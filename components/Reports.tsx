@@ -221,7 +221,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements }) => {
                                             ))}
                                         </div>
                                     </td>
-                                    <td className="border p-2 text-xs">{req.mappings.nist800_53.join(', ')}</td>
+                                    <td className="border p-2 text-xs">{req.mappings.nist800_53?.join(', ') || ''}</td>
                                 </tr>
                             );
                         })}

@@ -120,9 +120,9 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                      <div className="flex items-start gap-2">
                          <span className="text-xs font-bold text-slate-500 w-16 pt-1">NIST 53:</span>
                          <div className="flex flex-wrap gap-1.5">
-                            {requirement.mappings.nist800_53.map(m => (
+                            {requirement.mappings.nist800_53?.map(m => (
                                 <span key={m} className="px-2 py-0.5 bg-white text-slate-700 rounded text-xs font-mono border border-slate-200 shadow-sm">{m}</span>
-                            ))}
+                            )) || <span className="text-xs text-slate-400">None</span>}
                          </div>
                      </div>
 

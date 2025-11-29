@@ -84,7 +84,7 @@ export const ProjectBoard: React.FC<ProjectBoardProps> = ({
               title: `Mitigate: ${risk.description.substring(0, 40)}...`,
               description: `Execute remediation plan: ${risk.remediation}`,
               status: 'backlog',
-              priority: risk.impact >= 4 ? 'High' : 'Medium',
+              priority: (risk.impact || 0) >= 4 ? 'High' : 'Medium', // FIXED: Added safe check for impact
               linkedRiskId: risk.id
           };
           onAddTask(task);
