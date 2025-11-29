@@ -1,0 +1,7 @@
+{
+  "name": "CyberComply AI",
+  "description": "A comprehensive cybersecurity compliance tool for NIST 800-171A and CMMC, featuring AI-driven guidance, document generation, and artifact management.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
