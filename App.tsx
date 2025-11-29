@@ -1,10 +1,5 @@
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
-import { REQUIREMENTS_DATA, INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, INITIAL_USERS } from './data/standards';
+import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, INITIAL_USERS } from './data/standards';
 import { Requirement, Artifact, AppView, Ticket, ConnectWiseConfig, JiraConfig, ConfluenceConfig, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, WizardProgress, UserRole } from './types';
 import { RequirementsList } from './components/RequirementsList';
 import { RequirementDetail } from './components/RequirementDetail';
@@ -24,7 +19,8 @@ import { ComplianceWizard } from './components/ComplianceWizard';
 import { MSPDashboard } from './components/MSPDashboard';
 import { OrganizationManager } from './components/OrganizationManager';
 import { Login } from './components/Login';
-import { LayoutDashboard, ListChecks, FileEdit, MessageSquare, Menu, Network, Settings as SettingsIcon, PieChart, ShieldAlert, Monitor, Users, ChevronDown, KanbanSquare, TrendingUp, Sparkles, Building2, UserCircle, LogOut } from 'lucide-react';
+import { storageService } from './services/storage';
+import { LayoutDashboard, ListChecks, FileEdit, MessageSquare, Menu, Network, Settings as SettingsIcon, PieChart, ShieldAlert, Monitor, Users, ChevronDown, KanbanSquare, TrendingUp, Sparkles, Building2, UserCircle, LogOut, Database } from 'lucide-react';
 
 const App: React.FC = () => {
   // --- Auth & Role State ---
@@ -32,21 +28,17 @@ const App: React.FC = () => {
   
   const [currentView, setCurrentView] = useState<AppView>(AppView.MSP_DASHBOARD);
   
-  // --- MSP Client State ---
-  const [clients, setClients] = useState<Client[]>(INITIAL_CLIENTS);
-  const [activeClientId, setActiveClientId] = useState<string>(INITIAL_CLIENTS[0].id);
+  // --- MSP Client State (Loaded from Storage) ---
+  const [clients, setClients] = useState<Client[]>(() => storageService.loadClients());
+  const [activeClientId, setActiveClientId] = useState<string>(clients[0]?.id || INITIAL_CLIENTS[0].id);
   
-  // Master Store: Map ClientID -> ClientData
-  const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>(() => {
-      const initialStore: Record<string, ClientData> = {};
-      // Initialize mock data for the first client (TechFlow - MSP)
-      initialStore[INITIAL_CLIENTS[0].id] = createInitialClientData(true);
-      // Initialize clean data for others
-      INITIAL_CLIENTS.slice(1).forEach(client => {
-          initialStore[client.id] = createInitialClientData(true); // Using mock data for all for demo purposes
-      });
-      return initialStore;
-  });
+  // Master Store: Map ClientID -> ClientData (Loaded from Storage)
+  const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>(() => storageService.loadDataStore());
+
+  // --- Auto-Save Effect ---
+  useEffect(() => {
+    storageService.save(clients, clientDataStore);
+  }, [clients, clientDataStore]);
 
   // Ensure activeClient reflects permissions
   useEffect(() => {
@@ -66,7 +58,16 @@ const App: React.FC = () => {
   }, [currentUser, activeClientId, currentView]);
 
   const activeClient = clients.find(c => c.id === activeClientId) || clients[0];
-  const activeData = clientDataStore[activeClientId];
+  
+  // Fallback if data store is somehow missing the active client
+  if (!clientDataStore[activeClientId]) {
+      setClientDataStore(prev => ({
+          ...prev,
+          [activeClientId]: createInitialClientData(true)
+      }));
+  }
+  
+  const activeData = clientDataStore[activeClientId] || createInitialClientData(true);
 
   // Helper to update specific data for the ACTIVE client
   const updateActiveClientData = (updateFn: (prev: ClientData) => Partial<ClientData>) => {
@@ -178,7 +179,7 @@ const App: React.FC = () => {
   
   const handleDeleteClient = (clientId: string) => {
       setClients(prev => prev.filter(c => c.id !== clientId));
-      // Optionally cleanup store
+      // Optionally cleanup store in real app, but keep simple for now
   };
 
   const handleSelectReq = (req: Requirement) => {
@@ -204,7 +205,6 @@ const App: React.FC = () => {
       if (mockUser) {
           setCurrentUser(mockUser);
           setIsUserMenuOpen(false);
-          // View will auto-adjust via useEffect
       }
   };
 
@@ -458,7 +458,10 @@ const App: React.FC = () => {
                             </div>
                         </button>
                         <div className="border-t border-slate-100 p-2">
-                             <button onClick={() => setCurrentUser(null)} className="w-full flex items-center justify-center gap-2 text-xs text-red-500 p-2 hover:bg-red-50 rounded">
+                             <button onClick={() => storageService.reset()} className="w-full flex items-center justify-center gap-2 text-xs text-red-500 p-2 hover:bg-red-50 rounded">
+                                 <Database size={14} /> Factory Reset (Clear Data)
+                             </button>
+                             <button onClick={() => setCurrentUser(null)} className="w-full flex items-center justify-center gap-2 text-xs text-slate-500 p-2 hover:bg-slate-100 rounded">
                                  <LogOut size={14} /> Sign Out
                              </button>
                         </div>
