@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Requirement } from '../types';
 import { NIST_FAMILIES, NIST_CSF_FUNCTIONS } from '../data/standards';
@@ -232,7 +231,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements }) => {
 
           {/* Footer */}
           <div className="mt-12 border-t border-slate-200 pt-4 text-xs text-slate-400 flex justify-between">
-            <span>CyberComply AI Report</span>
+            <span>AuditIQ Report</span>
             <span>Page 1 of 1</span>
           </div>
 
