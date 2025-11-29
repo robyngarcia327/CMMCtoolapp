@@ -41,6 +41,15 @@ Your task is to analyze network inputs (diagrams or device lists) and provide a 
 - **Asset List:** Categorize assets into "Likely In-Scope" and "Likely Out-of-Scope".
 `;
 
+const SYSTEM_INSTRUCTION_POLICY_AUDIT = `
+You are a strict CMMC Certified Assessor (CCA). 
+Your job is to compare a provided policy snippet against a specific NIST/CMMC Requirement.
+- Analyze if the provided text satisfies the requirement's "Assessment Objectives".
+- If it passes, say "COMPLIANT" and explain why.
+- If it fails, say "NON-COMPLIANT" or "PARTIAL" and list exactly what is missing.
+- Be specific. If the requirement asks for "frequency", and the text doesn't have it, flag it.
+`;
+
 export const sendChatMessage = async (
   message: string,
   history: { role: 'user' | 'model'; text: string }[]
@@ -87,6 +96,34 @@ export const explainRequirement = async (req: Requirement): Promise<string> => {
     return response.text || "No explanation available.";
   } catch (e) {
     return "Failed to retrieve explanation.";
+  }
+};
+
+export const analyzePolicyGap = async (
+  req: Requirement,
+  policyText: string
+): Promise<string> => {
+  const prompt = `
+    **Requirement:** ${req.id} - ${req.title}
+    **Description:** ${req.description}
+    **Objectives:** ${req.objectives.map(o => o.description).join(', ')}
+
+    **User's Policy Snippet:**
+    "${policyText}"
+
+    **Task:**
+    Perform a Gap Analysis. Does the snippet above fully satisfy the requirement?
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: { systemInstruction: SYSTEM_INSTRUCTION_POLICY_AUDIT }
+    });
+    return response.text || "Analysis failed.";
+  } catch (e) {
+    return "Error analyzing policy.";
   }
 };
 

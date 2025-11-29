@@ -178,6 +178,17 @@ export interface ProjectTask {
   dueDate?: number;
 }
 
+// --- Budgeting Interfaces ---
+export interface BudgetLineItem {
+  id: string;
+  linkedRequirementId: string; // The gap this fixes
+  name: string; // e.g., "MFA License (Duo)"
+  category: 'Software' | 'Hardware' | 'Labor' | 'Consulting';
+  costType: 'One-Time' | 'Recurring/Year';
+  amount: number;
+  notes?: string;
+}
+
 export interface Framework {
   id: string;
   name: string;
@@ -212,6 +223,7 @@ export interface ClientData {
   artifacts: Artifact[];
   tickets: Ticket[];
   tasks: ProjectTask[];
+  budgetItems: BudgetLineItem[];
   cwConfig: ConnectWiseConfig;
   jiraConfig: JiraConfig;
   confluenceConfig: ConfluenceConfig;
@@ -231,6 +243,7 @@ export enum AppView {
   INVENTORY = 'INVENTORY',
   USERS = 'USERS',
   PROJECTS = 'PROJECTS',
+  BUDGET = 'BUDGET', // New View
   SETTINGS = 'SETTINGS',
   CHAT = 'CHAT',
   REPORTS = 'REPORTS',

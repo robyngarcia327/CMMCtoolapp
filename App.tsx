@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, INITIAL_USERS, REQUIREMENTS_DATA } from './data/standards';
-import { Requirement, Artifact, AppView, Ticket, ConnectWiseConfig, JiraConfig, ConfluenceConfig, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, WizardProgress, UserRole } from './types';
+import { Requirement, Artifact, AppView, Ticket, ConnectWiseConfig, JiraConfig, ConfluenceConfig, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, WizardProgress, UserRole, BudgetLineItem } from './types';
 import { RequirementsList } from './components/RequirementsList';
 import { RequirementDetail } from './components/RequirementDetail';
 import { DocGenerator } from './components/DocGenerator';
@@ -15,13 +15,14 @@ import { Inventory } from './components/Inventory';
 import { UserManagement } from './components/UserManagement';
 import { ClientSwitcher } from './components/ClientSwitcher';
 import { ProjectBoard } from './components/ProjectBoard';
+import { BudgetCalculator } from './components/BudgetCalculator';
 import { SPRSScorecard } from './components/SPRSScorecard';
 import { ComplianceWizard } from './components/ComplianceWizard';
 import { MSPDashboard } from './components/MSPDashboard';
 import { OrganizationManager } from './components/OrganizationManager';
 import { Login } from './components/Login';
 import { storageService } from './services/storage';
-import { LayoutDashboard, ListChecks, FileEdit, MessageSquare, Menu, Network, Settings as SettingsIcon, PieChart, ShieldAlert, Monitor, Users, ChevronDown, KanbanSquare, TrendingUp, Sparkles, Building2, UserCircle, LogOut, Database } from 'lucide-react';
+import { LayoutDashboard, ListChecks, FileEdit, MessageSquare, Menu, Network, Settings as SettingsIcon, PieChart, ShieldAlert, Monitor, Users, ChevronDown, KanbanSquare, TrendingUp, Sparkles, Building2, UserCircle, LogOut, Database, Calculator } from 'lucide-react';
 
 const App: React.FC = () => {
   // --- Auth & Role State ---
@@ -98,6 +99,7 @@ const App: React.FC = () => {
   const artifacts = activeData.artifacts;
   const tickets = activeData.tickets;
   const tasks = activeData.tasks;
+  const budgetItems = activeData.budgetItems || [];
   const cwConfig = activeData.cwConfig;
   const jiraConfig = activeData.jiraConfig;
   const confluenceConfig = activeData.confluenceConfig;
@@ -187,6 +189,14 @@ const App: React.FC = () => {
   };
   const handleDeleteTask = (id: string) => {
       updateActiveClientData(prev => ({ tasks: prev.tasks.filter(t => t.id !== id) }));
+  };
+
+  // Budget Handlers
+  const handleAddBudgetItem = (item: BudgetLineItem) => {
+      updateActiveClientData(prev => ({ budgetItems: [...(prev.budgetItems || []), item] }));
+  };
+  const handleRemoveBudgetItem = (id: string) => {
+      updateActiveClientData(prev => ({ budgetItems: (prev.budgetItems || []).filter(i => i.id !== id) }));
   };
 
   const handleUpdateWizardProgress = (progress: WizardProgress) => {
@@ -380,6 +390,14 @@ const App: React.FC = () => {
           )}
 
           <div className="pt-4 pb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider pl-4">Tools</div>
+          
+          <button
+            onClick={() => setCurrentView(AppView.BUDGET)}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm font-medium ${currentView === AppView.BUDGET ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+          >
+            <Calculator size={18} />
+            Budget & ROI
+          </button>
 
           <button
             onClick={() => setCurrentView(AppView.REPORTS)}
@@ -593,6 +611,17 @@ const App: React.FC = () => {
                         requirements={requirements.filter(r => r.framework === activeFramework.id)}
                         risks={risks}
                         users={users}
+                    />
+                </div>
+            )}
+
+            {currentView === AppView.BUDGET && (
+                <div className="flex-1 overflow-y-auto bg-slate-50">
+                    <BudgetCalculator
+                        requirements={requirements}
+                        budgetItems={budgetItems}
+                        onAddItem={handleAddBudgetItem}
+                        onRemoveItem={handleRemoveBudgetItem}
                     />
                 </div>
             )}

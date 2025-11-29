@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Requirement, Artifact, Ticket, ConnectWiseConfig, JiraConfig, AssessmentObjective } from '../types';
 import { ArtifactUploader } from './ArtifactUploader';
 import { TicketCreationModal } from './TicketCreationModal';
+import { PolicyAnalyzer } from './PolicyAnalyzer';
 import { explainRequirement } from '../services/gemini';
 import { NIST_CSF_FUNCTIONS } from '../data/standards';
 import ReactMarkdown from 'react-markdown';
@@ -149,6 +150,9 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
              </div>
           </div>
         </div>
+        
+        {/* NEW: Policy Analyzer */}
+        <PolicyAnalyzer requirement={requirement} />
 
         {/* Assessment Objectives */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">

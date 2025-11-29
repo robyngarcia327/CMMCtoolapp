@@ -1,5 +1,5 @@
 
-import { Requirement, Risk, Asset, User, Framework, Client, ClientData, ProjectTask } from '../types';
+import { Requirement, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, BudgetLineItem } from '../types';
 
 export const FRAMEWORKS: Framework[] = [
   { id: 'NIST800-171', name: 'NIST 800-171 / CMMC', description: 'Protecting Controlled Unclassified Information (CUI).' },
@@ -572,6 +572,36 @@ export const INITIAL_TASKS: ProjectTask[] = [
     }
 ];
 
+export const INITIAL_BUDGET: BudgetLineItem[] = [
+    {
+        id: 'B-001',
+        linkedRequirementId: '3.1.1',
+        name: 'Duo MFA Licenses (50 Users)',
+        category: 'Software',
+        costType: 'Recurring/Year',
+        amount: 3600,
+        notes: '$6/user/month'
+    },
+    {
+        id: 'B-002',
+        linkedRequirementId: '3.13.1',
+        name: 'Firewall Replacement (Hardware)',
+        category: 'Hardware',
+        costType: 'One-Time',
+        amount: 2500,
+        notes: 'Upgrade to FortiGate 60F'
+    },
+     {
+        id: 'B-003',
+        linkedRequirementId: '3.13.1',
+        name: 'Firewall Config Labor',
+        category: 'Labor',
+        costType: 'One-Time',
+        amount: 800,
+        notes: '4 hours @ $200/hr'
+    }
+];
+
 // --- MSP Data ---
 
 export const INITIAL_CLIENTS: Client[] = [
@@ -620,6 +650,7 @@ export const createInitialClientData = (useMockData = false): ClientData => {
         assets: useMockData ? [...INITIAL_ASSETS] : [],
         users: useMockData ? [...INITIAL_USERS] : [],
         tasks: useMockData ? [...INITIAL_TASKS] : [],
+        budgetItems: useMockData ? [...INITIAL_BUDGET] : [],
         artifacts: [],
         tickets: [],
         versions: [],
