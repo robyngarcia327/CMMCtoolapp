@@ -81,6 +81,24 @@ export interface ConfluenceConfig {
   enabled: boolean;
 }
 
+export interface AuvikConfig {
+  apiKey: string;
+  tenantId: string;
+  region: 'US' | 'EU';
+  enabled: boolean;
+}
+
+// Represents a device fetched from Auvik
+export interface AuvikDevice {
+  id: string;
+  name: string;
+  type: 'Switch' | 'Firewall' | 'Server' | 'Workstation' | 'Printer' | 'AccessPoint';
+  ipAddress: string;
+  vlan?: string;
+  firmware?: string;
+  isOnline: boolean;
+}
+
 export interface DocGenSession {
   id: string;
   type: 'SSP' | 'WISP';
@@ -197,6 +215,7 @@ export interface ClientData {
   cwConfig: ConnectWiseConfig;
   jiraConfig: JiraConfig;
   confluenceConfig: ConfluenceConfig;
+  auvikConfig: AuvikConfig;
   versions: RiskProfileVersion[];
   wizardProgress: WizardProgress;
 }

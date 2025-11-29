@@ -649,6 +649,12 @@ export const createInitialClientData = (useMockData = false): ClientData => {
             apiToken: '',
             spaceKey: '',
             enabled: false
+        },
+        auvikConfig: {
+            apiKey: '',
+            tenantId: '',
+            region: 'US',
+            enabled: false
         }
     };
 };

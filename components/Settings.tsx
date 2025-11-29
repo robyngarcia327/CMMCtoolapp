@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Save, CheckCircle, Lock, Globe, Building2, Key, Layers, BookOpen, Database, RefreshCw, AlertTriangle, Trash2 } from 'lucide-react';
+import { Save, CheckCircle, Lock, Globe, Building2, Key, Layers, BookOpen, Database, RefreshCw, AlertTriangle, Trash2, Network } from 'lucide-react';
 import { ConnectWiseConfig, JiraConfig, ConfluenceConfig } from '../types';
 
 interface SettingsProps {
@@ -11,7 +11,7 @@ interface SettingsProps {
   onReloadStandards?: () => void;
 }
 
-type SettingsTab = 'ConnectWise' | 'Jira' | 'Confluence' | 'Data';
+type SettingsTab = 'ConnectWise' | 'Jira' | 'Confluence' | 'Auvik' | 'Data';
 
 export const Settings: React.FC<SettingsProps> = ({ config, jiraConfig, confluenceConfig, onSave, onReloadStandards }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('ConnectWise');
@@ -217,6 +217,42 @@ export const Settings: React.FC<SettingsProps> = ({ config, jiraConfig, confluen
     </div>
   );
 
+  const renderAuvikSettings = () => (
+      <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+           <div className="col-span-1 md:col-span-2 bg-purple-50 text-purple-800 p-4 rounded-lg text-sm mb-2 flex items-start gap-2">
+             <Network size={20} className="shrink-0 mt-0.5" />
+             <div>
+                 <span className="font-bold">Auvik Integration:</span> Configure this to enable real-time network topology analysis for the "Network Analyzer" tool. 
+             </div>
+           </div>
+
+           <div className="space-y-2">
+             <label className="block text-sm font-medium text-slate-700">Auvik Region</label>
+             <select className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                 <option value="US">US (United States)</option>
+                 <option value="EU">EU (Europe)</option>
+             </select>
+           </div>
+
+           <div className="space-y-2">
+             <label className="block text-sm font-medium text-slate-700">Tenant ID</label>
+             <input 
+                 className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                 placeholder="e.g. 12345678-..."
+             />
+           </div>
+           
+            <div className="space-y-2 col-span-1 md:col-span-2">
+             <label className="block text-sm font-medium text-slate-700">API Key</label>
+             <input 
+                 type="password"
+                 className="w-full border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                 placeholder="••••••••••••••••••••••••"
+             />
+           </div>
+      </div>
+  );
+
   const renderDataSettings = () => (
       <div className="p-8 space-y-6">
           <div className="bg-slate-50 border border-slate-200 p-6 rounded-xl flex items-start gap-4">
@@ -292,6 +328,12 @@ export const Settings: React.FC<SettingsProps> = ({ config, jiraConfig, confluen
             >
                 Confluence
             </button>
+            <button
+                onClick={() => setActiveTab('Auvik')}
+                className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'Auvik' ? 'border-purple-600 text-purple-600' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
+            >
+                Auvik
+            </button>
              <button
                 onClick={() => setActiveTab('Data')}
                 className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Data' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
@@ -348,6 +390,17 @@ export const Settings: React.FC<SettingsProps> = ({ config, jiraConfig, confluen
                         </label>
                     </div>
                     {renderConfluenceSettings()}
+                </>
+            )}
+            {activeTab === 'Auvik' && (
+                <>
+                    <div className="p-6 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-purple-900 rounded-lg flex items-center justify-center text-white font-bold text-xs">AUV</div>
+                            <div><h3 className="font-bold text-slate-900">Auvik Network Management</h3></div>
+                        </div>
+                    </div>
+                    {renderAuvikSettings()}
                 </>
             )}
             {activeTab === 'Data' && renderDataSettings()}

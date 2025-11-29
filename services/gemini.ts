@@ -1,5 +1,6 @@
+
 import { GoogleGenAI } from "@google/genai";
-import { Requirement } from '../types';
+import { Requirement, AuvikDevice } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -24,11 +25,20 @@ Your task is to generate comprehensive cybersecurity documents, including System
 `;
 
 const SYSTEM_INSTRUCTION_NETWORK = `
-You are a Lead Security Architect for CMMC and NIST 800-171 compliance.
-Your role is to analyze network diagrams and provide technical feedback on system boundaries.
-- Identify where CUI (Controlled Unclassified Information) might flow.
-- Determine if the network segmentation is sufficient for "Out-of-Scope" designations.
-- Recommend architectural changes (e.g., placing a firewall, using a DMZ, implementing VDI) to reduce compliance scope or improve security.
+You are a Lead Security Architect for CMMC and NIST 800-171 compliance, specializing in Zero Trust Architecture and Network Segmentation.
+Your task is to analyze network inputs (diagrams or device lists) and provide a strict security assessment.
+
+**Key Analysis Goals:**
+1. **Identify CUI Flow:** Determine where Controlled Unclassified Information (CUI) likely resides.
+2. **Detect Flat Networks:** Aggressively identify if critical assets (Servers) share the same network segment (VLAN) as high-risk assets (IoT, Guest Wi-Fi).
+3. **Recommend Enclaves:** If CUI is present, you MUST recommend a "CUI Enclave" strategy to isolate sensitive data.
+4. **Scope Reduction:** Advise on how to move assets "Out-of-Scope" to reduce assessment costs.
+
+**Output Format:**
+- **Executive Summary:** A brief health check.
+- **Vulnerability Analysis:** Specific issues (e.g., "Guest Wi-Fi on same VLAN as HR Server").
+- **Enclave Recommendation:** A specific section detailing how to build a CUI Enclave (e.g., "Create VLAN 20 for CUI, deploy a Jump Box").
+- **Asset List:** Categorize assets into "Likely In-Scope" and "Likely Out-of-Scope".
 `;
 
 export const sendChatMessage = async (
@@ -131,12 +141,10 @@ export const analyzeNetworkDiagram = async (
   const prompt = `
     Analyze this network diagram for CMMC and NIST 800-171 compliance.
     
-    Please provide:
-    1. **System Boundary Definition**: Identify the perimeter of the Information System.
-    2. **Scope Analysis**:
-       - List likely **In-Scope** assets (storing/processing CUI).
-       - List likely **Out-of-Scope** assets (logically separated).
-    3. **Recommendations**: Suggest infrastructure changes (e.g., VLANs, Firewalls, Jump Boxes) to better isolate CUI or reduce the assessment scope.
+    Look specifically for:
+    1. **Flat Networks**: Are sensitive assets mixed with general traffic?
+    2. **Missing Boundary Protection**: Is there a firewall between the internet and the CUI?
+    3. **Enclave Opportunities**: Recommend where to place a CUI Enclave.
   `;
 
   try {
@@ -157,4 +165,37 @@ export const analyzeNetworkDiagram = async (
     console.error("Gemini Vision Error:", error);
     return "Error analyzing the diagram. Please try again.";
   }
+};
+
+export const analyzeAuvikTopology = async (
+    devices: AuvikDevice[]
+): Promise<string> => {
+    const deviceListStr = devices.map(d => 
+        `- ${d.name} (${d.type}): IP ${d.ipAddress}, VLAN ${d.vlan || 'None'}`
+    ).join('\n');
+
+    const prompt = `
+      I have performed a network scan using Auvik. Here is the list of discovered devices:
+      
+      ${deviceListStr}
+      
+      **Instructions:**
+      1. Analyze this topology for NIST 800-171 compliance (specifically SC.3.13.1 Boundary Protection).
+      2. Identify risks (e.g., Guest WiFi on same VLAN as Servers).
+      3. Propose a **Secure Enclave Architecture** for handling CUI. 
+      4. Suggest which devices should remain in the "Corporate" zone and which move to the "CUI Enclave".
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                systemInstruction: SYSTEM_INSTRUCTION_NETWORK
+            }
+        });
+        return response.text || "No analysis generated.";
+    } catch (error) {
+        return "Error analyzing Auvik topology.";
+    }
 };
