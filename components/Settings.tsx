@@ -1,31 +1,44 @@
 
 import React, { useState } from 'react';
-import { Save, CheckCircle, Lock, Globe, Building2, Key, Layers, BookOpen, Database, RefreshCw, AlertTriangle, Trash2, Network } from 'lucide-react';
-import { ConnectWiseConfig, JiraConfig, ConfluenceConfig } from '../types';
+import { Save, CheckCircle, Lock, Globe, Building2, Key, Layers, BookOpen, Database, RefreshCw, AlertTriangle, Trash2, Network, Palette, Upload } from 'lucide-react';
+import { ConnectWiseConfig, JiraConfig, ConfluenceConfig, BrandingConfig } from '../types';
 
 interface SettingsProps {
   config: ConnectWiseConfig;
   jiraConfig: JiraConfig;
   confluenceConfig: ConfluenceConfig;
-  onSave: (cw: ConnectWiseConfig, jira: JiraConfig, conf: ConfluenceConfig) => void;
+  mspBranding?: BrandingConfig;
+  onSave: (cw: ConnectWiseConfig, jira: JiraConfig, conf: ConfluenceConfig, branding?: BrandingConfig) => void;
   onReloadStandards?: () => void;
 }
 
-type SettingsTab = 'ConnectWise' | 'Jira' | 'Confluence' | 'Auvik' | 'Data';
+type SettingsTab = 'ConnectWise' | 'Jira' | 'Confluence' | 'Auvik' | 'Branding' | 'Data';
 
-export const Settings: React.FC<SettingsProps> = ({ config, jiraConfig, confluenceConfig, onSave, onReloadStandards }) => {
+export const Settings: React.FC<SettingsProps> = ({ config, jiraConfig, confluenceConfig, mspBranding, onSave, onReloadStandards }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('ConnectWise');
   
   const [cwData, setCwData] = useState<ConnectWiseConfig>(config);
   const [jiraData, setJiraData] = useState<JiraConfig>(jiraConfig);
   const [confData, setConfData] = useState<ConfluenceConfig>(confluenceConfig);
+  const [brandingData, setBrandingData] = useState<BrandingConfig>(mspBranding || { primaryColor: '#4f46e5' });
 
   const [isSaved, setIsSaved] = useState(false);
 
   const handleSave = () => {
-    onSave(cwData, jiraData, confData);
+    onSave(cwData, jiraData, confData, brandingData);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+              setBrandingData({ ...brandingData, logoUrl: ev.target?.result as string });
+          };
+          reader.readAsDataURL(file);
+      }
   };
 
   const renderCwSettings = () => (
@@ -253,6 +266,54 @@ export const Settings: React.FC<SettingsProps> = ({ config, jiraConfig, confluen
       </div>
   );
 
+  const renderBrandingSettings = () => (
+      <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="md:col-span-2">
+              <h3 className="font-bold text-slate-800 text-lg mb-2">MSP Branding</h3>
+              <p className="text-slate-600 text-sm">Upload your company logo. This will appear on the cover page of all reports generated for your clients.</p>
+          </div>
+
+          <div className="space-y-4">
+              <label className="block text-sm font-bold text-slate-700">Organization Logo</label>
+              <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors">
+                  {brandingData.logoUrl ? (
+                      <div className="relative group">
+                          <img src={brandingData.logoUrl} alt="MSP Logo" className="h-16 object-contain" />
+                          <button 
+                            onClick={() => setBrandingData({...brandingData, logoUrl: undefined})}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                              <Trash2 size={12} />
+                          </button>
+                      </div>
+                  ) : (
+                      <div className="text-center text-slate-400">
+                          <Upload size={32} className="mx-auto mb-2 opacity-50" />
+                          <span className="text-xs">Upload PNG/JPG</span>
+                      </div>
+                  )}
+                  <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleLogoUpload} />
+              </div>
+          </div>
+
+          <div className="space-y-4">
+              <label className="block text-sm font-bold text-slate-700">Brand Color</label>
+              <div className="flex items-center gap-4">
+                  <input 
+                    type="color" 
+                    value={brandingData.primaryColor}
+                    onChange={(e) => setBrandingData({...brandingData, primaryColor: e.target.value})}
+                    className="w-16 h-16 rounded border-0 cursor-pointer"
+                  />
+                  <div className="text-sm text-slate-500">
+                      <p>Selected: <span className="font-mono font-bold text-slate-800">{brandingData.primaryColor}</span></p>
+                      <p>Used for headers, buttons, and charts.</p>
+                  </div>
+              </div>
+          </div>
+      </div>
+  );
+
   const renderDataSettings = () => (
       <div className="p-8 space-y-6">
           <div className="bg-slate-50 border border-slate-200 p-6 rounded-xl flex items-start gap-4">
@@ -334,6 +395,12 @@ export const Settings: React.FC<SettingsProps> = ({ config, jiraConfig, confluen
             >
                 Auvik
             </button>
+            <button
+                onClick={() => setActiveTab('Branding')}
+                className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Branding' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
+            >
+                <Palette size={14} /> Branding
+            </button>
              <button
                 onClick={() => setActiveTab('Data')}
                 className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Data' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
@@ -403,6 +470,7 @@ export const Settings: React.FC<SettingsProps> = ({ config, jiraConfig, confluen
                     {renderAuvikSettings()}
                 </>
             )}
+            {activeTab === 'Branding' && renderBrandingSettings()}
             {activeTab === 'Data' && renderDataSettings()}
         </div>
 

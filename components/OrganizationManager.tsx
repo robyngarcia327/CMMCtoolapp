@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
-import { Client, User, UserRole, ClientData } from '../types';
-import { Plus, Shield, Trash2, Mail, Search } from 'lucide-react';
+import { Client, User, UserRole, ClientData, BrandingConfig } from '../types';
+import { Plus, Shield, Trash2, Mail, Search, Upload, Palette } from 'lucide-react';
 
 interface OrganizationManagerProps {
   clients: Client[];
@@ -22,37 +23,85 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
   const [activeTab, setActiveTab] = useState<'CLIENTS' | 'USERS'>('CLIENTS');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // New Client State
+  // New/Edit Client State
   const [isAddingClient, setIsAddingClient] = useState(false);
-  const [newClientName, setNewClientName] = useState('');
-  const [newClientIndustry, setNewClientIndustry] = useState('');
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  
+  const [clientForm, setClientForm] = useState<{
+      name: string;
+      industry: string;
+      branding: BrandingConfig;
+  }>({
+      name: '',
+      industry: '',
+      branding: { primaryColor: '#3b82f6' }
+  });
 
   // New User State
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [newUser, setNewUser] = useState<Partial<User>>({ role: 'CLIENT_USER' });
 
   // --- Client Handlers ---
-  const handleCreateClient = () => {
-    if (!newClientName) return;
-    const newClient: Client = {
-        id: `client-${Date.now()}`,
-        name: newClientName,
-        industry: newClientIndustry || 'General',
-        contactName: 'Admin',
-        logoInitial: newClientName.charAt(0).toUpperCase(),
-        primaryFramework: 'NIST800-171',
-        nextAuditDate: Date.now() + 1000 * 60 * 60 * 24 * 365,
-        accountManager: 'Unassigned',
-        isParent: false
-    };
-    onAddClient(newClient);
-    setIsAddingClient(false);
-    setNewClientName('');
-    setNewClientIndustry('');
+  const handleSaveClient = () => {
+    if (!clientForm.name) return;
+
+    if (editingClient) {
+        // Update existing
+        onUpdateClient({
+            ...editingClient,
+            name: clientForm.name,
+            industry: clientForm.industry,
+            branding: clientForm.branding
+        });
+        setEditingClient(null);
+    } else {
+        // Create new
+        const newClient: Client = {
+            id: `client-${Date.now()}`,
+            name: clientForm.name,
+            industry: clientForm.industry || 'General',
+            contactName: 'Admin',
+            logoInitial: clientForm.name.charAt(0).toUpperCase(),
+            primaryFramework: 'NIST800-171',
+            nextAuditDate: Date.now() + 1000 * 60 * 60 * 24 * 365,
+            accountManager: 'Unassigned',
+            isParent: false,
+            branding: clientForm.branding
+        };
+        onAddClient(newClient);
+        setIsAddingClient(false);
+    }
+    
+    // Reset Form
+    setClientForm({ name: '', industry: '', branding: { primaryColor: '#3b82f6' } });
+  };
+
+  const openEditClient = (client: Client) => {
+      setEditingClient(client);
+      setClientForm({
+          name: client.name,
+          industry: client.industry,
+          branding: client.branding || { primaryColor: '#3b82f6' }
+      });
+      setIsAddingClient(true);
   };
 
   const handleToggleParent = (client: Client) => {
       onUpdateClient({ ...client, isParent: !client.isParent });
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+              setClientForm(prev => ({
+                  ...prev,
+                  branding: { ...prev.branding, logoUrl: ev.target?.result as string }
+              }));
+          };
+          reader.readAsDataURL(file);
+      }
   };
 
   // --- User Handlers ---
@@ -147,7 +196,11 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                     />
                 </div>
                 <button 
-                    onClick={() => setIsAddingClient(true)}
+                    onClick={() => {
+                        setEditingClient(null);
+                        setClientForm({ name: '', industry: '', branding: { primaryColor: '#3b82f6' } });
+                        setIsAddingClient(true);
+                    }}
                     className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
                 >
                     <Plus size={18} /> Add Client
@@ -156,24 +209,54 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
 
            {isAddingClient && (
                <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 animate-in fade-in slide-in-from-top-2">
-                   <h3 className="font-bold text-slate-800 mb-4">New Client Organization</h3>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                       <input 
-                           className="border p-2 rounded" 
-                           placeholder="Company Name" 
-                           value={newClientName}
-                           onChange={e => setNewClientName(e.target.value)}
-                       />
-                       <input 
-                           className="border p-2 rounded" 
-                           placeholder="Industry" 
-                           value={newClientIndustry}
-                           onChange={e => setNewClientIndustry(e.target.value)}
-                       />
+                   <h3 className="font-bold text-slate-800 mb-4">{editingClient ? 'Edit Organization' : 'New Organization'}</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                       <div className="space-y-4">
+                           <input 
+                               className="w-full border p-2 rounded" 
+                               placeholder="Company Name" 
+                               value={clientForm.name}
+                               onChange={e => setClientForm({...clientForm, name: e.target.value})}
+                           />
+                           <input 
+                               className="w-full border p-2 rounded" 
+                               placeholder="Industry" 
+                               value={clientForm.industry}
+                               onChange={e => setClientForm({...clientForm, industry: e.target.value})}
+                           />
+                       </div>
+                       
+                       {/* Branding Section */}
+                       <div className="bg-white p-4 rounded-lg border border-slate-200 space-y-4">
+                           <h4 className="text-sm font-bold text-slate-600 flex items-center gap-2"><Palette size={14} /> Client Branding</h4>
+                           
+                           <div className="flex items-center gap-4">
+                               <div className="relative w-16 h-16 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center bg-slate-50 overflow-hidden group">
+                                   {clientForm.branding.logoUrl ? (
+                                       <img src={clientForm.branding.logoUrl} className="w-full h-full object-contain" alt="Logo" />
+                                   ) : (
+                                       <Upload size={20} className="text-slate-400" />
+                                   )}
+                                   <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleLogoUpload} />
+                               </div>
+                               <div>
+                                   <div className="text-xs text-slate-500 mb-1">Logo (Upload)</div>
+                                   <div className="flex items-center gap-2">
+                                       <input 
+                                            type="color" 
+                                            value={clientForm.branding.primaryColor}
+                                            onChange={e => setClientForm(prev => ({ ...prev, branding: { ...prev.branding, primaryColor: e.target.value } }))}
+                                            className="w-8 h-8 rounded border-0 cursor-pointer"
+                                       />
+                                       <span className="text-xs font-mono">{clientForm.branding.primaryColor}</span>
+                                   </div>
+                               </div>
+                           </div>
+                       </div>
                    </div>
                    <div className="flex justify-end gap-2">
                        <button onClick={() => setIsAddingClient(false)} className="px-4 py-2 text-slate-600">Cancel</button>
-                       <button onClick={handleCreateClient} className="px-4 py-2 bg-blue-600 text-white rounded">Create Organization</button>
+                       <button onClick={handleSaveClient} className="px-4 py-2 bg-blue-600 text-white rounded">Save Changes</button>
                    </div>
                </div>
            )}
@@ -187,11 +270,16 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                             </div>
                         )}
                         <div className="flex items-center gap-4 mb-4">
-                            <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center text-xl font-bold text-slate-500">
-                                {client.logoInitial}
-                            </div>
+                            {client.branding?.logoUrl ? (
+                                <img src={client.branding.logoUrl} alt={client.name} className="w-12 h-12 object-contain" />
+                            ) : (
+                                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center text-xl font-bold text-slate-500">
+                                    {client.logoInitial}
+                                </div>
+                            )}
+                            
                             <div>
-                                <h3 className="font-bold text-slate-900 text-lg">{client.name}</h3>
+                                <h3 className="font-bold text-slate-900 text-lg hover:text-blue-600 cursor-pointer" onClick={() => openEditClient(client)}>{client.name}</h3>
                                 <p className="text-sm text-slate-500">{client.industry}</p>
                             </div>
                         </div>
@@ -213,6 +301,12 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                                 className={`flex-1 text-xs py-2 rounded border transition-colors ${client.isParent ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
                             >
                                 {client.isParent ? 'Is Parent (MSP)' : 'Set as Parent'}
+                            </button>
+                            <button 
+                                onClick={() => openEditClient(client)}
+                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                            >
+                                <Palette size={16} />
                             </button>
                             {!client.isParent && (
                                 <button 

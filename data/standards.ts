@@ -614,7 +614,11 @@ export const INITIAL_CLIENTS: Client[] = [
       primaryFramework: 'ISO 27001',
       nextAuditDate: Date.now() + 1000 * 60 * 60 * 24 * 15,
       accountManager: 'Self',
-      isParent: true // PARENT ORGANIZATION
+      isParent: true,
+      branding: {
+          primaryColor: '#4f46e5', // Indigo
+          logoUrl: 'https://via.placeholder.com/150x50/4f46e5/ffffff?text=TechFlow+MSP'
+      }
     },
     { 
       id: 'client-1', 
@@ -625,7 +629,11 @@ export const INITIAL_CLIENTS: Client[] = [
       primaryFramework: 'CMMC L2',
       nextAuditDate: Date.now() + 1000 * 60 * 60 * 24 * 45,
       accountManager: 'Alice Johnson',
-      isParent: false
+      isParent: false,
+      branding: {
+          primaryColor: '#dc2626', // Red
+          logoUrl: 'https://via.placeholder.com/150x50/dc2626/ffffff?text=Acme+Defense'
+      }
     },
     { 
       id: 'client-2', 
@@ -636,7 +644,11 @@ export const INITIAL_CLIENTS: Client[] = [
       primaryFramework: 'HIPAA',
       nextAuditDate: Date.now() + 1000 * 60 * 60 * 24 * 180, 
       accountManager: 'Bob Builder',
-      isParent: false
+      isParent: false,
+      branding: {
+          primaryColor: '#059669', // Emerald
+          logoUrl: 'https://via.placeholder.com/150x50/059669/ffffff?text=Global+Health'
+      }
     },
 ];
 
@@ -686,6 +698,10 @@ export const createInitialClientData = (useMockData = false): ClientData => {
             tenantId: '',
             region: 'US',
             enabled: false
+        },
+        mspBranding: {
+            logoUrl: 'https://via.placeholder.com/150x50/4f46e5/ffffff?text=TechFlow+MSP',
+            primaryColor: '#4f46e5'
         }
     };
 };

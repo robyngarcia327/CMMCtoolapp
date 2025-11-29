@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, INITIAL_USERS, REQUIREMENTS_DATA } from './data/standards';
-import { Requirement, Artifact, AppView, Ticket, ConnectWiseConfig, JiraConfig, ConfluenceConfig, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, WizardProgress, UserRole, BudgetLineItem } from './types';
+import { Requirement, Artifact, AppView, Ticket, ConnectWiseConfig, JiraConfig, ConfluenceConfig, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, WizardProgress, UserRole, BudgetLineItem, BrandingConfig } from './types';
 import { RequirementsList } from './components/RequirementsList';
 import { RequirementDetail } from './components/RequirementDetail';
 import { DocGenerator } from './components/DocGenerator';
@@ -103,6 +103,7 @@ const App: React.FC = () => {
   const cwConfig = activeData.cwConfig;
   const jiraConfig = activeData.jiraConfig;
   const confluenceConfig = activeData.confluenceConfig;
+  const mspBranding = activeData.mspBranding; // MSP Branding is stored on the client data for now, but conceptually global
   const wizardProgress = activeData.wizardProgress || { currentStep: 'INTRO', currentQuestionIndex: 0 };
 
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
@@ -133,8 +134,8 @@ const App: React.FC = () => {
       updateActiveClientData(prev => ({ tickets: [...prev.tickets, ticket] }));
   };
 
-  const handleSaveSettings = (cw: ConnectWiseConfig, jira: JiraConfig, conf: ConfluenceConfig) => {
-      updateActiveClientData(() => ({ cwConfig: cw, jiraConfig: jira, confluenceConfig: conf }));
+  const handleSaveSettings = (cw: ConnectWiseConfig, jira: JiraConfig, conf: ConfluenceConfig, branding?: BrandingConfig) => {
+      updateActiveClientData(() => ({ cwConfig: cw, jiraConfig: jira, confluenceConfig: conf, mspBranding: branding }));
   };
 
   // --- SMART SYNC Logic ---
@@ -670,7 +671,12 @@ const App: React.FC = () => {
 
              {currentView === AppView.DOC_GENERATOR && (
                  <div className="flex-1 overflow-y-auto bg-slate-50">
-                    <DocGenerator clientName={activeClient.name} confluenceConfig={confluenceConfig} />
+                    <DocGenerator 
+                        clientName={activeClient.name} 
+                        clientBranding={activeClient.branding}
+                        mspBranding={mspBranding}
+                        confluenceConfig={confluenceConfig} 
+                    />
                  </div>
             )}
 
@@ -686,6 +692,7 @@ const App: React.FC = () => {
                         config={cwConfig} 
                         jiraConfig={jiraConfig} 
                         confluenceConfig={confluenceConfig}
+                        mspBranding={mspBranding}
                         onSave={handleSaveSettings} 
                         onReloadStandards={handleReloadStandards}
                     />

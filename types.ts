@@ -195,6 +195,12 @@ export interface Framework {
   description: string;
 }
 
+export interface BrandingConfig {
+  logoUrl?: string; // Data URL or Image Link
+  primaryColor?: string; // Hex Code
+  secondaryColor?: string;
+}
+
 // --- MSP Client Interfaces ---
 
 export interface Client {
@@ -208,6 +214,8 @@ export interface Client {
   nextAuditDate: number; // Timestamp
   accountManager: string;
   isParent: boolean; // Is this the MSP / Parent Organization?
+  // Branding
+  branding?: BrandingConfig;
 }
 
 export interface WizardProgress {
@@ -228,6 +236,8 @@ export interface ClientData {
   jiraConfig: JiraConfig;
   confluenceConfig: ConfluenceConfig;
   auvikConfig: AuvikConfig;
+  // MSP Global Branding (Only relevant if isParent is true, or passed down)
+  mspBranding?: BrandingConfig;
   versions: RiskProfileVersion[];
   wizardProgress: WizardProgress;
 }
