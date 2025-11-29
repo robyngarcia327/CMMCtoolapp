@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Save, CheckCircle, Lock, Globe, Building2, Key, Layers, BookOpen } from 'lucide-react';
+import { Save, CheckCircle, Lock, Globe, Building2, Key, Layers, BookOpen, Database, RefreshCw, AlertTriangle, Trash2 } from 'lucide-react';
 import { ConnectWiseConfig, JiraConfig, ConfluenceConfig } from '../types';
 
 interface SettingsProps {
@@ -8,11 +8,12 @@ interface SettingsProps {
   jiraConfig: JiraConfig;
   confluenceConfig: ConfluenceConfig;
   onSave: (cw: ConnectWiseConfig, jira: JiraConfig, conf: ConfluenceConfig) => void;
+  onReloadStandards?: () => void;
 }
 
-type SettingsTab = 'ConnectWise' | 'Jira' | 'Confluence';
+type SettingsTab = 'ConnectWise' | 'Jira' | 'Confluence' | 'Data';
 
-export const Settings: React.FC<SettingsProps> = ({ config, jiraConfig, confluenceConfig, onSave }) => {
+export const Settings: React.FC<SettingsProps> = ({ config, jiraConfig, confluenceConfig, onSave, onReloadStandards }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('ConnectWise');
   
   const [cwData, setCwData] = useState<ConnectWiseConfig>(config);
@@ -216,94 +217,154 @@ export const Settings: React.FC<SettingsProps> = ({ config, jiraConfig, confluen
     </div>
   );
 
+  const renderDataSettings = () => (
+      <div className="p-8 space-y-6">
+          <div className="bg-slate-50 border border-slate-200 p-6 rounded-xl flex items-start gap-4">
+              <div className="bg-blue-100 p-3 rounded-full text-blue-600">
+                  <RefreshCw size={24} />
+              </div>
+              <div className="flex-1">
+                  <h3 className="font-bold text-slate-900 text-lg">Sync with Latest Standards</h3>
+                  <p className="text-slate-600 mb-4">
+                      Update your assessment with the latest CMMC / NIST definitions from the application code. 
+                      This adds new controls and updates descriptions <span className="font-bold text-slate-800">without deleting your answers</span> or "Met/Not Met" status.
+                  </p>
+                  <button 
+                    onClick={onReloadStandards}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  >
+                      <RefreshCw size={18} /> Sync Standard Definitions
+                  </button>
+              </div>
+          </div>
+
+          <div className="bg-red-50 border border-red-200 p-6 rounded-xl flex items-start gap-4">
+              <div className="bg-red-100 p-3 rounded-full text-red-600">
+                  <AlertTriangle size={24} />
+              </div>
+              <div className="flex-1">
+                  <h3 className="font-bold text-red-900 text-lg">Factory Reset</h3>
+                  <p className="text-red-700 mb-4">
+                      Wipe all local data, clients, and assessments. This cannot be undone. 
+                      Use this if the application state is corrupted or you want to restart with fresh demo data.
+                  </p>
+                  <button 
+                     onClick={() => {
+                         if (confirm("Are you sure? This will delete all clients and risks.")) {
+                             localStorage.clear();
+                             window.location.reload();
+                         }
+                     }}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition-colors flex items-center gap-2"
+                  >
+                      <Trash2 size={18} /> Clear Data & Restart
+                  </button>
+              </div>
+          </div>
+      </div>
+  );
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Integrations & Settings</h2>
-        <p className="text-slate-600">Configure external tools to automate your compliance workflow.</p>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">System Configuration</h2>
+        <p className="text-slate-600">Configure external integrations and manage application data.</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         {/* Tabs */}
-        <div className="flex border-b border-slate-200">
+        <div className="flex border-b border-slate-200 overflow-x-auto">
             <button
                 onClick={() => setActiveTab('ConnectWise')}
-                className={`flex-1 py-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'ConnectWise' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
+                className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'ConnectWise' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
             >
                 ConnectWise
             </button>
             <button
                 onClick={() => setActiveTab('Jira')}
-                className={`flex-1 py-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'Jira' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
+                className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'Jira' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
             >
                 Jira Software
             </button>
             <button
                 onClick={() => setActiveTab('Confluence')}
-                className={`flex-1 py-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'Confluence' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
+                className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'Confluence' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
             >
                 Confluence
             </button>
-        </div>
-
-        {/* Header with Enable Switch */}
-        <div className="p-6 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-            {activeTab === 'ConnectWise' && (
-                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-900 rounded-lg flex items-center justify-center text-white font-bold text-xs">CW</div>
-                    <div><h3 className="font-bold text-slate-900">ConnectWise Manage</h3></div>
-                </div>
-            )}
-            {activeTab === 'Jira' && (
-                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">JIRA</div>
-                    <div><h3 className="font-bold text-slate-900">Atlassian Jira</h3></div>
-                </div>
-            )}
-             {activeTab === 'Confluence' && (
-                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-xs">CONF</div>
-                    <div><h3 className="font-bold text-slate-900">Atlassian Confluence</h3></div>
-                </div>
-            )}
-
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={
-                    activeTab === 'ConnectWise' ? cwData.enabled : 
-                    activeTab === 'Jira' ? jiraData.enabled : confData.enabled
-                }
-                onChange={(e) => {
-                    const val = e.target.checked;
-                    if (activeTab === 'ConnectWise') setCwData({...cwData, enabled: val});
-                    if (activeTab === 'Jira') setJiraData({...jiraData, enabled: val});
-                    if (activeTab === 'Confluence') setConfData({...confData, enabled: val});
-                }}
-                className="sr-only peer" 
-              />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              <span className="ml-3 text-sm font-medium text-slate-700">Enabled</span>
-            </label>
+             <button
+                onClick={() => setActiveTab('Data')}
+                className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Data' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
+            >
+                <Database size={14} /> Data & Backup
+            </button>
         </div>
 
         {/* Content */}
         <div>
-            {activeTab === 'ConnectWise' && renderCwSettings()}
-            {activeTab === 'Jira' && renderJiraSettings()}
-            {activeTab === 'Confluence' && renderConfluenceSettings()}
+            {activeTab === 'ConnectWise' && (
+                <>
+                    <div className="p-6 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-indigo-900 rounded-lg flex items-center justify-center text-white font-bold text-xs">CW</div>
+                            <div><h3 className="font-bold text-slate-900">ConnectWise Manage</h3></div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked={cwData.enabled} onChange={(e) => setCwData({...cwData, enabled: e.target.checked})} className="sr-only peer" />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            <span className="ml-3 text-sm font-medium text-slate-700">Enabled</span>
+                        </label>
+                    </div>
+                    {renderCwSettings()}
+                </>
+            )}
+            {activeTab === 'Jira' && (
+                 <>
+                    <div className="p-6 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">JIRA</div>
+                            <div><h3 className="font-bold text-slate-900">Atlassian Jira</h3></div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked={jiraData.enabled} onChange={(e) => setJiraData({...jiraData, enabled: e.target.checked})} className="sr-only peer" />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            <span className="ml-3 text-sm font-medium text-slate-700">Enabled</span>
+                        </label>
+                    </div>
+                    {renderJiraSettings()}
+                </>
+            )}
+            {activeTab === 'Confluence' && (
+                 <>
+                    <div className="p-6 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-xs">CONF</div>
+                            <div><h3 className="font-bold text-slate-900">Atlassian Confluence</h3></div>
+                        </div>
+                         <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked={confData.enabled} onChange={(e) => setConfData({...confData, enabled: e.target.checked})} className="sr-only peer" />
+                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            <span className="ml-3 text-sm font-medium text-slate-700">Enabled</span>
+                        </label>
+                    </div>
+                    {renderConfluenceSettings()}
+                </>
+            )}
+            {activeTab === 'Data' && renderDataSettings()}
         </div>
 
-        <div className="p-6 bg-slate-50 border-t border-slate-200 flex justify-end">
-             <button
-               onClick={handleSave}
-               className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-white transition-all ${
-                 isSaved ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-700'
-               }`}
-             >
-               {isSaved ? <><CheckCircle size={20} /> Saved!</> : <><Save size={20} /> Save Configuration</>}
-             </button>
-        </div>
+        {activeTab !== 'Data' && (
+            <div className="p-6 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button
+                onClick={handleSave}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-white transition-all ${
+                    isSaved ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+                >
+                {isSaved ? <><CheckCircle size={20} /> Saved!</> : <><Save size={20} /> Save Configuration</>}
+                </button>
+            </div>
+        )}
       </div>
     </div>
   );

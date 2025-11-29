@@ -1,8 +1,4 @@
 
-
-
-
-
 import { Requirement, Risk, Asset, User, Framework, Client, ClientData, ProjectTask } from '../types';
 
 export const FRAMEWORKS: Framework[] = [
@@ -39,7 +35,8 @@ export const NIST_CSF_FUNCTIONS = [
 ];
 
 export const REQUIREMENTS_DATA: Requirement[] = [
-  // --- NIST 800-171 Data ---
+  // --- NIST 800-171 Data (Expanded to all Families) ---
+  // FAMILY: AC
   {
     id: '3.1.1',
     framework: 'NIST800-171',
@@ -84,26 +81,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
       cis_v8: ['5.3', '6.2'],
     }
   },
-  {
-    id: '3.1.3',
-    framework: 'NIST800-171',
-    family: 'AC',
-    title: 'External Connections',
-    description: 'Control the flow of CUI in accordance with approved authorizations.',
-    discussion: 'Ensure that data flow between systems is mapped and authorized.',
-    level: '2',
-    sprsWeight: 5,
-    interviewQuestion: 'How do you control and monitor connections to external systems (e.g., Cloud, Partners)?',
-    objectives: [
-      { id: 'a', description: 'Information flow control policies are defined.', status: 'pending' },
-      { id: 'b', description: 'Methods for controlling data flow are implemented.', status: 'pending' },
-    ],
-    mappings: {
-      nist800_53: ['AC-4'],
-      nist_csf: ['PR.AC-3', 'PR.DS-5'],
-      cis_v8: ['12.2'],
-    }
-  },
+  // FAMILY: AT
   {
     id: '3.2.1',
     framework: 'NIST800-171',
@@ -125,6 +103,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
       cis_v8: ['14.1', '14.2'],
     }
   },
+  // FAMILY: AU
    {
     id: '3.3.1',
     framework: 'NIST800-171',
@@ -144,6 +123,219 @@ export const REQUIREMENTS_DATA: Requirement[] = [
       iso27001: ['A.12.4.1'],
       nist_csf: ['DE.AE-3', 'PR.PT-1'],
       cis_v8: ['8.2', '8.10'],
+    }
+  },
+  // FAMILY: CM
+  {
+    id: '3.4.1',
+    framework: 'NIST800-171',
+    family: 'CM',
+    title: 'Baseline Configurations',
+    description: 'Establish and maintain baseline configurations and inventories of organizational systems (including hardware, software, firmware, and documentation) throughout the respective system development life cycles.',
+    discussion: 'You need a standard image for workstations and servers (Golden Image).',
+    level: '2',
+    sprsWeight: 5,
+    interviewQuestion: 'Do you have a standard "Golden Image" or configuration for all computers?',
+    objectives: [
+        { id: 'a', description: 'Baseline configurations are established.', status: 'pending' },
+        { id: 'b', description: 'Inventories of systems are maintained.', status: 'pending' }
+    ],
+    mappings: {
+        nist800_53: ['CM-2', 'CM-8'],
+        nist_csf: ['ID.AM-1', 'PR.IP-1']
+    }
+  },
+  // FAMILY: IA
+  {
+    id: '3.5.1',
+    framework: 'NIST800-171',
+    family: 'IA',
+    title: 'Identification',
+    description: 'Identify system users, processes acting on behalf of users, and devices.',
+    discussion: 'Every user needs a unique username. No shared accounts.',
+    level: '1',
+    sprsWeight: 5,
+    interviewQuestion: 'Do all users have unique usernames? Are shared accounts prohibited?',
+    objectives: [
+        { id: 'a', description: 'Users are uniquely identified.', status: 'pending' },
+        { id: 'b', description: 'Processes are uniquely identified.', status: 'pending' }
+    ],
+    mappings: {
+        nist800_53: ['IA-2'],
+        nist_csf: ['PR.AC-6']
+    }
+  },
+  // FAMILY: IR
+  {
+    id: '3.6.1',
+    framework: 'NIST800-171',
+    family: 'IR',
+    title: 'Incident Handling',
+    description: 'Establish an operational incident-handling capability for organizational systems that includes preparation, detection, analysis, containment, recovery, and user response activities.',
+    discussion: 'You must have a plan for when things go wrong.',
+    level: '2',
+    sprsWeight: 3,
+    interviewQuestion: 'Do you have an Incident Response Plan (IRP) that covers detection, containment, and recovery?',
+    objectives: [
+        { id: 'a', description: 'Incident response capability established.', status: 'pending' }
+    ],
+    mappings: {
+        nist800_53: ['IR-4'],
+        nist_csf: ['RS.RP-1']
+    }
+  },
+  // FAMILY: MA
+  {
+    id: '3.7.1',
+    framework: 'NIST800-171',
+    family: 'MA',
+    title: 'System Maintenance',
+    description: 'Perform maintenance on organizational systems.',
+    discussion: 'Keep systems patched and repaired. Track maintenance activities.',
+    level: '2',
+    sprsWeight: 1,
+    interviewQuestion: 'How do you track and perform routine maintenance (patching, repairs) on your systems?',
+    objectives: [
+        { id: 'a', description: 'System maintenance is performed.', status: 'pending' }
+    ],
+    mappings: {
+        nist800_53: ['MA-2'],
+        nist_csf: ['PR.MA-1']
+    }
+  },
+  // FAMILY: MP
+  {
+    id: '3.8.1',
+    framework: 'NIST800-171',
+    family: 'MP',
+    title: 'Media Protection',
+    description: 'Protect (i.e., physically control and securely store) system media containing CUI, both paper and digital.',
+    discussion: 'USB drives, external hard drives, and printed paper with CUI must be locked up.',
+    level: '1',
+    sprsWeight: 3,
+    interviewQuestion: 'How do you secure physical media (USB drives, paper documents) that contain sensitive info?',
+    objectives: [
+        { id: 'a', description: 'System media containing CUI is protected.', status: 'pending' }
+    ],
+    mappings: {
+        nist800_53: ['MP-4'],
+        nist_csf: ['PR.PT-2']
+    }
+  },
+  // FAMILY: PS
+  {
+    id: '3.9.1',
+    framework: 'NIST800-171',
+    family: 'PS',
+    title: 'Personnel Screening',
+    description: 'Screen individuals prior to authorizing access to organizational systems containing CUI.',
+    discussion: 'Background checks for employees handling CUI.',
+    level: '2',
+    sprsWeight: 3,
+    interviewQuestion: 'Do you perform background checks on all employees before granting access to CUI?',
+    objectives: [
+        { id: 'a', description: 'Individuals are screened prior to access authorization.', status: 'pending' }
+    ],
+    mappings: {
+        nist800_53: ['PS-3'],
+        nist_csf: ['PR.IP-11']
+    }
+  },
+  // FAMILY: PE
+  {
+    id: '3.10.1',
+    framework: 'NIST800-171',
+    family: 'PE',
+    title: 'Physical Access Control',
+    description: 'Limit physical access to organizational systems, equipment, and the respective operating environments to authorized individuals.',
+    discussion: 'Locks on doors, badges, visitor logs.',
+    level: '1',
+    sprsWeight: 5,
+    interviewQuestion: 'How do you restrict physical access to your servers and office space (e.g., badges, locks)?',
+    objectives: [
+        { id: 'a', description: 'Physical access is limited to authorized individuals.', status: 'pending' }
+    ],
+    mappings: {
+        nist800_53: ['PE-2', 'PE-3'],
+        nist_csf: ['PR.AC-2']
+    }
+  },
+  // FAMILY: RA
+  {
+    id: '3.11.1',
+    framework: 'NIST800-171',
+    family: 'RA',
+    title: 'Risk Assessment',
+    description: 'Periodically assess the risk to organizational operations (including mission, functions, image, or reputation), organizational assets, and individuals, resulting from the operation of organizational systems and the associated processing, storage, or transmission of CUI.',
+    discussion: 'You need to run a formal risk assessment at least annually.',
+    level: '2',
+    sprsWeight: 1,
+    interviewQuestion: 'Do you perform a formal risk assessment at least annually?',
+    objectives: [
+        { id: 'a', description: 'Risk to organizational operations is assessed.', status: 'pending' }
+    ],
+    mappings: {
+        nist800_53: ['RA-3'],
+        nist_csf: ['ID.RA-1']
+    }
+  },
+  // FAMILY: CA
+  {
+    id: '3.12.1',
+    framework: 'NIST800-171',
+    family: 'CA',
+    title: 'Security Assessment',
+    description: 'Periodically assess the security controls in organizational systems to determine if the controls are effective in their application.',
+    discussion: 'This is your self-assessment or internal audit process.',
+    level: '2',
+    sprsWeight: 1,
+    interviewQuestion: 'How often do you test your security controls to make sure they work?',
+    objectives: [
+        { id: 'a', description: 'Security controls are assessed periodically.', status: 'pending' }
+    ],
+    mappings: {
+        nist800_53: ['CA-2'],
+        nist_csf: ['ID.RA-1']
+    }
+  },
+  // FAMILY: SC
+  {
+    id: '3.13.1',
+    framework: 'NIST800-171',
+    family: 'SC',
+    title: 'Boundary Protection',
+    description: 'Monitor, control, and protect organizational communications (i.e., information transmitted or received by organizational systems) at the external boundaries and key internal boundaries of the information systems.',
+    discussion: 'Firewalls, proxies, and gateways at the edge of your network.',
+    level: '1',
+    sprsWeight: 5,
+    interviewQuestion: 'Do you use firewalls to protect your network boundary?',
+    objectives: [
+        { id: 'a', description: 'Communications are monitored at external boundaries.', status: 'pending' },
+        { id: 'b', description: 'Communications are controlled at external boundaries.', status: 'pending' }
+    ],
+    mappings: {
+        nist800_53: ['SC-7'],
+        nist_csf: ['PR.AC-5']
+    }
+  },
+  // FAMILY: SI
+  {
+    id: '3.14.1',
+    framework: 'NIST800-171',
+    family: 'SI',
+    title: 'Flaw Remediation',
+    description: 'Identify, report, and correct information and information system flaws in a timely manner.',
+    discussion: 'Patch management. Fix bugs and vulnerabilities quickly.',
+    level: '1',
+    sprsWeight: 5,
+    interviewQuestion: 'How quickly do you install security patches after they are released?',
+    objectives: [
+        { id: 'a', description: 'System flaws are identified.', status: 'pending' },
+        { id: 'b', description: 'System flaws are corrected in a timely manner.', status: 'pending' }
+    ],
+    mappings: {
+        nist800_53: ['SI-2'],
+        nist_csf: ['ID.RA-1', 'PR.IP-12']
     }
   },
 
@@ -201,6 +393,62 @@ export const REQUIREMENTS_DATA: Requirement[] = [
       ],
       mappings: {
           nist_csf: ['GV.OC-2']
+      }
+  },
+
+  // --- HIPAA Mock Data ---
+  {
+      id: '164.308(a)(1)',
+      framework: 'HIPAA',
+      family: 'Security Management',
+      title: 'Security Management Process',
+      description: 'Implement policies and procedures to prevent, detect, contain, and correct security violations.',
+      discussion: 'This includes Risk Analysis, Risk Management, Sanction Policy, and Information System Activity Review.',
+      level: 'Required',
+      interviewQuestion: 'Do you perform a regular risk analysis to identify where your ePHI is stored and what vulnerabilities exist?',
+      objectives: [
+          { id: 'a', description: 'Risk analysis performed.', status: 'pending' },
+          { id: 'b', description: 'Risk management measures implemented.', status: 'pending' }
+      ],
+      mappings: {
+          nist800_53: ['RA-3'],
+          nist_csf: ['ID.RA-1']
+      }
+  },
+  {
+      id: '164.312(a)(1)',
+      framework: 'HIPAA',
+      family: 'Access Control',
+      title: 'Access Control',
+      description: 'Implement technical policies and procedures for electronic information systems that maintain electronic protected health information to allow access only to those persons or software programs that have been granted access rights.',
+      discussion: 'Unique User Identification, Emergency Access Procedure, Automatic Logoff, Encryption and Decryption.',
+      level: 'Required',
+      interviewQuestion: 'Does every user have a unique username and password to access patient data?',
+      objectives: [
+          { id: 'a', description: 'Unique user identification assigned.', status: 'pending' },
+          { id: 'b', description: 'Emergency access procedures established.', status: 'pending' }
+      ],
+      mappings: {
+          nist800_53: ['AC-2'],
+          nist_csf: ['PR.AC-1']
+      }
+  },
+  {
+      id: '164.312(b)',
+      framework: 'HIPAA',
+      family: 'Audit Controls',
+      title: 'Audit Controls',
+      description: 'Implement hardware, software, and/or procedural mechanisms that record and examine activity in information systems that contain or use electronic protected health information.',
+      discussion: 'You must log who accessed what record.',
+      level: 'Required',
+      interviewQuestion: 'Do you keep logs of who accessed which patient records?',
+      objectives: [
+          { id: 'a', description: 'Audit mechanisms implemented.', status: 'pending' },
+          { id: 'b', description: 'Activity reviews performed.', status: 'pending' }
+      ],
+      mappings: {
+          nist800_53: ['AU-2'],
+          nist_csf: ['PR.PT-1']
       }
   }
 ];

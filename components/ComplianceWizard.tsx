@@ -250,7 +250,21 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   }
 
   if (wizardProgress.currentStep === 'ASSESSMENT') {
-      if (!currentReq) return <div>Error loading requirement</div>;
+      if (!currentReq) {
+        return (
+            <WizardWrapper 
+                nextLabel="Finish" 
+                onNext={onComplete}
+                onPrev={() => goToStep('NETWORK')}
+            >
+                <div className="flex flex-col items-center justify-center h-full p-10 text-center text-slate-500">
+                    <Shield size={48} className="mb-4 text-slate-300" />
+                    <h2 className="text-xl font-bold text-slate-700">No Requirements Found</h2>
+                    <p>There are no assessment questions configured for this framework ({activeFrameworkId}) yet.</p>
+                </div>
+            </WizardWrapper>
+        );
+      }
 
       const progress = Math.round(((wizardProgress.currentQuestionIndex) / activeReqs.length) * 100);
       const isMet = currentReq.objectives.every(o => o.status === 'met');

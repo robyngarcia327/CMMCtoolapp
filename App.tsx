@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, INITIAL_USERS } from './data/standards';
+import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, INITIAL_USERS, REQUIREMENTS_DATA } from './data/standards';
 import { Requirement, Artifact, AppView, Ticket, ConnectWiseConfig, JiraConfig, ConfluenceConfig, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, WizardProgress, UserRole } from './types';
 import { RequirementsList } from './components/RequirementsList';
 import { RequirementDetail } from './components/RequirementDetail';
@@ -132,6 +133,33 @@ const App: React.FC = () => {
 
   const handleSaveSettings = (cw: ConnectWiseConfig, jira: JiraConfig, conf: ConfluenceConfig) => {
       updateActiveClientData(() => ({ cwConfig: cw, jiraConfig: jira, confluenceConfig: conf }));
+  };
+
+  // --- SMART SYNC Logic ---
+  const handleReloadStandards = () => {
+      const currentReqs = activeData.requirements;
+      const latestReqs = REQUIREMENTS_DATA; // Imported from code (the new big list)
+
+      // Merge Logic:
+      // 1. If a requirement ID exists in latest but not current, add it.
+      // 2. If a requirement ID exists in both, update text fields but KEEP status/response.
+      
+      const mergedRequirements = latestReqs.map(latest => {
+          const existing = currentReqs.find(r => r.id === latest.id);
+          if (existing) {
+              return {
+                  ...latest,
+                  objectives: existing.objectives.length > 0 ? existing.objectives : latest.objectives, // Keep status
+                  response: existing.response // Keep user answer
+              };
+          }
+          return latest; // New requirement
+      });
+
+      // Also preserve any custom requirements the user might have added (if we supported that)
+      // For now, we just replace with the merged set
+      updateActiveClientData(() => ({ requirements: mergedRequirements }));
+      alert(`Sync Complete! ${mergedRequirements.length} controls loaded.`);
   };
   
   const handleAddRisk = (risk: Risk) => {
@@ -630,6 +658,7 @@ const App: React.FC = () => {
                         jiraConfig={jiraConfig} 
                         confluenceConfig={confluenceConfig}
                         onSave={handleSaveSettings} 
+                        onReloadStandards={handleReloadStandards}
                     />
                  </div>
             )}
