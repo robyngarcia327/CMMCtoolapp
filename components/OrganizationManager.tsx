@@ -1,8 +1,6 @@
-
-
 import React, { useState } from 'react';
 import { Client, User, UserRole, ClientData } from '../types';
-import { Building2, Plus, Users, Shield, Trash2, Mail, CheckCircle, Search, MoreHorizontal, Settings } from 'lucide-react';
+import { Plus, Shield, Trash2, Mail, Search } from 'lucide-react';
 
 interface OrganizationManagerProps {
   clients: Client[];
@@ -22,7 +20,6 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
   onUpdateClientData
 }) => {
   const [activeTab, setActiveTab] = useState<'CLIENTS' | 'USERS'>('CLIENTS');
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
   // New Client State
@@ -51,17 +48,15 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
     onAddClient(newClient);
     setIsAddingClient(false);
     setNewClientName('');
+    setNewClientIndustry('');
   };
 
   const handleToggleParent = (client: Client) => {
-      // Logic: Only one parent allowed? Or multiple?
-      // For now, toggle boolean.
       onUpdateClient({ ...client, isParent: !client.isParent });
   };
 
   // --- User Handlers ---
   const getAllUsers = () => {
-      // Aggregate users from all client data stores + enhance with client name
       let allUsers: (User & { clientName: string })[] = [];
       clients.forEach(c => {
           const cData = clientDataStore[c.id];
@@ -74,16 +69,20 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
   };
 
   const handleCreateUser = () => {
-      if (!newUser.name || !newUser.email || !newUser.organizationId) return;
+      // TypeScript Strictness: Ensure fields are present
+      if (!newUser.name || !newUser.email || !newUser.organizationId) {
+          alert("Please fill in Name, Email, and Organization.");
+          return;
+      }
       
       const user: User = {
           id: `u-${Date.now()}`,
           name: newUser.name,
           email: newUser.email,
           organizationId: newUser.organizationId,
-          role: newUser.role as UserRole,
+          role: (newUser.role as UserRole) || 'CLIENT_USER',
           department: newUser.department || 'General',
-          lastLogin: Date.now(), // Mock
+          lastLogin: Date.now(), 
           mfaEnabled: false,
           hasPasskey: false
       };
@@ -269,10 +268,10 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                        />
                         <select
                             className="border p-2 rounded"
-                            value={newUser.organizationId}
+                            value={newUser.organizationId || ''}
                             onChange={e => setNewUser({...newUser, organizationId: e.target.value})}
                         >
-                            <option value="">Select Organization...</option>
+                            <option value="" disabled>Select Organization...</option>
                             {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                         <select

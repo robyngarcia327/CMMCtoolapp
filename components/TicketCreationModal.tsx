@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { X, Ticket, Loader2, ClipboardList, RefreshCcw } from 'lucide-react';
+import { X, Ticket, Loader2, ClipboardList } from 'lucide-react';
 import { ConnectWiseConfig, JiraConfig, Ticket as TicketType } from '../types';
 import { createConnectWiseTicket } from '../services/connectwise';
 import { createJiraTicket } from '../services/atlassian';
@@ -48,14 +47,16 @@ export const TicketCreationModal: React.FC<TicketCreationModalProps> = ({
       let newTicket: TicketType;
 
       if (destination === 'ConnectWise') {
-          newTicket = await createConnectWiseTicket({
+          // Explicitly construct the ticket data to match expected type
+          const ticketData = {
             requirementId,
             summary,
             description,
             board: cwBoard,
             priority,
-            source: 'ConnectWise'
-          } as any, cwConfig); // casting because mock service might not align perfectly with updated types if not fully updated, but types.ts is updated.
+            source: 'ConnectWise' as const
+          };
+          newTicket = await createConnectWiseTicket(ticketData, cwConfig); 
       } else {
           newTicket = await createJiraTicket({
               requirementId,
