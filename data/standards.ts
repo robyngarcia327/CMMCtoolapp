@@ -1,4 +1,5 @@
 
+
 import { Requirement, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, BudgetLineItem, TrainingModule } from '../types';
 
 export const FRAMEWORKS: Framework[] = [
@@ -717,8 +718,8 @@ export const INITIAL_CLIENTS: Client[] = [
       accountManager: 'Self',
       isParent: true,
       branding: {
-          primaryColor: '#4f46e5', // Indigo
-          logoUrl: 'https://via.placeholder.com/150x50/4f46e5/ffffff?text=TechFlow+MSP'
+          primaryColor: '#ff7f50', // Coral
+          logoUrl: 'https://via.placeholder.com/150x50/ff7f50/ffffff?text=TechFlow+MSP'
       }
     },
     { 
@@ -801,8 +802,8 @@ export const createInitialClientData = (useMockData = false): ClientData => {
             enabled: false
         },
         mspBranding: {
-            logoUrl: 'https://via.placeholder.com/150x50/4f46e5/ffffff?text=TechFlow+MSP',
-            primaryColor: '#4f46e5'
+            logoUrl: 'https://via.placeholder.com/150x50/ff7f50/ffffff?text=TechFlow+MSP',
+            primaryColor: '#ff7f50' // Coral
         }
     };
 };

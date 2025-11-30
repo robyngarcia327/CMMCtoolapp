@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Save, CheckCircle, Lock, Globe, Building2, Key, Layers, BookOpen, Database, RefreshCw, AlertTriangle, Trash2, Network, Palette, Upload } from 'lucide-react';
 import { ConnectWiseConfig, JiraConfig, ConfluenceConfig, BrandingConfig } from '../types';
@@ -20,7 +21,7 @@ export const Settings: React.FC<SettingsProps> = ({ config, jiraConfig, confluen
   const [cwData, setCwData] = useState<ConnectWiseConfig>(config);
   const [jiraData, setJiraData] = useState<JiraConfig>(jiraConfig);
   const [confData, setConfData] = useState<ConfluenceConfig>(confluenceConfig);
-  const [brandingData, setBrandingData] = useState<BrandingConfig>(mspBranding || { primaryColor: '#4f46e5' });
+  const [brandingData, setBrandingData] = useState<BrandingConfig>(mspBranding || { primaryColor: '#ff7f50' });
 
   const [isSaved, setIsSaved] = useState(false);
 
