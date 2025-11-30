@@ -1,5 +1,5 @@
 
-import { Requirement, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, BudgetLineItem } from '../types';
+import { Requirement, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, BudgetLineItem, TrainingModule } from '../types';
 
 export const FRAMEWORKS: Framework[] = [
   { id: 'NIST800-171', name: 'NIST 800-171 / CMMC', description: 'Protecting Controlled Unclassified Information (CUI).' },
@@ -34,6 +34,79 @@ export const NIST_CSF_FUNCTIONS = [
     { id: 'RC', name: 'Recover', color: 'bg-green-500', text: 'text-green-700' },
 ];
 
+export const TRAINING_MODULES: TrainingModule[] = [
+    {
+        id: 'MOD-AC-01',
+        familyId: 'AC',
+        title: 'Access Control Basics',
+        description: 'Understand the difference between Authorized Users, Devices, and Processes.',
+        durationMinutes: 15,
+        difficulty: 'Beginner',
+        content: `
+# Access Control Fundamentals
+
+Access control is the first line of defense. In NIST 800-171, it's not just about passwords; it's about **Authorization**.
+
+## Key Concepts
+
+1.  **Authorized Users:** People who have been vetted and given permission.
+2.  **Processes:** Software scripts or services that run in the background (e.g., a backup service running as 'svc_backup').
+3.  **Devices:** Computers, tablets, or phones allowed on the network.
+
+## Implementation Tips for Technicians
+
+*   **Active Directory Groups:** Never assign permissions to individual users. Always use Groups (e.g., 'FS_Finance_RW').
+*   **Least Privilege:** If a user only needs to *read* a file, do not give them *write* access just because it's easier.
+*   **Device Authentication:** Use 802.1x or MAC address filtering to ensure unknown laptops cannot just plug into the wall and get an IP address.
+        `
+    },
+    {
+        id: 'MOD-PE-01',
+        familyId: 'PE',
+        title: 'Physical Security Walkthrough',
+        description: 'How to escort visitors and secure server rooms.',
+        durationMinutes: 10,
+        difficulty: 'Beginner',
+        content: `
+# Physical Protection
+
+Security isn't just digital. If I can steal the server, I own the data.
+
+## The Visitor Log
+Every person who is not an employee **must** sign a logbook when entering sensitive areas (like the server room).
+*   **Date/Time In**
+*   **Name & Company**
+*   **Purpose of Visit**
+*   **Escort Name**
+
+## Escorting
+Visitors should never be left alone in areas where CUI is accessible. 
+        `
+    },
+    {
+        id: 'MOD-SC-01',
+        familyId: 'SC',
+        title: 'Boundary Protection & Firewalls',
+        description: 'Defining what is In-Scope versus Out-of-Scope.',
+        durationMinutes: 25,
+        difficulty: 'Advanced',
+        content: `
+# System & Comm Protection
+
+This is where many shops fail. You must define a **boundary**.
+
+## The "CUI Enclave"
+If you are a machine shop, your CNC machines probably don't need access to the HR files. 
+Isolate the machines that handle CUI (blueprints, specs) into their own VLAN.
+
+## Deny by Default
+Your firewall rules should block EVERYTHING, and only allow specific traffic you need.
+*   **Bad:** Allow Any -> Any
+*   **Good:** Allow LAN -> Internet (Port 443 only)
+        `
+    }
+];
+
 export const REQUIREMENTS_DATA: Requirement[] = [
   // --- NIST 800-171 Data (Expanded to all Families) ---
   // FAMILY: AC
@@ -52,6 +125,11 @@ export const REQUIREMENTS_DATA: Requirement[] = [
       { id: 'b', description: 'Processes acting on behalf of users are identified.', status: 'pending' },
       { id: 'c', description: 'Devices (and other systems) are identified.', status: 'pending' },
       { id: 'd', description: 'System access is limited to authorized users.', status: 'pending' },
+    ],
+    scopeStatus: 'IN_SCOPE',
+    references: [
+        { title: 'NIST MEP Handbook (Ch. 3)', url: 'https://www.nist.gov/mep/cybersecurity-resources-manufacturers/nist-mep-cybersecurity-self-assessment-handbook', type: 'Guide' },
+        { title: 'Microsoft AD Access Control Guide', url: 'https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/security-best-practices/implementing-least-privilege-administrative-models', type: 'Official' }
     ],
     mappings: {
       nist800_53: ['AC-2', 'AC-3'],
@@ -75,6 +153,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
       { id: 'b', description: 'Types of functions authorized users are permitted to execute are defined.', status: 'pending' },
       { id: 'c', description: 'System access is limited to permitted transactions/functions.', status: 'pending' },
     ],
+    scopeStatus: 'IN_SCOPE',
     mappings: {
       nist800_53: ['AC-2(4)', 'AC-3', 'AC-17'],
       nist_csf: ['PR.AC-3', 'PR.AC-5'],
@@ -95,6 +174,10 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     objectives: [
       { id: 'a', description: 'Security risks are identified for each role.', status: 'pending' },
       { id: 'b', description: 'Training material is updated regularly.', status: 'pending' },
+    ],
+    scopeStatus: 'IN_SCOPE',
+    references: [
+        { title: 'SANS Security Awareness Worksheets', url: '#', type: 'Template' }
     ],
     mappings: {
       nist800_53: ['AT-2', 'AT-3'],
@@ -118,6 +201,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
       { id: 'a', description: 'Audit events are defined.', status: 'pending' },
       { id: 'b', description: 'Logs are retained for a defined period.', status: 'pending' },
     ],
+    scopeStatus: 'IN_SCOPE',
     mappings: {
       nist800_53: ['AU-2', 'AU-6'],
       iso27001: ['A.12.4.1'],
@@ -140,6 +224,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
         { id: 'a', description: 'Baseline configurations are established.', status: 'pending' },
         { id: 'b', description: 'Inventories of systems are maintained.', status: 'pending' }
     ],
+    scopeStatus: 'IN_SCOPE',
     mappings: {
         nist800_53: ['CM-2', 'CM-8'],
         nist_csf: ['ID.AM-1', 'PR.IP-1']
@@ -160,6 +245,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
         { id: 'a', description: 'Users are uniquely identified.', status: 'pending' },
         { id: 'b', description: 'Processes are uniquely identified.', status: 'pending' }
     ],
+    scopeStatus: 'IN_SCOPE',
     mappings: {
         nist800_53: ['IA-2'],
         nist_csf: ['PR.AC-6']
@@ -179,6 +265,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     objectives: [
         { id: 'a', description: 'Incident response capability established.', status: 'pending' }
     ],
+    scopeStatus: 'IN_SCOPE',
     mappings: {
         nist800_53: ['IR-4'],
         nist_csf: ['RS.RP-1']
@@ -198,6 +285,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     objectives: [
         { id: 'a', description: 'System maintenance is performed.', status: 'pending' }
     ],
+    scopeStatus: 'IN_SCOPE',
     mappings: {
         nist800_53: ['MA-2'],
         nist_csf: ['PR.MA-1']
@@ -217,6 +305,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     objectives: [
         { id: 'a', description: 'System media containing CUI is protected.', status: 'pending' }
     ],
+    scopeStatus: 'IN_SCOPE',
     mappings: {
         nist800_53: ['MP-4'],
         nist_csf: ['PR.PT-2']
@@ -236,6 +325,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     objectives: [
         { id: 'a', description: 'Individuals are screened prior to access authorization.', status: 'pending' }
     ],
+    scopeStatus: 'IN_SCOPE',
     mappings: {
         nist800_53: ['PS-3'],
         nist_csf: ['PR.IP-11']
@@ -255,6 +345,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     objectives: [
         { id: 'a', description: 'Physical access is limited to authorized individuals.', status: 'pending' }
     ],
+    scopeStatus: 'IN_SCOPE',
     mappings: {
         nist800_53: ['PE-2', 'PE-3'],
         nist_csf: ['PR.AC-2']
@@ -274,6 +365,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     objectives: [
         { id: 'a', description: 'Risk to organizational operations is assessed.', status: 'pending' }
     ],
+    scopeStatus: 'IN_SCOPE',
     mappings: {
         nist800_53: ['RA-3'],
         nist_csf: ['ID.RA-1']
@@ -293,6 +385,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     objectives: [
         { id: 'a', description: 'Security controls are assessed periodically.', status: 'pending' }
     ],
+    scopeStatus: 'IN_SCOPE',
     mappings: {
         nist800_53: ['CA-2'],
         nist_csf: ['ID.RA-1']
@@ -313,6 +406,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
         { id: 'a', description: 'Communications are monitored at external boundaries.', status: 'pending' },
         { id: 'b', description: 'Communications are controlled at external boundaries.', status: 'pending' }
     ],
+    scopeStatus: 'IN_SCOPE',
     mappings: {
         nist800_53: ['SC-7'],
         nist_csf: ['PR.AC-5']
@@ -333,6 +427,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
         { id: 'a', description: 'System flaws are identified.', status: 'pending' },
         { id: 'b', description: 'System flaws are corrected in a timely manner.', status: 'pending' }
     ],
+    scopeStatus: 'IN_SCOPE',
     mappings: {
         nist800_53: ['SI-2'],
         nist_csf: ['ID.RA-1', 'PR.IP-12']
@@ -353,6 +448,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
           { id: 'a', description: 'Policies defined and approved.', status: 'pending' },
           { id: 'b', description: 'Policies communicated to employees.', status: 'pending' }
       ],
+      scopeStatus: 'IN_SCOPE',
       mappings: {
           nist800_53: ['PM-1'],
           nist_csf: ['GV.PO-1']
@@ -371,6 +467,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
           { id: 'a', description: 'Classification scheme defined.', status: 'pending' },
           { id: 'b', description: 'Assets labeled according to scheme.', status: 'pending' }
       ],
+      scopeStatus: 'IN_SCOPE',
       mappings: {
           nist800_53: ['RA-2'],
           nist_csf: ['ID.AM-5']
@@ -391,6 +488,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
           { id: 'a', description: 'Code of conduct exists.', status: 'pending' },
           { id: 'b', description: 'Employees acknowledge code annually.', status: 'pending' }
       ],
+      scopeStatus: 'IN_SCOPE',
       mappings: {
           nist_csf: ['GV.OC-2']
       }
@@ -410,6 +508,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
           { id: 'a', description: 'Risk analysis performed.', status: 'pending' },
           { id: 'b', description: 'Risk management measures implemented.', status: 'pending' }
       ],
+      scopeStatus: 'IN_SCOPE',
       mappings: {
           nist800_53: ['RA-3'],
           nist_csf: ['ID.RA-1']
@@ -428,6 +527,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
           { id: 'a', description: 'Unique user identification assigned.', status: 'pending' },
           { id: 'b', description: 'Emergency access procedures established.', status: 'pending' }
       ],
+      scopeStatus: 'IN_SCOPE',
       mappings: {
           nist800_53: ['AC-2'],
           nist_csf: ['PR.AC-1']
@@ -446,6 +546,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
           { id: 'a', description: 'Audit mechanisms implemented.', status: 'pending' },
           { id: 'b', description: 'Activity reviews performed.', status: 'pending' }
       ],
+      scopeStatus: 'IN_SCOPE',
       mappings: {
           nist800_53: ['AU-2'],
           nist_csf: ['PR.PT-1']

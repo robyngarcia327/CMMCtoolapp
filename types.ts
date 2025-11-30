@@ -5,6 +5,22 @@ export interface AssessmentObjective {
   status: 'met' | 'not_met' | 'na' | 'pending';
 }
 
+export interface ReferenceLink {
+  title: string;
+  url: string;
+  type: 'Guide' | 'Video' | 'Template' | 'Official';
+}
+
+export interface TrainingModule {
+  id: string;
+  familyId: string; // Links to 'AC', 'PE', etc.
+  title: string;
+  description: string;
+  content: string; // Markdown content for the lesson
+  durationMinutes: number;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+}
+
 export interface Requirement {
   id: string;
   framework: string; // e.g., 'NIST800-171', 'ISO27001', 'SOC2'
@@ -19,6 +35,13 @@ export interface Requirement {
   // New fields for Onboarding Wizard
   interviewQuestion?: string; // Friendly question text
   response?: string; // User's text answer to the question
+
+  // New Scoping Fields
+  scopeStatus?: 'IN_SCOPE' | 'OUT_OF_SCOPE';
+  scopeJustification?: string; // Reason for N/A (e.g. "We do not use wireless")
+
+  // Educational Resources
+  references?: ReferenceLink[];
 
   mappings: {
     nist800_53?: string[];
@@ -254,6 +277,7 @@ export enum AppView {
   USERS = 'USERS',
   PROJECTS = 'PROJECTS',
   BUDGET = 'BUDGET', // New View
+  TRAINING = 'TRAINING', // New Training View
   SETTINGS = 'SETTINGS',
   CHAT = 'CHAT',
   REPORTS = 'REPORTS',

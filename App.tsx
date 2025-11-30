@@ -20,9 +20,10 @@ import { SPRSScorecard } from './components/SPRSScorecard';
 import { ComplianceWizard } from './components/ComplianceWizard';
 import { MSPDashboard } from './components/MSPDashboard';
 import { OrganizationManager } from './components/OrganizationManager';
+import { TrainingCenter } from './components/TrainingCenter';
 import { Login } from './components/Login';
 import { storageService } from './services/storage';
-import { LayoutDashboard, ListChecks, FileEdit, MessageSquare, Menu, Network, Settings as SettingsIcon, PieChart, ShieldAlert, Monitor, Users, ChevronDown, KanbanSquare, TrendingUp, Sparkles, Building2, UserCircle, LogOut, Database, Calculator } from 'lucide-react';
+import { LayoutDashboard, ListChecks, FileEdit, MessageSquare, Menu, Network, Settings as SettingsIcon, PieChart, ShieldAlert, Monitor, Users, ChevronDown, KanbanSquare, TrendingUp, Sparkles, Building2, UserCircle, LogOut, Database, Calculator, GraduationCap } from 'lucide-react';
 
 const App: React.FC = () => {
   // --- Auth & Role State ---
@@ -153,7 +154,9 @@ const App: React.FC = () => {
               return {
                   ...latest,
                   objectives: existing.objectives.length > 0 ? existing.objectives : latest.objectives, // Keep status
-                  response: existing.response // Keep user answer
+                  response: existing.response, // Keep user answer
+                  scopeStatus: existing.scopeStatus, // Keep Scope Status
+                  scopeJustification: existing.scopeJustification // Keep Scope Justification
               };
           }
           return latest; // New requirement
@@ -401,6 +404,14 @@ const App: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setCurrentView(AppView.TRAINING)}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm font-medium ${currentView === AppView.TRAINING ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+          >
+            <GraduationCap size={18} />
+            Training Center
+          </button>
+
+          <button
             onClick={() => setCurrentView(AppView.REPORTS)}
             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm font-medium ${currentView === AppView.REPORTS ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
           >
@@ -624,6 +635,12 @@ const App: React.FC = () => {
                         onAddItem={handleAddBudgetItem}
                         onRemoveItem={handleRemoveBudgetItem}
                     />
+                </div>
+            )}
+
+            {currentView === AppView.TRAINING && (
+                <div className="flex-1 overflow-y-auto bg-slate-50">
+                    <TrainingCenter />
                 </div>
             )}
 
