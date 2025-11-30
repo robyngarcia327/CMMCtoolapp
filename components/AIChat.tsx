@@ -50,7 +50,7 @@ export const AIChat: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isO
             <Bot size={18} className="text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm">AuditIQ Assistant</h3>
+            <h3 className="font-semibold text-sm">Cyber ComplAI Assistant</h3>
             <p className="text-xs text-slate-400">Powered by Gemini</p>
           </div>
         </div>
