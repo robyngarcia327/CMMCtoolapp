@@ -1,4 +1,4 @@
-import { Requirement, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, BudgetLineItem, TrainingModule } from '../types';
+import { Requirement, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, BudgetLineItem, TrainingModule, IntegrationConfig } from '../types';
 
 export const FRAMEWORKS: Framework[] = [
   { id: 'NIST800-171', name: 'NIST SP 800-171 r2', description: 'Protecting CUI in Nonfederal Systems' },
@@ -158,7 +158,9 @@ export const INITIAL_USERS: User[] = [
         department: 'IT Security', 
         lastLogin: Date.now(),
         mfaEnabled: true,
-        hasPasskey: true 
+        hasPasskey: true,
+        isCuiAuthorized: true,
+        iamSource: 'Manual'
     },
     { 
         id: 'u2', 
@@ -169,7 +171,9 @@ export const INITIAL_USERS: User[] = [
         department: 'Support', 
         lastLogin: Date.now(),
         mfaEnabled: true,
-        hasPasskey: false 
+        hasPasskey: false,
+        isCuiAuthorized: true,
+        iamSource: 'Manual'
     },
     { 
         id: 'u3', 
@@ -180,7 +184,9 @@ export const INITIAL_USERS: User[] = [
         department: 'Operations', 
         lastLogin: Date.now(),
         mfaEnabled: false,
-        hasPasskey: false 
+        hasPasskey: false,
+        isCuiAuthorized: false,
+        iamSource: 'Manual'
     }
 ];
 

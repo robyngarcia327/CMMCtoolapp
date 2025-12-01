@@ -48,7 +48,7 @@ import { VendorManager } from './components/VendorManager';
 import { MSPDashboard } from './components/MSPDashboard';
 import { Login } from './components/Login';
 import { Dashboard } from './components/Dashboard'; 
-import { AuditorPortal } from './components/AuditorPortal'; // Added import
+import { AuditorPortal } from './components/AuditorPortal'; 
 import { storageService } from './services/storage';
 
 const App: React.FC = () => {
@@ -264,13 +264,14 @@ const App: React.FC = () => {
 
                       <NavDropdown label="Assets" icon={Package}>
                           <NavItem label="Asset Inventory" icon={Package} view={AppView.INVENTORY} />
+                          <NavItem label="Identity / Users" icon={Users} view={AppView.USERS} />
                           <NavItem label="Network Map" icon={Network} view={AppView.NETWORK_ANALYSIS} />
                           <NavItem label="Vendor Management" icon={Building2} view={AppView.VENDORS} />
                       </NavDropdown>
 
                       {isMSPUser && (
                           <NavDropdown label="Admin" icon={SettingsIcon}>
-                              <NavItem label="Client Manager" icon={Users} view={AppView.ORGANIZATION_MANAGER} />
+                              <NavItem label="Client Manager" icon={Building2} view={AppView.ORGANIZATION_MANAGER} />
                               <NavItem label="Settings & Integrations" icon={SettingsIcon} view={AppView.SETTINGS} />
                               <div className="my-1 border-b border-slate-100"></div>
                               <NavItem label="For The Auditor" icon={Briefcase} view={AppView.AUDITOR_PORTAL} />
@@ -466,6 +467,17 @@ const App: React.FC = () => {
                         onAddVendor={handleAddVendor}
                         onUpdateVendor={handleUpdateVendor}
                         onDeleteVendor={handleDeleteVendor}
+                    />
+                </div>
+            )}
+
+            {currentView === AppView.USERS && (
+                <div className="flex-1 overflow-y-auto bg-slate-50">
+                    <UserManagement 
+                        users={users}
+                        onAddUser={(u) => updateActiveClientData(prev => ({ users: [...prev.users, u] }))}
+                        onUpdateUser={(u) => updateActiveClientData(prev => ({ users: prev.users.map(ex => ex.id === u.id ? u : ex) }))}
+                        onDeleteUser={(id) => updateActiveClientData(prev => ({ users: prev.users.filter(u => u.id !== id) }))}
                     />
                 </div>
             )}

@@ -59,13 +59,13 @@ export interface Artifact {
   id: string;
   requirementId: string;
   name: string;
-  type: 'image' | 'document' | 'link' | 'email' | 'json'; // Added json for API data
+  type: 'image' | 'document' | 'link' | 'email' | 'json';
   url: string;
   timestamp: number;
   notes?: string;
   expiryDate?: number;
-  containsCui?: boolean; // FIPS protection flag
-  source?: 'USER_UPLOAD' | 'API_AUTO'; // Automation flag
+  containsCui?: boolean;
+  source?: 'USER_UPLOAD' | 'API_AUTO';
 }
 
 export interface Ticket {
@@ -158,7 +158,6 @@ export interface RiskProfileVersion {
   risks: Risk[];
 }
 
-// Updated for CMMC Specific Asset Classification
 export type CmmcAssetCategory = 'CUI' | 'FCI' | 'SPA' | 'CRMA' | 'Out-of-Scope';
 
 export interface Asset {
@@ -167,8 +166,8 @@ export interface Asset {
   type: 'Server' | 'Workstation' | 'Mobile' | 'Software' | 'Network Device';
   owner: string;
   location: string;
-  cmmcCategory: CmmcAssetCategory; // Replaces boolean
-  enclave?: string; // e.g. "CUI VLAN"
+  cmmcCategory: CmmcAssetCategory;
+  enclave?: string;
   criticality: 'Low' | 'Medium' | 'High';
 }
 
@@ -198,6 +197,10 @@ export interface User {
   lastLogin: number;
   mfaEnabled: boolean;
   hasPasskey: boolean;
+  // New Fields for Asset Management
+  isCuiAuthorized: boolean; // Flag for CUI access
+  iamSource?: 'Manual' | 'Microsoft365' | 'GoogleWorkspace' | 'Okta';
+  securityClearance?: string;
 }
 
 export interface ProjectTask {
@@ -222,12 +225,10 @@ export interface BudgetLineItem {
   notes?: string;
 }
 
-// --- Integration Configurations ---
 export interface IntegrationConfig {
     enabled: boolean;
     connectedAt?: number;
     accountName?: string;
-    // In a real app, you might store encrypted tokens here or in a backend
 }
 
 export interface Framework {
@@ -274,13 +275,10 @@ export interface ClientData {
   jiraConfig: JiraConfig;
   confluenceConfig: ConfluenceConfig;
   auvikConfig: AuvikConfig;
-  
-  // Cloud Integrations
   m365Config: IntegrationConfig;
   awsConfig: IntegrationConfig;
   googleConfig: IntegrationConfig;
   siemConfig: IntegrationConfig;
-
   mspBranding?: BrandingConfig;
   versions: RiskProfileVersion[];
   wizardProgress: WizardProgress;
