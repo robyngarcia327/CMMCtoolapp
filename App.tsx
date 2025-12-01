@@ -19,7 +19,9 @@ import {
   Wand2,
   LogOut,
   User as UserIcon,
-  ChevronsUpDown
+  ChevronsUpDown,
+  Menu,
+  ChevronDown
 } from 'lucide-react';
 
 import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, INITIAL_USERS, REQUIREMENTS_DATA } from './data/standards';
@@ -44,7 +46,7 @@ import { ComplianceWizard } from './components/ComplianceWizard';
 import { VendorManager } from './components/VendorManager';
 import { MSPDashboard } from './components/MSPDashboard';
 import { Login } from './components/Login';
-import { Dashboard } from './components/Dashboard'; // Fix: Ensure this import exists
+import { Dashboard } from './components/Dashboard'; 
 import { storageService } from './services/storage';
 
 const App: React.FC = () => {
@@ -62,11 +64,9 @@ const App: React.FC = () => {
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Auto-save data on changes
     storageService.save(clients, clientDataStore);
   }, [clients, clientDataStore]);
 
-  // Fallback if data store is somehow missing the active client
   if (!clientDataStore[activeClientId]) {
       setClientDataStore(prev => ({
           ...prev,
@@ -95,7 +95,6 @@ const App: React.FC = () => {
       }));
   };
 
-  // Adapters
   const requirements = activeData.requirements;
   const risks = activeData.risks;
   const assets = activeData.assets;
@@ -187,7 +186,6 @@ const App: React.FC = () => {
       alert('Standards synced successfully!');
   };
 
-  // Auth Handling
   if (!currentUser) {
       return <Login onLogin={setCurrentUser} />;
   }
@@ -195,169 +193,159 @@ const App: React.FC = () => {
   const selectedRequirement = requirements.find(r => r.id === selectedRequirementId);
   const isMSPUser = currentUser.role === 'MSP_ADMIN' || currentUser.role === 'MSP_TECH';
 
-  return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
-      
-      {/* Sidebar */}
-      <div className="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 transition-all duration-300">
-        
-        {/* Branding / MSP Logo */}
-        <div className="p-4 border-b border-slate-800">
-            {mspBranding?.logoUrl ? (
-                <img src={mspBranding.logoUrl} alt="MSP Logo" className="h-8 object-contain mb-2" />
-            ) : (
-                <div className="flex items-center gap-2 text-white font-bold text-lg mb-1">
-                    <Shield className="text-blue-500" /> Cualli Cyber
-                </div>
-            )}
-            <div className="text-xs text-slate-500 font-medium tracking-wider">MSP PLATFORM</div>
-        </div>
-
-        {/* Client Switcher (Only visible to MSPs) */}
-        {isMSPUser && (
-            <ClientSwitcher 
-                clients={clients} 
-                activeClient={activeClient} 
-                onSelectClient={setActiveClientId} 
-                onAddClient={(c) => setClients([...clients, c])}
-            />
-        )}
-
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto py-4">
-            <nav className="space-y-1 px-2">
-                {isMSPUser && (
-                    <div className="mb-4">
-                        <button onClick={() => setCurrentView(AppView.MSP_DASHBOARD)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.MSP_DASHBOARD ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                            <TrendingUp size={18} /> <span className="font-medium text-sm">MSP Dashboard</span>
-                        </button>
-                        <button onClick={() => setCurrentView(AppView.ORGANIZATION_MANAGER)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.ORGANIZATION_MANAGER ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                            <Building2 size={18} /> <span className="font-medium text-sm">Organizations</span>
-                        </button>
-                    </div>
-                )}
-
-                <div className="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Compliance</div>
-                <button onClick={() => setCurrentView(AppView.DASHBOARD)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.DASHBOARD ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <LayoutDashboard size={18} /> <span className="font-medium text-sm">Dashboard</span>
-                </button>
-                <button onClick={() => setCurrentView(AppView.REQUIREMENTS)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.REQUIREMENTS ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <ListChecks size={18} /> <span className="font-medium text-sm">Requirements</span>
-                </button>
-                <button onClick={() => setCurrentView(AppView.REPORTS)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.REPORTS ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <BarChart3 size={18} /> <span className="font-medium text-sm">Reports</span>
-                </button>
-                <button onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.SPRS_SCORECARD ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <TrendingUp size={18} /> <span className="font-medium text-sm">SPRS Scorecard</span>
-                </button>
-
-                <div className="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-4">Tools</div>
-                <button onClick={() => setCurrentView(AppView.WIZARD)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.WIZARD ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <Wand2 size={18} /> <span className="font-medium text-sm">Onboarding Wizard</span>
-                </button>
-                <button onClick={() => setCurrentView(AppView.RISK_REGISTER)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.RISK_REGISTER ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <AlertTriangle size={18} /> <span className="font-medium text-sm">Risk Register</span>
-                </button>
-                <button onClick={() => setCurrentView(AppView.PROJECTS)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.PROJECTS ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <KanbanSquare size={18} /> <span className="font-medium text-sm">Projects / POAM</span>
-                </button>
-                <button onClick={() => setCurrentView(AppView.DOC_GENERATOR)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.DOC_GENERATOR ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <FileText size={18} /> <span className="font-medium text-sm">Doc Generator</span>
-                </button>
-                
-                <div className="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-4">Assets</div>
-                <button onClick={() => setCurrentView(AppView.INVENTORY)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.INVENTORY ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <Package size={18} /> <span className="font-medium text-sm">Asset Inventory</span>
-                </button>
-                <button onClick={() => setCurrentView(AppView.NETWORK_ANALYSIS)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.NETWORK_ANALYSIS ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <Network size={18} /> <span className="font-medium text-sm">Network Map</span>
-                </button>
-                <button onClick={() => setCurrentView(AppView.VENDORS)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.VENDORS ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <Building2 size={18} /> <span className="font-medium text-sm">Vendor Risk</span>
-                </button>
-
-                <div className="px-3 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-4">Admin</div>
-                <button onClick={() => setCurrentView(AppView.BUDGET)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.BUDGET ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <Calculator size={18} /> <span className="font-medium text-sm">Budget & ROI</span>
-                </button>
-                <button onClick={() => setCurrentView(AppView.TRAINING)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.TRAINING ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <GraduationCap size={18} /> <span className="font-medium text-sm">Training Center</span>
-                </button>
-                <button onClick={() => setCurrentView(AppView.SETTINGS)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${currentView === AppView.SETTINGS ? 'bg-blue-600 text-white' : 'hover:bg-slate-800'}`}>
-                    <SettingsIcon size={18} /> <span className="font-medium text-sm">Configuration</span>
-                </button>
-            </nav>
-        </div>
-
-        {/* User Profile */}
-        <div className="p-4 bg-slate-950 border-t border-slate-800 flex justify-between items-center">
-            <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold text-white text-xs">
-                    {currentUser.name.charAt(0)}
-                </div>
-                <div className="flex flex-col">
-                    <span className="text-sm font-medium text-white">{currentUser.name.split(' ')[0]}</span>
-                    <span className="text-[10px] text-slate-500 uppercase">{currentUser.role.replace('_', ' ')}</span>
-                </div>
-            </div>
-            <button 
-                onClick={() => setCurrentUser(null)} 
-                className="text-slate-500 hover:text-white transition-colors" 
-                title="Sign Out"
-            >
-                <LogOut size={16} />
-            </button>
-        </div>
+  // --- Render Helpers for Menu ---
+  const NavDropdown = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
+      <div className="relative group h-full flex items-center">
+          <button className="flex items-center gap-1 px-3 py-2 text-slate-300 hover:text-white font-medium transition-colors">
+              <Icon size={16} /> {label} <ChevronDown size={14} className="opacity-50 group-hover:opacity-100 transition-opacity" />
+          </button>
+          <div className="absolute top-full left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-2 hidden group-hover:block animate-in fade-in zoom-in-95 duration-100 z-50">
+              {children}
+          </div>
       </div>
+  );
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        
-        {/* Top Navigation Bar */}
-        <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shrink-0 shadow-sm z-10">
-            <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-sm text-slate-700 font-medium">
-                    {activeClient.isParent ? <Shield size={14} className="text-purple-600"/> : <Building2 size={14} className="text-blue-600"/>}
-                    {activeClient.name}
-                </div>
-                
-                {/* Framework Selector */}
-                {currentView !== AppView.WIZARD && (
-                    <div className="relative group">
-                        <button className="flex items-center gap-2 text-sm text-slate-600 hover:text-blue-600 font-medium px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors">
-                            Framework: <span className="text-slate-900 font-bold">{activeFramework.id}</span>
-                            <ChevronsUpDown size={14} className="text-slate-400" />
+  const NavItem = ({ label, icon: Icon, view }: { label: string, icon: any, view: AppView }) => (
+      <button 
+        onClick={() => setCurrentView(view)}
+        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors ${currentView === view ? 'text-blue-600 font-bold bg-blue-50' : 'text-slate-700'}`}
+      >
+          <Icon size={16} className={currentView === view ? 'text-blue-600' : 'text-slate-400'} />
+          {label}
+      </button>
+  );
+
+  return (
+    <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
+      
+      {/* --- TOP NAVIGATION BAR --- */}
+      <header className="bg-slate-900 text-slate-200 h-16 shrink-0 shadow-md z-50">
+          <div className="max-w-[1920px] mx-auto px-6 h-full flex items-center justify-between">
+              
+              {/* Left: Logo & Title */}
+              <div className="flex items-center gap-8">
+                  <div className="flex items-center gap-2 text-white font-bold text-lg">
+                      {mspBranding?.logoUrl ? (
+                          <img src={mspBranding.logoUrl} alt="Logo" className="h-8 w-auto object-contain" />
+                      ) : (
+                          <Shield className="text-blue-500 fill-blue-500/20" size={24} />
+                      )}
+                      <span>Cualli Cyber</span>
+                  </div>
+
+                  {/* Main Menu Links */}
+                  <div className="hidden md:flex items-center gap-2 h-16">
+                      <button 
+                        onClick={() => setCurrentView(isMSPUser ? AppView.MSP_DASHBOARD : AppView.DASHBOARD)}
+                        className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${[AppView.MSP_DASHBOARD, AppView.DASHBOARD].includes(currentView) ? 'bg-slate-800 text-white' : 'hover:bg-slate-800 hover:text-white'}`}
+                      >
+                          Dashboard
+                      </button>
+
+                      <NavDropdown label="Compliance" icon={ListChecks}>
+                          <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Assessment</div>
+                          <NavItem label="Requirements List" icon={ListChecks} view={AppView.REQUIREMENTS} />
+                          <NavItem label="SPRS Scorecard" icon={TrendingUp} view={AppView.SPRS_SCORECARD} />
+                          <NavItem label="Onboarding Wizard" icon={Wand2} view={AppView.WIZARD} />
+                          <div className="my-1 border-b border-slate-100"></div>
+                          <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Reports</div>
+                          <NavItem label="Compliance Reports" icon={BarChart3} view={AppView.REPORTS} />
+                          <NavItem label="Doc Generator" icon={FileText} view={AppView.DOC_GENERATOR} />
+                      </NavDropdown>
+
+                      <NavDropdown label="Risk & Tools" icon={AlertTriangle}>
+                          <NavItem label="Risk Register" icon={AlertTriangle} view={AppView.RISK_REGISTER} />
+                          <NavItem label="POA&M Projects" icon={KanbanSquare} view={AppView.PROJECTS} />
+                          <NavItem label="Budget & ROI" icon={Calculator} view={AppView.BUDGET} />
+                          <NavItem label="Training Center" icon={GraduationCap} view={AppView.TRAINING} />
+                      </NavDropdown>
+
+                      <NavDropdown label="Assets" icon={Package}>
+                          <NavItem label="Asset Inventory" icon={Package} view={AppView.INVENTORY} />
+                          <NavItem label="Network Map" icon={Network} view={AppView.NETWORK_ANALYSIS} />
+                          <NavItem label="Vendor Management" icon={Building2} view={AppView.VENDORS} />
+                      </NavDropdown>
+
+                      {isMSPUser && (
+                          <NavDropdown label="Admin" icon={SettingsIcon}>
+                              <NavItem label="Client Manager" icon={Users} view={AppView.ORGANIZATION_MANAGER} />
+                              <NavItem label="Settings & Integrations" icon={SettingsIcon} view={AppView.SETTINGS} />
+                          </NavDropdown>
+                      )}
+                  </div>
+              </div>
+
+              {/* Right: Controls & User */}
+              <div className="flex items-center gap-4">
+                  {/* Framework Selector */}
+                  <div className="relative group hidden lg:block">
+                        <button className="flex items-center gap-2 text-xs font-bold text-slate-400 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-600 transition-colors">
+                            <span>{activeFramework.id}</span>
+                            <ChevronsUpDown size={12} />
                         </button>
-                        <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-xl p-2 hidden group-hover:block z-50">
-                            <div className="text-xs font-bold text-slate-400 px-2 py-1 uppercase">Switch Standard</div>
+                        <div className="absolute top-full right-0 mt-2 w-56 bg-white text-slate-900 rounded-xl shadow-xl p-2 hidden group-hover:block border border-slate-200 z-50">
                             {FRAMEWORKS.map(f => (
                                 <button
                                     key={f.id}
                                     onClick={() => setActiveFramework(f)}
-                                    className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-1 ${activeFramework.id === f.id ? 'bg-blue-50 text-blue-700 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
+                                    className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-1 ${activeFramework.id === f.id ? 'bg-blue-50 text-blue-700 font-bold' : 'hover:bg-slate-50'}`}
                                 >
-                                    <div>{f.name}</div>
-                                    <div className="text-xs text-slate-400 font-normal truncate">{f.description}</div>
+                                    {f.name}
                                 </button>
                             ))}
                         </div>
-                    </div>
-                )}
-            </div>
+                  </div>
 
-            <button 
-                onClick={() => setIsChatOpen(!isChatOpen)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all shadow-sm ${
-                    isChatOpen ? 'bg-indigo-600 text-white' : 'bg-white border border-indigo-100 text-indigo-600 hover:bg-indigo-50'
-                }`}
-            >
-                <MessageSquare size={18} />
-                {isChatOpen ? 'Close Assistant' : 'Ask AI Assistant'}
-            </button>
-        </header>
+                  {/* AI Chat Toggle */}
+                  <button 
+                    onClick={() => setIsChatOpen(!isChatOpen)}
+                    className={`p-2 rounded-full transition-all ${isChatOpen ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/50' : 'bg-slate-800 text-indigo-400 hover:bg-indigo-900 hover:text-white'}`}
+                    title="AI Assistant"
+                  >
+                      <MessageSquare size={20} />
+                  </button>
 
-        {/* Views Switch */}
-        <main className="flex-1 flex overflow-hidden">
+                  <div className="h-6 w-px bg-slate-700 mx-1"></div>
+
+                  {/* User Profile */}
+                  <div className="flex items-center gap-3">
+                      <div className="text-right hidden md:block">
+                          <div className="text-sm font-bold text-white">{currentUser.name}</div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{activeClient.name}</div>
+                      </div>
+                      <div className="relative group">
+                          <button className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow border-2 border-slate-700 group-hover:border-white transition-all">
+                              {currentUser.name.charAt(0)}
+                          </button>
+                          {/* Profile Dropdown */}
+                          <div className="absolute top-full right-0 mt-2 w-48 bg-white text-slate-900 rounded-xl shadow-xl border border-slate-200 py-1 hidden group-hover:block z-50">
+                              {isMSPUser && (
+                                  <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                                      <p className="text-xs text-slate-500 mb-1">Switch Client:</p>
+                                      <select 
+                                        value={activeClientId} 
+                                        onChange={(e) => setActiveClientId(e.target.value)}
+                                        className="w-full text-sm border rounded p-1 bg-slate-50"
+                                      >
+                                          {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                      </select>
+                                  </div>
+                              )}
+                              <button 
+                                onClick={() => setCurrentUser(null)}
+                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                              >
+                                  <LogOut size={14} /> Sign Out
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </header>
+
+      {/* --- MAIN CONTENT AREA --- */}
+      <main className="flex-1 flex overflow-hidden relative">
             {currentView === AppView.MSP_DASHBOARD && (
                 <div className="flex-1 overflow-y-auto bg-slate-50">
                     <MSPDashboard 
@@ -433,7 +421,6 @@ const App: React.FC = () => {
                             cwConfig={cwConfig}
                             jiraConfig={jiraConfig}
                             currentUser={currentUser}
-                            // Wired Up Integrations
                             m365Config={m365Config}
                             awsConfig={awsConfig}
                             siemConfig={siemConfig}
@@ -550,7 +537,6 @@ const App: React.FC = () => {
                         jiraConfig={jiraConfig} 
                         confluenceConfig={confluenceConfig}
                         mspBranding={mspBranding}
-                        // Wired Up Integrations
                         m365Config={m365Config}
                         awsConfig={awsConfig}
                         googleConfig={googleConfig}
@@ -560,10 +546,9 @@ const App: React.FC = () => {
                     />
                  </div>
             )}
-        </main>
+      </main>
 
-        <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
-      </div>
+      <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>
   );
 };
