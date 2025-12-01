@@ -21,7 +21,8 @@ import {
   User as UserIcon,
   ChevronsUpDown,
   Menu,
-  ChevronDown
+  ChevronDown,
+  Briefcase
 } from 'lucide-react';
 
 import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, INITIAL_USERS, REQUIREMENTS_DATA } from './data/standards';
@@ -47,6 +48,7 @@ import { VendorManager } from './components/VendorManager';
 import { MSPDashboard } from './components/MSPDashboard';
 import { Login } from './components/Login';
 import { Dashboard } from './components/Dashboard'; 
+import { AuditorPortal } from './components/AuditorPortal'; // Added import
 import { storageService } from './services/storage';
 
 const App: React.FC = () => {
@@ -270,6 +272,8 @@ const App: React.FC = () => {
                           <NavDropdown label="Admin" icon={SettingsIcon}>
                               <NavItem label="Client Manager" icon={Users} view={AppView.ORGANIZATION_MANAGER} />
                               <NavItem label="Settings & Integrations" icon={SettingsIcon} view={AppView.SETTINGS} />
+                              <div className="my-1 border-b border-slate-100"></div>
+                              <NavItem label="For The Auditor" icon={Briefcase} view={AppView.AUDITOR_PORTAL} />
                           </NavDropdown>
                       )}
                   </div>
@@ -526,6 +530,17 @@ const App: React.FC = () => {
                     <SPRSScorecard 
                         requirements={requirements}
                         activeFrameworkId={activeFramework.id}
+                    />
+                </div>
+            )}
+
+            {currentView === AppView.AUDITOR_PORTAL && (
+                <div className="flex-1 overflow-y-auto bg-slate-50">
+                    <AuditorPortal 
+                        client={activeClient}
+                        requirements={requirements}
+                        artifacts={artifacts}
+                        risks={risks}
                     />
                 </div>
             )}
