@@ -171,7 +171,12 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
                                                   <div key={art.id} className="flex items-center gap-2 text-xs text-blue-600 hover:underline cursor-pointer">
                                                       <FileText size={12} />
                                                       {art.name}
-                                                      {art.containsCui && <Lock size={10} className="text-red-500" title="CUI Encrypted"/>}
+                                                      {/* Corrected: title prop moved to span */}
+                                                      {art.containsCui && (
+                                                          <span title="CUI Encrypted">
+                                                              <Lock size={10} className="text-red-500" />
+                                                          </span>
+                                                      )}
                                                   </div>
                                               ))}
                                           </div>
