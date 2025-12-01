@@ -44,6 +44,7 @@ import { ComplianceWizard } from './components/ComplianceWizard';
 import { VendorManager } from './components/VendorManager';
 import { MSPDashboard } from './components/MSPDashboard';
 import { Login } from './components/Login';
+import { Dashboard } from './components/Dashboard'; // Fix: Ensure this import exists
 import { storageService } from './services/storage';
 
 const App: React.FC = () => {

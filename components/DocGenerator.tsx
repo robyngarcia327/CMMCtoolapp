@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { generateComplianceDocument } from '../services/gemini';
 import { publishToConfluence } from '../services/atlassian';
-import { Wand2, Save, Copy, FileText, Loader2, ShieldCheck, AlertTriangle, BookOpen, Activity, UploadCloud, Printer, Edit3, Eye } from 'lucide-react';
+import { Wand2, Save, Copy, FileText, Loader2, ShieldCheck, AlertTriangle, BookOpen, Activity, UploadCloud, Printer, Edit3, Eye, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { ConfluenceConfig, Client, BrandingConfig } from '../types';
+import { ConfluenceConfig, Client, BrandingConfig, Requirement } from '../types';
 
 interface DocTemplate {
   id: string;
@@ -105,9 +104,10 @@ interface DocGeneratorProps {
   clientBranding?: BrandingConfig;
   mspBranding?: BrandingConfig;
   confluenceConfig?: ConfluenceConfig;
+  requirements: Requirement[]; // Added this required prop
 }
 
-export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBranding, mspBranding, confluenceConfig }) => {
+export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBranding, mspBranding, confluenceConfig, requirements }) => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(TEMPLATES[0].id);
   const [allAnswers, setAllAnswers] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
@@ -135,9 +135,23 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
   const handleGenerate = async () => {
     setIsGenerating(true);
     const relevantAnswers: Record<string, string> = {};
+    
+    // 1. Manual Answers
     selectedTemplate.questions.forEach(q => {
         relevantAnswers[q] = allAnswers[q] || "";
     });
+
+    // 2. Auto-Fill for SSP (Live Data)
+    if (selectedTemplate.id === 'ssp' && requirements) {
+        const assessmentContext = requirements
+            .filter(r => r.response && r.response.length > 5)
+            .map(r => `Control ${r.id}: ${r.response}`)
+            .join('\n');
+        
+        if (assessmentContext) {
+            relevantAnswers['Assessment_Data_Dump'] = assessmentContext;
+        }
+    }
 
     const result = await generateComplianceDocument(selectedTemplate.type, selectedTemplate.title, relevantAnswers);
     setGeneratedDoc(result);
@@ -229,6 +243,11 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                             {selectedTemplate.icon}
                             {selectedTemplate.title}
                         </h3>
+                        {selectedTemplate.id === 'ssp' && (
+                            <div className="mt-2 text-xs bg-green-50 text-green-700 p-2 rounded flex items-center gap-2">
+                                <RefreshCw size={14} /> Live Sync Enabled: Will ingest assessment data.
+                            </div>
+                        )}
                         <p className="text-sm text-slate-500 mt-1">Please provide details below to customize your document.</p>
                     </div>
 
