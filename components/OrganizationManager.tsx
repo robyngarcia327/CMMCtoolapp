@@ -124,7 +124,8 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
           department: newUser.department || 'General',
           lastLogin: Date.now(), 
           mfaEnabled: false,
-          hasPasskey: false
+          hasPasskey: false,
+          isCuiAuthorized: false // FIX: Added default value
       };
 
       const targetClientData = clientDataStore[newUser.organizationId];
