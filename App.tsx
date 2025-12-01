@@ -22,7 +22,8 @@ import {
   ChevronsUpDown,
   Menu,
   ChevronDown,
-  Briefcase
+  Briefcase,
+  Loader2
 } from 'lucide-react';
 
 import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, INITIAL_USERS, REQUIREMENTS_DATA } from './data/standards';
@@ -56,27 +57,66 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.MSP_DASHBOARD);
   const [isChatOpen, setIsChatOpen] = useState(false);
   
-  const [clients, setClients] = useState<Client[]>(() => storageService.loadClients());
-  const [activeClientId, setActiveClientId] = useState<string>(clients[0]?.id || INITIAL_CLIENTS[0].id);
+  // Loading State
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  
+  const [clients, setClients] = useState<Client[]>([]);
+  const [activeClientId, setActiveClientId] = useState<string>('');
   const [activeFramework, setActiveFramework] = useState<Framework>(FRAMEWORKS[0]);
   
-  const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>(() => storageService.loadDataStore());
+  const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>({});
 
   // Selection States
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
 
+  // Initial Load
   useEffect(() => {
-    storageService.save(clients, clientDataStore);
-  }, [clients, clientDataStore]);
+      const initData = async () => {
+          setIsDataLoading(true);
+          const loadedClients = await storageService.loadClients();
+          const loadedStore = await storageService.loadDataStore();
+          
+          setClients(loadedClients);
+          setClientDataStore(loadedStore);
+          setActiveClientId(loadedClients[0]?.id || 'client-msp');
+          setIsDataLoading(false);
+      };
+      initData();
+  }, []);
 
-  if (!clientDataStore[activeClientId]) {
-      setClientDataStore(prev => ({
-          ...prev,
-          [activeClientId]: createInitialClientData(true)
-      }));
+  // Auto-save on change (Debounced in real app, direct here)
+  useEffect(() => {
+    if (!isDataLoading && clients.length > 0) {
+        storageService.save(clients, clientDataStore);
+    }
+  }, [clients, clientDataStore, isDataLoading]);
+
+  // ... (The rest of the component logic remains the same, but we render a Loader if isDataLoading is true)
+
+  if (isDataLoading) {
+      return (
+          <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4">
+              <Loader2 size={48} className="animate-spin text-blue-600" />
+              <h2 className="text-xl font-bold text-slate-700">Loading Secure Environment...</h2>
+              <p className="text-slate-500">Decrypting local storage</p>
+          </div>
+      );
+  }
+
+  if (!currentUser) {
+      return <Login onLogin={setCurrentUser} />;
   }
   
-  const activeData = clientDataStore[activeClientId] || createInitialClientData(true);
+  // Fallback if data store is somehow missing the active client
+  if (!clientDataStore[activeClientId]) {
+      // Create empty on the fly if missing
+      const newData = createInitialClientData(true);
+      setClientDataStore(prev => ({ ...prev, [activeClientId]: newData }));
+      // Return null briefly while state updates to avoid crash
+      return null; 
+  }
+  
+  const activeData = clientDataStore[activeClientId];
   const activeClient = clients.find(c => c.id === activeClientId) || clients[0];
 
   const updateActiveClientData = (updateFn: (prev: ClientData) => Partial<ClientData>) => {
@@ -187,10 +227,6 @@ const App: React.FC = () => {
       });
       alert('Standards synced successfully!');
   };
-
-  if (!currentUser) {
-      return <Login onLogin={setCurrentUser} />;
-  }
 
   const selectedRequirement = requirements.find(r => r.id === selectedRequirementId);
   const isMSPUser = currentUser.role === 'MSP_ADMIN' || currentUser.role === 'MSP_TECH';
