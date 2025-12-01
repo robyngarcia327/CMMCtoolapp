@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Client, User, UserRole, ClientData, BrandingConfig } from '../types';
 import { Plus, Shield, Trash2, Mail, Search, Upload, Palette } from 'lucide-react';
@@ -23,7 +22,6 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
   const [activeTab, setActiveTab] = useState<'CLIENTS' | 'USERS'>('CLIENTS');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // New/Edit Client State
   const [isAddingClient, setIsAddingClient] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   
@@ -37,16 +35,13 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
       branding: { primaryColor: '#3b82f6' }
   });
 
-  // New User State
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [newUser, setNewUser] = useState<Partial<User>>({ role: 'CLIENT_USER' });
 
-  // --- Client Handlers ---
   const handleSaveClient = () => {
     if (!clientForm.name) return;
 
     if (editingClient) {
-        // Update existing
         onUpdateClient({
             ...editingClient,
             name: clientForm.name,
@@ -55,7 +50,6 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
         });
         setEditingClient(null);
     } else {
-        // Create new
         const newClient: Client = {
             id: `client-${Date.now()}`,
             name: clientForm.name,
@@ -72,7 +66,6 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
         setIsAddingClient(false);
     }
     
-    // Reset Form
     setClientForm({ name: '', industry: '', branding: { primaryColor: '#3b82f6' } });
   };
 
@@ -104,7 +97,6 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
       }
   };
 
-  // --- User Handlers ---
   const getAllUsers = () => {
       let allUsers: (User & { clientName: string })[] = [];
       clients.forEach(c => {
@@ -118,7 +110,6 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
   };
 
   const handleCreateUser = () => {
-      // TypeScript Strictness: Ensure fields are present
       if (!newUser.name || !newUser.email || !newUser.organizationId) {
           alert("Please fill in Name, Email, and Organization.");
           return;
@@ -136,7 +127,6 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
           hasPasskey: false
       };
 
-      // Add user to the SPECIFIC client's data store
       const targetClientData = clientDataStore[newUser.organizationId];
       if (targetClientData) {
           onUpdateClientData(newUser.organizationId, {
@@ -182,7 +172,6 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
         </div>
       </div>
 
-      {/* --- CLIENTS VIEW --- */}
       {activeTab === 'CLIENTS' && (
         <div className="space-y-6">
            <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -226,7 +215,6 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                            />
                        </div>
                        
-                       {/* Branding Section */}
                        <div className="bg-white p-4 rounded-lg border border-slate-200 space-y-4">
                            <h4 className="text-sm font-bold text-slate-600 flex items-center gap-2"><Palette size={14} /> Client Branding</h4>
                            
@@ -244,7 +232,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                                    <div className="flex items-center gap-2">
                                        <input 
                                             type="color" 
-                                            value={clientForm.branding.primaryColor}
+                                            value={clientForm.branding.primaryColor || '#3b82f6'} 
                                             onChange={e => setClientForm(prev => ({ ...prev, branding: { ...prev.branding, primaryColor: e.target.value } }))}
                                             className="w-8 h-8 rounded border-0 cursor-pointer"
                                        />
@@ -323,7 +311,6 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
         </div>
       )}
 
-      {/* --- USERS VIEW --- */}
       {activeTab === 'USERS' && (
           <div className="space-y-6">
                <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">

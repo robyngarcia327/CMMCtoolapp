@@ -1,8 +1,8 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { Requirement, AuvikDevice } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Fix: Ensure apiKey is treated as a string, even if env is undefined during check
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 const SYSTEM_INSTRUCTION_CHAT = `
 You are an expert cybersecurity compliance consultant specialized in CMMC 2.0 (Level 1 and 2) and NIST SP 800-171A.
