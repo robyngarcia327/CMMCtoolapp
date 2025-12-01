@@ -185,7 +185,7 @@ const App: React.FC = () => {
           });
           return { requirements: mergedReqs };
       });
-      alert('Standards synced successfully!');
+      alert('Standards Library Updated! Your assessments have been merged with the latest controls.');
   };
 
   if (!currentUser) {

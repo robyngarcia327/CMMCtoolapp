@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, CheckCircle, Lock, Globe, Building2, Key, Layers, BookOpen, Database, RefreshCw, AlertTriangle, Trash2, Network, Palette, Upload, Cloud, Server, Shield, Plug } from 'lucide-react';
+import { Save, CheckCircle, Lock, Globe, Building2, Key, Layers, BookOpen, Database, RefreshCw, AlertTriangle, Trash2, Network, Palette, Upload, Cloud, Server, Shield, Plug, Library } from 'lucide-react';
 import { ConnectWiseConfig, JiraConfig, ConfluenceConfig, BrandingConfig, IntegrationConfig } from '../types';
 
 interface SettingsProps {
@@ -7,7 +7,6 @@ interface SettingsProps {
   jiraConfig: JiraConfig;
   confluenceConfig: ConfluenceConfig;
   mspBranding?: BrandingConfig;
-  // Cloud Integrations
   m365Config?: IntegrationConfig;
   awsConfig?: IntegrationConfig;
   googleConfig?: IntegrationConfig;
@@ -19,7 +18,7 @@ interface SettingsProps {
   onExportData?: () => void;
 }
 
-type SettingsTab = 'ConnectWise' | 'Jira' | 'Confluence' | 'Auvik' | 'Integrations' | 'Branding' | 'Data';
+type SettingsTab = 'ConnectWise' | 'Jira' | 'Confluence' | 'Auvik' | 'Integrations' | 'Branding' | 'Data' | 'Library';
 
 export const Settings: React.FC<SettingsProps> = ({ 
     config, 
@@ -42,7 +41,6 @@ export const Settings: React.FC<SettingsProps> = ({
   const [confData, setConfData] = useState<ConfluenceConfig>(confluenceConfig);
   const [brandingData, setBrandingData] = useState<BrandingConfig>(mspBranding || { primaryColor: '#ff7f50', logoUrl: '' });
 
-  // Cloud Integration States
   const [m365Data, setM365Data] = useState<IntegrationConfig>(m365Config || { enabled: false });
   const [awsData, setAwsData] = useState<IntegrationConfig>(awsConfig || { enabled: false });
   const [googleData, setGoogleData] = useState<IntegrationConfig>(googleConfig || { enabled: false });
@@ -153,6 +151,38 @@ export const Settings: React.FC<SettingsProps> = ({
       </div>
   );
 
+  const renderLibrary = () => (
+      <div className="p-8 space-y-6">
+          <div className="bg-indigo-50 p-6 rounded-xl border border-indigo-100 mb-6">
+              <h3 className="font-bold text-indigo-900 flex items-center gap-2"><Library size={20}/> Framework Library</h3>
+              <p className="text-sm text-indigo-700 mt-2">
+                  Manage your compliance definitions. Sync with the central repository to get the latest NIST 800-171 r2 and CMMC 2.0 controls.
+              </p>
+          </div>
+
+          <div className="grid gap-4">
+              <div className="bg-white border p-4 rounded-lg flex items-center justify-between">
+                  <div>
+                      <h4 className="font-bold text-slate-800">NIST SP 800-171 r2</h4>
+                      <p className="text-xs text-slate-500">110 Controls • Last Updated: Today</p>
+                  </div>
+                  <button onClick={onReloadStandards} className="bg-slate-900 text-white px-4 py-2 rounded text-sm font-bold hover:bg-slate-800">
+                      Force Update / Repair
+                  </button>
+              </div>
+              <div className="bg-white border p-4 rounded-lg flex items-center justify-between opacity-60">
+                  <div>
+                      <h4 className="font-bold text-slate-800">ISO 27001:2022</h4>
+                      <p className="text-xs text-slate-500">93 Controls • License Required</p>
+                  </div>
+                  <button className="bg-slate-100 text-slate-400 px-4 py-2 rounded text-sm font-bold cursor-not-allowed">
+                      Locked
+                  </button>
+              </div>
+          </div>
+      </div>
+  );
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="mb-8">
@@ -162,12 +192,12 @@ export const Settings: React.FC<SettingsProps> = ({
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="flex border-b border-slate-200 overflow-x-auto">
-            {/* Tabs */}
             <button onClick={() => setActiveTab('ConnectWise')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap ${activeTab === 'ConnectWise' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600'}`}>ConnectWise</button>
             <button onClick={() => setActiveTab('Jira')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap ${activeTab === 'Jira' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600'}`}>Jira</button>
             <button onClick={() => setActiveTab('Confluence')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap ${activeTab === 'Confluence' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600'}`}>Confluence</button>
             <button onClick={() => setActiveTab('Integrations')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Integrations' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-600'}`}><Plug size={14}/> Cloud Integrations</button>
             <button onClick={() => setActiveTab('Auvik')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap ${activeTab === 'Auvik' ? 'border-purple-600 text-purple-600' : 'border-transparent text-slate-600'}`}>Auvik</button>
+            <button onClick={() => setActiveTab('Library')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Library' ? 'border-green-600 text-green-600' : 'border-transparent text-slate-600'}`}><Library size={14}/> Frameworks</button>
             <button onClick={() => setActiveTab('Branding')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Branding' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-600'}`}><Palette size={14}/> Branding</button>
             <button onClick={() => setActiveTab('Data')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Data' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600'}`}><Database size={14}/> Data</button>
         </div>
@@ -183,7 +213,6 @@ export const Settings: React.FC<SettingsProps> = ({
                     </div>
                 </div>
             )}
-            {/* Reuse existing logic for other tabs, injecting Integrations */}
             {activeTab === 'Jira' && (
                  <div className="p-6">
                     <h3 className="font-bold mb-4">Jira Software</h3>
@@ -214,6 +243,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     </div>
                 </div>
             )}
+            {activeTab === 'Library' && renderLibrary()}
             {activeTab === 'Branding' && (
                 <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
@@ -236,12 +266,11 @@ export const Settings: React.FC<SettingsProps> = ({
                         <label className="bg-indigo-600 text-white px-4 py-2 rounded cursor-pointer"><Upload size={16} className="inline mr-2"/> Upload<input type="file" className="hidden" onChange={handleFileUpload}/></label>
                     </div>
                     <button onClick={onExportData} className="w-full border border-slate-300 px-4 py-2 rounded">Download Backup</button>
-                    <button onClick={onReloadStandards} className="w-full text-blue-600 font-bold flex items-center justify-center gap-2"><RefreshCw size={16}/> Sync Definitions</button>
                 </div>
             )}
         </div>
 
-        {activeTab !== 'Data' && (
+        {activeTab !== 'Data' && activeTab !== 'Library' && (
             <div className="p-6 bg-slate-50 border-t flex justify-end">
                 <button onClick={handleSave} className={`px-6 py-3 rounded-lg font-bold text-white transition-all flex items-center gap-2 ${isSaved ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
                     {isSaved ? <><CheckCircle size={20}/> Saved!</> : <><Save size={20}/> Save Changes</>}
