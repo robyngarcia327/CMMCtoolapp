@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, INITIAL_USERS, REQUIREMENTS_DATA } from './data/standards';
-import { Requirement, Artifact, AppView, Ticket, ConnectWiseConfig, JiraConfig, ConfluenceConfig, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, WizardProgress, UserRole, BudgetLineItem, BrandingConfig } from './types';
+import { Requirement, Artifact, AppView, Ticket, ConnectWiseConfig, JiraConfig, ConfluenceConfig, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, WizardProgress, UserRole, BudgetLineItem, BrandingConfig, Vendor } from './types';
 import { RequirementsList } from './components/RequirementsList';
 import { RequirementDetail } from './components/RequirementDetail';
 import { DocGenerator } from './components/DocGenerator';
@@ -21,6 +21,7 @@ import { ComplianceWizard } from './components/ComplianceWizard';
 import { MSPDashboard } from './components/MSPDashboard';
 import { OrganizationManager } from './components/OrganizationManager';
 import { TrainingCenter } from './components/TrainingCenter';
+import { VendorManager } from './components/VendorManager';
 import { Login } from './components/Login';
 import { storageService } from './services/storage';
 import { LayoutDashboard, ListChecks, FileEdit, MessageSquare, Menu, Network, Settings as SettingsIcon, PieChart, ShieldAlert, Monitor, Users, ChevronDown, KanbanSquare, TrendingUp, Sparkles, Building2, UserCircle, LogOut, Database, Calculator, GraduationCap } from 'lucide-react';
@@ -96,6 +97,7 @@ const App: React.FC = () => {
   const requirements = activeData.requirements;
   const risks = activeData.risks;
   const assets = activeData.assets;
+  const vendors = activeData.vendors || [];
   const users = activeData.users;
   const artifacts = activeData.artifacts;
   const tickets = activeData.tickets;
@@ -139,31 +141,25 @@ const App: React.FC = () => {
       updateActiveClientData(() => ({ cwConfig: cw, jiraConfig: jira, confluenceConfig: conf, mspBranding: branding }));
   };
 
-  // --- SMART SYNC Logic ---
   const handleReloadStandards = () => {
       const currentReqs = activeData.requirements;
-      const latestReqs = REQUIREMENTS_DATA; // Imported from code (the new big list)
-
-      // Merge Logic:
-      // 1. If a requirement ID exists in latest but not current, add it.
-      // 2. If a requirement ID exists in both, update text fields but KEEP status/response.
+      const latestReqs = REQUIREMENTS_DATA; 
       
       const mergedRequirements = latestReqs.map(latest => {
           const existing = currentReqs.find(r => r.id === latest.id);
           if (existing) {
               return {
                   ...latest,
-                  objectives: existing.objectives.length > 0 ? existing.objectives : latest.objectives, // Keep status
-                  response: existing.response, // Keep user answer
-                  scopeStatus: existing.scopeStatus, // Keep Scope Status
-                  scopeJustification: existing.scopeJustification // Keep Scope Justification
+                  objectives: existing.objectives.length > 0 ? existing.objectives : latest.objectives,
+                  response: existing.response,
+                  scopeStatus: existing.scopeStatus,
+                  scopeJustification: existing.scopeJustification,
+                  comments: existing.comments
               };
           }
-          return latest; // New requirement
+          return latest; 
       });
 
-      // Also preserve any custom requirements the user might have added (if we supported that)
-      // For now, we just replace with the merged set
       updateActiveClientData(() => ({ requirements: mergedRequirements }));
       alert(`Sync Complete! ${mergedRequirements.length} controls loaded.`);
   };
@@ -184,6 +180,17 @@ const App: React.FC = () => {
   const handleDeleteAsset = (id: string) => {
       updateActiveClientData(prev => ({ assets: prev.assets.filter(a => a.id !== id) }));
   };
+
+  // Vendor Handlers
+  const handleAddVendor = (vendor: Vendor) => {
+      updateActiveClientData(prev => ({ vendors: [...(prev.vendors || []), vendor] }));
+  };
+  const handleUpdateVendor = (vendor: Vendor) => {
+      updateActiveClientData(prev => ({ vendors: (prev.vendors || []).map(v => v.id === vendor.id ? vendor : v) }));
+  };
+  const handleDeleteVendor = (id: string) => {
+      updateActiveClientData(prev => ({ vendors: (prev.vendors || []).filter(v => v.id !== id) }));
+  };
   
   const handleAddTask = (task: ProjectTask) => {
       updateActiveClientData(prev => ({ tasks: [task, ...prev.tasks] }));
@@ -195,7 +202,6 @@ const App: React.FC = () => {
       updateActiveClientData(prev => ({ tasks: prev.tasks.filter(t => t.id !== id) }));
   };
 
-  // Budget Handlers
   const handleAddBudgetItem = (item: BudgetLineItem) => {
       updateActiveClientData(prev => ({ budgetItems: [...(prev.budgetItems || []), item] }));
   };
@@ -221,7 +227,6 @@ const App: React.FC = () => {
   
   const handleDeleteClient = (clientId: string) => {
       setClients(prev => prev.filter(c => c.id !== clientId));
-      // Optionally cleanup store in real app, but keep simple for now
   };
 
   const handleSelectReq = (req: Requirement) => {
@@ -234,7 +239,6 @@ const App: React.FC = () => {
       setCurrentUser(user);
   };
 
-  // --- Auth Simulation Handlers ---
   const handleSimulateUser = (role: UserRole) => {
       let mockUser: User | undefined;
       
@@ -255,7 +259,6 @@ const App: React.FC = () => {
       return <Login onLogin={handleLogin} />;
   }
 
-  // --- Visibility Logic ---
   const isMSP = currentUser.role === 'MSP_ADMIN' || currentUser.role === 'MSP_TECH';
   const isClientAdmin = currentUser.role === 'CLIENT_ADMIN';
 
@@ -273,7 +276,6 @@ const App: React.FC = () => {
                 onAddClient={handleAddClient} 
             />
         ) : (
-            // Client Portal Header (Locked to single client)
             <div className="px-4 py-4 border-b border-slate-800 flex items-center gap-3">
                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
                     {activeClient.logoInitial}
@@ -285,7 +287,6 @@ const App: React.FC = () => {
             </div>
         )}
 
-        {/* Framework Switcher */}
         <div className="p-4 border-b border-slate-800">
             <div className="text-xs text-slate-400 uppercase font-bold mb-2 tracking-wider">Active Standard</div>
             <div className="relative group">
@@ -308,7 +309,6 @@ const App: React.FC = () => {
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {/* MSP Only Views */}
           {isMSP && (
               <>
                 <button
@@ -329,7 +329,6 @@ const App: React.FC = () => {
               </>
           )}
 
-          {/* Common Views (Visible to Clients) */}
           <button
             onClick={() => setCurrentView(AppView.WIZARD)}
             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm font-medium ${currentView === AppView.WIZARD ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
@@ -381,8 +380,14 @@ const App: React.FC = () => {
             <Monitor size={18} />
             Asset Inventory
           </button>
+          <button
+            onClick={() => setCurrentView(AppView.VENDORS)}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm font-medium ${currentView === AppView.VENDORS ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+          >
+            <Building2 size={18} />
+            Vendor Risk
+          </button>
           
-          {/* Only Show User Directory if Admin or MSP */}
           {(isMSP || isClientAdmin) && (
               <button
                 onClick={() => setCurrentView(AppView.USERS)}
@@ -461,8 +466,6 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full relative">
-        
-        {/* Top Header / Mobile Header */}
         <div className="bg-white border-b border-slate-200 p-4 flex items-center justify-between print:hidden">
             <div className="flex items-center gap-4">
                 <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-slate-600 md:hidden">
@@ -474,7 +477,6 @@ const App: React.FC = () => {
                 </div>
             </div>
 
-            {/* User Profile / Simulator */}
             <div className="relative">
                 <button 
                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -603,6 +605,7 @@ const App: React.FC = () => {
                             onAddTicket={handleAddTicket}
                             cwConfig={cwConfig}
                             jiraConfig={jiraConfig}
+                            currentUser={currentUser}
                         />
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
@@ -665,6 +668,17 @@ const App: React.FC = () => {
                  </div>
             )}
 
+            {currentView === AppView.VENDORS && (
+                 <div className="flex-1 overflow-y-auto bg-slate-50">
+                    <VendorManager 
+                        vendors={vendors}
+                        onAddVendor={handleAddVendor}
+                        onUpdateVendor={handleUpdateVendor}
+                        onDeleteVendor={handleDeleteVendor}
+                    />
+                 </div>
+            )}
+
             {currentView === AppView.USERS && (
                  <div className="flex-1 overflow-y-auto bg-slate-50">
                     <UserManagement users={users} />
@@ -717,7 +731,6 @@ const App: React.FC = () => {
             )}
         </main>
 
-        {/* Chat Overlay */}
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
       </div>
     </div>

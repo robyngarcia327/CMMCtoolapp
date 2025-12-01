@@ -21,6 +21,14 @@ export interface TrainingModule {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
 }
 
+export interface Comment {
+  id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  timestamp: number;
+}
+
 export interface Requirement {
   id: string;
   framework: string; // e.g., 'NIST800-171', 'ISO27001', 'SOC2'
@@ -43,6 +51,12 @@ export interface Requirement {
   // Educational Resources
   references?: ReferenceLink[];
 
+  // Collaboration
+  comments?: Comment[];
+  
+  // Evidence Ingestion
+  evidenceEmail?: string; // e.g. upload+req-3.1.1@app.com
+
   mappings: {
     nist800_53?: string[];
     iso27001?: string[];
@@ -57,10 +71,11 @@ export interface Artifact {
   id: string;
   requirementId: string;
   name: string;
-  type: 'image' | 'document' | 'link';
+  type: 'image' | 'document' | 'link' | 'email';
   url: string; // dataURL for images, mock URL for files
   timestamp: number;
   notes?: string;
+  expiryDate?: number; // For tracking evidence aging (e.g. annual pen test)
 }
 
 export interface Ticket {
@@ -174,6 +189,20 @@ export interface Asset {
   criticality: 'Low' | 'Medium' | 'High';
 }
 
+export interface Vendor {
+  id: string;
+  name: string;
+  serviceProvided: string;
+  criticality: 'Low' | 'Medium' | 'High' | 'Critical';
+  contactPerson: string;
+  contactEmail: string;
+  status: 'Active' | 'Under Review' | 'Rejected';
+  hasNDASigned: boolean;
+  hasDPA: boolean; // Data Processing Agreement
+  lastAssessmentDate?: number;
+  nextAssessmentDate?: number;
+}
+
 export type UserRole = 'MSP_ADMIN' | 'MSP_TECH' | 'CLIENT_ADMIN' | 'CLIENT_USER';
 
 export interface User {
@@ -250,6 +279,7 @@ export interface ClientData {
   requirements: Requirement[];
   risks: Risk[];
   assets: Asset[];
+  vendors: Vendor[];
   users: User[];
   artifacts: Artifact[];
   tickets: Ticket[];
@@ -274,6 +304,7 @@ export enum AppView {
   NETWORK_ANALYSIS = 'NETWORK_ANALYSIS',
   RISK_REGISTER = 'RISK_REGISTER',
   INVENTORY = 'INVENTORY',
+  VENDORS = 'VENDORS', // New View
   USERS = 'USERS',
   PROJECTS = 'PROJECTS',
   BUDGET = 'BUDGET', // New View

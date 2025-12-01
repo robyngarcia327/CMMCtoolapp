@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Client, ClientData } from '../types';
-import { Users, AlertTriangle, Calendar, CheckCircle2, TrendingUp, ArrowRight, ShieldAlert, MoreHorizontal } from 'lucide-react';
+import { Users, AlertTriangle, Calendar, CheckCircle2, TrendingUp, ArrowRight, ShieldAlert, MoreHorizontal, Clock, FileWarning } from 'lucide-react';
 
 interface MSPDashboardProps {
   clients: Client[];
@@ -11,17 +11,23 @@ interface MSPDashboardProps {
 
 export const MSPDashboard: React.FC<MSPDashboardProps> = ({ clients, clientDataStore, onSelectClient }) => {
   // Helper to calculate score for a specific client
-  const getClientScore = (clientId: string) => {
+  const getClientMetrics = (clientId: string) => {
     const data = clientDataStore[clientId];
-    if (!data) return 0;
+    if (!data) return { score: 0, staleEvidence: 0 };
 
-    // Filter by the client's primary framework if possible, otherwise use all loaded requirements
-    // For simplicity in this aggregate view, we take the average met status of ALL current requirements in their profile
+    // Compliance Score
     const reqs = data.requirements;
-    if (reqs.length === 0) return 0;
-
+    const totalReqs = reqs.length || 1;
     const metCount = reqs.filter(r => r.objectives.every(o => o.status === 'met' || o.status === 'na')).length;
-    return Math.round((metCount / reqs.length) * 100);
+    const score = Math.round((metCount / totalReqs) * 100);
+
+    // Stale Evidence (Older than 365 days)
+    const staleEvidence = data.artifacts.filter(a => {
+        const ageDays = (Date.now() - a.timestamp) / (1000 * 60 * 60 * 24);
+        return ageDays > 365;
+    }).length;
+
+    return { score, staleEvidence };
   };
 
   const getStatus = (score: number) => {
@@ -31,11 +37,12 @@ export const MSPDashboard: React.FC<MSPDashboardProps> = ({ clients, clientDataS
   };
 
   const enhancedClients = clients.map(c => {
-      const score = getClientScore(c.id);
+      const metrics = getClientMetrics(c.id);
       return {
           ...c,
-          score,
-          statusObj: getStatus(score),
+          score: metrics.score,
+          staleEvidence: metrics.staleEvidence,
+          statusObj: getStatus(metrics.score),
           daysToAudit: Math.ceil((c.nextAuditDate - Date.now()) / (1000 * 60 * 60 * 24))
       };
   });
@@ -43,6 +50,7 @@ export const MSPDashboard: React.FC<MSPDashboardProps> = ({ clients, clientDataS
   const totalClients = clients.length;
   const atRiskClients = enhancedClients.filter(c => c.score < 90).length;
   const upcomingAudits = enhancedClients.filter(c => c.daysToAudit <= 30 && c.daysToAudit >= 0).length;
+  const clientsWithStaleEvidence = enhancedClients.filter(c => c.staleEvidence > 0).length;
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
@@ -53,7 +61,7 @@ export const MSPDashboard: React.FC<MSPDashboardProps> = ({ clients, clientDataS
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
               <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
                   <Users size={24} />
@@ -84,6 +92,17 @@ export const MSPDashboard: React.FC<MSPDashboardProps> = ({ clients, clientDataS
                   <div className="text-3xl font-bold text-slate-900">{upcomingAudits}</div>
               </div>
           </div>
+
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                  <FileWarning size={24} />
+              </div>
+              <div>
+                  <div className="text-sm font-bold text-slate-500 uppercase">Stale Evidence</div>
+                  <div className="text-3xl font-bold text-slate-900">{clientsWithStaleEvidence}</div>
+                  <div className="text-xs text-slate-400">Clients w/ expired docs</div>
+              </div>
+          </div>
       </div>
 
       {/* Main Client Table */}
@@ -102,6 +121,7 @@ export const MSPDashboard: React.FC<MSPDashboardProps> = ({ clients, clientDataS
                           <th className="p-4">Client Name</th>
                           <th className="p-4">Framework</th>
                           <th className="p-4">Compliance Score</th>
+                          <th className="p-4">Evidence Health</th>
                           <th className="p-4">Status</th>
                           <th className="p-4">Recertification Due</th>
                           <th className="p-4 text-right">Action</th>
@@ -140,6 +160,17 @@ export const MSPDashboard: React.FC<MSPDashboardProps> = ({ clients, clientDataS
                                   </div>
                               </td>
                               <td className="p-4">
+                                  {client.staleEvidence > 0 ? (
+                                      <span className="flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded w-fit">
+                                          <Clock size={12} /> {client.staleEvidence} Expired
+                                      </span>
+                                  ) : (
+                                      <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded w-fit">
+                                          <CheckCircle2 size={12} /> Healthy
+                                      </span>
+                                  )}
+                              </td>
+                              <td className="p-4">
                                   <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${client.statusObj.color}`}>
                                       {client.statusObj.label}
                                   </span>
@@ -168,46 +199,6 @@ export const MSPDashboard: React.FC<MSPDashboardProps> = ({ clients, clientDataS
                       ))}
                   </tbody>
               </table>
-          </div>
-      </div>
-
-      {/* Upcoming Timeline Visualization */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-              <Calendar className="text-indigo-600" /> Audit Lifecycle Timeline (Next 6 Months)
-          </h3>
-          <div className="relative pt-6 pb-2">
-               <div className="absolute top-8 left-0 w-full h-1 bg-slate-100 rounded-full"></div>
-               <div className="flex justify-between relative">
-                   {[0,1,2,3,4,5].map(offset => {
-                       const date = new Date();
-                       date.setMonth(date.getMonth() + offset);
-                       const monthLabel = date.toLocaleString('default', { month: 'short' });
-                       
-                       // Check for audits in this month
-                       const auditsInMonth = enhancedClients.filter(c => {
-                           const d = new Date(c.nextAuditDate);
-                           return d.getMonth() === date.getMonth() && d.getFullYear() === date.getFullYear();
-                       });
-
-                       return (
-                           <div key={offset} className="flex flex-col items-center relative group">
-                               <div className="w-4 h-4 rounded-full bg-slate-300 border-4 border-white shadow-sm z-10 mb-2"></div>
-                               <span className="text-xs font-bold text-slate-500 uppercase">{monthLabel}</span>
-                               
-                               {/* Audit Markers */}
-                               {auditsInMonth.length > 0 && (
-                                   <div className="absolute top-[-40px] flex flex-col items-center animate-in slide-in-from-bottom-2">
-                                       <div className="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded shadow-md whitespace-nowrap mb-1">
-                                           {auditsInMonth.length} Audit{auditsInMonth.length > 1 ? 's' : ''}
-                                       </div>
-                                       <div className="w-0.5 h-4 bg-indigo-600"></div>
-                                   </div>
-                               )}
-                           </div>
-                       );
-                   })}
-               </div>
           </div>
       </div>
     </div>

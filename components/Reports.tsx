@@ -1,13 +1,14 @@
+
 import React, { useState } from 'react';
 import { Requirement } from '../types';
 import { NIST_FAMILIES, NIST_CSF_FUNCTIONS } from '../data/standards';
-import { Printer, FileText, BarChart3, AlertOctagon, CheckSquare, Download } from 'lucide-react';
+import { Printer, FileText, BarChart3, AlertOctagon, CheckSquare, Download, Presentation, ShieldCheck, XCircle } from 'lucide-react';
 
 interface ReportsProps {
   requirements: Requirement[];
 }
 
-type ReportType = 'EXECUTIVE' | 'POAM' | 'MATRIX';
+type ReportType = 'EXECUTIVE' | 'POAM' | 'MATRIX' | 'QBR';
 
 export const Reports: React.FC<ReportsProps> = ({ requirements }) => {
   const [activeReport, setActiveReport] = useState<ReportType>('EXECUTIVE');
@@ -48,6 +49,13 @@ export const Reports: React.FC<ReportsProps> = ({ requirements }) => {
         >
           <BarChart3 size={18} /> Executive Summary
         </button>
+
+        <button
+          onClick={() => setActiveReport('QBR')}
+          className={`text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeReport === 'QBR' ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}
+        >
+          <Presentation size={18} /> Audit Readiness (QBR)
+        </button>
         
         <button
           onClick={() => setActiveReport('POAM')}
@@ -82,6 +90,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements }) => {
             <div>
                 <h1 className="text-3xl font-bold text-slate-900 uppercase tracking-tight">
                     {activeReport === 'EXECUTIVE' && 'Executive Compliance Summary'}
+                    {activeReport === 'QBR' && 'Audit Readiness Scorecard'}
                     {activeReport === 'POAM' && 'Plan of Action & Milestones (POA&M)'}
                     {activeReport === 'MATRIX' && 'Compliance Traceability Matrix'}
                 </h1>
@@ -142,6 +151,67 @@ export const Reports: React.FC<ReportsProps> = ({ requirements }) => {
                     <strong>Analyst Note:</strong> This report reflects the current assessment status. Areas with scores below 100% require immediate attention to meet CMMC Level 2 certification requirements.
                 </div>
             </div>
+          )}
+
+          {activeReport === 'QBR' && (
+              <div className="space-y-8">
+                  <div className="text-center mb-8">
+                      <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+                          This scorecard provides a high-level view of cybersecurity maturity. 
+                          Green indicates audit-ready. Red indicates significant gaps requiring investment.
+                      </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {NIST_FAMILIES.map(family => {
+                          const score = getFamilyScore(family.id);
+                          const hasReqs = requirements.some(r => r.family === family.id);
+                          if (!hasReqs) return null;
+
+                          let statusColor = 'bg-red-500';
+                          let statusText = 'Critical Gaps';
+                          let icon = <XCircle className="text-white" size={24} />;
+
+                          if (score === 100) {
+                              statusColor = 'bg-green-500';
+                              statusText = 'Audit Ready';
+                              icon = <ShieldCheck className="text-white" size={24} />;
+                          } else if (score >= 70) {
+                              statusColor = 'bg-amber-500';
+                              statusText = 'Remediation in Progress';
+                              icon = <AlertOctagon className="text-white" size={24} />;
+                          }
+
+                          return (
+                              <div key={family.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden flex shadow-sm">
+                                  <div className={`w-16 flex items-center justify-center ${statusColor}`}>
+                                      {icon}
+                                  </div>
+                                  <div className="p-4 flex-1">
+                                      <div className="flex justify-between items-start mb-1">
+                                          <div>
+                                              <h4 className="font-bold text-slate-900">{family.name}</h4>
+                                              <div className="text-xs text-slate-500 font-mono">Domain: {family.id}</div>
+                                          </div>
+                                          <div className={`text-xs font-bold px-2 py-1 rounded uppercase ${statusColor} bg-opacity-10 text-slate-800`}>
+                                              {statusText}
+                                          </div>
+                                      </div>
+                                      <div className="mt-3">
+                                          <div className="flex justify-between text-xs text-slate-500 mb-1">
+                                              <span>Progress</span>
+                                              <span>{score}%</span>
+                                          </div>
+                                          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                              <div className={`${statusColor} h-full`} style={{ width: `${score}%` }}></div>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                          );
+                      })}
+                  </div>
+              </div>
           )}
 
           {activeReport === 'POAM' && (

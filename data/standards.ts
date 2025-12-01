@@ -765,6 +765,7 @@ export const createInitialClientData = (useMockData = false): ClientData => {
         users: useMockData ? [...INITIAL_USERS] : [],
         tasks: useMockData ? [...INITIAL_TASKS] : [],
         budgetItems: useMockData ? [...INITIAL_BUDGET] : [],
+        vendors: [],
         artifacts: [],
         tickets: [],
         versions: [],
