@@ -217,7 +217,6 @@ export const INITIAL_CLIENTS: Client[] = [
 ];
 
 export const createInitialClientData = (useMockData = false): ClientData => {
-    // Deep copy requirements to ensure clean status for new client
     const cleanRequirements = JSON.parse(JSON.stringify(REQUIREMENTS_DATA || []));
     
     return {
