@@ -28,6 +28,16 @@ export interface Comment {
   timestamp: number;
 }
 
+// New Interface for Manual POA&M Editing
+export interface PoamEntry {
+    weaknessName?: string; // Allow overriding the generic control title
+    scheduledCompletionDate?: string;
+    milestones?: string;
+    poc?: string; // Point of Contact
+    status?: 'Ongoing' | 'Completed' | 'Planned' | 'Delayed' | 'Risk Accepted';
+    comments?: string;
+}
+
 export interface Requirement {
   id: string;
   framework: string;
@@ -45,6 +55,8 @@ export interface Requirement {
   references?: ReferenceLink[];
   comments?: Comment[];
   evidenceEmail?: string;
+  // New Field: Stores manual POA&M data
+  poam?: PoamEntry; 
   mappings: {
     nist800_53?: string[];
     iso27001?: string[];
@@ -197,8 +209,7 @@ export interface User {
   lastLogin: number;
   mfaEnabled: boolean;
   hasPasskey: boolean;
-  // New Fields for Asset Management
-  isCuiAuthorized: boolean; // Flag for CUI access
+  isCuiAuthorized: boolean;
   iamSource?: 'Manual' | 'Microsoft365' | 'GoogleWorkspace' | 'Okta';
   securityClearance?: string;
 }

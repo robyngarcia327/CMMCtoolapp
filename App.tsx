@@ -185,7 +185,7 @@ const App: React.FC = () => {
           });
           return { requirements: mergedReqs };
       });
-      alert('Standards Library Updated! Your assessments have been merged with the latest controls.');
+      alert('Standards synced successfully!');
   };
 
   if (!currentUser) {
@@ -533,7 +533,7 @@ const App: React.FC = () => {
 
             {currentView === AppView.REPORTS && (
                 <div className="flex-1 overflow-hidden bg-slate-50">
-                    <Reports requirements={requirements} />
+                    <Reports requirements={requirements} onUpdateRequirement={handleUpdateRequirement} />
                 </div>
             )}
 
