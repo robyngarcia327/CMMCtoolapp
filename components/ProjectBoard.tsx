@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { ProjectTask, Requirement, Risk, User } from '../types';
-import { KanbanSquare, Plus, Calendar, User as UserIcon, AlertTriangle, CheckCircle2, ChevronRight, X, ArrowRight, ArrowLeft } from 'lucide-react';
+import { KanbanSquare, Plus, Calendar, User as UserIcon, AlertTriangle, CheckCircle2, ChevronRight, X, ArrowRight, ArrowLeft, Download } from 'lucide-react';
 
 interface ProjectBoardProps {
   tasks: ProjectTask[];
@@ -56,7 +55,6 @@ export const ProjectBoard: React.FC<ProjectBoardProps> = ({
   const importFromPoam = () => {
       let count = 0;
       unmetReqs.forEach(req => {
-          // Check if already exists
           if (tasks.some(t => t.linkedRequirementId === req.id)) return;
           
           const task: ProjectTask = {
@@ -76,7 +74,6 @@ export const ProjectBoard: React.FC<ProjectBoardProps> = ({
   const importFromRisks = () => {
       let count = 0;
       openRisks.forEach(risk => {
-           // Check if already exists
           if (tasks.some(t => t.linkedRiskId === risk.id)) return;
 
           const task: ProjectTask = {
@@ -84,13 +81,47 @@ export const ProjectBoard: React.FC<ProjectBoardProps> = ({
               title: `Mitigate: ${risk.description.substring(0, 40)}...`,
               description: `Execute remediation plan: ${risk.remediation}`,
               status: 'backlog',
-              priority: (risk.impact || 0) >= 4 ? 'High' : 'Medium', // FIXED: Added safe check for impact
+              priority: (risk.impact || 0) >= 4 ? 'High' : 'Medium',
               linkedRiskId: risk.id
           };
           onAddTask(task);
           count++;
       });
       alert(`Imported ${count} tasks from Risk Register.`);
+  };
+
+  // --- NEW: Export Functionality ---
+  const handleExportPoam = () => {
+      // Filter for active items (not done)
+      const activeTasks = tasks.filter(t => t.status !== 'done');
+      
+      if (activeTasks.length === 0) {
+          alert("No active tasks to export.");
+          return;
+      }
+
+      // Create CSV Header
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Control ID,Weakness Description,Priority,Status,Scheduled Completion,Milestones\n";
+
+      // Add Rows
+      activeTasks.forEach(task => {
+          const controlId = task.linkedRequirementId || task.linkedRiskId || "N/A";
+          const desc = `"${task.title} - ${task.description.replace(/"/g, '""')}"`; // Escape quotes
+          const date = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "TBD";
+          
+          const row = `${controlId},${desc},${task.priority},${task.status},${date},See Task Details`;
+          csvContent += row + "\n";
+      });
+
+      // Trigger Download
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `POAM_Export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
   };
 
   const columns: { id: ProjectTask['status']; title: string; color: string }[] = [
@@ -120,6 +151,13 @@ export const ProjectBoard: React.FC<ProjectBoardProps> = ({
             <p className="text-slate-600">Track deployment and remediation tasks.</p>
         </div>
         <div className="flex gap-2">
+             <button 
+                onClick={handleExportPoam}
+                className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 text-sm font-medium flex items-center gap-2 shadow-sm"
+                title="Download POA&M CSV"
+            >
+                <Download size={16} /> Export POA&M
+            </button>
              <button 
                 onClick={importFromPoam}
                 className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-sm font-medium flex items-center gap-2"
@@ -197,7 +235,6 @@ export const ProjectBoard: React.FC<ProjectBoardProps> = ({
           </div>
       )}
 
-      {/* Board Columns */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4">
           <div className="flex h-full gap-6 min-w-[1000px]">
               {columns.map(col => {
@@ -217,7 +254,6 @@ export const ProjectBoard: React.FC<ProjectBoardProps> = ({
                                   return (
                                       <div key={task.id} className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 hover:shadow-md transition-shadow group relative">
                                           
-                                          {/* Status Controls Overlay (visible on hover) */}
                                           <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white pl-2">
                                               {col.id !== 'backlog' && (
                                                 <button onClick={() => moveTask(task, 'left')} className="p-1 hover:bg-slate-100 rounded text-slate-500" title="Move Back">
