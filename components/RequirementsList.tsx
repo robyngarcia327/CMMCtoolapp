@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
-import { Requirement, AssessmentObjective } from '../types';
+import { Requirement } from '../types';
 import { NIST_FAMILIES } from '../data/standards';
-import { ChevronRight, CheckCircle2, Circle, Info, Filter } from 'lucide-react';
+import { Info, Filter } from 'lucide-react';
 
 interface RequirementsListProps {
   requirements: Requirement[];
@@ -48,7 +47,7 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
             className="w-full p-2 pl-9 bg-white border border-slate-300 rounded-lg text-sm appearance-none focus:ring-2 focus:ring-blue-500 outline-none"
             >
             <option value="ALL">All Families / Domains</option>
-            {families.map(f => (
+            {families.map((f: any) => (
                 <option key={f.id} value={f.id}>{f.name}</option>
             ))}
             </select>

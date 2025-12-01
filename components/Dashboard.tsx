@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Requirement, Artifact, Framework } from '../types';
 import { NIST_FAMILIES, NIST_CSF_FUNCTIONS } from '../data/standards';
@@ -30,7 +29,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, a
   const complianceScore = totalReqs > 0 ? Math.round((metReqs / totalReqs) * 100) : 0;
 
   // Calculate Family Stats
-  // Only use NIST Families structure if we are in NIST mode, otherwise just group by family string
   let familyStats;
   
   if (activeFramework.id === 'NIST800-171') {
@@ -65,7 +63,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, a
       });
   }
 
-  // Calculate CSF Stats (relevant mostly for NIST but we show mapping overlap if exists)
+  // Calculate CSF Stats
   const csfStats = NIST_CSF_FUNCTIONS.map(func => {
     const relevantReqs = activeReqs.filter(r => 
         r.mappings.nist_csf?.some(mapping => mapping.startsWith(func.id))
@@ -154,7 +152,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, a
             </div>
         </div>
 
-        {/* Framework Overlay (NIST CSF) - Only show if current framework maps to it */}
+        {/* Framework Overlay (NIST CSF) */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
             <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
                 <Layers size={20} className="text-indigo-600"/> NIST CSF 2.0 Coverage
@@ -179,29 +177,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, a
 
         {/* Detailed Breakdown */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            {/* Family Breakdown Chart */}
             <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
                     <PieChart size={20} className="text-blue-600"/> Breakdown by Domain / Family
                 </h3>
                 <div className="space-y-5">
-                    {familyStats?.map(stat => (
-                        <div key={stat!.id}>
+                    {familyStats?.map((stat: any) => (
+                        <div key={stat.id}>
                             <div className="flex justify-between items-end mb-1">
                                 <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                                    <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 line-clamp-1 max-w-[80px]">{stat!.id}</span>
-                                    {stat!.name}
+                                    <span className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 line-clamp-1 max-w-[80px]">{stat.id}</span>
+                                    {stat.name}
                                 </span>
-                                <span className="text-xs font-bold text-slate-900">{stat!.met}/{stat!.total} ({stat!.percent}%)</span>
+                                <span className="text-xs font-bold text-slate-900">{stat.met}/{stat.total} ({stat.percent}%)</span>
                             </div>
                             <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                                 <div 
                                     className={`h-full rounded-full transition-all duration-700 ${
-                                        stat!.percent === 100 ? 'bg-green-500' : 
-                                        stat!.percent > 50 ? 'bg-blue-500' : 'bg-amber-500'
+                                        stat.percent === 100 ? 'bg-green-500' : 
+                                        stat.percent > 50 ? 'bg-blue-500' : 'bg-amber-500'
                                     }`} 
-                                    style={{ width: `${stat!.percent}%` }}
+                                    style={{ width: `${stat.percent}%` }}
                                 ></div>
                             </div>
                         </div>
@@ -212,7 +208,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, a
                 </div>
             </div>
 
-            {/* Recent Activity / Audit Log */}
+            {/* Recent Activity */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <h3 className="font-bold text-slate-800 mb-6">Recent Evidence</h3>
                 <div className="space-y-0 border-l-2 border-slate-100 ml-2">

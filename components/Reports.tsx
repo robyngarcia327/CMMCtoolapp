@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Requirement } from '../types';
 import { NIST_FAMILIES, NIST_CSF_FUNCTIONS } from '../data/standards';
@@ -121,7 +120,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements }) => {
                 <div>
                     <h3 className="text-xl font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">Compliance by Control Family</h3>
                     <div className="grid grid-cols-1 gap-4">
-                        {NIST_FAMILIES.map(family => {
+                        {NIST_FAMILIES.map((family: any) => {
                             const score = getFamilyScore(family.id);
                             const hasReqs = requirements.some(r => r.family === family.id);
                             if (!hasReqs) return null;
@@ -163,7 +162,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements }) => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {NIST_FAMILIES.map(family => {
+                      {NIST_FAMILIES.map((family: any) => {
                           const score = getFamilyScore(family.id);
                           const hasReqs = requirements.some(r => r.family === family.id);
                           if (!hasReqs) return null;

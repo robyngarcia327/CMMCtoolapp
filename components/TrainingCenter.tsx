@@ -1,17 +1,16 @@
-
 import React, { useState } from 'react';
 import { TRAINING_MODULES, NIST_FAMILIES } from '../data/standards';
-import { BookOpen, PlayCircle, Clock, CheckCircle2, ChevronRight, GraduationCap } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle2, ChevronRight, GraduationCap } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 export const TrainingCenter: React.FC = () => {
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   
-  const activeModule = TRAINING_MODULES.find(m => m.id === activeModuleId);
+  const activeModule = TRAINING_MODULES.find((m: any) => m.id === activeModuleId);
 
   // Group modules by family
-  const familiesWithTraining = NIST_FAMILIES.filter(f => 
-      TRAINING_MODULES.some(m => m.familyId === f.id)
+  const familiesWithTraining = NIST_FAMILIES.filter((f: any) => 
+      TRAINING_MODULES.some((m: any) => m.familyId === f.id)
   );
 
   return (
@@ -32,13 +31,13 @@ export const TrainingCenter: React.FC = () => {
             
             {/* Library / List */}
             <div className={`lg:col-span-4 space-y-6 ${activeModule ? 'hidden lg:block' : ''}`}>
-                {familiesWithTraining.map(family => (
+                {familiesWithTraining.map((family: any) => (
                     <div key={family.id} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
                             <span className="font-bold text-slate-700">{family.id} - {family.name}</span>
                         </div>
                         <div className="divide-y divide-slate-100">
-                            {TRAINING_MODULES.filter(m => m.familyId === family.id).map(module => (
+                            {TRAINING_MODULES.filter((m: any) => m.familyId === family.id).map((module: any) => (
                                 <button
                                     key={module.id}
                                     onClick={() => setActiveModuleId(module.id)}

@@ -18,10 +18,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Auto-fill demo credentials
   useEffect(() => {
     const timer = setTimeout(() => {
-      // For demo convenience only
       setEmail('alice@msp.com'); 
     }, 500);
     return () => clearTimeout(timer);
@@ -32,15 +30,13 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setIsLoading(true);
     setError('');
 
-    // Simulate API Lookup
     setTimeout(() => {
-        const user = INITIAL_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
+        // Explicitly cast 'u' to avoid implicit any error
+        const user = INITIAL_USERS.find((u: any) => u.email.toLowerCase() === email.toLowerCase());
         
         if (user) {
             setFoundUser(user);
             setIsLoading(false);
-
-            // Determine next step based on user security settings
             if (user.hasPasskey) {
                 setStep('PASSKEY_PROMPT');
             } else {
@@ -55,10 +51,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const handlePasskeyAuth = () => {
       setIsLoading(true);
-      // Simulate WebAuthn Prompt
       setTimeout(() => {
           setIsLoading(false);
-          // 80% chance of success for demo
           setStep('SUCCESS');
           setTimeout(() => onLogin(foundUser!), 1000);
       }, 2000);
@@ -67,7 +61,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const handlePasswordSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       setIsLoading(true);
-      // Demo password check - allow anything non-empty
       setTimeout(() => {
           setIsLoading(false);
           if (foundUser?.mfaEnabled) {
@@ -82,7 +75,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const handleMfaSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       setIsLoading(true);
-      // Demo MFA check
       setTimeout(() => {
           setIsLoading(false);
           setStep('SUCCESS');
@@ -110,7 +102,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative animate-in zoom-in-95 duration-500">
          <div className="h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500"></div>
-         
          <div className="p-8">
              {step === 'IDENTIFIER' && (
                  <form onSubmit={handleIdentifierSubmit} className="space-y-6">
@@ -118,7 +109,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                          <h2 className="text-xl font-bold text-slate-800">Sign In</h2>
                          <p className="text-sm text-slate-500">Enter your email to continue</p>
                      </div>
-                     
                      <div className="space-y-2">
                          <label className="text-xs font-bold text-slate-500 uppercase">Email Address</label>
                          <div className="relative">
@@ -134,13 +124,11 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                              />
                          </div>
                      </div>
-
                      {error && (
                          <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100 flex items-center gap-2">
                              <Lock size={16} /> {error}
                          </div>
                      )}
-
                      <button 
                         type="submit" 
                         disabled={isLoading}
@@ -150,7 +138,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                      </button>
                  </form>
              )}
-
              {step === 'PASSKEY_PROMPT' && (
                  <div className="text-center space-y-6">
                       <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto animate-pulse">
@@ -160,7 +147,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                           <h2 className="text-xl font-bold text-slate-800">Verify Identity</h2>
                           <p className="text-sm text-slate-500 mt-1">Use your device passkey (FaceID / TouchID)</p>
                       </div>
-                      
                       <button 
                         onClick={handlePasskeyAuth}
                         disabled={isLoading}
@@ -169,13 +155,11 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         {isLoading ? <Loader2 className="animate-spin" /> : <Fingerprint size={20} />}
                         Authenticate with Passkey
                      </button>
-
                      <button onClick={() => setStep('PASSWORD')} className="text-sm text-slate-500 hover:text-blue-600 underline">
                          Use password instead
                      </button>
                  </div>
              )}
-
              {step === 'PASSWORD' && (
                  <form onSubmit={handlePasswordSubmit} className="space-y-6">
                      <div className="text-center mb-6">
@@ -185,7 +169,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                          <h2 className="text-lg font-bold text-slate-800">Welcome, {foundUser?.name.split(' ')[0]}</h2>
                          <p className="text-sm text-slate-500">{foundUser?.email}</p>
                      </div>
-
                      <div className="space-y-2">
                          <label className="text-xs font-bold text-slate-500 uppercase">Password</label>
                          <input 
@@ -198,7 +181,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                             placeholder="••••••••"
                          />
                      </div>
-
                      <button 
                         type="submit" 
                         disabled={isLoading}
@@ -206,18 +188,15 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                      >
                         {isLoading ? <Loader2 className="animate-spin" /> : 'Sign In'}
                      </button>
-
                      <div className="relative py-2">
                          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
                          <div className="relative flex justify-center"><span className="bg-white px-2 text-xs text-slate-400 uppercase">Or</span></div>
                      </div>
-
                      <button type="button" onClick={handleMagicLink} className="w-full py-3 border border-slate-200 text-slate-600 rounded-xl font-medium hover:bg-slate-50 transition-colors">
                          Email me a Magic Link
                      </button>
                  </form>
              )}
-
              {step === 'MFA_TOTP' && (
                  <form onSubmit={handleMfaSubmit} className="space-y-6 text-center">
                      <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto">
@@ -227,7 +206,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                          <h2 className="text-xl font-bold text-slate-800">Two-Factor Authentication</h2>
                          <p className="text-sm text-slate-500 mt-1">Enter the 6-digit code from your authenticator app.</p>
                      </div>
-
                      <input 
                         type="text" 
                         maxLength={6}
@@ -237,7 +215,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         className="w-full text-center text-3xl font-mono tracking-widest py-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                         placeholder="000 000"
                      />
-
                      <button 
                         type="submit" 
                         disabled={isLoading || mfaCode.length < 6}
@@ -247,7 +224,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                      </button>
                  </form>
              )}
-
              {step === 'SUCCESS' && (
                  <div className="text-center py-8 space-y-4 animate-in zoom-in duration-300">
                      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
@@ -258,12 +234,10 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                  </div>
              )}
          </div>
-         
          <div className="bg-slate-50 p-4 text-center text-xs text-slate-400 border-t border-slate-100">
              Protected by Cyber ComplAI SSO • CMMC Level 2 Compliant
          </div>
       </div>
-      
       <div className="mt-8 text-slate-500 text-sm flex gap-6">
           <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
           <a href="#" className="hover:text-white transition-colors">Security Center</a>
