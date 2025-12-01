@@ -1,4 +1,3 @@
-
 export interface AssessmentObjective {
   id: string;
   description: string;
@@ -13,10 +12,10 @@ export interface ReferenceLink {
 
 export interface TrainingModule {
   id: string;
-  familyId: string; // Links to 'AC', 'PE', etc.
+  familyId: string;
   title: string;
   description: string;
-  content: string; // Markdown content for the lesson
+  content: string;
   durationMinutes: number;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
 }
@@ -31,37 +30,26 @@ export interface Comment {
 
 export interface Requirement {
   id: string;
-  framework: string; // e.g., 'NIST800-171', 'ISO27001', 'SOC2'
+  framework: string;
   family: string;
   title: string;
   description: string;
   discussion: string;
-  level: string; // e.g., "1", "2", "3" or "Level 1"
+  level: string;
   objectives: AssessmentObjective[];
-  sprsWeight?: number; // SPRS Score weight (typically 1, 3, or 5)
-  
-  // New fields for Onboarding Wizard
-  interviewQuestion?: string; // Friendly question text
-  response?: string; // User's text answer to the question
-
-  // New Scoping Fields
+  sprsWeight?: number;
+  interviewQuestion?: string;
+  response?: string;
   scopeStatus?: 'IN_SCOPE' | 'OUT_OF_SCOPE';
-  scopeJustification?: string; // Reason for N/A (e.g. "We do not use wireless")
-
-  // Educational Resources
+  scopeJustification?: string;
   references?: ReferenceLink[];
-
-  // Collaboration
   comments?: Comment[];
-  
-  // Evidence Ingestion
-  evidenceEmail?: string; // e.g. upload+req-3.1.1@app.com
-
+  evidenceEmail?: string;
   mappings: {
     nist800_53?: string[];
     iso27001?: string[];
-    nist_csf?: string[]; // e.g., "PR.AC-1", "ID.AM-1"
-    cis_v8?: string[];   // e.g., "3.1", "5.2"
+    nist_csf?: string[];
+    cis_v8?: string[];
     soc2?: string[];
     hipaa?: string[];
   };
@@ -71,11 +59,13 @@ export interface Artifact {
   id: string;
   requirementId: string;
   name: string;
-  type: 'image' | 'document' | 'link' | 'email';
-  url: string; // dataURL for images, mock URL for files
+  type: 'image' | 'document' | 'link' | 'email' | 'json'; // Added json for API data
+  url: string;
   timestamp: number;
   notes?: string;
-  expiryDate?: number; // For tracking evidence aging (e.g. annual pen test)
+  expiryDate?: number;
+  containsCui?: boolean; // FIPS protection flag
+  source?: 'USER_UPLOAD' | 'API_AUTO'; // Automation flag
 }
 
 export interface Ticket {
@@ -85,9 +75,9 @@ export interface Ticket {
   description: string;
   priority: 'Low' | 'Medium' | 'High' | 'Critical';
   status: 'New' | 'In Progress' | 'Resolved';
-  board: string; // CW Service Board or Jira Project Name
+  board: string;
   createdAt: number;
-  ticketNumber: string; // e.g., #1024 or PROJ-123
+  ticketNumber: string;
   source: 'ConnectWise' | 'Jira';
   url?: string;
 }
@@ -102,11 +92,11 @@ export interface ConnectWiseConfig {
 }
 
 export interface JiraConfig {
-  baseUrl: string; // e.g., https://mycompany.atlassian.net
+  baseUrl: string;
   email: string;
   apiToken: string;
-  projectKey: string; // e.g., SEC, COMP
-  issueType: string; // e.g., Task, Bug
+  projectKey: string;
+  issueType: string;
   enabled: boolean;
 }
 
@@ -114,7 +104,7 @@ export interface ConfluenceConfig {
   baseUrl: string;
   email: string;
   apiToken: string;
-  spaceKey: string; // e.g., COMP, ISMS
+  spaceKey: string;
   parentPageId?: string;
   enabled: boolean;
 }
@@ -126,7 +116,6 @@ export interface AuvikConfig {
   enabled: boolean;
 }
 
-// Represents a device fetched from Auvik
 export interface AuvikDevice {
   id: string;
   name: string;
@@ -140,11 +129,9 @@ export interface AuvikDevice {
 export interface DocGenSession {
   id: string;
   type: 'SSP' | 'WISP';
-  answers: Record<string, string>; // QuestionID -> Answer
+  answers: Record<string, string>;
   generatedContent: string;
 }
-
-// --- New Features Interfaces ---
 
 export interface Risk {
   id: string;
@@ -154,30 +141,25 @@ export interface Risk {
   owner: string;
   status: 'Open' | 'Mitigated' | 'Accepted' | 'Transferred';
   dateIdentified: number;
-  
-  // Assessment Methodology
   assessmentType: 'Qualitative' | 'Quantitative';
-
-  // Qualitative Fields (Legacy/Simple)
-  likelihood?: 1 | 2 | 3 | 4 | 5; // 1=Rare, 5=Almost Certain
-  impact?: 1 | 2 | 3 | 4 | 5; // 1=Insignificant, 5=Catastrophic
-  
-  // Quantitative / FAIR Fields
-  threatEventFrequency?: number; // (TEF) Times per year event occurs
-  vulnerability?: number; // (V) Probability of successful exploit (0.0 - 1.0)
-  lossMagnitude?: number; // (PLM) Estimated financial loss per event ($)
-  
-  // Computed
-  riskScore: number; // For Qualitative: Likelihood * Impact. For FAIR: ALE ($)
+  likelihood?: 1 | 2 | 3 | 4 | 5;
+  impact?: 1 | 2 | 3 | 4 | 5;
+  threatEventFrequency?: number;
+  vulnerability?: number;
+  lossMagnitude?: number;
+  riskScore: number;
 }
 
 export interface RiskProfileVersion {
   id: string;
-  versionNumber: string; // e.g., "v1.0", "v1.1"
+  versionNumber: string;
   timestamp: number;
   createdBy: string;
-  risks: Risk[]; // Snapshot of risks at that time
+  risks: Risk[];
 }
+
+// Updated for CMMC Specific Asset Classification
+export type CmmcAssetCategory = 'CUI' | 'FCI' | 'SPA' | 'CRMA' | 'Out-of-Scope';
 
 export interface Asset {
   id: string;
@@ -185,7 +167,8 @@ export interface Asset {
   type: 'Server' | 'Workstation' | 'Mobile' | 'Software' | 'Network Device';
   owner: string;
   location: string;
-  inScopeCUI: boolean; // Is it part of the boundary?
+  cmmcCategory: CmmcAssetCategory; // Replaces boolean
+  enclave?: string; // e.g. "CUI VLAN"
   criticality: 'Low' | 'Medium' | 'High';
 }
 
@@ -198,7 +181,7 @@ export interface Vendor {
   contactEmail: string;
   status: 'Active' | 'Under Review' | 'Rejected';
   hasNDASigned: boolean;
-  hasDPA: boolean; // Data Processing Agreement
+  hasDPA: boolean;
   lastAssessmentDate?: number;
   nextAssessmentDate?: number;
 }
@@ -207,15 +190,14 @@ export type UserRole = 'MSP_ADMIN' | 'MSP_TECH' | 'CLIENT_ADMIN' | 'CLIENT_USER'
 
 export interface User {
   id: string;
-  organizationId: string; // Links to Client.id
+  organizationId: string;
   name: string;
   email: string;
   role: UserRole;
   department: string;
   lastLogin: number;
-  // Auth Security Fields
   mfaEnabled: boolean;
-  hasPasskey: boolean; // Supports WebAuthn/Device Keys
+  hasPasskey: boolean;
 }
 
 export interface ProjectTask {
@@ -224,21 +206,28 @@ export interface ProjectTask {
   description: string;
   status: 'backlog' | 'in_progress' | 'review' | 'done';
   priority: 'Low' | 'Medium' | 'High';
-  assigneeId?: string; // Links to User.id
-  linkedRequirementId?: string; // Links to POA&M item
-  linkedRiskId?: string; // Links to Risk
+  assigneeId?: string;
+  linkedRequirementId?: string;
+  linkedRiskId?: string;
   dueDate?: number;
 }
 
-// --- Budgeting Interfaces ---
 export interface BudgetLineItem {
   id: string;
-  linkedRequirementId: string; // The gap this fixes
-  name: string; // e.g., "MFA License (Duo)"
+  linkedRequirementId: string;
+  name: string;
   category: 'Software' | 'Hardware' | 'Labor' | 'Consulting';
   costType: 'One-Time' | 'Recurring/Year';
   amount: number;
   notes?: string;
+}
+
+// --- Integration Configurations ---
+export interface IntegrationConfig {
+    enabled: boolean;
+    connectedAt?: number;
+    accountName?: string;
+    // In a real app, you might store encrypted tokens here or in a backend
 }
 
 export interface Framework {
@@ -248,12 +237,10 @@ export interface Framework {
 }
 
 export interface BrandingConfig {
-  logoUrl?: string; // Data URL or Image Link
-  primaryColor?: string; // Hex Code
+  logoUrl?: string;
+  primaryColor?: string;
   secondaryColor?: string;
 }
-
-// --- MSP Client Interfaces ---
 
 export interface Client {
   id: string;
@@ -261,12 +248,10 @@ export interface Client {
   industry: string;
   contactName: string;
   logoInitial: string;
-  // MSP Fields
-  primaryFramework: string; // e.g. "CMMC L2"
-  nextAuditDate: number; // Timestamp
+  primaryFramework: string;
+  nextAuditDate: number;
   accountManager: string;
-  isParent: boolean; // Is this the MSP / Parent Organization?
-  // Branding
+  isParent: boolean;
   branding?: BrandingConfig;
 }
 
@@ -289,29 +274,35 @@ export interface ClientData {
   jiraConfig: JiraConfig;
   confluenceConfig: ConfluenceConfig;
   auvikConfig: AuvikConfig;
-  // MSP Global Branding (Only relevant if isParent is true, or passed down)
+  
+  // Cloud Integrations
+  m365Config: IntegrationConfig;
+  awsConfig: IntegrationConfig;
+  googleConfig: IntegrationConfig;
+  siemConfig: IntegrationConfig;
+
   mspBranding?: BrandingConfig;
   versions: RiskProfileVersion[];
   wizardProgress: WizardProgress;
 }
 
 export enum AppView {
-  MSP_DASHBOARD = 'MSP_DASHBOARD', // Top-level MSP View
-  ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER', // Central Client/User Management
+  MSP_DASHBOARD = 'MSP_DASHBOARD',
+  ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
   DASHBOARD = 'DASHBOARD',
   REQUIREMENTS = 'REQUIREMENTS',
   DOC_GENERATOR = 'DOC_GENERATOR',
   NETWORK_ANALYSIS = 'NETWORK_ANALYSIS',
   RISK_REGISTER = 'RISK_REGISTER',
   INVENTORY = 'INVENTORY',
-  VENDORS = 'VENDORS', // New View
+  VENDORS = 'VENDORS',
   USERS = 'USERS',
   PROJECTS = 'PROJECTS',
-  BUDGET = 'BUDGET', // New View
-  TRAINING = 'TRAINING', // New Training View
+  BUDGET = 'BUDGET',
+  TRAINING = 'TRAINING',
   SETTINGS = 'SETTINGS',
   CHAT = 'CHAT',
   REPORTS = 'REPORTS',
   SPRS_SCORECARD = 'SPRS_SCORECARD',
-  WIZARD = 'WIZARD', // New Onboarding Wizard View
+  WIZARD = 'WIZARD',
 }
