@@ -32,7 +32,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, a
   let familyStats;
   
   if (activeFramework.id === 'NIST800-171') {
-      familyStats = NIST_FAMILIES.map(family => {
+      // FIX: Added (family: any) to prevent TS7006 error
+      familyStats = NIST_FAMILIES.map((family: any) => {
         const familyReqs = activeReqs.filter(r => r.family === family.id);
         const total = familyReqs.length;
         if (total === 0) return null;
@@ -64,7 +65,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, a
   }
 
   // Calculate CSF Stats
-  const csfStats = NIST_CSF_FUNCTIONS.map(func => {
+  // FIX: Added (func: any) to prevent TS7006 error
+  const csfStats = NIST_CSF_FUNCTIONS.map((func: any) => {
     const relevantReqs = activeReqs.filter(r => 
         r.mappings.nist_csf?.some(mapping => mapping.startsWith(func.id))
     );
@@ -158,7 +160,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, a
                 <Layers size={20} className="text-indigo-600"/> NIST CSF 2.0 Coverage
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {csfStats.map(stat => (
+                {csfStats.map((stat: any) => (
                     <div key={stat.id} className="bg-slate-50 rounded-lg p-4 border border-slate-100 flex flex-col items-center text-center">
                          <div className={`w-8 h-8 ${stat.color} rounded-full flex items-center justify-center text-white text-xs font-bold mb-3 shadow-sm`}>
                              {stat.id}

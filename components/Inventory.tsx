@@ -124,7 +124,7 @@ export const Inventory: React.FC<InventoryProps> = ({ assets, onAddAsset, onDele
                           </label>
                           <select 
                             className="w-full border p-2 rounded text-sm"
-                            value={newAsset.cmmcCategory}
+                            value={newAsset.cmmcCategory || 'Out-of-Scope'} // FIX: Fallback value
                             onChange={e => setNewAsset({...newAsset, cmmcCategory: e.target.value as any})}
                           >
                               <option value="Out-of-Scope">Out-of-Scope</option>
