@@ -207,7 +207,7 @@ const App: React.FC = () => {
                 <img src={mspBranding.logoUrl} alt="MSP Logo" className="h-8 object-contain mb-2" />
             ) : (
                 <div className="flex items-center gap-2 text-white font-bold text-lg mb-1">
-                    <Shield className="text-blue-500" /> Cyber ComplAI
+                    <Shield className="text-blue-500" /> Cualli Cyber
                 </div>
             )}
             <div className="text-xs text-slate-500 font-medium tracking-wider">MSP PLATFORM</div>

@@ -300,7 +300,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements }) => {
 
           {/* Footer */}
           <div className="mt-12 border-t border-slate-200 pt-4 text-xs text-slate-400 flex justify-between">
-            <span>Cyber ComplAI Report</span>
+            <span>Cualli Cyber Report</span>
             <span>Page 1 of 1</span>
           </div>
 
