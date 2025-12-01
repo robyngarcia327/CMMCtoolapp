@@ -1,4 +1,4 @@
-import { Requirement, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, BudgetLineItem, TrainingModule, IntegrationConfig } from '../types';
+import { Requirement, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, BudgetLineItem, TrainingModule } from '../types';
 
 export const FRAMEWORKS: Framework[] = [
   { id: 'NIST800-171', name: 'NIST SP 800-171 r2', description: 'Protecting CUI in Nonfederal Systems' },
@@ -217,6 +217,7 @@ export const INITIAL_CLIENTS: Client[] = [
 ];
 
 export const createInitialClientData = (useMockData = false): ClientData => {
+    // Deep copy requirements to ensure clean status for new client
     const cleanRequirements = JSON.parse(JSON.stringify(REQUIREMENTS_DATA || []));
     
     return {

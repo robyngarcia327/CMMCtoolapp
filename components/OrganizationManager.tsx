@@ -32,7 +32,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
   }>({
       name: '',
       industry: '',
-      branding: { primaryColor: '#3b82f6' }
+      branding: { primaryColor: '#3b82f6', logoUrl: '' }
   });
 
   const [isAddingUser, setIsAddingUser] = useState(false);
@@ -66,7 +66,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
         setIsAddingClient(false);
     }
     
-    setClientForm({ name: '', industry: '', branding: { primaryColor: '#3b82f6' } });
+    setClientForm({ name: '', industry: '', branding: { primaryColor: '#3b82f6', logoUrl: '' } });
   };
 
   const openEditClient = (client: Client) => {
@@ -74,7 +74,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
       setClientForm({
           name: client.name,
           industry: client.industry,
-          branding: client.branding || { primaryColor: '#3b82f6' }
+          branding: client.branding || { primaryColor: '#3b82f6', logoUrl: '' }
       });
       setIsAddingClient(true);
   };
@@ -187,7 +187,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                 <button 
                     onClick={() => {
                         setEditingClient(null);
-                        setClientForm({ name: '', industry: '', branding: { primaryColor: '#3b82f6' } });
+                        setClientForm({ name: '', industry: '', branding: { primaryColor: '#3b82f6', logoUrl: '' } });
                         setIsAddingClient(true);
                     }}
                     className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
@@ -220,7 +220,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                            
                            <div className="flex items-center gap-4">
                                <div className="relative w-16 h-16 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center bg-slate-50 overflow-hidden group">
-                                   {clientForm.branding.logoUrl ? (
+                                   {clientForm.branding?.logoUrl ? (
                                        <img src={clientForm.branding.logoUrl} className="w-full h-full object-contain" alt="Logo" />
                                    ) : (
                                        <Upload size={20} className="text-slate-400" />
@@ -232,11 +232,11 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                                    <div className="flex items-center gap-2">
                                        <input 
                                             type="color" 
-                                            value={clientForm.branding.primaryColor || '#3b82f6'} 
+                                            value={clientForm.branding?.primaryColor || '#3b82f6'} 
                                             onChange={e => setClientForm(prev => ({ ...prev, branding: { ...prev.branding, primaryColor: e.target.value } }))}
                                             className="w-8 h-8 rounded border-0 cursor-pointer"
                                        />
-                                       <span className="text-xs font-mono">{clientForm.branding.primaryColor}</span>
+                                       <span className="text-xs font-mono">{clientForm.branding?.primaryColor}</span>
                                    </div>
                                </div>
                            </div>

@@ -40,7 +40,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [cwData, setCwData] = useState<ConnectWiseConfig>(config);
   const [jiraData, setJiraData] = useState<JiraConfig>(jiraConfig);
   const [confData, setConfData] = useState<ConfluenceConfig>(confluenceConfig);
-  const [brandingData, setBrandingData] = useState<BrandingConfig>(mspBranding || { primaryColor: '#ff7f50' });
+  const [brandingData, setBrandingData] = useState<BrandingConfig>(mspBranding || { primaryColor: '#ff7f50', logoUrl: '' });
 
   // Cloud Integration States
   const [m365Data, setM365Data] = useState<IntegrationConfig>(m365Config || { enabled: false });
@@ -184,7 +184,51 @@ export const Settings: React.FC<SettingsProps> = ({
                 </div>
             )}
             {/* Reuse existing logic for other tabs, injecting Integrations */}
+            {activeTab === 'Jira' && (
+                 <div className="p-6">
+                    <h3 className="font-bold mb-4">Jira Software</h3>
+                    <div className="space-y-4">
+                        <input className="border p-2 w-full rounded" placeholder="Base URL" value={jiraData.baseUrl} onChange={e=>setJiraData({...jiraData, baseUrl: e.target.value})} />
+                        <input className="border p-2 w-full rounded" placeholder="Email" value={jiraData.email} onChange={e=>setJiraData({...jiraData, email: e.target.value})} />
+                        <div className="flex items-center gap-2"><input type="checkbox" checked={jiraData.enabled} onChange={e=>setJiraData({...jiraData, enabled: e.target.checked})} /> Enabled</div>
+                    </div>
+                </div>
+            )}
+            {activeTab === 'Confluence' && (
+                 <div className="p-6">
+                    <h3 className="font-bold mb-4">Confluence</h3>
+                    <div className="space-y-4">
+                        <input className="border p-2 w-full rounded" placeholder="Base URL" value={confData.baseUrl} onChange={e=>setConfData({...confData, baseUrl: e.target.value})} />
+                        <input className="border p-2 w-full rounded" placeholder="Space Key" value={confData.spaceKey} onChange={e=>setConfData({...confData, spaceKey: e.target.value})} />
+                        <div className="flex items-center gap-2"><input type="checkbox" checked={confData.enabled} onChange={e=>setConfData({...confData, enabled: e.target.checked})} /> Enabled</div>
+                    </div>
+                </div>
+            )}
             {activeTab === 'Integrations' && renderIntegrations()}
+            {activeTab === 'Auvik' && (
+                <div className="p-6">
+                    <h3 className="font-bold mb-4">Auvik Network Management</h3>
+                    <div className="grid gap-4">
+                        <input className="border p-2 rounded" placeholder="Tenant ID" />
+                        <input className="border p-2 rounded" type="password" placeholder="API Key" />
+                    </div>
+                </div>
+            )}
+            {activeTab === 'Branding' && (
+                <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                        <label className="block text-sm font-bold text-slate-700">Logo</label>
+                        <div className="border-2 border-dashed p-6 rounded flex flex-col items-center">
+                            {brandingData.logoUrl ? <img src={brandingData.logoUrl} className="h-16 mb-2 object-contain" /> : <Upload className="mb-2 text-slate-400"/>}
+                            <input type="file" onChange={handleLogoUpload} className="text-xs" />
+                        </div>
+                    </div>
+                    <div className="space-y-4">
+                        <label className="block text-sm font-bold text-slate-700">Primary Color</label>
+                        <input type="color" value={brandingData.primaryColor} onChange={e => setBrandingData({...brandingData, primaryColor: e.target.value})} className="w-full h-12 rounded cursor-pointer" />
+                    </div>
+                </div>
+            )}
             {activeTab === 'Data' && (
                 <div className="p-8 space-y-6">
                     <div className="bg-white border p-6 rounded-xl flex items-center justify-between">
