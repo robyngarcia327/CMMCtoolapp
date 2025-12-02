@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, CheckCircle, Lock, Globe, Building2, Key, Layers, BookOpen, Database, RefreshCw, AlertTriangle, Trash2, Network, Palette, Upload, Cloud, Server, Shield, Plug, Library } from 'lucide-react';
+import { Save, CheckCircle, Lock, Globe, Building2, Key, Layers, BookOpen, Database, RefreshCw, AlertTriangle, Trash2, Network, Palette, Upload, Cloud, Server, Shield, Plug, Library, HardDrive } from 'lucide-react';
 import { ConnectWiseConfig, JiraConfig, ConfluenceConfig, BrandingConfig, IntegrationConfig } from '../types';
 
 interface SettingsProps {
@@ -153,30 +153,41 @@ export const Settings: React.FC<SettingsProps> = ({
 
   const renderLibrary = () => (
       <div className="p-8 space-y-6">
-          <div className="bg-indigo-50 p-6 rounded-xl border border-indigo-100 mb-6">
-              <h3 className="font-bold text-indigo-900 flex items-center gap-2"><Library size={20}/> Framework Library</h3>
-              <p className="text-sm text-indigo-700 mt-2">
-                  Manage your compliance definitions. Sync with the central repository to get the latest NIST 800-171 r2 and CMMC 2.0 controls.
-              </p>
+          <div className="bg-indigo-50 p-6 rounded-xl border border-indigo-100 mb-6 flex gap-4">
+              <div className="p-3 bg-white rounded-lg shadow-sm h-fit text-indigo-600"><Library size={24}/></div>
+              <div>
+                  <h3 className="font-bold text-indigo-900 text-lg">Framework Library</h3>
+                  <p className="text-sm text-indigo-700 mt-1">
+                      This section manages the "Master Definitions" for compliance frameworks.
+                      Clicking "Seed Database" below will trigger the automated population process, 
+                      copying 110+ controls into your active client's database.
+                  </p>
+              </div>
           </div>
 
           <div className="grid gap-4">
-              <div className="bg-white border p-4 rounded-lg flex items-center justify-between">
+              <div className="bg-white border p-6 rounded-xl flex items-center justify-between shadow-sm">
                   <div>
-                      <h4 className="font-bold text-slate-800">NIST SP 800-171 r2</h4>
-                      <p className="text-xs text-slate-500">110 Controls • Last Updated: Today</p>
+                      <h4 className="font-bold text-slate-900 text-lg flex items-center gap-2"><Shield size={18} className="text-blue-600"/> NIST SP 800-171 r2</h4>
+                      <div className="flex gap-4 mt-1">
+                         <p className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Version: 2.0</p>
+                         <p className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Controls: 110</p>
+                      </div>
                   </div>
                   <button onClick={onReloadStandards} className="bg-slate-900 text-white px-4 py-2 rounded text-sm font-bold hover:bg-slate-800">
-                      Force Update / Repair
+                      Reset / Repair Library
                   </button>
               </div>
-              <div className="bg-white border p-4 rounded-lg flex items-center justify-between opacity-60">
+              <div className="bg-white border p-6 rounded-xl flex items-center justify-between opacity-70 border-dashed">
                   <div>
-                      <h4 className="font-bold text-slate-800">ISO 27001:2022</h4>
-                      <p className="text-xs text-slate-500">93 Controls • License Required</p>
+                      <h4 className="font-bold text-slate-700 text-lg">ISO 27001:2022</h4>
+                      <div className="flex gap-4 mt-1">
+                         <p className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Version: 2022</p>
+                         <p className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Controls: 93</p>
+                      </div>
                   </div>
                   <button className="bg-slate-100 text-slate-400 px-4 py-2 rounded text-sm font-bold cursor-not-allowed">
-                      Locked
+                      <Lock size={14} className="inline mr-1"/> Locked
                   </button>
               </div>
           </div>
@@ -185,9 +196,14 @@ export const Settings: React.FC<SettingsProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">System Configuration</h2>
-        <p className="text-slate-600">Manage integrations and application settings.</p>
+      <div className="mb-8 flex justify-between items-end">
+        <div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">System Configuration</h2>
+            <p className="text-slate-600">Manage integrations and application settings.</p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full text-xs font-bold text-green-700">
+            <HardDrive size={12} /> Local Storage Mode (Secure)
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
