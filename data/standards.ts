@@ -114,15 +114,16 @@ const generateIsoControls = (): Requirement[] => {
             scopeStatus: 'IN_SCOPE',
             mappings: {}
         }
-        // ... In a real app, we would list all Annex A controls here
     ];
 };
 
+// THIS IS THE REAL FRAMEWORK DATA (Used for seeding)
 export const REQUIREMENTS_DATA: Requirement[] = [
     ...generateNistControls(),
     ...generateIsoControls()
 ];
 
+// THIS IS REAL CONTENT (Training)
 export const TRAINING_MODULES: TrainingModule[] = [
     {
         id: 'MOD-AC-01',
@@ -144,131 +145,26 @@ export const TRAINING_MODULES: TrainingModule[] = [
     }
 ];
 
-export const INITIAL_RISKS: Risk[] = [
-    {
-        id: 'R-1001',
-        description: 'Unpatched Domain Controller vulnerability (ZeroLogon)',
-        category: 'Technical',
-        remediation: 'Apply Microsoft Security Patch KB45678 immediately.',
-        owner: 'SysAdmin',
-        status: 'Open',
-        dateIdentified: Date.now() - 1000 * 60 * 60 * 24 * 5,
-        assessmentType: 'Quantitative',
-        threatEventFrequency: 2,
-        vulnerability: 0.9,
-        lossMagnitude: 50000,
-        riskScore: 90000 
-    }
-];
-
-export const INITIAL_ASSETS: Asset[] = [
-    {
-        id: 'A-001',
-        name: 'DC-01',
-        type: 'Server',
-        owner: 'IT Dept',
-        location: 'Server Room',
-        cmmcCategory: 'SPA',
-        criticality: 'High',
-        enclave: 'Core'
-    },
-    {
-        id: 'A-002',
-        name: 'ENG-LT-04',
-        type: 'Workstation',
-        owner: 'Engineering',
-        location: 'Remote',
-        cmmcCategory: 'CUI',
-        criticality: 'Medium',
-        enclave: 'VPN'
-    }
-];
-
-export const INITIAL_USERS: User[] = [
-    { 
-        id: 'u1', 
-        organizationId: 'client-msp', 
-        name: 'Alice Admin', 
-        email: 'alice@msp.com', 
-        role: 'MSP_ADMIN', 
-        department: 'IT Security', 
-        lastLogin: Date.now(),
-        mfaEnabled: true,
-        hasPasskey: true,
-        isCuiAuthorized: true,
-        iamSource: 'Manual'
-    },
-    { 
-        id: 'u2', 
-        organizationId: 'client-msp', 
-        name: 'Tom Tech', 
-        email: 'tom@msp.com', 
-        role: 'MSP_TECH', 
-        department: 'Support', 
-        lastLogin: Date.now(),
-        mfaEnabled: true,
-        hasPasskey: false,
-        isCuiAuthorized: true,
-        iamSource: 'Manual'
-    },
-    { 
-        id: 'u3', 
-        organizationId: 'client-a', 
-        name: 'Bob Client', 
-        email: 'bob@acme.com', 
-        role: 'CLIENT_ADMIN', 
-        department: 'Operations', 
-        lastLogin: Date.now(),
-        mfaEnabled: false,
-        hasPasskey: false,
-        isCuiAuthorized: false,
-        iamSource: 'Manual'
-    }
-];
-
+// --- CLEAN STATE (No Demo Data) ---
+export const INITIAL_RISKS: Risk[] = [];
+export const INITIAL_ASSETS: Asset[] = [];
+export const INITIAL_USERS: User[] = [];
 export const INITIAL_TASKS: ProjectTask[] = [];
 export const INITIAL_BUDGET: BudgetLineItem[] = [];
-
-export const INITIAL_CLIENTS: Client[] = [
-    { 
-      id: 'client-msp', 
-      name: 'TechFlow Solutions (MSP)', 
-      industry: 'Managed Services', 
-      contactName: 'Alice Johnson', 
-      logoInitial: 'T',
-      primaryFramework: 'ISO 27001',
-      nextAuditDate: Date.now() + 1000 * 60 * 60 * 24 * 15,
-      accountManager: 'Self',
-      isParent: true,
-      branding: {
-          primaryColor: '#ff7f50',
-          logoUrl: ''
-      }
-    },
-    { 
-      id: 'client-a', 
-      name: 'Acme Aerospace', 
-      industry: 'Defense Contractor', 
-      contactName: 'Bob Smith', 
-      logoInitial: 'A',
-      primaryFramework: 'CMMC-L2',
-      nextAuditDate: Date.now() + 1000 * 60 * 60 * 24 * 60,
-      accountManager: 'Alice Johnson',
-      isParent: false 
-    }
-];
+export const INITIAL_CLIENTS: Client[] = [];
 
 export const createInitialClientData = (useMockData = false): ClientData => {
-    // Uses the generated Full Data list
+    // If we are starting fresh, we usually want to SEED the Requirements (110 controls),
+    // but the status of them should be "Pending" / Empty.
     const cleanRequirements = JSON.parse(JSON.stringify(REQUIREMENTS_DATA));
     
     return {
         requirements: cleanRequirements,
-        risks: useMockData ? [...(INITIAL_RISKS || [])] : [],
-        assets: useMockData ? [...(INITIAL_ASSETS || [])] : [],
-        users: useMockData ? [...(INITIAL_USERS || [])] : [],
-        tasks: useMockData ? [...(INITIAL_TASKS || [])] : [],
-        budgetItems: useMockData ? [...(INITIAL_BUDGET || [])] : [],
+        risks: [],
+        assets: [],
+        users: [],
+        tasks: [],
+        budgetItems: [],
         vendors: [],
         artifacts: [],
         tickets: [],

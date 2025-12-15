@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from "react-oidc-context";
 import { 
   Shield, 
   LayoutDashboard, 
@@ -26,7 +27,7 @@ import {
   Loader2
 } from 'lucide-react';
 
-import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, INITIAL_USERS, REQUIREMENTS_DATA } from './data/standards';
+import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, REQUIREMENTS_DATA } from './data/standards';
 import { Requirement, Artifact, AppView, Ticket, ConnectWiseConfig, JiraConfig, ConfluenceConfig, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, WizardProgress, UserRole, BudgetLineItem, BrandingConfig, Vendor, IntegrationConfig } from './types';
 import { RequirementsList } from './components/RequirementsList';
 import { RequirementDetail } from './components/RequirementDetail';
@@ -52,24 +53,44 @@ import { Dashboard } from './components/Dashboard';
 import { AuditorPortal } from './components/AuditorPortal'; 
 import { storageService } from './services/storage';
 
+// --- Render Helpers for Menu (Moved outside component to fix type issues) ---
+const NavDropdown = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
+  <div className="relative group h-full flex items-center">
+      <button className="flex items-center gap-1 px-3 py-2 text-slate-300 hover:text-white font-medium transition-colors">
+          <Icon size={16} /> {label} <ChevronDown size={14} className="opacity-50 group-hover:opacity-100 transition-opacity" />
+      </button>
+      <div className="absolute top-full left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-2 hidden group-hover:block animate-in fade-in zoom-in-95 duration-100 z-50">
+          {children}
+      </div>
+  </div>
+);
+
+const NavItem = ({ label, icon: Icon, isActive, onClick }: { label: string, icon: any, isActive: boolean, onClick: () => void }) => (
+  <button 
+    onClick={onClick}
+    className={`w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors ${isActive ? 'text-blue-600 font-bold bg-blue-50' : 'text-slate-700'}`}
+  >
+      <Icon size={16} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
+      {label}
+  </button>
+);
+
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const auth = useAuth();
+  
+  // App State
   const [currentView, setCurrentView] = useState<AppView>(AppView.MSP_DASHBOARD);
   const [isChatOpen, setIsChatOpen] = useState(false);
   
-  // Loading State
+  // Data State
   const [isDataLoading, setIsDataLoading] = useState(true);
-  
   const [clients, setClients] = useState<Client[]>([]);
   const [activeClientId, setActiveClientId] = useState<string>('');
   const [activeFramework, setActiveFramework] = useState<Framework>(FRAMEWORKS[0]);
-  
   const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>({});
-
-  // Selection States
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
 
-  // Initial Load
+  // Initial Data Load
   useEffect(() => {
       const initData = async () => {
           setIsDataLoading(true);
@@ -78,41 +99,115 @@ const App: React.FC = () => {
           
           setClients(loadedClients);
           setClientDataStore(loadedStore);
-          setActiveClientId(loadedClients[0]?.id || 'client-msp');
+          
+          if (loadedClients.length > 0) {
+              setActiveClientId(loadedClients[0].id);
+          }
+          
           setIsDataLoading(false);
       };
       initData();
   }, []);
 
-  // Auto-save on change (Debounced in real app, direct here)
+  // Auto-save
   useEffect(() => {
     if (!isDataLoading && clients.length > 0) {
         storageService.save(clients, clientDataStore);
     }
   }, [clients, clientDataStore, isDataLoading]);
 
-  // ... (The rest of the component logic remains the same, but we render a Loader if isDataLoading is true)
+  // --- Auth Handling ---
+  
+  if (auth.isLoading) {
+      return (
+          <div className="flex h-screen items-center justify-center bg-slate-900 flex-col gap-4">
+              <Loader2 size={48} className="animate-spin text-blue-500" />
+              <h2 className="text-xl font-bold text-white">Authenticating...</h2>
+              <p className="text-slate-400">Connecting to Secure Gateway</p>
+          </div>
+      );
+  }
+
+  if (auth.error) {
+      return (
+          <div className="flex h-screen items-center justify-center bg-slate-50">
+             <Login onLogin={() => auth.signinRedirect()} error={auth.error} />
+          </div>
+      );
+  }
+
+  if (!auth.isAuthenticated) {
+      return <Login onLogin={() => auth.signinRedirect()} />;
+  }
+
+  // Construct current user from OIDC profile
+  const currentUser: User = {
+      id: auth.user?.profile.sub || 'unknown',
+      name: (auth.user?.profile.email || 'User').split('@')[0],
+      email: auth.user?.profile.email || '',
+      organizationId: 'client-msp', // Default for now
+      role: 'MSP_ADMIN', // Defaulting to Admin for the demo
+      department: 'IT',
+      lastLogin: Date.now(),
+      mfaEnabled: true, // Assumed true via SSO
+      hasPasskey: false,
+      isCuiAuthorized: true,
+      iamSource: 'Microsoft365'
+  };
+
+  // --- Main App Logic (Only renders if authenticated) ---
 
   if (isDataLoading) {
       return (
           <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4">
               <Loader2 size={48} className="animate-spin text-blue-600" />
-              <h2 className="text-xl font-bold text-slate-700">Loading Secure Environment...</h2>
-              <p className="text-slate-500">Decrypting local storage</p>
+              <h2 className="text-xl font-bold text-slate-700">Initializing Environment...</h2>
+              <p className="text-slate-500">Decrypting data for {currentUser.email}</p>
           </div>
       );
   }
-
-  if (!currentUser) {
-      return <Login onLogin={setCurrentUser} />;
+  
+  // EDGE CASE: No Clients Exist (First Run in Prod)
+  if (clients.length === 0) {
+      return (
+          <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
+              <header className="bg-slate-900 text-slate-200 h-16 shrink-0 shadow-md z-50 flex items-center px-6">
+                  <div className="flex items-center gap-2 text-white font-bold text-lg">
+                      <Shield className="text-blue-500 fill-blue-500/20" size={24} />
+                      <span>Cualli Cyber</span>
+                  </div>
+              </header>
+              <main className="flex-1 flex items-center justify-center p-6">
+                  <div className="max-w-2xl w-full">
+                      <div className="bg-white p-8 rounded-xl shadow-lg border border-slate-200 text-center mb-8">
+                          <Building2 size={64} className="mx-auto text-blue-600 mb-4" />
+                          <h1 className="text-2xl font-bold text-slate-900 mb-2">Welcome to your new environment</h1>
+                          <p className="text-slate-600 mb-6">
+                              The database is currently empty. Please create your first Organization (Client) to begin the assessment process.
+                          </p>
+                          <OrganizationManager 
+                            clients={clients}
+                            clientDataStore={clientDataStore}
+                            onAddClient={(c) => {
+                                setClients([c]);
+                                setClientDataStore({ [c.id]: createInitialClientData(false) });
+                                setActiveClientId(c.id);
+                            }}
+                            onUpdateClient={() => {}}
+                            onDeleteClient={() => {}}
+                            onUpdateClientData={() => {}}
+                        />
+                      </div>
+                  </div>
+              </main>
+          </div>
+      );
   }
   
   // Fallback if data store is somehow missing the active client
   if (!clientDataStore[activeClientId]) {
-      // Create empty on the fly if missing
-      const newData = createInitialClientData(true);
+      const newData = createInitialClientData(false);
       setClientDataStore(prev => ({ ...prev, [activeClientId]: newData }));
-      // Return null briefly while state updates to avoid crash
       return null; 
   }
   
@@ -137,6 +232,7 @@ const App: React.FC = () => {
       }));
   };
 
+  // Data Selectors
   const requirements = activeData.requirements;
   const risks = activeData.risks;
   const assets = activeData.assets;
@@ -151,7 +247,6 @@ const App: React.FC = () => {
   const confluenceConfig = activeData.confluenceConfig;
   const mspBranding = activeData.mspBranding;
   const wizardProgress = activeData.wizardProgress || { currentStep: 'INTRO', currentQuestionIndex: 0 };
-  
   const m365Config = activeData.m365Config;
   const awsConfig = activeData.awsConfig;
   const googleConfig = activeData.googleConfig;
@@ -218,40 +313,19 @@ const App: React.FC = () => {
                       })),
                       response: existing.response,
                       scopeStatus: existing.scopeStatus,
-                      comments: existing.comments
+                      comments: existing.comments,
+                      poam: existing.poam
                   };
               }
               return freshReq;
           });
           return { requirements: mergedReqs };
       });
-      alert('Standards synced successfully!');
+      alert('Standards Library successfully seeded into this client.');
   };
 
   const selectedRequirement = requirements.find(r => r.id === selectedRequirementId);
   const isMSPUser = currentUser.role === 'MSP_ADMIN' || currentUser.role === 'MSP_TECH';
-
-  // --- Render Helpers for Menu ---
-  const NavDropdown = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
-      <div className="relative group h-full flex items-center">
-          <button className="flex items-center gap-1 px-3 py-2 text-slate-300 hover:text-white font-medium transition-colors">
-              <Icon size={16} /> {label} <ChevronDown size={14} className="opacity-50 group-hover:opacity-100 transition-opacity" />
-          </button>
-          <div className="absolute top-full left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-2 hidden group-hover:block animate-in fade-in zoom-in-95 duration-100 z-50">
-              {children}
-          </div>
-      </div>
-  );
-
-  const NavItem = ({ label, icon: Icon, view }: { label: string, icon: any, view: AppView }) => (
-      <button 
-        onClick={() => setCurrentView(view)}
-        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors ${currentView === view ? 'text-blue-600 font-bold bg-blue-50' : 'text-slate-700'}`}
-      >
-          <Icon size={16} className={currentView === view ? 'text-blue-600' : 'text-slate-400'} />
-          {label}
-      </button>
-  );
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
@@ -282,35 +356,35 @@ const App: React.FC = () => {
 
                       <NavDropdown label="Compliance" icon={ListChecks}>
                           <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Assessment</div>
-                          <NavItem label="Requirements List" icon={ListChecks} view={AppView.REQUIREMENTS} />
-                          <NavItem label="SPRS Scorecard" icon={TrendingUp} view={AppView.SPRS_SCORECARD} />
-                          <NavItem label="Onboarding Wizard" icon={Wand2} view={AppView.WIZARD} />
+                          <NavItem label="Requirements List" icon={ListChecks} isActive={currentView === AppView.REQUIREMENTS} onClick={() => setCurrentView(AppView.REQUIREMENTS)} />
+                          <NavItem label="SPRS Scorecard" icon={TrendingUp} isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
+                          <NavItem label="Onboarding Wizard" icon={Wand2} isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} />
                           <div className="my-1 border-b border-slate-100"></div>
                           <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Reports</div>
-                          <NavItem label="Compliance Reports" icon={BarChart3} view={AppView.REPORTS} />
-                          <NavItem label="Doc Generator" icon={FileText} view={AppView.DOC_GENERATOR} />
+                          <NavItem label="Compliance Reports" icon={BarChart3} isActive={currentView === AppView.REPORTS} onClick={() => setCurrentView(AppView.REPORTS)} />
+                          <NavItem label="Doc Generator" icon={FileText} isActive={currentView === AppView.DOC_GENERATOR} onClick={() => setCurrentView(AppView.DOC_GENERATOR)} />
                       </NavDropdown>
 
                       <NavDropdown label="Risk & Tools" icon={AlertTriangle}>
-                          <NavItem label="Risk Register" icon={AlertTriangle} view={AppView.RISK_REGISTER} />
-                          <NavItem label="POA&M Projects" icon={KanbanSquare} view={AppView.PROJECTS} />
-                          <NavItem label="Budget & ROI" icon={Calculator} view={AppView.BUDGET} />
-                          <NavItem label="Training Center" icon={GraduationCap} view={AppView.TRAINING} />
+                          <NavItem label="Risk Register" icon={AlertTriangle} isActive={currentView === AppView.RISK_REGISTER} onClick={() => setCurrentView(AppView.RISK_REGISTER)} />
+                          <NavItem label="POA&M Projects" icon={KanbanSquare} isActive={currentView === AppView.PROJECTS} onClick={() => setCurrentView(AppView.PROJECTS)} />
+                          <NavItem label="Budget & ROI" icon={Calculator} isActive={currentView === AppView.BUDGET} onClick={() => setCurrentView(AppView.BUDGET)} />
+                          <NavItem label="Training Center" icon={GraduationCap} isActive={currentView === AppView.TRAINING} onClick={() => setCurrentView(AppView.TRAINING)} />
                       </NavDropdown>
 
                       <NavDropdown label="Assets" icon={Package}>
-                          <NavItem label="Asset Inventory" icon={Package} view={AppView.INVENTORY} />
-                          <NavItem label="Identity / Users" icon={Users} view={AppView.USERS} />
-                          <NavItem label="Network Map" icon={Network} view={AppView.NETWORK_ANALYSIS} />
-                          <NavItem label="Vendor Management" icon={Building2} view={AppView.VENDORS} />
+                          <NavItem label="Asset Inventory" icon={Package} isActive={currentView === AppView.INVENTORY} onClick={() => setCurrentView(AppView.INVENTORY)} />
+                          <NavItem label="Identity / Users" icon={Users} isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
+                          <NavItem label="Network Map" icon={Network} isActive={currentView === AppView.NETWORK_ANALYSIS} onClick={() => setCurrentView(AppView.NETWORK_ANALYSIS)} />
+                          <NavItem label="Vendor Management" icon={Building2} isActive={currentView === AppView.VENDORS} onClick={() => setCurrentView(AppView.VENDORS)} />
                       </NavDropdown>
 
                       {isMSPUser && (
                           <NavDropdown label="Admin" icon={SettingsIcon}>
-                              <NavItem label="Client Manager" icon={Building2} view={AppView.ORGANIZATION_MANAGER} />
-                              <NavItem label="Settings & Integrations" icon={SettingsIcon} view={AppView.SETTINGS} />
+                              <NavItem label="Client Manager" icon={Building2} isActive={currentView === AppView.ORGANIZATION_MANAGER} onClick={() => setCurrentView(AppView.ORGANIZATION_MANAGER)} />
+                              <NavItem label="Settings & Integrations" icon={SettingsIcon} isActive={currentView === AppView.SETTINGS} onClick={() => setCurrentView(AppView.SETTINGS)} />
                               <div className="my-1 border-b border-slate-100"></div>
-                              <NavItem label="For The Auditor" icon={Briefcase} view={AppView.AUDITOR_PORTAL} />
+                              <NavItem label="For The Auditor" icon={Briefcase} isActive={currentView === AppView.AUDITOR_PORTAL} onClick={() => setCurrentView(AppView.AUDITOR_PORTAL)} />
                           </NavDropdown>
                       )}
                   </div>
@@ -373,7 +447,7 @@ const App: React.FC = () => {
                                   </div>
                               )}
                               <button 
-                                onClick={() => setCurrentUser(null)}
+                                onClick={() => auth.removeUser()}
                                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                               >
                                   <LogOut size={14} /> Sign Out
@@ -405,7 +479,13 @@ const App: React.FC = () => {
                     <OrganizationManager 
                         clients={clients}
                         clientDataStore={clientDataStore}
-                        onAddClient={(c) => setClients([...clients, c])}
+                        onAddClient={(c) => {
+                            setClients([...clients, c]);
+                            setClientDataStore(prev => ({
+                                ...prev,
+                                [c.id]: createInitialClientData(false)
+                            }));
+                        }}
                         onUpdateClient={(c) => setClients(clients.map(ex => ex.id === c.id ? c : ex))}
                         onDeleteClient={(id) => setClients(clients.filter(c => c.id !== id))}
                         onUpdateClientData={handleUpdateClientData}
