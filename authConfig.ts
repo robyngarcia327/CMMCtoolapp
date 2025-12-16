@@ -8,10 +8,13 @@ const USER_POOL_ID = "us-east-1_ky47RcgYh";
 const CLIENT_ID = "5pe5430hrtohupn12gj8r66qtb"; 
 const COGNITO_DOMAIN = "https://us-east-1ky47rcgyh.auth.us-east-1.amazoncognito.com"; 
 
+// Remove trailing slash if present to avoid mismatch with AWS Console settings
+const ORIGIN = window.location.origin.replace(/\/$/, '');
+
 export const authConfig = {
   authority: `https://cognito-idp.us-east-1.amazonaws.com/${USER_POOL_ID}`,
   client_id: CLIENT_ID,
-  redirect_uri: window.location.origin, 
+  redirect_uri: ORIGIN, 
   response_type: "code",
   scope: "phone openid email",
   cognito_domain: COGNITO_DOMAIN,
