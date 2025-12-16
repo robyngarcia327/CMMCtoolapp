@@ -9,11 +9,13 @@ export const api = {
    * 1. GET /orgs
    * Fetches the list of organizations the authenticated user belongs to.
    */
-  getOrgs: async (accessToken: string): Promise<{ orgId: string, name: string, role: string }[]> => {
+  getOrgs: async (token: string): Promise<{ orgId: string, name: string, role: string }[]> => {
     try {
       const response = await fetch(`${API_BASE_URL}/orgs`, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          // IMPORTANT: Removed 'Bearer ' prefix. 
+          // Standard AWS Cognito Authorizers often expect just the token string.
+          'Authorization': token, 
           'Content-Type': 'application/json'
         }
       });
@@ -23,7 +25,8 @@ export const api = {
         console.error("API Error (getOrgs):", {
             status: response.status,
             statusText: response.statusText,
-            body: errorBody
+            body: errorBody,
+            tokenSnippet: token.substring(0, 10) + "..." // Log start of token for debug
         });
         throw new Error(`API Error ${response.status}: ${errorBody || response.statusText}`);
       }
@@ -39,11 +42,11 @@ export const api = {
    * Create Organization
    * POST /orgs
    */
-  createOrg: async (accessToken: string, name: string): Promise<{ orgId: string, name: string }> => {
+  createOrg: async (token: string, name: string): Promise<{ orgId: string, name: string }> => {
     const response = await fetch(`${API_BASE_URL}/orgs`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': token,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ name })
@@ -61,14 +64,14 @@ export const api = {
   /**
    * 2. Evidence Upload Flow (3 Steps)
    */
-  uploadEvidence: async (accessToken: string, orgId: string, file: File, requirementId: string): Promise<Artifact> => {
+  uploadEvidence: async (token: string, orgId: string, file: File, requirementId: string): Promise<Artifact> => {
     
     // Step A: POST /orgs/{orgId}/evidence/upload-request
     // We request a presigned URL to upload the file
     const initResponse = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/upload-request`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': token,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -100,7 +103,7 @@ export const api = {
     const completeResponse = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/upload-complete`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': token,
         'Content-Type': 'application/json'
       }
     });
@@ -122,12 +125,12 @@ export const api = {
   /**
    * 3. Evidence Download Flow
    */
-  getDownloadUrl: async (accessToken: string, orgId: string, evidenceId: string): Promise<string> => {
+  getDownloadUrl: async (token: string, orgId: string, evidenceId: string): Promise<string> => {
     // POST /orgs/{orgId}/evidence/{evidenceId}/download-request
     const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/download-request`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': token,
         'Content-Type': 'application/json'
       }
     });
@@ -142,10 +145,10 @@ export const api = {
    * Fetch List of Evidence for an Org
    * GET /orgs/{orgId}/evidence
    */
-  getEvidenceList: async (accessToken: string, orgId: string): Promise<Artifact[]> => {
+  getEvidenceList: async (token: string, orgId: string): Promise<Artifact[]> => {
     const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence`, {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': token,
         'Content-Type': 'application/json'
       }
     });

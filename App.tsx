@@ -101,15 +101,15 @@ const App: React.FC = () => {
 
   // --- 1. Load Organizations on Auth ---
   const loadOrganizations = async (forceRefresh = false) => {
-      // Use ACCESS TOKEN for API Authorization, not ID Token
-      if (!auth.isAuthenticated || !auth.user?.access_token) return;
+      // Use ID TOKEN for API Authorization
+      if (!auth.isAuthenticated || !auth.user?.id_token) return;
 
       setIsDataLoading(true);
       setLoadingMessage("Loading Organization...");
       setOrgFetchError(null);
       
       try {
-          const apiOrgs = await api.getOrgs(auth.user.access_token);
+          const apiOrgs = await api.getOrgs(auth.user.id_token);
           
           const mappedClients: Client[] = apiOrgs.map((o: any) => ({
               id: o.orgId,
@@ -142,8 +142,8 @@ const App: React.FC = () => {
                       newStore[c.id] = clientDataStore[c.id];
                   }
                   
-                  // Fetch Evidence using ACCESS TOKEN
-                  api.getEvidenceList(auth.user.access_token, c.id).then(evidence => {
+                  // Fetch Evidence using ID TOKEN
+                  api.getEvidenceList(auth.user.id_token, c.id).then(evidence => {
                       setClientDataStore(prev => ({
                           ...prev,
                           [c.id]: { ...prev[c.id], artifacts: evidence }
@@ -164,7 +164,8 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-      if (auth.isAuthenticated && auth.user?.access_token) {
+      // Check for id_token instead of access_token
+      if (auth.isAuthenticated && auth.user?.id_token) {
           loadOrganizations();
       }
   }, [auth.isAuthenticated, auth.user]);
@@ -178,7 +179,7 @@ const App: React.FC = () => {
 
   // Handle Org Creation
   const handleCreateOrganization = async (name: string) => {
-      if (!auth.user?.access_token) return;
+      if (!auth.user?.id_token) return;
       
       setCreationStatus('creating');
       setIsDataLoading(true);
@@ -186,8 +187,8 @@ const App: React.FC = () => {
       setOrgFetchError(null);
 
       try {
-          // Attempt creation using ACCESS TOKEN
-          const newOrg = await api.createOrg(auth.user.access_token, name);
+          // Attempt creation using ID TOKEN
+          const newOrg = await api.createOrg(auth.user.id_token, name);
           // If successful response, use it immediately
           finishOrgCreation(newOrg);
       } catch (e: any) {
@@ -203,7 +204,7 @@ const App: React.FC = () => {
   };
 
   const verifyOrganizationExists = async (name: string) => {
-      if (!auth.user?.access_token) return;
+      if (!auth.user?.id_token) return;
 
       // Poll up to 10 times (30+ seconds) to handle DB Index Propagation Latency
       let attempts = 0;
@@ -217,8 +218,8 @@ const App: React.FC = () => {
               // Wait 3s between checks
               await new Promise(resolve => setTimeout(resolve, 3000));
               
-              // Use ACCESS TOKEN
-              const apiOrgs = await api.getOrgs(auth.user.access_token);
+              // Use ID TOKEN
+              const apiOrgs = await api.getOrgs(auth.user.id_token);
               
               // 1. Strict Match
               const existing = apiOrgs.find((o: any) => o.name.trim().toLowerCase() === name.trim().toLowerCase());
