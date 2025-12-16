@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, ArrowRight, Loader2, RefreshCw, AlertCircle, RotateCcw } from 'lucide-react';
+import { Building2, ArrowRight, Loader2, RefreshCw, AlertCircle, RotateCcw, Info, Bug } from 'lucide-react';
 import { User } from '../types';
 
 interface OnboardingProps {
@@ -8,10 +8,12 @@ interface OnboardingProps {
   onRefresh?: () => void;
   creationStatus?: 'idle' | 'creating' | 'verifying' | 'failed_verification';
   onRetryVerification?: (name: string) => void;
+  errorMessage?: string | null;
 }
 
-export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganization, onRefresh, creationStatus = 'idle', onRetryVerification }) => {
+export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganization, onRefresh, creationStatus = 'idle', onRetryVerification, errorMessage }) => {
   const [orgName, setOrgName] = useState('');
+  const [showDebug, setShowDebug] = useState(false);
   
   const isSubmitting = creationStatus === 'creating' || creationStatus === 'verifying';
 
@@ -45,6 +47,17 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
                 To get started, please set up your organization workspace.
             </p>
             
+            {/* Error Banner */}
+            {errorMessage && (
+                <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-red-800 text-sm mb-4 flex items-start gap-2">
+                    <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                    <div>
+                        <p className="font-bold">Error</p>
+                        <p className="text-xs opacity-90">{errorMessage}</p>
+                    </div>
+                </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Organization Name</label>
@@ -121,6 +134,24 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
                     </button>
                 </div>
             )}
+
+            {/* DEBUG TOGGLE */}
+            <div className="mt-8 text-center">
+                <button 
+                    onClick={() => setShowDebug(!showDebug)}
+                    className="text-[10px] text-slate-400 flex items-center justify-center gap-1 mx-auto hover:text-slate-600"
+                >
+                    <Bug size={10} /> {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
+                </button>
+                {showDebug && (
+                    <div className="mt-2 text-left bg-slate-900 text-green-400 p-3 rounded text-[10px] font-mono overflow-auto max-h-32">
+                        <p><strong>Auth Sub:</strong> {user.id}</p>
+                        <p><strong>Email:</strong> {user.email}</p>
+                        <p><strong>App Version:</strong> 1.0.1 (Auth Fix)</p>
+                        {errorMessage && <p className="text-red-400"><strong>Last Error:</strong> {errorMessage}</p>}
+                    </div>
+                )}
+            </div>
         </div>
 
       </div>

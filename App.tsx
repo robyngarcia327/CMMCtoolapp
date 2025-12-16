@@ -101,14 +101,15 @@ const App: React.FC = () => {
 
   // --- 1. Load Organizations on Auth ---
   const loadOrganizations = async (forceRefresh = false) => {
-      if (!auth.isAuthenticated || !auth.user?.id_token) return;
+      // Use ACCESS TOKEN for API Authorization, not ID Token
+      if (!auth.isAuthenticated || !auth.user?.access_token) return;
 
       setIsDataLoading(true);
       setLoadingMessage("Loading Organization...");
       setOrgFetchError(null);
       
       try {
-          const apiOrgs = await api.getOrgs(auth.user.id_token);
+          const apiOrgs = await api.getOrgs(auth.user.access_token);
           
           const mappedClients: Client[] = apiOrgs.map((o: any) => ({
               id: o.orgId,
@@ -141,8 +142,8 @@ const App: React.FC = () => {
                       newStore[c.id] = clientDataStore[c.id];
                   }
                   
-                  // Fetch Evidence
-                  api.getEvidenceList(auth.user.id_token, c.id).then(evidence => {
+                  // Fetch Evidence using ACCESS TOKEN
+                  api.getEvidenceList(auth.user.access_token, c.id).then(evidence => {
                       setClientDataStore(prev => ({
                           ...prev,
                           [c.id]: { ...prev[c.id], artifacts: evidence }
@@ -154,16 +155,16 @@ const App: React.FC = () => {
               setActiveClientId('');
           }
 
-      } catch (e) {
+      } catch (e: any) {
           console.error("Failed to load organizations", e);
-          setOrgFetchError("Could not load organization data.");
+          setOrgFetchError(e.message || "Could not load organization data.");
       } finally {
           setIsDataLoading(false);
       }
   };
 
   useEffect(() => {
-      if (auth.isAuthenticated && auth.user?.id_token) {
+      if (auth.isAuthenticated && auth.user?.access_token) {
           loadOrganizations();
       }
   }, [auth.isAuthenticated, auth.user]);
@@ -177,19 +178,21 @@ const App: React.FC = () => {
 
   // Handle Org Creation
   const handleCreateOrganization = async (name: string) => {
-      if (!auth.user?.id_token) return;
+      if (!auth.user?.access_token) return;
       
       setCreationStatus('creating');
       setIsDataLoading(true);
       setLoadingMessage("Creating Organization...");
+      setOrgFetchError(null);
 
       try {
-          // Attempt creation
-          const newOrg = await api.createOrg(auth.user.id_token, name);
+          // Attempt creation using ACCESS TOKEN
+          const newOrg = await api.createOrg(auth.user.access_token, name);
           // If successful response, use it immediately
           finishOrgCreation(newOrg);
       } catch (e: any) {
           console.warn("API Error during creation. Attempting recovery...", e);
+          setOrgFetchError(e.message);
           
           // If creation failed (e.g. timeout), enter Verification Loop
           setCreationStatus('verifying');
@@ -200,7 +203,7 @@ const App: React.FC = () => {
   };
 
   const verifyOrganizationExists = async (name: string) => {
-      if (!auth.user?.id_token) return;
+      if (!auth.user?.access_token) return;
 
       // Poll up to 10 times (30+ seconds) to handle DB Index Propagation Latency
       let attempts = 0;
@@ -214,7 +217,8 @@ const App: React.FC = () => {
               // Wait 3s between checks
               await new Promise(resolve => setTimeout(resolve, 3000));
               
-              const apiOrgs = await api.getOrgs(auth.user.id_token);
+              // Use ACCESS TOKEN
+              const apiOrgs = await api.getOrgs(auth.user.access_token);
               
               // 1. Strict Match
               const existing = apiOrgs.find((o: any) => o.name.trim().toLowerCase() === name.trim().toLowerCase());
@@ -225,7 +229,6 @@ const App: React.FC = () => {
               }
 
               // 2. Fuzzy/First Match: If we had NO clients before, and now we have ONE, assume it's the one we just made.
-              // This handles cases where API returns 504 but DB write succeeded with slight name char difference.
               if (clients.length === 0 && apiOrgs.length > 0) {
                   console.log("Strict match failed, but new organization found. Proceeding with:", apiOrgs[0]);
                   finishOrgCreation(apiOrgs[0]);
@@ -322,6 +325,7 @@ const App: React.FC = () => {
             onRefresh={() => loadOrganizations(true)}
             creationStatus={creationStatus}
             onRetryVerification={verifyOrganizationExists}
+            errorMessage={orgFetchError}
           />
       );
   }

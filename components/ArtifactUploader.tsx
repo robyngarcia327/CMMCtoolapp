@@ -26,13 +26,13 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !activeClientId || !auth.user?.id_token) return;
+    if (!file || !activeClientId || !auth.user?.access_token) return;
 
     setIsUploading(true);
     try {
-        // Implement 3-Step Upload Flow
+        // Implement 3-Step Upload Flow using ACCESS TOKEN
         const newArtifact = await api.uploadEvidence(
-            auth.user.id_token,
+            auth.user.access_token,
             activeClientId,
             file,
             requirementId
@@ -49,7 +49,7 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
 
   // Note: Snipping tool logic would also need to convert base64 to File object to use the API
   const handleSnipCapture = async (dataUrl: string) => {
-    if (!activeClientId || !auth.user?.id_token) return;
+    if (!activeClientId || !auth.user?.access_token) return;
 
     // Convert Data URL to File
     const res = await fetch(dataUrl);
@@ -59,7 +59,7 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
     setIsUploading(true);
     try {
         const newArtifact = await api.uploadEvidence(
-            auth.user.id_token,
+            auth.user.access_token,
             activeClientId,
             file,
             requirementId
@@ -75,9 +75,9 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
   };
 
   const handleDownload = async (artifact: Artifact) => {
-      if (!activeClientId || !auth.user?.id_token) return;
+      if (!activeClientId || !auth.user?.access_token) return;
       try {
-          const downloadUrl = await api.getDownloadUrl(auth.user.id_token, activeClientId, artifact.id);
+          const downloadUrl = await api.getDownloadUrl(auth.user.access_token, activeClientId, artifact.id);
           window.open(downloadUrl, '_blank');
       } catch (e) {
           alert("Failed to retrieve secure download link.");
