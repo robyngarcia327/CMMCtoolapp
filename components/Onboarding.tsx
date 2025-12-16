@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Building2, ArrowRight, Loader2, RefreshCw, AlertCircle, RotateCcw, Info, Bug, Copy } from 'lucide-react';
+import { Building2, ArrowRight, Loader2, RefreshCw, AlertCircle, RotateCcw, Info, Bug, Copy, Network } from 'lucide-react';
 import { User } from '../types';
+import { api } from '../services/api';
 
 interface OnboardingProps {
   user: User;
@@ -18,6 +19,8 @@ interface OnboardingProps {
 export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganization, onRefresh, creationStatus = 'idle', onRetryVerification, errorMessage, debugTokens }) => {
   const [orgName, setOrgName] = useState('');
   const [showDebug, setShowDebug] = useState(false);
+  const [diagnosticResult, setDiagnosticResult] = useState<string | null>(null);
+  const [isRunningDiag, setIsRunningDiag] = useState(false);
   
   const isSubmitting = creationStatus === 'creating' || creationStatus === 'verifying';
 
@@ -44,9 +47,24 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
       }
   };
 
+  const runDiagnostics = async () => {
+      if (!debugTokens?.idToken) return;
+      setIsRunningDiag(true);
+      setDiagnosticResult("Querying GET /orgs...");
+      try {
+          // Bypass the app's abstraction and fetch raw
+          const raw = await api.getOrgs(debugTokens.idToken);
+          setDiagnosticResult(JSON.stringify(raw, null, 2));
+      } catch (e: any) {
+          setDiagnosticResult(`API Failed: ${e.message}`);
+      } finally {
+          setIsRunningDiag(false);
+      }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-500">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-500 my-8">
         
         <div className="p-8">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-600">
@@ -155,14 +173,29 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
                     <Bug size={10} /> {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
                 </button>
                 {showDebug && (
-                    <div className="mt-2 text-left bg-slate-900 text-green-400 p-3 rounded text-[10px] font-mono overflow-auto max-h-64 break-all shadow-inner">
+                    <div className="mt-2 text-left bg-slate-900 text-green-400 p-3 rounded text-[10px] font-mono overflow-auto max-h-96 break-all shadow-inner border border-slate-800">
+                        <div className="flex justify-between items-center mb-2 border-b border-slate-700 pb-2">
+                            <span className="font-bold text-white">Diagnostics</span>
+                            <button onClick={runDiagnostics} className="bg-green-700 hover:bg-green-600 text-white px-2 py-1 rounded flex items-center gap-1">
+                                {isRunningDiag ? <Loader2 className="animate-spin" size={10}/> : <Network size={10}/>}
+                                Test Connectivity
+                            </button>
+                        </div>
+
+                        {diagnosticResult && (
+                            <div className="mb-4 p-2 bg-black/30 rounded border border-slate-700">
+                                <div className="text-xs text-slate-400 mb-1 font-bold">GET /orgs Response:</div>
+                                <pre className="whitespace-pre-wrap">{diagnosticResult}</pre>
+                            </div>
+                        )}
+
                         <p><strong>Auth Sub:</strong> {user.id}</p>
                         <p><strong>Email:</strong> {user.email}</p>
-                        <p><strong>App Version:</strong> 1.0.2 (Token Debug)</p>
+                        <p><strong>App Version:</strong> 1.0.3 (Diag Mode)</p>
                         
                         <div className="mt-2 border-t border-slate-700 pt-2">
                             <div className="flex justify-between items-center mb-1">
-                                <span className="font-bold text-slate-500">Access Token (Used for API):</span>
+                                <span className="font-bold text-slate-500">Access Token:</span>
                                 <button onClick={() => copyToClipboard(debugTokens?.accessToken)} className="text-blue-400 hover:text-white"><Copy size={10}/></button>
                             </div>
                             <p className="opacity-70">{debugTokens?.accessToken ? debugTokens.accessToken.substring(0, 50) + '...' : 'None'}</p>
@@ -170,7 +203,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
 
                         <div className="mt-2 border-t border-slate-700 pt-2">
                             <div className="flex justify-between items-center mb-1">
-                                <span className="font-bold text-slate-500">ID Token (Identity):</span>
+                                <span className="font-bold text-slate-500">ID Token (Used for API):</span>
                                 <button onClick={() => copyToClipboard(debugTokens?.idToken)} className="text-blue-400 hover:text-white"><Copy size={10}/></button>
                             </div>
                             <p className="opacity-70">{debugTokens?.idToken ? debugTokens.idToken.substring(0, 50) + '...' : 'None'}</p>
