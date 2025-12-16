@@ -88,6 +88,7 @@ const App: React.FC = () => {
   
   // Data State
   const [isDataLoading, setIsDataLoading] = useState(false); // Changed to false initially, true when auth confirms
+  const [loadingMessage, setLoadingMessage] = useState("Loading Organization...");
   const [clients, setClients] = useState<Client[]>([]);
   const [activeClientId, setActiveClientId] = useState<string>('');
   const [activeFramework, setActiveFramework] = useState<Framework>(FRAMEWORKS[0]);
@@ -103,6 +104,7 @@ const App: React.FC = () => {
       if (auth.isAuthenticated && auth.user?.id_token) {
           const fetchOrgs = async () => {
               setIsDataLoading(true);
+              setLoadingMessage("Loading Organization...");
               setOrgFetchError(null);
               try {
                   // Call API to get orgs using ID token
@@ -169,92 +171,92 @@ const App: React.FC = () => {
     }
   }, [clients, clientDataStore, isDataLoading]);
 
+  // Helper: Poll for organization existence
+  const waitForOrganization = async (name: string, retries = 3): Promise<any> => {
+      for (let i = 0; i < retries; i++) {
+          console.log(`Polling for organization "${name}" (Attempt ${i+1}/${retries})...`);
+          
+          // Wait increased on each retry: 2s, 4s, 6s
+          await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1))); 
+          
+          try {
+              const apiOrgs = await api.getOrgs(auth.user!.id_token!);
+              // Case-insensitive check and trim
+              const existingOrg = apiOrgs.find((o: any) => o.name.trim().toLowerCase() === name.trim().toLowerCase());
+              if (existingOrg) return existingOrg;
+          } catch (e) {
+              console.warn("Polling failed", e);
+          }
+      }
+      return null;
+  };
+
   // Handle Org Creation
   const handleCreateOrganization = async (name: string) => {
-      // Use ID Token
       if (!auth.user?.id_token) return;
       
       setIsDataLoading(true);
+      setLoadingMessage("Creating Organization...");
 
       try {
-          const newOrg = await api.createOrg(auth.user.id_token, name);
+          // Attempt creation
+          await api.createOrg(auth.user.id_token, name);
           
-          const newClient: Client = {
-              id: newOrg.orgId,
-              name: newOrg.name,
-              industry: 'General',
-              contactName: auth.user.profile.email || 'Admin',
-              logoInitial: newOrg.name.charAt(0).toUpperCase(),
-              primaryFramework: 'NIST800-171',
-              nextAuditDate: Date.now() + 31536000000,
-              accountManager: 'Self-Managed',
-              isParent: false
-          };
-
-          setClients(prev => [...prev, newClient]);
+          // If successful immediately, we wait briefly for read-consistency
+          await new Promise(resolve => setTimeout(resolve, 1500));
           
-          setClientDataStore(prev => ({
-              ...prev,
-              [newClient.id]: createInitialClientData(false)
-          }));
-
-          setActiveClientId(newClient.id);
-          localStorage.setItem('activeOrgId', newClient.id);
+          // Fetch updated list
+          const orgData = await waitForOrganization(name, 1);
+          if (orgData) {
+              finishOrgCreation(orgData);
+          } else {
+              // Should theoretically be there if createOrg didn't throw
+              throw new Error("Created but not found"); 
+          }
 
       } catch (e) {
-          console.warn("API Error during creation. Checking for consistency...", e);
+          console.warn("API Error during creation. Entering recovery mode...", e);
+          setLoadingMessage("Verifying creation...");
           
-          // Optimistic Recovery Strategy
-          // 1. Wait for DB consistency (Lambda cold start or DynamoDB consistency)
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Optimistic Recovery Strategy: Retry finding it 3 times
+          const recoveredOrg = await waitForOrganization(name, 3);
 
-          try {
-              // 2. Fetch all organizations to see if it actually exists
-              const apiOrgs = await api.getOrgs(auth.user.id_token);
-              
-              // 3. Find the org we tried to create
-              const existingOrg = apiOrgs.find((o: any) => o.name.toLowerCase() === name.toLowerCase());
-
-              if (existingOrg) {
-                  console.log("Organization created successfully despite API error.");
-                  
-                  // Re-map all clients
-                  const mappedClients: Client[] = apiOrgs.map((o: any) => ({
-                      id: o.orgId,
-                      name: o.name,
-                      industry: 'Unknown',
-                      contactName: auth.user?.profile.email || 'User',
-                      logoInitial: o.name.charAt(0).toUpperCase(),
-                      primaryFramework: 'NIST800-171',
-                      nextAuditDate: Date.now() + 31536000000,
-                      accountManager: 'Self-Managed',
-                      isParent: false
-                  }));
-
-                  setClients(mappedClients);
-                  
-                  // Ensure store has data
-                  setClientDataStore(prev => {
-                      const next = { ...prev };
-                      if (!next[existingOrg.orgId]) {
-                          next[existingOrg.orgId] = createInitialClientData(false);
-                      }
-                      return next;
-                  });
-
-                  setActiveClientId(existingOrg.orgId);
-                  localStorage.setItem('activeOrgId', existingOrg.orgId);
-              } else {
-                  console.error("Organization creation failed definitively.");
-                  alert("Failed to create organization. Please try again.");
-              }
-          } catch (recoveryError) {
-              console.error("Recovery check failed", recoveryError);
-              alert("Failed to create organization. Please try again.");
+          if (recoveredOrg) {
+              console.log("Organization recovered successfully.");
+              finishOrgCreation(recoveredOrg);
+          } else {
+              console.error("Organization creation failed definitively.");
+              alert("We could not confirm the organization was created. Please refresh the page. If it appears, select it. If not, please try again.");
+              setIsDataLoading(false);
           }
-      } finally {
-          setIsDataLoading(false);
       }
+  };
+
+  const finishOrgCreation = (orgData: any) => {
+      // Re-map all clients
+      const newClient: Client = {
+          id: orgData.orgId,
+          name: orgData.name,
+          industry: 'General',
+          contactName: auth.user?.profile.email || 'Admin',
+          logoInitial: orgData.name.charAt(0).toUpperCase(),
+          primaryFramework: 'NIST800-171',
+          nextAuditDate: Date.now() + 31536000000,
+          accountManager: 'Self-Managed',
+          isParent: false
+      };
+
+      setClients(prev => [...prev, newClient]);
+      
+      // Ensure store has data
+      setClientDataStore(prev => ({
+          ...prev,
+          [newClient.id]: createInitialClientData(false)
+      }));
+
+      setActiveClientId(newClient.id);
+      localStorage.setItem('activeOrgId', newClient.id);
+      setIsDataLoading(false);
   };
 
   // --- Auth Handling ---
@@ -293,8 +295,8 @@ const App: React.FC = () => {
       return (
           <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4">
               <Loader2 size={48} className="animate-spin text-blue-600" />
-              <h2 className="text-xl font-bold text-slate-700">Loading Organization...</h2>
-              <p className="text-slate-500">Fetching access rights and encryption keys</p>
+              <h2 className="text-xl font-bold text-slate-700">{loadingMessage}</h2>
+              <p className="text-slate-500">Syncing with cloud database...</p>
           </div>
       );
   }
