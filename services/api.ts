@@ -13,9 +13,6 @@ export const api = {
     try {
       const response = await fetch(`${API_BASE_URL}/orgs`, {
         headers: {
-          // Re-adding 'Bearer' prefix. 
-          // While some raw Cognito setups expect just the token, standard implementations 
-          // and Lambda Authorizers typically require the standard 'Bearer <token>' schema.
           'Authorization': `Bearer ${token}`, 
           'Content-Type': 'application/json'
         }
@@ -25,14 +22,36 @@ export const api = {
         const errorBody = await response.text();
         console.error("API Error (getOrgs):", {
             status: response.status,
-            statusText: response.statusText,
-            body: errorBody,
-            tokenSnippet: token.substring(0, 10) + "..."
+            body: errorBody
         });
         throw new Error(`API Error ${response.status}: ${errorBody || response.statusText}`);
       }
 
-      return await response.json();
+      let data = await response.json();
+      
+      // AWS Lambda Proxy Integration Robustness:
+      // Sometimes the body is double-encoded or wrapped in a "body" property
+      if (typeof data === 'string') {
+          try { data = JSON.parse(data); } catch(e) { console.warn("Failed to parse string response", e); }
+      }
+      if (data && data.body && typeof data.body === 'string') {
+          try { data = JSON.parse(data.body); } catch(e) { console.warn("Failed to parse inner body", e); }
+      }
+
+      // Handle wrapped arrays (e.g. { data: [...] } or { items: [...] })
+      if (!Array.isArray(data)) {
+          if (Array.isArray(data.data)) data = data.data;
+          else if (Array.isArray(data.items)) data = data.items;
+          else if (Array.isArray(data.organizations)) data = data.organizations;
+          else {
+              console.warn("getOrgs response is not an array:", data);
+              // Fallback: if it's a single object, maybe wrap it?
+              if (data && data.orgId) return [data];
+              return [];
+          }
+      }
+
+      return data;
     } catch (error) {
       console.error("Network or parsing error in getOrgs:", error);
       throw error;
@@ -56,10 +75,22 @@ export const api = {
     if (!response.ok) {
         const errorText = await response.text();
         console.error("API Error (createOrg):", { status: response.status, body: errorText });
+        // We throw, but the frontend app will catch this and try to verify existence
+        // in case the backend wrote to DB but crashed on return.
         throw new Error(errorText || 'Failed to create organization');
     }
 
-    return await response.json();
+    let data = await response.json();
+    
+    // Robust parsing for POST response as well
+    if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch(e) {}
+    }
+    if (data && data.body && typeof data.body === 'string') {
+        try { data = JSON.parse(data.body); } catch(e) {}
+    }
+
+    return data;
   },
 
   /**
@@ -68,7 +99,6 @@ export const api = {
   uploadEvidence: async (token: string, orgId: string, file: File, requirementId: string): Promise<Artifact> => {
     
     // Step A: POST /orgs/{orgId}/evidence/upload-request
-    // We request a presigned URL to upload the file
     const initResponse = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/upload-request`, {
       method: 'POST',
       headers: {
@@ -87,20 +117,23 @@ export const api = {
         throw new Error(`Failed to initiate upload: ${err}`);
     }
     
-    const { uploadUrl, evidenceId, requiredHeaders } = await initResponse.json();
+    let initData = await initResponse.json();
+    if (initData.body && typeof initData.body === 'string') {
+        initData = JSON.parse(initData.body);
+    }
+    
+    const { uploadUrl, evidenceId, requiredHeaders } = initData;
 
     // Step B: PUT file to uploadUrl (S3 Presigned URL)
-    // IMPORTANT: Must use the exact Content-Type returned by the backend
     const s3Response = await fetch(uploadUrl, {
       method: 'PUT',
-      headers: requiredHeaders, // e.g. { "Content-Type": "image/png" }
+      headers: requiredHeaders, 
       body: file
     });
 
     if (!s3Response.ok) throw new Error('Failed to upload file to storage');
 
     // Step C: POST /orgs/{orgId}/evidence/{evidenceId}/upload-complete
-    // Notify backend that upload is finished so it can be marked as 'uploaded'
     const completeResponse = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/upload-complete`, {
       method: 'POST',
       headers: {
@@ -111,13 +144,12 @@ export const api = {
 
     if (!completeResponse.ok) throw new Error('Failed to complete upload registration');
 
-    // Return a constructed Artifact object for the frontend state
     return {
       id: evidenceId,
       requirementId: requirementId,
       name: file.name,
       type: file.type.startsWith('image/') ? 'image' : 'document',
-      url: '', // URL is fetched on demand via download request
+      url: '', 
       timestamp: Date.now(),
       source: 'USER_UPLOAD'
     };
@@ -127,7 +159,6 @@ export const api = {
    * 3. Evidence Download Flow
    */
   getDownloadUrl: async (token: string, orgId: string, evidenceId: string): Promise<string> => {
-    // POST /orgs/{orgId}/evidence/{evidenceId}/download-request
     const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/download-request`, {
       method: 'POST',
       headers: {
@@ -138,13 +169,14 @@ export const api = {
 
     if (!response.ok) throw new Error('Failed to get download link');
 
-    const data = await response.json();
-    return data.downloadUrl; // The short-lived presigned URL
+    let data = await response.json();
+    if (data.body && typeof data.body === 'string') data = JSON.parse(data.body);
+    
+    return data.downloadUrl; 
   },
 
   /**
    * Fetch List of Evidence for an Org
-   * GET /orgs/{orgId}/evidence
    */
   getEvidenceList: async (token: string, orgId: string): Promise<Artifact[]> => {
     const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence`, {
@@ -156,14 +188,24 @@ export const api = {
 
     if (!response.ok) return [];
 
-    const data = await response.json();
-    // Map backend response to frontend Artifact type
+    let data = await response.json();
+    
+    // Robust parsing
+    if (typeof data === 'string') { try { data = JSON.parse(data); } catch(e){} }
+    if (data && data.body && typeof data.body === 'string') { try { data = JSON.parse(data.body); } catch(e){} }
+    if (!Array.isArray(data)) {
+        // Try common wrappers
+        if (Array.isArray(data.items)) data = data.items;
+        else if (Array.isArray(data.data)) data = data.data;
+        else return [];
+    }
+
     return data.map((item: any) => ({
       id: item.evidenceId,
       requirementId: item.requirementId,
       name: item.filename,
       type: item.contentType?.startsWith('image/') ? 'image' : 'document',
-      url: '', // On-demand
+      url: '', 
       timestamp: new Date(item.createdAt).getTime(),
       source: 'USER_UPLOAD'
     }));

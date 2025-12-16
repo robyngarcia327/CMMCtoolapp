@@ -186,24 +186,26 @@ const App: React.FC = () => {
       setLoadingMessage("Creating Organization...");
       setOrgFetchError(null);
 
+      let initialError = null;
+
       try {
           // Attempt creation using ID TOKEN
           const newOrg = await api.createOrg(auth.user.id_token, name);
           // If successful response, use it immediately
           finishOrgCreation(newOrg);
       } catch (e: any) {
-          console.warn("API Error during creation. Attempting recovery...", e);
-          setOrgFetchError(e.message);
+          console.warn("API Error during creation. Attempting background verification...", e);
+          // Don't show error yet. Wait for verification loop.
+          initialError = e.message;
           
-          // If creation failed (e.g. timeout), enter Verification Loop
           setCreationStatus('verifying');
-          setLoadingMessage("Verifying creation...");
+          setLoadingMessage("Verifying creation (Backend syncing)...");
           
-          await verifyOrganizationExists(name);
+          await verifyOrganizationExists(name, initialError);
       }
   };
 
-  const verifyOrganizationExists = async (name: string) => {
+  const verifyOrganizationExists = async (name: string, originalError: string | null) => {
       if (!auth.user?.id_token) return;
 
       // Poll up to 10 times (30+ seconds) to handle DB Index Propagation Latency
@@ -212,7 +214,6 @@ const App: React.FC = () => {
 
       while (attempts < maxAttempts) {
           attempts++;
-          console.log(`Verifying organization "${name}" (Attempt ${attempts}/${maxAttempts})...`);
           
           try {
               // Wait 3s between checks
@@ -220,20 +221,22 @@ const App: React.FC = () => {
               
               // Use ID TOKEN
               const apiOrgs = await api.getOrgs(auth.user.id_token);
-              
-              // 1. Strict Match
-              const existing = apiOrgs.find((o: any) => o.name.trim().toLowerCase() === name.trim().toLowerCase());
-              
-              if (existing) {
-                  finishOrgCreation(existing);
-                  return;
-              }
+              console.log("Verification check:", apiOrgs);
 
-              // 2. Fuzzy/First Match: If we had NO clients before, and now we have ONE, assume it's the one we just made.
-              if (clients.length === 0 && apiOrgs.length > 0) {
-                  console.log("Strict match failed, but new organization found. Proceeding with:", apiOrgs[0]);
-                  finishOrgCreation(apiOrgs[0]);
-                  return;
+              if (apiOrgs && apiOrgs.length > 0) {
+                  // 1. Strict Match
+                  const existing = apiOrgs.find((o: any) => o.name && o.name.trim().toLowerCase() === name.trim().toLowerCase());
+                  if (existing) {
+                      finishOrgCreation(existing);
+                      return;
+                  }
+
+                  // 2. Fuzzy/First Match (Fallback if this is the only org)
+                  if (clients.length === 0 && apiOrgs.length === 1) {
+                      console.log("Strict match failed, but found single new organization. Proceeding.", apiOrgs[0]);
+                      finishOrgCreation(apiOrgs[0]);
+                      return;
+                  }
               }
 
           } catch (err) {
@@ -243,6 +246,12 @@ const App: React.FC = () => {
 
       // If loop completes without success
       setCreationStatus('failed_verification');
+      // NOW we show the error because even verification failed
+      if (originalError) {
+          setOrgFetchError(`Creation failed: ${originalError}`);
+      } else {
+          setOrgFetchError("Verification timed out. Organization not found.");
+      }
       setIsDataLoading(false);
   };
 
@@ -325,7 +334,7 @@ const App: React.FC = () => {
             onCreateOrganization={handleCreateOrganization}
             onRefresh={() => loadOrganizations(true)}
             creationStatus={creationStatus}
-            onRetryVerification={verifyOrganizationExists}
+            onRetryVerification={(name) => verifyOrganizationExists(name, null)}
             errorMessage={orgFetchError}
             debugTokens={{
                 accessToken: auth.user?.access_token,
