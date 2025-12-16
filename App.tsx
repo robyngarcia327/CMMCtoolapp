@@ -99,7 +99,7 @@ const App: React.FC = () => {
 
   // --- 1. Load Organizations on Auth ---
   useEffect(() => {
-      // Use Access Token
+      // Use Access Token instead of ID Token
       if (auth.isAuthenticated && auth.user?.access_token) {
           const fetchOrgs = async () => {
               setIsDataLoading(true);
