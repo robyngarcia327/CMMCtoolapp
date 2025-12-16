@@ -10,18 +10,29 @@ export const api = {
    * Fetches the list of organizations the authenticated user belongs to.
    */
   getOrgs: async (accessToken: string): Promise<{ orgId: string, name: string, role: string }[]> => {
-    const response = await fetch(`${API_BASE_URL}/orgs`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+    try {
+      const response = await fetch(`${API_BASE_URL}/orgs`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        console.error("API Error (getOrgs):", {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorBody
+        });
+        throw new Error(`API Error ${response.status}: ${errorBody || response.statusText}`);
       }
-    });
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch organizations');
+      return await response.json();
+    } catch (error) {
+      console.error("Network or parsing error in getOrgs:", error);
+      throw error;
     }
-
-    return await response.json();
   },
 
   /**
@@ -40,6 +51,7 @@ export const api = {
 
     if (!response.ok) {
         const errorText = await response.text();
+        console.error("API Error (createOrg):", { status: response.status, body: errorText });
         throw new Error(errorText || 'Failed to create organization');
     }
 
@@ -66,7 +78,10 @@ export const api = {
       })
     });
 
-    if (!initResponse.ok) throw new Error('Failed to initiate upload');
+    if (!initResponse.ok) {
+        const err = await initResponse.text();
+        throw new Error(`Failed to initiate upload: ${err}`);
+    }
     
     const { uploadUrl, evidenceId, requiredHeaders } = await initResponse.json();
 
