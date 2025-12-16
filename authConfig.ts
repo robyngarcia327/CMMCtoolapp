@@ -8,13 +8,24 @@ const USER_POOL_ID = "us-east-1_ky47RcgYh";
 const CLIENT_ID = "5pe5430hrtohupn12gj8r66qtb"; 
 const COGNITO_DOMAIN = "https://us-east-1ky47rcgyh.auth.us-east-1.amazoncognito.com"; 
 
-// Remove trailing slash if present to avoid mismatch with AWS Console settings
-const ORIGIN = window.location.origin.replace(/\/$/, '');
+// Helper to determine the exact redirect URI based on the environment
+// This ensures we match the Allowed Callback URLs in Cognito exactly (character-for-character)
+const getRedirectUri = () => {
+  // If running locally, use the dynamic origin (e.g., http://localhost:5173)
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return window.location.origin;
+  }
+  
+  // IN PRODUCTION: Hardcode strictly to the allowed callback URL with trailing slash.
+  // DO NOT use window.location.origin here, as it lacks the trailing slash 
+  // and might vary (www vs non-www) causing mismatch errors.
+  return "https://cualleecyber.com/";
+};
 
 export const authConfig = {
   authority: `https://cognito-idp.us-east-1.amazonaws.com/${USER_POOL_ID}`,
   client_id: CLIENT_ID,
-  redirect_uri: ORIGIN, 
+  redirect_uri: getRedirectUri(), 
   response_type: "code",
   scope: "phone openid email",
   cognito_domain: COGNITO_DOMAIN,
