@@ -1,7 +1,7 @@
 import { Artifact, Client } from '../types';
 
-// Configuration - In a real build, this would likely come from import.meta.env.VITE_API_URL
-const API_BASE_URL = 'https://api.your-backend.com'; 
+// Configuration - Updated API Gateway Endpoint
+const API_BASE_URL = 'https://irwrdtn81b.execute-api.us-east-1.amazonaws.com/CualleeCyberEvidence'; 
 
 export const api = {
   
