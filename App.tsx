@@ -122,25 +122,24 @@ const App: React.FC = () => {
 
                   setClients(mappedClients);
 
-                  // Logic: 0, 1, or Many
-                  if (mappedClients.length === 1) {
-                      setActiveClientId(mappedClients[0].id);
-                  } else if (mappedClients.length === 0) {
-                      // No orgs found - Trigger "No Access" screen
+                  // Logic: Select Active Org
+                  if (mappedClients.length === 0) {
+                      // No orgs found - Trigger Creation Wizard
                       setActiveClientId(''); 
-                  }
-                  // If > 1, activeClientId remains empty initially, forcing user to pick (or we can default to [0])
-                  if (mappedClients.length > 1) {
-                      setActiveClientId(mappedClients[0].id);
+                  } else {
+                      // Restore preference from local storage or default to first
+                      const storedOrgId = localStorage.getItem('activeOrgId');
+                      const validStored = storedOrgId ? mappedClients.find(c => c.id === storedOrgId) : null;
+                      
+                      const selectedId = validStored ? validStored.id : mappedClients[0].id;
+                      setActiveClientId(selectedId);
+                      localStorage.setItem('activeOrgId', selectedId);
                   }
 
                   // Initialize Data Store for these clients (Hybrid: API for Orgs/Evidence, Local for Risks/Assets for now)
                   const newStore: Record<string, ClientData> = {};
                   for (const c of mappedClients) {
-                      // In a full implementation, we'd fetch risks/assets here too.
-                      // For now, we seed empty data structures so the UI renders.
                       newStore[c.id] = createInitialClientData(false);
-                      
                       // Fetch Evidence for this org
                       try {
                           const evidence = await api.getEvidenceList(auth.user!.access_token, c.id);
@@ -169,10 +168,49 @@ const App: React.FC = () => {
     }
   }, [clients, clientDataStore, isDataLoading]);
 
+  // Handle Org Creation
+  const handleCreateOrganization = async (name: string) => {
+      if (!auth.user?.access_token) return;
+      
+      try {
+          setIsDataLoading(true);
+          const newOrg = await api.createOrg(auth.user.access_token, name);
+          
+          const newClient: Client = {
+              id: newOrg.orgId,
+              name: newOrg.name,
+              industry: 'General',
+              contactName: auth.user.profile.email || 'Admin',
+              logoInitial: newOrg.name.charAt(0).toUpperCase(),
+              primaryFramework: 'NIST800-171',
+              nextAuditDate: Date.now() + 31536000000,
+              accountManager: 'Self-Managed',
+              isParent: false
+          };
+
+          setClients(prev => [...prev, newClient]);
+          
+          setClientDataStore(prev => ({
+              ...prev,
+              [newClient.id]: createInitialClientData(false)
+          }));
+
+          setActiveClientId(newClient.id);
+          localStorage.setItem('activeOrgId', newClient.id);
+
+      } catch (e) {
+          console.error("Failed to create org", e);
+          alert("Failed to create organization. Please try again.");
+      } finally {
+          setIsDataLoading(false);
+      }
+  };
+
   // --- Auth Handling ---
 
   const handleLogout = () => {
       auth.removeUser();
+      localStorage.removeItem('activeOrgId');
       const clientId = authConfig.client_id;
       const logoutUri = authConfig.redirect_uri;
       const cognitoDomain = authConfig.cognito_domain.replace(/\/$/, "");
@@ -210,19 +248,17 @@ const App: React.FC = () => {
       );
   }
 
-  // --- ONBOARDING / NO ACCESS FLOW ---
+  // --- ONBOARDING / CREATION FLOW ---
   // If authenticated but no active client (and we aren't loading), it means 0 orgs found
-  // OR user hasn't selected one yet (if we implemented a picker screen, which we skipped for simple default [0])
   if (!activeClientId) {
-      // Pass empty user/handler since we aren't creating orgs here anymore
       return (
           <Onboarding 
             user={{
                 id: auth.user?.profile.sub || '', 
-                name: '', email: '', role: 'CLIENT_USER', 
+                name: '', email: auth.user?.profile.email || '', role: 'CLIENT_USER', 
                 organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false 
             }}
-            onCreateOrganization={() => {}} 
+            onCreateOrganization={handleCreateOrganization} 
           />
       );
   }
@@ -473,7 +509,10 @@ const App: React.FC = () => {
                                       <p className="text-xs text-slate-500 mb-1">Switch Client:</p>
                                       <select 
                                         value={activeClientId} 
-                                        onChange={(e) => setActiveClientId(e.target.value)}
+                                        onChange={(e) => {
+                                            setActiveClientId(e.target.value);
+                                            localStorage.setItem('activeOrgId', e.target.value);
+                                        }}
                                         className="w-full text-sm border rounded p-1 bg-slate-50"
                                       >
                                           {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -502,6 +541,7 @@ const App: React.FC = () => {
                         clientDataStore={clientDataStore}
                         onSelectClient={(id) => {
                             setActiveClientId(id);
+                            localStorage.setItem('activeOrgId', id);
                             setCurrentView(AppView.DASHBOARD);
                         }}
                     />

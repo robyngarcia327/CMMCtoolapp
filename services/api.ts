@@ -25,6 +25,28 @@ export const api = {
   },
 
   /**
+   * Create Organization
+   * POST /orgs
+   */
+  createOrg: async (accessToken: string, name: string): Promise<{ orgId: string, name: string }> => {
+    const response = await fetch(`${API_BASE_URL}/orgs`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to create organization');
+    }
+
+    return await response.json();
+  },
+
+  /**
    * 2. Evidence Upload Flow (3 Steps)
    */
   uploadEvidence: async (accessToken: string, orgId: string, file: File, requirementId: string): Promise<Artifact> => {

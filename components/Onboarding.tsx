@@ -1,46 +1,58 @@
 import React, { useState } from 'react';
-import { Building2, ArrowRight, ShieldCheck, CheckCircle, Lock } from 'lucide-react';
+import { Building2, ArrowRight, Loader2 } from 'lucide-react';
 import { User } from '../types';
 
 interface OnboardingProps {
   user: User;
-  onCreateOrganization: (name: string, industry: string) => void;
+  onCreateOrganization: (name: string) => void;
 }
 
 export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganization }) => {
-  
-  // Logic simplified: If user reaches here, it means they are authenticated
-  // but GET /orgs returned 0. 
-  // This implies the Post-Confirmation trigger failed OR they need to be added manually.
+  const [orgName, setOrgName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!orgName.trim()) return;
+    setIsSubmitting(true);
+    await onCreateOrganization(orgName);
+    setIsSubmitting(false);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-500">
         
-        <div className="p-8 text-center">
-            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-600">
-                <Lock size={32} />
+        <div className="p-8">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-600">
+                <Building2 size={32} />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">No Organization Access</h1>
-            <p className="text-slate-600 mb-6 text-sm">
-                Welcome, <strong>{user.email || 'User'}</strong>. <br/>
-                It seems you are not linked to any active organization yet.
+            <h1 className="text-2xl font-bold text-slate-900 mb-2 text-center">Create your organization</h1>
+            <p className="text-slate-600 mb-8 text-center text-sm">
+                Welcome, <strong>{user.email || 'User'}</strong>.<br/>
+                To get started, please set up your organization workspace.
             </p>
             
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-left mb-6">
-                <h3 className="font-bold text-slate-800 text-sm mb-1">Troubleshooting</h3>
-                <ul className="text-xs text-slate-500 space-y-2 list-disc pl-4">
-                    <li>If you just signed up, please wait a moment and refresh. Your account provisioning might be in progress.</li>
-                    <li>If you were invited, check with your administrator to ensure you have been added to the correct group.</li>
-                </ul>
-            </div>
-
-            <button 
-                onClick={() => window.location.reload()}
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-transform hover:scale-[1.02] shadow-lg"
-            >
-                Refresh Access
-            </button>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Organization Name</label>
+                    <input 
+                        className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        placeholder="e.g. Acme Corp"
+                        value={orgName}
+                        onChange={(e) => setOrgName(e.target.value)}
+                        autoFocus
+                    />
+                </div>
+                <button 
+                    type="submit"
+                    disabled={!orgName.trim() || isSubmitting}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-transform hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:scale-100"
+                >
+                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}
+                    Create Organization
+                </button>
+            </form>
         </div>
 
       </div>
