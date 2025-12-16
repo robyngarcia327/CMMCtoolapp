@@ -87,7 +87,7 @@ const App: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   
   // Data State
-  const [isDataLoading, setIsDataLoading] = useState(false); // Changed to false initially, true when auth confirms
+  const [isDataLoading, setIsDataLoading] = useState(false); 
   const [loadingMessage, setLoadingMessage] = useState("Loading Organization...");
   const [clients, setClients] = useState<Client[]>([]);
   const [activeClientId, setActiveClientId] = useState<string>('');
@@ -95,8 +95,9 @@ const App: React.FC = () => {
   const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>({});
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
   
-  // Org Fetch State
+  // Onboarding/Fetch State
   const [orgFetchError, setOrgFetchError] = useState<string | null>(null);
+  const [creationStatus, setCreationStatus] = useState<'idle' | 'creating' | 'verifying' | 'failed_verification'>('idle');
 
   // --- 1. Load Organizations on Auth ---
   const loadOrganizations = async (forceRefresh = false) => {
@@ -107,14 +108,12 @@ const App: React.FC = () => {
       setOrgFetchError(null);
       
       try {
-          // Call API to get orgs using ID token
           const apiOrgs = await api.getOrgs(auth.user.id_token);
           
-          // Map API response to Client type for internal app compatibility
           const mappedClients: Client[] = apiOrgs.map((o: any) => ({
               id: o.orgId,
               name: o.name,
-              industry: 'Unknown', // Backend might not provide this yet
+              industry: 'Unknown', 
               contactName: auth.user?.profile.email || 'User',
               logoInitial: o.name.charAt(0).toUpperCase(),
               primaryFramework: 'NIST800-171',
@@ -125,9 +124,7 @@ const App: React.FC = () => {
 
           setClients(mappedClients);
 
-          // Logic: Select Active Org
           if (mappedClients.length > 0) {
-              // Restore preference from local storage or default to first
               const storedOrgId = localStorage.getItem('activeOrgId');
               const validStored = storedOrgId ? mappedClients.find(c => c.id === storedOrgId) : null;
               
@@ -135,17 +132,16 @@ const App: React.FC = () => {
               setActiveClientId(selectedId);
               localStorage.setItem('activeOrgId', selectedId);
 
-              // Initialize Data Store for these clients
+              // Initialize Data Store
               const newStore: Record<string, ClientData> = {};
               for (const c of mappedClients) {
-                  // Only init if not already there to preserve local state
                   if (!clientDataStore[c.id]) {
                       newStore[c.id] = createInitialClientData(false);
                   } else {
                       newStore[c.id] = clientDataStore[c.id];
                   }
                   
-                  // Fetch Evidence for this org using access token (Async update)
+                  // Fetch Evidence
                   api.getEvidenceList(auth.user.id_token, c.id).then(evidence => {
                       setClientDataStore(prev => ({
                           ...prev,
@@ -155,7 +151,6 @@ const App: React.FC = () => {
               }
               setClientDataStore(prev => ({ ...prev, ...newStore }));
           } else {
-              // Explicitly set empty to trigger onboarding if we are genuinely loaded
               setActiveClientId('');
           }
 
@@ -168,13 +163,12 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-      // Use ID Token for API Gateway Authentication
       if (auth.isAuthenticated && auth.user?.id_token) {
           loadOrganizations();
       }
   }, [auth.isAuthenticated, auth.user]);
 
-  // Auto-save (Hybrid: Only saves local parts like Risks/Assets to local storage for persistence between reloads)
+  // Auto-save
   useEffect(() => {
     if (!isDataLoading && clients.length > 0) {
         storageService.save(clients, clientDataStore);
@@ -185,47 +179,59 @@ const App: React.FC = () => {
   const handleCreateOrganization = async (name: string) => {
       if (!auth.user?.id_token) return;
       
+      setCreationStatus('creating');
       setIsDataLoading(true);
       setLoadingMessage("Creating Organization...");
 
       try {
-          // 1. Attempt creation - IMPORTANT: Capture the response!
-          // The API returns { orgId: "...", name: "..." }
+          // Attempt creation
           const newOrg = await api.createOrg(auth.user.id_token, name);
-          
-          console.log("Org Created Successfully:", newOrg);
-
-          // 2. IMMEDIATELY use this data to bootstrap the app. 
-          // Do NOT wait for getOrgs() polling which might be slow due to eventual consistency.
+          // If successful response, use it immediately
           finishOrgCreation(newOrg);
-
       } catch (e: any) {
-          console.warn("API Error during creation.", e);
+          console.warn("API Error during creation. Attempting recovery...", e);
           
-          // Fallback: If error implies it already exists, try to find it in a fresh list fetch
-          setLoadingMessage("Verifying...");
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // If creation failed (e.g. timeout), enter Verification Loop
+          setCreationStatus('verifying');
+          setLoadingMessage("Verifying creation...");
           
-          try {
-              const apiOrgs = await api.getOrgs(auth.user.id_token);
-              const existing = apiOrgs.find((o: any) => o.name.toLowerCase() === name.toLowerCase());
-              
-              if (existing) {
-                  finishOrgCreation(existing);
-              } else {
-                  console.error("Organization creation failed definitively.");
-                  alert(`Failed to create organization. Error: ${e.message || "Unknown error"}`);
-                  setIsDataLoading(false);
-              }
-          } catch (retryError) {
-              alert("Failed to create organization and could not verify existence. Please try again.");
-              setIsDataLoading(false);
-          }
+          await verifyOrganizationExists(name);
       }
   };
 
+  const verifyOrganizationExists = async (name: string) => {
+      if (!auth.user?.id_token) return;
+
+      // Poll up to 5 times (15 seconds)
+      let attempts = 0;
+      const maxAttempts = 5;
+
+      while (attempts < maxAttempts) {
+          attempts++;
+          console.log(`Verifying organization "${name}" (Attempt ${attempts}/${maxAttempts})...`);
+          
+          try {
+              // Wait before checking
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              
+              const apiOrgs = await api.getOrgs(auth.user.id_token);
+              const existing = apiOrgs.find((o: any) => o.name.trim().toLowerCase() === name.trim().toLowerCase());
+              
+              if (existing) {
+                  finishOrgCreation(existing);
+                  return;
+              }
+          } catch (err) {
+              console.warn("Polling error:", err);
+          }
+      }
+
+      // If loop completes without success
+      setCreationStatus('failed_verification');
+      setIsDataLoading(false);
+  };
+
   const finishOrgCreation = (orgData: any) => {
-      // Re-map all clients
       const newClient: Client = {
           id: orgData.orgId,
           name: orgData.name,
@@ -240,7 +246,6 @@ const App: React.FC = () => {
 
       setClients(prev => [...prev, newClient]);
       
-      // Ensure store has data
       setClientDataStore(prev => ({
           ...prev,
           [newClient.id]: createInitialClientData(false)
@@ -249,6 +254,7 @@ const App: React.FC = () => {
       setActiveClientId(newClient.id);
       localStorage.setItem('activeOrgId', newClient.id);
       setIsDataLoading(false);
+      setCreationStatus('idle');
   };
 
   // --- Auth Handling ---
@@ -277,12 +283,11 @@ const App: React.FC = () => {
       );
   }
 
-  // Not Authenticated -> Login Screen
   if (auth.error || !auth.isAuthenticated) {
       return <Login onLogin={() => auth.signinRedirect()} error={auth.error} />;
   }
 
-  // --- Data Loading State ---
+  // --- Data Loading State (Global) ---
   if (isDataLoading) {
       return (
           <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4">
@@ -294,7 +299,6 @@ const App: React.FC = () => {
   }
 
   // --- ONBOARDING / CREATION FLOW ---
-  // If authenticated but no active client (and we aren't loading), it means 0 orgs found
   if (!activeClientId) {
       return (
           <Onboarding 
@@ -305,6 +309,8 @@ const App: React.FC = () => {
             }}
             onCreateOrganization={handleCreateOrganization}
             onRefresh={() => loadOrganizations(true)}
+            creationStatus={creationStatus}
+            onRetryVerification={verifyOrganizationExists}
           />
       );
   }
