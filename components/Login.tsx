@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { Shield, Lock, ArrowRight, Loader2, Globe, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { authConfig } from '../authConfig';
+import React from 'react';
+import { Shield, Lock, ArrowRight, Loader2, Globe } from 'lucide-react';
 
 interface LoginProps {
   onLogin: () => void;
@@ -9,9 +8,6 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
-  const currentRedirectUri = window.location.origin;
-  const isAmplifyUrl = currentRedirectUri.includes('amplifyapp.com');
-
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
       <div className="mb-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -64,34 +60,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
          
          <div className="bg-slate-50 p-4 border-t border-slate-100 flex flex-col gap-2 items-center text-center">
              <span className="text-xs text-slate-500 font-medium">Protected by Cuallee Cyber SSO</span>
-             
-             {/* Configuration Debugger */}
-             <div className="w-full bg-slate-200/50 p-3 rounded border border-slate-200 text-[11px] text-slate-600 font-mono text-left break-all">
-                <div className="flex items-center gap-1 mb-2 font-bold text-slate-700 border-b border-slate-300 pb-1">
-                    <AlertCircle size={12} /> AWS Configuration Check
-                </div>
-                
-                <div className="mb-2">
-                    <strong>1. Configured Domain:</strong><br/>
-                    {authConfig.cognito_domain}
-                </div>
-
-                <div className="mb-2">
-                    <strong>2. Go to:</strong> App Integration &gt; App clients &gt; [Client] &gt; Login pages
-                </div>
-
-                <div className={`p-2 rounded border ${isAmplifyUrl ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-blue-50 border-blue-200 text-blue-900'}`}>
-                    <strong>3. Ensure "Allowed callback URLs" includes:</strong><br/>
-                    <span className="font-bold block mt-1 select-all bg-white px-1 rounded border border-slate-200">
-                        {currentRedirectUri}
-                    </span>
-                    {isAmplifyUrl && (
-                        <div className="mt-1 text-[10px] italic opacity-80">
-                            (Must match your Amplify URL exactly)
-                        </div>
-                    )}
-                </div>
-             </div>
          </div>
       </div>
     </div>
