@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Shield, Loader2, AlertTriangle, RefreshCw, LogOut, Copy, CheckCircle2, Wrench, PauseCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, AlertTriangle, RefreshCw, LogOut, Copy, CheckCircle2, Lock } from 'lucide-react';
 import { authConfig } from '../authConfig';
 
 interface LoginProps {
@@ -10,23 +10,6 @@ interface LoginProps {
 
 export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
   const [copied, setCopied] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(true);
-  const [countdown, setCountdown] = useState(3);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Auto-redirect logic with cancellation capability
-  useEffect(() => {
-    if (!error && !isLoading && isRedirecting) {
-      if (countdown > 0) {
-          timerRef.current = setTimeout(() => setCountdown(c => c - 1), 1000);
-      } else {
-          onLogin();
-      }
-    }
-    return () => {
-        if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [error, isLoading, isRedirecting, countdown, onLogin]);
 
   const handleCopy = () => {
       navigator.clipboard.writeText(authConfig.redirect_uri);
@@ -34,12 +17,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
       setTimeout(() => setCopied(false), 2000);
   };
 
-  const cancelRedirect = () => {
-      setIsRedirecting(false);
-      if (timerRef.current) clearTimeout(timerRef.current);
-  };
-
-  // ERROR STATE (From App wrapper)
+  // ERROR STATE
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 font-sans">
@@ -49,15 +27,15 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
                      <AlertTriangle size={24} />
                  </div>
                  <div>
-                     <h2 className="text-xl font-bold text-red-900">Authentication Failed</h2>
-                     <p className="text-red-700 text-sm">The security gateway rejected the connection.</p>
+                     <h2 className="text-xl font-bold text-red-900">Sign In Error</h2>
+                     <p className="text-red-700 text-sm">We couldn't log you in.</p>
                  </div>
              </div>
              
              <div className="p-8">
                  <div className="mb-6">
-                     <p className="text-xs font-bold text-slate-500 uppercase mb-2">Error Message</p>
-                     <div className="bg-slate-50 border border-slate-200 rounded p-3 font-mono text-sm text-slate-700 break-all">
+                     <p className="text-xs font-bold text-slate-500 uppercase mb-2">Technical Details</p>
+                     <div className="bg-slate-50 border border-slate-200 rounded p-3 font-mono text-xs text-slate-700 break-all">
                         {error.message || "Unknown Error"}
                      </div>
                  </div>
@@ -70,7 +48,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
                         }}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
                      >
-                         <RefreshCw size={18} /> Retry Login
+                         <RefreshCw size={18} /> Reload Application
                      </button>
                  </div>
              </div>
@@ -79,87 +57,60 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
     );
   }
 
-  // MANUAL DEBUG / PAUSED STATE
-  if (!isRedirecting) {
-      return (
-        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
-            <div className="max-w-lg w-full bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-                <div className="bg-amber-50 p-6 border-b border-amber-100">
-                    <h2 className="text-xl font-bold text-amber-900 flex items-center gap-2">
-                        <Wrench size={24} /> Configuration Helper
-                    </h2>
-                    <p className="text-amber-700 text-sm mt-1">
-                        If you are seeing a <strong>redirect_mismatch</strong> error on the AWS/Cognito page, it means the URL below is missing from your configuration.
-                    </p>
-                </div>
-                
-                <div className="p-8 space-y-6">
-                    <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Required Callback URL</label>
-                        <div className="flex items-center gap-2">
-                            <code className="flex-1 bg-slate-100 border border-slate-300 px-3 py-3 rounded-lg text-sm font-mono text-slate-800 break-all select-all">
-                                {authConfig.redirect_uri}
-                            </code>
-                            <button 
-                                onClick={handleCopy}
-                                className="p-3 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-600 transition-colors"
-                                title="Copy to clipboard"
-                            >
-                                {copied ? <CheckCircle2 size={20} className="text-green-600"/> : <Copy size={20}/>}
-                            </button>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-2">
-                            <strong>Action:</strong> Copy this URL exactly. Go to AWS Cognito Console &rarr; App Client Settings &rarr; Allowed callback URLs. Paste it there.
-                        </p>
-                    </div>
+  // STANDARD LOGIN SCREEN (No Auto-Redirect to prevent loops)
+  return (
+    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        {/* Background Decorations */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[100px]"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[100px]"></div>
+        </div>
 
-                    <div className="pt-4 border-t border-slate-100 flex gap-3">
-                        <button 
-                            onClick={onLogin} 
-                            className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                        >
-                            <RefreshCw size={18} /> Try Connecting Now
-                        </button>
-                    </div>
+        <div className="max-w-md w-full bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl relative z-10 animate-in fade-in zoom-in duration-500">
+            <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/50 mx-auto mb-6">
+                    <Shield size={40} className="text-white" />
+                </div>
+                <h1 className="text-2xl font-bold text-white mb-2">Cuallee Cyber</h1>
+                <p className="text-slate-400 text-sm">Secure Compliance Gateway</p>
+            </div>
+
+            <button 
+                onClick={onLogin}
+                className="w-full bg-white text-slate-900 hover:bg-blue-50 font-bold py-4 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg hover:shadow-blue-500/20 hover:scale-[1.02] mb-8"
+            >
+                <Lock size={20} className="text-blue-600" />
+                Sign In with AWS Cognito
+            </button>
+
+            {/* Debug Info for Config Mismatch */}
+            <div className="bg-black/30 rounded-xl p-4 border border-white/5">
+                <h3 className="text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
+                    <AlertTriangle size={12} /> Config Debugger
+                </h3>
+                <p className="text-[10px] text-slate-400 mb-2">
+                    If you see a <strong>redirect_mismatch</strong> error after clicking Sign In, ensure this URL is in your AWS User Pool Allowed Callback URLs:
+                </p>
+                <div className="flex items-center gap-2">
+                    <code className="flex-1 bg-black/50 px-2 py-2 rounded text-[10px] font-mono text-blue-200 break-all border border-white/10">
+                        {authConfig.redirect_uri}
+                    </code>
+                    <button 
+                        onClick={handleCopy}
+                        className="p-2 bg-white/10 hover:bg-white/20 rounded text-white transition-colors"
+                        title="Copy to clipboard"
+                    >
+                        {copied ? <CheckCircle2 size={14} className="text-green-400"/> : <Copy size={14}/>}
+                    </button>
                 </div>
             </div>
-        </div>
-      );
-  }
-
-  // LOADING / COUNTDOWN STATE
-  return (
-    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
-      <div className="animate-in fade-in zoom-in duration-700 flex flex-col items-center text-center max-w-sm">
-        <div className="relative mb-8">
-             <div className="absolute inset-0 bg-blue-500 blur-2xl opacity-20 rounded-full"></div>
-             <div className="w-24 h-24 bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-3xl flex items-center justify-center shadow-2xl relative z-10">
-                 <Shield size={48} className="text-blue-500" />
-             </div>
         </div>
         
-        <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">Securing Connection</h2>
-                <p className="text-slate-400 text-sm mt-1">Redirecting to Identity Provider in {countdown}s...</p>
-            </div>
-
-            <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                <div 
-                    className="h-full bg-blue-500 transition-all duration-1000 ease-linear"
-                    style={{ width: `${((3 - countdown) / 3) * 100}%` }}
-                ></div>
-            </div>
-            
-            <button 
-                onClick={cancelRedirect}
-                className="text-xs text-slate-500 hover:text-white flex items-center justify-center gap-2 mx-auto px-4 py-2 hover:bg-white/5 rounded-full transition-colors"
-            >
-                <PauseCircle size={14} /> 
-                Wait! I have connection issues
-            </button>
+        <div className="mt-8 text-center">
+            <p className="text-slate-600 text-xs">
+                &copy; {new Date().getFullYear()} Cuallee Cyber. Secure Infrastructure.
+            </p>
         </div>
-      </div>
     </div>
   );
 };

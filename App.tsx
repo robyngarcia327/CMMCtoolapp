@@ -50,12 +50,13 @@ import { ComplianceWizard } from './components/ComplianceWizard';
 import { VendorManager } from './components/VendorManager';
 import { MSPDashboard } from './components/MSPDashboard';
 import { Login } from './components/Login';
+import { Onboarding } from './components/Onboarding'; // New Import
 import { Dashboard } from './components/Dashboard'; 
 import { AuditorPortal } from './components/AuditorPortal'; 
 import { storageService } from './services/storage';
 import { authConfig } from './authConfig';
 
-// --- Render Helpers for Menu (Moved outside component to fix type issues) ---
+// --- Render Helpers ---
 const NavDropdown = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
   <div className="relative group h-full flex items-center">
       <button className="flex items-center gap-1 px-3 py-2 text-slate-300 hover:text-white font-medium transition-colors">
@@ -81,7 +82,7 @@ const App: React.FC = () => {
   const auth = useAuth();
   
   // App State
-  const [currentView, setCurrentView] = useState<AppView>(AppView.MSP_DASHBOARD);
+  const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
   const [isChatOpen, setIsChatOpen] = useState(false);
   
   // Data State
@@ -102,14 +103,42 @@ const App: React.FC = () => {
           setClients(loadedClients);
           setClientDataStore(loadedStore);
           
-          if (loadedClients.length > 0) {
-              setActiveClientId(loadedClients[0].id);
-          }
-          
           setIsDataLoading(false);
       };
       initData();
   }, []);
+
+  // Set Active Client based on User Email
+  useEffect(() => {
+      if (!isDataLoading && auth.user?.profile.email && clients.length > 0) {
+          const userEmail = auth.user.profile.email;
+          
+          // 1. Find which client this user belongs to
+          let userClientId = '';
+          
+          // Iterate over all client data to find the user
+          // In a real DB, this is a query: SELECT * FROM OrgDirectory WHERE users CONTAINS email
+          for (const clientId of Object.keys(clientDataStore)) {
+              const clientUsers = clientDataStore[clientId].users || [];
+              if (clientUsers.some(u => u.email === userEmail)) {
+                  userClientId = clientId;
+                  break;
+              }
+          }
+
+          // 2. If found, set active. If not, we stay empty to trigger Onboarding.
+          if (userClientId) {
+              setActiveClientId(userClientId);
+          } else {
+              // Special case: If NO clients exist, or user is not found, we don't set active ID.
+              // This triggers the Onboarding View below.
+              setActiveClientId('');
+          }
+      } else if (!isDataLoading && clients.length > 0 && !activeClientId) {
+          // Fallback for dev mode / first load if no auth
+          setActiveClientId(clients[0].id);
+      }
+  }, [isDataLoading, auth.user, clients, clientDataStore]);
 
   // Auto-save
   useEffect(() => {
@@ -121,20 +150,14 @@ const App: React.FC = () => {
   // --- Auth Handling ---
 
   const handleLogout = () => {
-      // 1. Clear local storage tokens
       auth.removeUser();
-      
-      // 2. Redirect to Cognito Logout Endpoint
       const clientId = authConfig.client_id;
       const logoutUri = window.location.origin;
-      // Ensure no trailing slash to prevent double slash errors
       const cognitoDomain = authConfig.cognito_domain.replace(/\/$/, "");
       
-      // If the domain isn't set yet or is the placeholder, simple reload
       if (cognitoDomain.includes("your-domain")) {
           window.location.href = logoutUri;
       } else {
-          // Standard Cognito Logout URL structure
           window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
       }
   };
@@ -149,85 +172,88 @@ const App: React.FC = () => {
       );
   }
 
-  // If we have an error or are not authenticated, delegate to the Login component
-  // which will handle auto-redirection to Cognito or display the error details.
+  // Not Authenticated -> Login Screen
   if (auth.error || !auth.isAuthenticated) {
       return <Login onLogin={() => auth.signinRedirect()} error={auth.error} />;
   }
 
-  // Construct current user from OIDC profile
-  const currentUser: User = {
-      id: auth.user?.profile.sub || 'unknown',
-      name: (auth.user?.profile.email || 'User').split('@')[0],
-      email: auth.user?.profile.email || '',
-      organizationId: 'client-msp', // Default for now
-      role: 'MSP_ADMIN', // Defaulting to Admin for the demo
-      department: 'IT',
-      lastLogin: Date.now(),
-      mfaEnabled: true, // Assumed true via SSO
-      hasPasskey: false,
-      isCuiAuthorized: true,
-      iamSource: 'Microsoft365'
-  };
-
-  // --- Main App Logic (Only renders if authenticated) ---
-
+  // --- Data Loading State ---
   if (isDataLoading) {
       return (
           <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4">
               <Loader2 size={48} className="animate-spin text-blue-600" />
-              <h2 className="text-xl font-bold text-slate-700">Initializing Environment...</h2>
-              <p className="text-slate-500">Decrypting data for {currentUser.email}</p>
+              <h2 className="text-xl font-bold text-slate-700">Loading Workspace...</h2>
+              <p className="text-slate-500">Decrypting organizational data</p>
           </div>
       );
   }
-  
-  // EDGE CASE: No Clients Exist (First Run in Prod)
-  if (clients.length === 0) {
+
+  // --- ONBOARDING FLOW ---
+  // If user is authenticated BUT not linked to a client (activeClientId is empty), show Onboarding.
+  if (!activeClientId) {
+      const tempUser: User = {
+          id: auth.user?.profile.sub || 'new',
+          name: (auth.user?.profile.email || 'User').split('@')[0],
+          email: auth.user?.profile.email || '',
+          role: 'CLIENT_ADMIN',
+          organizationId: '',
+          department: '',
+          lastLogin: Date.now(),
+          mfaEnabled: true,
+          hasPasskey: false,
+          isCuiAuthorized: false
+      };
+
       return (
-          <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
-              <header className="bg-slate-900 text-slate-200 h-16 shrink-0 shadow-md z-50 flex items-center px-6">
-                  <div className="flex items-center gap-2 text-white font-bold text-lg">
-                      <Shield className="text-blue-500 fill-blue-500/20" size={24} />
-                      <span>Cuallee Cyber</span>
-                  </div>
-              </header>
-              <main className="flex-1 flex items-center justify-center p-6">
-                  <div className="max-w-2xl w-full">
-                      <div className="bg-white p-8 rounded-xl shadow-lg border border-slate-200 text-center mb-8">
-                          <Building2 size={64} className="mx-auto text-blue-600 mb-4" />
-                          <h1 className="text-2xl font-bold text-slate-900 mb-2">Welcome to your new environment</h1>
-                          <p className="text-slate-600 mb-6">
-                              The database is currently empty. Please create your first Organization (Client) to begin the assessment process.
-                          </p>
-                          <OrganizationManager 
-                            clients={clients}
-                            clientDataStore={clientDataStore}
-                            onAddClient={(c) => {
-                                setClients([c]);
-                                setClientDataStore({ [c.id]: createInitialClientData(false) });
-                                setActiveClientId(c.id);
-                            }}
-                            onUpdateClient={() => {}}
-                            onDeleteClient={() => {}}
-                            onUpdateClientData={() => {}}
-                        />
-                      </div>
-                  </div>
-              </main>
-          </div>
+          <Onboarding 
+            user={tempUser}
+            onCreateOrganization={(name, industry) => {
+                const newClient: Client = {
+                    id: `org-${Date.now()}`,
+                    name: name,
+                    industry: industry,
+                    contactName: tempUser.name,
+                    logoInitial: name.charAt(0).toUpperCase(),
+                    primaryFramework: 'NIST800-171',
+                    nextAuditDate: Date.now() + 31536000000,
+                    accountManager: 'Self-Managed',
+                    isParent: false
+                };
+                
+                // Initialize Data
+                const newData = createInitialClientData(false);
+                // Add the current user as the first Admin
+                newData.users.push({ ...tempUser, organizationId: newClient.id });
+
+                setClients([...clients, newClient]);
+                setClientDataStore({ ...clientDataStore, [newClient.id]: newData });
+                setActiveClientId(newClient.id);
+            }}
+          />
       );
   }
-  
-  // Fallback if data store is somehow missing the active client
-  if (!clientDataStore[activeClientId]) {
-      const newData = createInitialClientData(false);
-      setClientDataStore(prev => ({ ...prev, [activeClientId]: newData }));
-      return null; 
-  }
-  
-  const activeData = clientDataStore[activeClientId];
+
+  // --- MAIN APPLICATION ---
+  // User is Auth'd AND Linked to an Organization
+
   const activeClient = clients.find(c => c.id === activeClientId) || clients[0];
+  const activeData = clientDataStore[activeClientId];
+  
+  if (!activeData) return <div className="p-10">Error loading organization data. Please refresh.</div>;
+
+  // Find current user object from the loaded data
+  const currentUser = activeData.users.find(u => u.email === auth.user?.profile.email) || {
+      id: auth.user?.profile.sub || 'unknown',
+      name: (auth.user?.profile.email || 'User').split('@')[0],
+      email: auth.user?.profile.email || '',
+      organizationId: activeClientId,
+      role: 'CLIENT_ADMIN', // Default fallback
+      department: 'IT',
+      lastLogin: Date.now(),
+      mfaEnabled: true,
+      hasPasskey: false,
+      isCuiAuthorized: true
+  };
 
   const updateActiveClientData = (updateFn: (prev: ClientData) => Partial<ClientData>) => {
       setClientDataStore(prevStore => {
