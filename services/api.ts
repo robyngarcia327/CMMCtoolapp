@@ -13,9 +13,10 @@ export const api = {
     try {
       const response = await fetch(`${API_BASE_URL}/orgs`, {
         headers: {
-          // IMPORTANT: Removed 'Bearer ' prefix. 
-          // Standard AWS Cognito Authorizers often expect just the token string.
-          'Authorization': token, 
+          // Re-adding 'Bearer' prefix. 
+          // While some raw Cognito setups expect just the token, standard implementations 
+          // and Lambda Authorizers typically require the standard 'Bearer <token>' schema.
+          'Authorization': `Bearer ${token}`, 
           'Content-Type': 'application/json'
         }
       });
@@ -26,7 +27,7 @@ export const api = {
             status: response.status,
             statusText: response.statusText,
             body: errorBody,
-            tokenSnippet: token.substring(0, 10) + "..." // Log start of token for debug
+            tokenSnippet: token.substring(0, 10) + "..."
         });
         throw new Error(`API Error ${response.status}: ${errorBody || response.statusText}`);
       }
@@ -46,7 +47,7 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/orgs`, {
       method: 'POST',
       headers: {
-        'Authorization': token,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ name })
@@ -71,7 +72,7 @@ export const api = {
     const initResponse = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/upload-request`, {
       method: 'POST',
       headers: {
-        'Authorization': token,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -103,7 +104,7 @@ export const api = {
     const completeResponse = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/upload-complete`, {
       method: 'POST',
       headers: {
-        'Authorization': token,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
@@ -130,7 +131,7 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/download-request`, {
       method: 'POST',
       headers: {
-        'Authorization': token,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
@@ -148,7 +149,7 @@ export const api = {
   getEvidenceList: async (token: string, orgId: string): Promise<Artifact[]> => {
     const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence`, {
       headers: {
-        'Authorization': token,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
