@@ -152,7 +152,8 @@ const App: React.FC = () => {
   const handleLogout = () => {
       auth.removeUser();
       const clientId = authConfig.client_id;
-      const logoutUri = window.location.origin;
+      // Use the exact redirect_uri from authConfig to match what is registered in Cognito (no trailing slashes)
+      const logoutUri = authConfig.redirect_uri;
       const cognitoDomain = authConfig.cognito_domain.replace(/\/$/, "");
       
       if (cognitoDomain.includes("your-domain")) {
