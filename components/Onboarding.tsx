@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Building2, ArrowRight, Loader2 } from 'lucide-react';
+import { Building2, ArrowRight, Loader2, RefreshCw } from 'lucide-react';
 import { User } from '../types';
 
 interface OnboardingProps {
   user: User;
   onCreateOrganization: (name: string) => void;
+  onRefresh?: () => void;
 }
 
-export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganization }) => {
+export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganization, onRefresh }) => {
   const [orgName, setOrgName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -53,6 +54,18 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
                     Create Organization
                 </button>
             </form>
+
+            {onRefresh && (
+                <div className="mt-6 pt-6 border-t border-slate-100 text-center">
+                    <p className="text-xs text-slate-400 mb-2">Already created an organization?</p>
+                    <button 
+                        onClick={onRefresh}
+                        className="text-sm text-blue-600 font-medium hover:text-blue-800 flex items-center justify-center gap-2 mx-auto"
+                    >
+                        <RefreshCw size={14} /> Refresh Data
+                    </button>
+                </div>
+            )}
         </div>
 
       </div>

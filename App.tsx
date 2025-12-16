@@ -99,68 +99,78 @@ const App: React.FC = () => {
   const [orgFetchError, setOrgFetchError] = useState<string | null>(null);
 
   // --- 1. Load Organizations on Auth ---
+  const loadOrganizations = async (forceRefresh = false) => {
+      if (!auth.isAuthenticated || !auth.user?.id_token) return;
+
+      setIsDataLoading(true);
+      setLoadingMessage("Loading Organization...");
+      setOrgFetchError(null);
+      
+      try {
+          // Call API to get orgs using ID token
+          const apiOrgs = await api.getOrgs(auth.user.id_token);
+          
+          // Map API response to Client type for internal app compatibility
+          const mappedClients: Client[] = apiOrgs.map((o: any) => ({
+              id: o.orgId,
+              name: o.name,
+              industry: 'Unknown', // Backend might not provide this yet
+              contactName: auth.user?.profile.email || 'User',
+              logoInitial: o.name.charAt(0).toUpperCase(),
+              primaryFramework: 'NIST800-171',
+              nextAuditDate: Date.now() + 31536000000,
+              accountManager: 'Self-Managed',
+              isParent: false
+          }));
+
+          setClients(mappedClients);
+
+          // Logic: Select Active Org
+          if (mappedClients.length > 0) {
+              // Restore preference from local storage or default to first
+              const storedOrgId = localStorage.getItem('activeOrgId');
+              const validStored = storedOrgId ? mappedClients.find(c => c.id === storedOrgId) : null;
+              
+              const selectedId = validStored ? validStored.id : mappedClients[0].id;
+              setActiveClientId(selectedId);
+              localStorage.setItem('activeOrgId', selectedId);
+
+              // Initialize Data Store for these clients
+              const newStore: Record<string, ClientData> = {};
+              for (const c of mappedClients) {
+                  // Only init if not already there to preserve local state
+                  if (!clientDataStore[c.id]) {
+                      newStore[c.id] = createInitialClientData(false);
+                  } else {
+                      newStore[c.id] = clientDataStore[c.id];
+                  }
+                  
+                  // Fetch Evidence for this org using access token (Async update)
+                  api.getEvidenceList(auth.user.id_token, c.id).then(evidence => {
+                      setClientDataStore(prev => ({
+                          ...prev,
+                          [c.id]: { ...prev[c.id], artifacts: evidence }
+                      }));
+                  }).catch(e => console.warn(`Failed to fetch evidence for ${c.id}`, e));
+              }
+              setClientDataStore(prev => ({ ...prev, ...newStore }));
+          } else {
+              // Explicitly set empty to trigger onboarding if we are genuinely loaded
+              setActiveClientId('');
+          }
+
+      } catch (e) {
+          console.error("Failed to load organizations", e);
+          setOrgFetchError("Could not load organization data.");
+      } finally {
+          setIsDataLoading(false);
+      }
+  };
+
   useEffect(() => {
       // Use ID Token for API Gateway Authentication
       if (auth.isAuthenticated && auth.user?.id_token) {
-          const fetchOrgs = async () => {
-              setIsDataLoading(true);
-              setLoadingMessage("Loading Organization...");
-              setOrgFetchError(null);
-              try {
-                  // Call API to get orgs using ID token
-                  const apiOrgs = await api.getOrgs(auth.user!.id_token!);
-                  
-                  // Map API response to Client type for internal app compatibility
-                  const mappedClients: Client[] = apiOrgs.map((o: any) => ({
-                      id: o.orgId,
-                      name: o.name,
-                      industry: 'Unknown', // Backend might not provide this yet
-                      contactName: auth.user?.profile.email || 'User',
-                      logoInitial: o.name.charAt(0).toUpperCase(),
-                      primaryFramework: 'NIST800-171',
-                      nextAuditDate: Date.now() + 31536000000,
-                      accountManager: 'Self-Managed',
-                      isParent: false
-                  }));
-
-                  setClients(mappedClients);
-
-                  // Logic: Select Active Org
-                  if (mappedClients.length === 0) {
-                      // No orgs found - Trigger Creation Wizard
-                      setActiveClientId(''); 
-                  } else {
-                      // Restore preference from local storage or default to first
-                      const storedOrgId = localStorage.getItem('activeOrgId');
-                      const validStored = storedOrgId ? mappedClients.find(c => c.id === storedOrgId) : null;
-                      
-                      const selectedId = validStored ? validStored.id : mappedClients[0].id;
-                      setActiveClientId(selectedId);
-                      localStorage.setItem('activeOrgId', selectedId);
-                  }
-
-                  // Initialize Data Store for these clients (Hybrid: API for Orgs/Evidence, Local for Risks/Assets for now)
-                  const newStore: Record<string, ClientData> = {};
-                  for (const c of mappedClients) {
-                      newStore[c.id] = createInitialClientData(false);
-                      // Fetch Evidence for this org using access token
-                      try {
-                          const evidence = await api.getEvidenceList(auth.user!.id_token!, c.id);
-                          newStore[c.id].artifacts = evidence;
-                      } catch (e) {
-                          console.warn(`Failed to fetch evidence for ${c.id}`, e);
-                      }
-                  }
-                  setClientDataStore(newStore);
-
-              } catch (e) {
-                  console.error("Failed to load organizations", e);
-                  setOrgFetchError("Could not load organization data.");
-              } finally {
-                  setIsDataLoading(false);
-              }
-          };
-          fetchOrgs();
+          loadOrganizations();
       }
   }, [auth.isAuthenticated, auth.user]);
 
@@ -171,26 +181,6 @@ const App: React.FC = () => {
     }
   }, [clients, clientDataStore, isDataLoading]);
 
-  // Helper: Poll for organization existence
-  const waitForOrganization = async (name: string, retries = 3): Promise<any> => {
-      for (let i = 0; i < retries; i++) {
-          console.log(`Polling for organization "${name}" (Attempt ${i+1}/${retries})...`);
-          
-          // Wait increased on each retry: 2s, 4s, 6s
-          await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1))); 
-          
-          try {
-              const apiOrgs = await api.getOrgs(auth.user!.id_token!);
-              // Case-insensitive check and trim
-              const existingOrg = apiOrgs.find((o: any) => o.name.trim().toLowerCase() === name.trim().toLowerCase());
-              if (existingOrg) return existingOrg;
-          } catch (e) {
-              console.warn("Polling failed", e);
-          }
-      }
-      return null;
-  };
-
   // Handle Org Creation
   const handleCreateOrganization = async (name: string) => {
       if (!auth.user?.id_token) return;
@@ -199,34 +189,36 @@ const App: React.FC = () => {
       setLoadingMessage("Creating Organization...");
 
       try {
-          // Attempt creation
-          await api.createOrg(auth.user.id_token, name);
+          // 1. Attempt creation - IMPORTANT: Capture the response!
+          // The API returns { orgId: "...", name: "..." }
+          const newOrg = await api.createOrg(auth.user.id_token, name);
           
-          // If successful immediately, we wait briefly for read-consistency
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
-          // Fetch updated list
-          const orgData = await waitForOrganization(name, 1);
-          if (orgData) {
-              finishOrgCreation(orgData);
-          } else {
-              // Should theoretically be there if createOrg didn't throw
-              throw new Error("Created but not found"); 
-          }
+          console.log("Org Created Successfully:", newOrg);
 
-      } catch (e) {
-          console.warn("API Error during creation. Entering recovery mode...", e);
-          setLoadingMessage("Verifying creation...");
-          
-          // Optimistic Recovery Strategy: Retry finding it 3 times
-          const recoveredOrg = await waitForOrganization(name, 3);
+          // 2. IMMEDIATELY use this data to bootstrap the app. 
+          // Do NOT wait for getOrgs() polling which might be slow due to eventual consistency.
+          finishOrgCreation(newOrg);
 
-          if (recoveredOrg) {
-              console.log("Organization recovered successfully.");
-              finishOrgCreation(recoveredOrg);
-          } else {
-              console.error("Organization creation failed definitively.");
-              alert("We could not confirm the organization was created. Please refresh the page. If it appears, select it. If not, please try again.");
+      } catch (e: any) {
+          console.warn("API Error during creation.", e);
+          
+          // Fallback: If error implies it already exists, try to find it in a fresh list fetch
+          setLoadingMessage("Verifying...");
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          try {
+              const apiOrgs = await api.getOrgs(auth.user.id_token);
+              const existing = apiOrgs.find((o: any) => o.name.toLowerCase() === name.toLowerCase());
+              
+              if (existing) {
+                  finishOrgCreation(existing);
+              } else {
+                  console.error("Organization creation failed definitively.");
+                  alert(`Failed to create organization. Error: ${e.message || "Unknown error"}`);
+                  setIsDataLoading(false);
+              }
+          } catch (retryError) {
+              alert("Failed to create organization and could not verify existence. Please try again.");
               setIsDataLoading(false);
           }
       }
@@ -311,7 +303,8 @@ const App: React.FC = () => {
                 name: '', email: auth.user?.profile.email || '', role: 'CLIENT_USER', 
                 organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false 
             }}
-            onCreateOrganization={handleCreateOrganization} 
+            onCreateOrganization={handleCreateOrganization}
+            onRefresh={() => loadOrganizations(true)}
           />
       );
   }
