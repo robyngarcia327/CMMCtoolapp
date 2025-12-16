@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Paperclip, Image as ImageIcon, X, FileText, Trash2, Loader2, CloudUpload } from 'lucide-react';
+import { Paperclip, Image as ImageIcon, X, FileText, Trash2, Loader2 } from 'lucide-react';
 import { Artifact } from '../types';
 import { SnippingTool } from './SnippingTool';
 import { api } from '../services/api';
