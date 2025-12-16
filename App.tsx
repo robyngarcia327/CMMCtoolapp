@@ -202,25 +202,36 @@ const App: React.FC = () => {
   const verifyOrganizationExists = async (name: string) => {
       if (!auth.user?.id_token) return;
 
-      // Poll up to 5 times (15 seconds)
+      // Poll up to 10 times (30+ seconds) to handle DB Index Propagation Latency
       let attempts = 0;
-      const maxAttempts = 5;
+      const maxAttempts = 10;
 
       while (attempts < maxAttempts) {
           attempts++;
           console.log(`Verifying organization "${name}" (Attempt ${attempts}/${maxAttempts})...`);
           
           try {
-              // Wait before checking
+              // Wait 3s between checks
               await new Promise(resolve => setTimeout(resolve, 3000));
               
               const apiOrgs = await api.getOrgs(auth.user.id_token);
+              
+              // 1. Strict Match
               const existing = apiOrgs.find((o: any) => o.name.trim().toLowerCase() === name.trim().toLowerCase());
               
               if (existing) {
                   finishOrgCreation(existing);
                   return;
               }
+
+              // 2. Fuzzy/First Match: If we had NO clients before, and now we have ONE, assume it's the one we just made.
+              // This handles cases where API returns 504 but DB write succeeded with slight name char difference.
+              if (clients.length === 0 && apiOrgs.length > 0) {
+                  console.log("Strict match failed, but new organization found. Proceeding with:", apiOrgs[0]);
+                  finishOrgCreation(apiOrgs[0]);
+                  return;
+              }
+
           } catch (err) {
               console.warn("Polling error:", err);
           }

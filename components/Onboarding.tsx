@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, ArrowRight, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Building2, ArrowRight, Loader2, RefreshCw, AlertCircle, RotateCcw } from 'lucide-react';
 import { User } from '../types';
 
 interface OnboardingProps {
@@ -25,6 +25,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
       if (onRetryVerification) {
           onRetryVerification(orgName);
       }
+  };
+
+  const handleHardReload = () => {
+      window.location.reload();
   };
 
   return (
@@ -55,20 +59,36 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
                 </div>
                 
                 {creationStatus === 'failed_verification' ? (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
-                        <div className="flex justify-center mb-2 text-amber-500">
-                            <AlertCircle size={24} />
+                    <div className="space-y-3">
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+                            <div className="flex justify-center mb-2 text-amber-500">
+                                <AlertCircle size={24} />
+                            </div>
+                            <p className="text-sm text-amber-800 font-medium mb-1">
+                                Verification timed out.
+                            </p>
+                            <p className="text-xs text-amber-600 mb-3">
+                                The organization may have been created but is not yet visible to the application due to synchronization delays.
+                            </p>
+                            <button 
+                                type="button"
+                                onClick={handleRetry}
+                                className="w-full bg-amber-100 text-amber-800 font-bold py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-amber-200 transition-colors mb-2 text-sm"
+                            >
+                                <RefreshCw size={14} /> Retry Verification
+                            </button>
                         </div>
-                        <p className="text-sm text-amber-800 font-medium mb-3">
-                            Creation initiated, but verification is taking longer than expected.
-                        </p>
-                        <button 
-                            type="button"
-                            onClick={handleRetry}
-                            className="w-full bg-amber-100 text-amber-800 font-bold py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-amber-200 transition-colors"
-                        >
-                            <RefreshCw size={16} /> Check Status Again
-                        </button>
+                        
+                        <div className="text-center pt-2">
+                            <p className="text-xs text-slate-400 mb-2">If you are certain it was created:</p>
+                            <button 
+                                type="button"
+                                onClick={handleHardReload}
+                                className="w-full bg-slate-800 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-slate-700 transition-colors"
+                            >
+                                <RotateCcw size={16} /> Force Reload Application
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <button 
