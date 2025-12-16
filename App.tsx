@@ -326,6 +326,10 @@ const App: React.FC = () => {
             creationStatus={creationStatus}
             onRetryVerification={verifyOrganizationExists}
             errorMessage={orgFetchError}
+            debugTokens={{
+                accessToken: auth.user?.access_token,
+                idToken: auth.user?.id_token
+            }}
           />
       );
   }

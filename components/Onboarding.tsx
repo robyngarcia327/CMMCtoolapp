@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, ArrowRight, Loader2, RefreshCw, AlertCircle, RotateCcw, Info, Bug } from 'lucide-react';
+import { Building2, ArrowRight, Loader2, RefreshCw, AlertCircle, RotateCcw, Info, Bug, Copy } from 'lucide-react';
 import { User } from '../types';
 
 interface OnboardingProps {
@@ -9,9 +9,13 @@ interface OnboardingProps {
   creationStatus?: 'idle' | 'creating' | 'verifying' | 'failed_verification';
   onRetryVerification?: (name: string) => void;
   errorMessage?: string | null;
+  debugTokens?: {
+      accessToken?: string;
+      idToken?: string;
+  };
 }
 
-export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganization, onRefresh, creationStatus = 'idle', onRetryVerification, errorMessage }) => {
+export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganization, onRefresh, creationStatus = 'idle', onRetryVerification, errorMessage, debugTokens }) => {
   const [orgName, setOrgName] = useState('');
   const [showDebug, setShowDebug] = useState(false);
   
@@ -31,6 +35,13 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
 
   const handleHardReload = () => {
       window.location.reload();
+  };
+
+  const copyToClipboard = (text: string | undefined) => {
+      if (text) {
+          navigator.clipboard.writeText(text);
+          alert("Token copied to clipboard");
+      }
   };
 
   return (
@@ -144,11 +155,28 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
                     <Bug size={10} /> {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
                 </button>
                 {showDebug && (
-                    <div className="mt-2 text-left bg-slate-900 text-green-400 p-3 rounded text-[10px] font-mono overflow-auto max-h-32">
+                    <div className="mt-2 text-left bg-slate-900 text-green-400 p-3 rounded text-[10px] font-mono overflow-auto max-h-64 break-all shadow-inner">
                         <p><strong>Auth Sub:</strong> {user.id}</p>
                         <p><strong>Email:</strong> {user.email}</p>
-                        <p><strong>App Version:</strong> 1.0.1 (Auth Fix)</p>
-                        {errorMessage && <p className="text-red-400"><strong>Last Error:</strong> {errorMessage}</p>}
+                        <p><strong>App Version:</strong> 1.0.2 (Token Debug)</p>
+                        
+                        <div className="mt-2 border-t border-slate-700 pt-2">
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="font-bold text-slate-500">Access Token (Used for API):</span>
+                                <button onClick={() => copyToClipboard(debugTokens?.accessToken)} className="text-blue-400 hover:text-white"><Copy size={10}/></button>
+                            </div>
+                            <p className="opacity-70">{debugTokens?.accessToken ? debugTokens.accessToken.substring(0, 50) + '...' : 'None'}</p>
+                        </div>
+
+                        <div className="mt-2 border-t border-slate-700 pt-2">
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="font-bold text-slate-500">ID Token (Identity):</span>
+                                <button onClick={() => copyToClipboard(debugTokens?.idToken)} className="text-blue-400 hover:text-white"><Copy size={10}/></button>
+                            </div>
+                            <p className="opacity-70">{debugTokens?.idToken ? debugTokens.idToken.substring(0, 50) + '...' : 'None'}</p>
+                        </div>
+
+                        {errorMessage && <p className="text-red-400 mt-2 border-t border-red-900 pt-2"><strong>Last Error:</strong> {errorMessage}</p>}
                     </div>
                 )}
             </div>
