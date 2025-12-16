@@ -149,35 +149,10 @@ const App: React.FC = () => {
       );
   }
 
-  if (auth.error) {
-      console.error("Cognito Error:", auth.error);
-      return (
-          <div className="flex h-screen items-center justify-center bg-slate-50 p-6">
-             <div className="max-w-md w-full">
-                 <Login 
-                    onLogin={() => auth.signinRedirect()} 
-                    error={auth.error} 
-                 />
-                 <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded text-xs text-red-800 font-mono break-all">
-                    Debug: {auth.error.message}
-                 </div>
-                 {/* Fallback button to clear session if stuck in a loop */}
-                 <button 
-                    onClick={() => {
-                        auth.removeUser();
-                        window.location.href = window.location.origin;
-                    }}
-                    className="mt-2 w-full flex items-center justify-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded text-sm font-bold transition-colors"
-                 >
-                    <RefreshCw size={14} /> Clear Session & Retry
-                 </button>
-             </div>
-          </div>
-      );
-  }
-
-  if (!auth.isAuthenticated) {
-      return <Login onLogin={() => auth.signinRedirect()} />;
+  // If we have an error or are not authenticated, delegate to the Login component
+  // which will handle auto-redirection to Cognito or display the error details.
+  if (auth.error || !auth.isAuthenticated) {
+      return <Login onLogin={() => auth.signinRedirect()} error={auth.error} />;
   }
 
   // Construct current user from OIDC profile
