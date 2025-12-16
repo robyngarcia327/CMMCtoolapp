@@ -8,14 +8,13 @@
 const USER_POOL_ID = "us-east-1_ky47RcgYh"; 
 const CLIENT_ID = "5pe5430hrtohupn12gj8r66qtb"; 
 
-// IMPORTANT: Updated to match "Cuallee" spelling. 
-// If you see a 404 error when clicking "Sign In", verify this URL in AWS > App Integration > Domain name.
-const COGNITO_DOMAIN = "https://cuallee-cyber.auth.us-east-1.amazoncognito.com"; 
+// UPDATED: This matches the URL you saw when clicking "View login page"
+const COGNITO_DOMAIN = "https://us-east-1ky47rcgyh.auth.us-east-1.amazoncognito.com"; 
 
 export const authConfig = {
   authority: `https://cognito-idp.us-east-1.amazonaws.com/${USER_POOL_ID}`,
   client_id: CLIENT_ID,
-  // This uses the current browser URL (e.g., https://cualleecyber.com)
+  // This uses the current browser URL (e.g., https://cualleecyber.com or https://main...amplifyapp.com)
   // You MUST add this exact value to "Allowed Callback URLs" in Cognito Console
   redirect_uri: window.location.origin, 
   response_type: "code",
