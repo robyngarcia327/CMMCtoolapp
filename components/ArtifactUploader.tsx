@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { Paperclip, Image as ImageIcon, X, FileText, Trash2 } from 'lucide-react';
+import { Paperclip, Image as ImageIcon, X, FileText, Trash2, Loader2, CloudUpload } from 'lucide-react';
 import { Artifact } from '../types';
 import { SnippingTool } from './SnippingTool';
+import { api } from '../services/api';
+import { useAuth } from "react-oidc-context";
 
 interface ArtifactUploaderProps {
   requirementId: string;
   artifacts: Artifact[];
   onAddArtifact: (artifact: Artifact) => void;
   onRemoveArtifact: (id: string) => void;
+  activeClientId?: string; // Needed for API calls
 }
 
 export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
@@ -15,53 +18,85 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
   artifacts,
   onAddArtifact,
   onRemoveArtifact,
+  activeClientId
 }) => {
+  const auth = useAuth();
   const [showSnipper, setShowSnipper] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !activeClientId || !auth.user?.access_token) return;
 
-    // For demo, creating a fake URL. In real app, upload to S3/Blob storage
-    const mockUrl = URL.createObjectURL(file);
-    
-    const newArtifact: Artifact = {
-      id: Date.now().toString(),
-      requirementId,
-      name: file.name,
-      type: file.type.startsWith('image/') ? 'image' : 'document',
-      url: mockUrl,
-      timestamp: Date.now(),
-    };
-    onAddArtifact(newArtifact);
-    e.target.value = ''; // reset
+    setIsUploading(true);
+    try {
+        // Implement 3-Step Upload Flow
+        const newArtifact = await api.uploadEvidence(
+            auth.user.access_token,
+            activeClientId,
+            file,
+            requirementId
+        );
+        onAddArtifact(newArtifact);
+    } catch (error) {
+        console.error("Upload failed", error);
+        alert("Failed to upload file to secure storage. Please try again.");
+    } finally {
+        setIsUploading(false);
+        e.target.value = ''; // reset input
+    }
   };
 
-  const handleSnipCapture = (dataUrl: string) => {
-    const newArtifact: Artifact = {
-      id: Date.now().toString(),
-      requirementId,
-      name: `Screen_Capture_${new Date().toLocaleTimeString()}.png`,
-      type: 'image',
-      url: dataUrl,
-      timestamp: Date.now(),
-    };
-    onAddArtifact(newArtifact);
-    setShowSnipper(false);
+  // Note: Snipping tool logic would also need to convert base64 to File object to use the API
+  const handleSnipCapture = async (dataUrl: string) => {
+    if (!activeClientId || !auth.user?.access_token) return;
+
+    // Convert Data URL to File
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], `Screen_Capture_${new Date().getTime()}.png`, { type: 'image/png' });
+
+    setIsUploading(true);
+    try {
+        const newArtifact = await api.uploadEvidence(
+            auth.user.access_token,
+            activeClientId,
+            file,
+            requirementId
+        );
+        onAddArtifact(newArtifact);
+        setShowSnipper(false);
+    } catch (error) {
+        console.error("Upload failed", error);
+        alert("Failed to upload screenshot.");
+    } finally {
+        setIsUploading(false);
+    }
+  };
+
+  const handleDownload = async (artifact: Artifact) => {
+      if (!activeClientId || !auth.user?.access_token) return;
+      try {
+          const downloadUrl = await api.getDownloadUrl(auth.user.access_token, activeClientId, artifact.id);
+          window.open(downloadUrl, '_blank');
+      } catch (e) {
+          alert("Failed to retrieve secure download link.");
+      }
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <label className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 transition-colors text-sm font-medium">
-          <Paperclip size={16} />
-          Upload File
-          <input type="file" className="hidden" onChange={handleFileUpload} />
+        <label className={`cursor-pointer flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 transition-colors text-sm font-medium ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+          {isUploading ? <Loader2 size={16} className="animate-spin"/> : <Paperclip size={16} />}
+          {isUploading ? 'Uploading...' : 'Upload File'}
+          <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
         </label>
         
         <button
           onClick={() => setShowSnipper(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg border border-indigo-200 transition-colors text-sm font-medium"
+          disabled={isUploading}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg border border-indigo-200 transition-colors text-sm font-medium disabled:opacity-50"
         >
           <ImageIcon size={16} />
           Snipping Tool
@@ -85,11 +120,14 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
-                {art.type === 'image' && (
-                    <a href={art.url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">View</a>
-                )}
+                <button 
+                    onClick={() => handleDownload(art)}
+                    className="text-xs text-blue-600 hover:underline px-2"
+                >
+                    View
+                </button>
                 <button onClick={() => onRemoveArtifact(art.id)} className="text-slate-400 hover:text-red-500 p-1">
-                <Trash2 size={16} />
+                    <Trash2 size={16} />
                 </button>
             </div>
           </div>

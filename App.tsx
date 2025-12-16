@@ -50,11 +50,12 @@ import { ComplianceWizard } from './components/ComplianceWizard';
 import { VendorManager } from './components/VendorManager';
 import { MSPDashboard } from './components/MSPDashboard';
 import { Login } from './components/Login';
-import { Onboarding } from './components/Onboarding'; // New Import
+import { Onboarding } from './components/Onboarding'; 
 import { Dashboard } from './components/Dashboard'; 
 import { AuditorPortal } from './components/AuditorPortal'; 
 import { storageService } from './services/storage';
 import { authConfig } from './authConfig';
+import { api } from './services/api';
 
 // --- Render Helpers ---
 const NavDropdown = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
@@ -86,61 +87,82 @@ const App: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   
   // Data State
-  const [isDataLoading, setIsDataLoading] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(false); // Changed to false initially, true when auth confirms
   const [clients, setClients] = useState<Client[]>([]);
   const [activeClientId, setActiveClientId] = useState<string>('');
   const [activeFramework, setActiveFramework] = useState<Framework>(FRAMEWORKS[0]);
   const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>({});
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
+  
+  // Org Fetch State
+  const [orgFetchError, setOrgFetchError] = useState<string | null>(null);
 
-  // Initial Data Load
+  // --- 1. Load Organizations on Auth ---
   useEffect(() => {
-      const initData = async () => {
-          setIsDataLoading(true);
-          const loadedClients = await storageService.loadClients();
-          const loadedStore = await storageService.loadDataStore();
-          
-          setClients(loadedClients);
-          setClientDataStore(loadedStore);
-          
-          setIsDataLoading(false);
-      };
-      initData();
-  }, []);
+      if (auth.isAuthenticated && auth.user?.access_token) {
+          const fetchOrgs = async () => {
+              setIsDataLoading(true);
+              setOrgFetchError(null);
+              try {
+                  // Call API to get orgs
+                  const apiOrgs = await api.getOrgs(auth.user!.access_token);
+                  
+                  // Map API response to Client type for internal app compatibility
+                  const mappedClients: Client[] = apiOrgs.map((o: any) => ({
+                      id: o.orgId,
+                      name: o.name,
+                      industry: 'Unknown', // Backend might not provide this yet
+                      contactName: auth.user?.profile.email || 'User',
+                      logoInitial: o.name.charAt(0).toUpperCase(),
+                      primaryFramework: 'NIST800-171',
+                      nextAuditDate: Date.now() + 31536000000,
+                      accountManager: 'Self-Managed',
+                      isParent: false
+                  }));
 
-  // Set Active Client based on User Email
-  useEffect(() => {
-      if (!isDataLoading && auth.user?.profile.email && clients.length > 0) {
-          const userEmail = auth.user.profile.email;
-          
-          // 1. Find which client this user belongs to
-          let userClientId = '';
-          
-          // Iterate over all client data to find the user
-          // In a real DB, this is a query: SELECT * FROM OrgDirectory WHERE users CONTAINS email
-          for (const clientId of Object.keys(clientDataStore)) {
-              const clientUsers = clientDataStore[clientId].users || [];
-              if (clientUsers.some(u => u.email === userEmail)) {
-                  userClientId = clientId;
-                  break;
+                  setClients(mappedClients);
+
+                  // Logic: 0, 1, or Many
+                  if (mappedClients.length === 1) {
+                      setActiveClientId(mappedClients[0].id);
+                  } else if (mappedClients.length === 0) {
+                      // No orgs found - Trigger "No Access" screen
+                      setActiveClientId(''); 
+                  }
+                  // If > 1, activeClientId remains empty initially, forcing user to pick (or we can default to [0])
+                  if (mappedClients.length > 1) {
+                      setActiveClientId(mappedClients[0].id);
+                  }
+
+                  // Initialize Data Store for these clients (Hybrid: API for Orgs/Evidence, Local for Risks/Assets for now)
+                  const newStore: Record<string, ClientData> = {};
+                  for (const c of mappedClients) {
+                      // In a full implementation, we'd fetch risks/assets here too.
+                      // For now, we seed empty data structures so the UI renders.
+                      newStore[c.id] = createInitialClientData(false);
+                      
+                      // Fetch Evidence for this org
+                      try {
+                          const evidence = await api.getEvidenceList(auth.user!.access_token, c.id);
+                          newStore[c.id].artifacts = evidence;
+                      } catch (e) {
+                          console.warn(`Failed to fetch evidence for ${c.id}`, e);
+                      }
+                  }
+                  setClientDataStore(newStore);
+
+              } catch (e) {
+                  console.error("Failed to load organizations", e);
+                  setOrgFetchError("Could not load organization data.");
+              } finally {
+                  setIsDataLoading(false);
               }
-          }
-
-          // 2. If found, set active. If not, we stay empty to trigger Onboarding.
-          if (userClientId) {
-              setActiveClientId(userClientId);
-          } else {
-              // Special case: If NO clients exist, or user is not found, we don't set active ID.
-              // This triggers the Onboarding View below.
-              setActiveClientId('');
-          }
-      } else if (!isDataLoading && clients.length > 0 && !activeClientId) {
-          // Fallback for dev mode / first load if no auth
-          setActiveClientId(clients[0].id);
+          };
+          fetchOrgs();
       }
-  }, [isDataLoading, auth.user, clients, clientDataStore]);
+  }, [auth.isAuthenticated, auth.user]);
 
-  // Auto-save
+  // Auto-save (Hybrid: Only saves local parts like Risks/Assets to local storage for persistence between reloads)
   useEffect(() => {
     if (!isDataLoading && clients.length > 0) {
         storageService.save(clients, clientDataStore);
@@ -152,7 +174,6 @@ const App: React.FC = () => {
   const handleLogout = () => {
       auth.removeUser();
       const clientId = authConfig.client_id;
-      // Use the exact redirect_uri from authConfig to match what is registered in Cognito (no trailing slashes)
       const logoutUri = authConfig.redirect_uri;
       const cognitoDomain = authConfig.cognito_domain.replace(/\/$/, "");
       
@@ -183,72 +204,42 @@ const App: React.FC = () => {
       return (
           <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4">
               <Loader2 size={48} className="animate-spin text-blue-600" />
-              <h2 className="text-xl font-bold text-slate-700">Loading Workspace...</h2>
-              <p className="text-slate-500">Decrypting organizational data</p>
+              <h2 className="text-xl font-bold text-slate-700">Loading Organization...</h2>
+              <p className="text-slate-500">Fetching access rights and encryption keys</p>
           </div>
       );
   }
 
-  // --- ONBOARDING FLOW ---
-  // If user is authenticated BUT not linked to a client (activeClientId is empty), show Onboarding.
+  // --- ONBOARDING / NO ACCESS FLOW ---
+  // If authenticated but no active client (and we aren't loading), it means 0 orgs found
+  // OR user hasn't selected one yet (if we implemented a picker screen, which we skipped for simple default [0])
   if (!activeClientId) {
-      const tempUser: User = {
-          id: auth.user?.profile.sub || 'new',
-          name: (auth.user?.profile.email || 'User').split('@')[0],
-          email: auth.user?.profile.email || '',
-          role: 'CLIENT_ADMIN',
-          organizationId: '',
-          department: '',
-          lastLogin: Date.now(),
-          mfaEnabled: true,
-          hasPasskey: false,
-          isCuiAuthorized: false
-      };
-
+      // Pass empty user/handler since we aren't creating orgs here anymore
       return (
           <Onboarding 
-            user={tempUser}
-            onCreateOrganization={(name, industry) => {
-                const newClient: Client = {
-                    id: `org-${Date.now()}`,
-                    name: name,
-                    industry: industry,
-                    contactName: tempUser.name,
-                    logoInitial: name.charAt(0).toUpperCase(),
-                    primaryFramework: 'NIST800-171',
-                    nextAuditDate: Date.now() + 31536000000,
-                    accountManager: 'Self-Managed',
-                    isParent: false
-                };
-                
-                // Initialize Data
-                const newData = createInitialClientData(false);
-                // Add the current user as the first Admin
-                newData.users.push({ ...tempUser, organizationId: newClient.id });
-
-                setClients([...clients, newClient]);
-                setClientDataStore({ ...clientDataStore, [newClient.id]: newData });
-                setActiveClientId(newClient.id);
+            user={{
+                id: auth.user?.profile.sub || '', 
+                name: '', email: '', role: 'CLIENT_USER', 
+                organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false 
             }}
+            onCreateOrganization={() => {}} 
           />
       );
   }
 
   // --- MAIN APPLICATION ---
-  // User is Auth'd AND Linked to an Organization
-
   const activeClient = clients.find(c => c.id === activeClientId) || clients[0];
   const activeData = clientDataStore[activeClientId];
   
   if (!activeData) return <div className="p-10">Error loading organization data. Please refresh.</div>;
 
-  // Find current user object from the loaded data
+  // Find current user object
   const currentUser = activeData.users.find(u => u.email === auth.user?.profile.email) || {
       id: auth.user?.profile.sub || 'unknown',
       name: (auth.user?.profile.email || 'User').split('@')[0],
       email: auth.user?.profile.email || '',
       organizationId: activeClientId,
-      role: 'CLIENT_ADMIN', // Default fallback
+      role: 'CLIENT_ADMIN',
       department: 'IT',
       lastLogin: Date.now(),
       mfaEnabled: true,
@@ -476,7 +467,8 @@ const App: React.FC = () => {
                           </button>
                           {/* Profile Dropdown */}
                           <div className="absolute top-full right-0 mt-2 w-48 bg-white text-slate-900 rounded-xl shadow-xl border border-slate-200 py-1 hidden group-hover:block z-50">
-                              {isMSPUser && (
+                              {/* Client Switching via dropdown if more than 1 available */}
+                              {clients.length > 1 && (
                                   <div className="px-4 py-2 border-b border-slate-100 mb-1">
                                       <p className="text-xs text-slate-500 mb-1">Switch Client:</p>
                                       <select 
@@ -587,6 +579,7 @@ const App: React.FC = () => {
                             m365Config={m365Config}
                             awsConfig={awsConfig}
                             siemConfig={siemConfig}
+                            activeClientId={activeClientId} // PASS ACTIVE CLIENT ID FOR UPLOADS
                         />
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50">

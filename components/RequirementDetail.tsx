@@ -19,10 +19,10 @@ interface RequirementDetailProps {
   cwConfig: ConnectWiseConfig;
   jiraConfig: JiraConfig;
   currentUser?: User;
-  // Cloud Integration States
   m365Config?: IntegrationConfig;
   awsConfig?: IntegrationConfig;
   siemConfig?: IntegrationConfig;
+  activeClientId?: string; // New Prop
 }
 
 export const RequirementDetail: React.FC<RequirementDetailProps> = ({
@@ -38,7 +38,8 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
   currentUser,
   m365Config,
   awsConfig,
-  siemConfig
+  siemConfig,
+  activeClientId
 }) => {
   const [activeTab, setActiveTab] = useState<'DETAILS' | 'DISCUSSION' | 'EVIDENCE'>('DETAILS');
   const [simpleMode, setSimpleMode] = useState(true);
@@ -230,7 +231,13 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
 
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="font-bold text-slate-800 mb-4">Manual Upload</h3>
-                            <ArtifactUploader requirementId={requirement.id} artifacts={relevantArtifacts} onAddArtifact={onAddArtifact} onRemoveArtifact={onRemoveArtifact} />
+                            <ArtifactUploader 
+                                requirementId={requirement.id} 
+                                artifacts={relevantArtifacts} 
+                                onAddArtifact={onAddArtifact} 
+                                onRemoveArtifact={onRemoveArtifact}
+                                activeClientId={activeClientId}
+                            />
                         </div>
 
                         {relevantArtifacts.length > 0 && (
