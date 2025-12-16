@@ -174,8 +174,9 @@ const App: React.FC = () => {
       // Use ID Token
       if (!auth.user?.id_token) return;
       
+      setIsDataLoading(true);
+
       try {
-          setIsDataLoading(true);
           const newOrg = await api.createOrg(auth.user.id_token, name);
           
           const newClient: Client = {
@@ -201,8 +202,56 @@ const App: React.FC = () => {
           localStorage.setItem('activeOrgId', newClient.id);
 
       } catch (e) {
-          console.error("Failed to create org", e);
-          alert("Failed to create organization. Please try again.");
+          console.warn("API Error during creation. Checking for consistency...", e);
+          
+          // Optimistic Recovery Strategy
+          // 1. Wait for DB consistency (Lambda cold start or DynamoDB consistency)
+          await new Promise(resolve => setTimeout(resolve, 2000));
+
+          try {
+              // 2. Fetch all organizations to see if it actually exists
+              const apiOrgs = await api.getOrgs(auth.user.id_token);
+              
+              // 3. Find the org we tried to create
+              const existingOrg = apiOrgs.find((o: any) => o.name.toLowerCase() === name.toLowerCase());
+
+              if (existingOrg) {
+                  console.log("Organization created successfully despite API error.");
+                  
+                  // Re-map all clients
+                  const mappedClients: Client[] = apiOrgs.map((o: any) => ({
+                      id: o.orgId,
+                      name: o.name,
+                      industry: 'Unknown',
+                      contactName: auth.user?.profile.email || 'User',
+                      logoInitial: o.name.charAt(0).toUpperCase(),
+                      primaryFramework: 'NIST800-171',
+                      nextAuditDate: Date.now() + 31536000000,
+                      accountManager: 'Self-Managed',
+                      isParent: false
+                  }));
+
+                  setClients(mappedClients);
+                  
+                  // Ensure store has data
+                  setClientDataStore(prev => {
+                      const next = { ...prev };
+                      if (!next[existingOrg.orgId]) {
+                          next[existingOrg.orgId] = createInitialClientData(false);
+                      }
+                      return next;
+                  });
+
+                  setActiveClientId(existingOrg.orgId);
+                  localStorage.setItem('activeOrgId', existingOrg.orgId);
+              } else {
+                  console.error("Organization creation failed definitively.");
+                  alert("Failed to create organization. Please try again.");
+              }
+          } catch (recoveryError) {
+              console.error("Recovery check failed", recoveryError);
+              alert("Failed to create organization. Please try again.");
+          }
       } finally {
           setIsDataLoading(false);
       }
