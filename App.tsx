@@ -24,7 +24,8 @@ import {
   Menu,
   ChevronDown,
   Briefcase,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 
 import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, REQUIREMENTS_DATA } from './data/standards';
@@ -126,7 +127,8 @@ const App: React.FC = () => {
       // 2. Redirect to Cognito Logout Endpoint
       const clientId = authConfig.client_id;
       const logoutUri = window.location.origin;
-      const cognitoDomain = authConfig.cognito_domain;
+      // Ensure no trailing slash to prevent double slash errors
+      const cognitoDomain = authConfig.cognito_domain.replace(/\/$/, "");
       
       // If the domain isn't set yet or is the placeholder, simple reload
       if (cognitoDomain.includes("your-domain")) {
@@ -159,6 +161,16 @@ const App: React.FC = () => {
                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded text-xs text-red-800 font-mono break-all">
                     Debug: {auth.error.message}
                  </div>
+                 {/* Fallback button to clear session if stuck in a loop */}
+                 <button 
+                    onClick={() => {
+                        auth.removeUser();
+                        window.location.href = window.location.origin;
+                    }}
+                    className="mt-2 w-full flex items-center justify-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded text-sm font-bold transition-colors"
+                 >
+                    <RefreshCw size={14} /> Clear Session & Retry
+                 </button>
              </div>
           </div>
       );
