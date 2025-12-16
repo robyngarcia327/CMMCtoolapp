@@ -214,7 +214,7 @@ const App: React.FC = () => {
               <header className="bg-slate-900 text-slate-200 h-16 shrink-0 shadow-md z-50 flex items-center px-6">
                   <div className="flex items-center gap-2 text-white font-bold text-lg">
                       <Shield className="text-blue-500 fill-blue-500/20" size={24} />
-                      <span>Cualli Cyber</span>
+                      <span>Cuallee Cyber</span>
                   </div>
               </header>
               <main className="flex-1 flex items-center justify-center p-6">
@@ -382,7 +382,7 @@ const App: React.FC = () => {
                       ) : (
                           <Shield className="text-blue-500 fill-blue-500/20" size={24} />
                       )}
-                      <span>Cualli Cyber</span>
+                      <span>Cuallee Cyber</span>
                   </div>
 
                   {/* Main Menu Links */}

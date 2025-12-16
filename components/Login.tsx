@@ -15,7 +15,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-900/50">
              <Shield size={32} className="text-white" />
          </div>
-         <h1 className="text-3xl font-bold text-white tracking-tight">Cualli Cyber</h1>
+         <h1 className="text-3xl font-bold text-white tracking-tight">Cuallee Cyber</h1>
          <p className="text-slate-400 mt-2">Enterprise Security & Compliance Platform</p>
       </div>
 
@@ -58,7 +58,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
              </div>
          </div>
          <div className="bg-slate-50 p-4 text-center text-xs text-slate-400 border-t border-slate-100">
-             Protected by Cualli Cyber SSO • CMMC Level 2 Compliant
+             Protected by Cuallee Cyber SSO • CMMC Level 2 Compliant
          </div>
       </div>
     </div>
