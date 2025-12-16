@@ -52,6 +52,7 @@ import { Login } from './components/Login';
 import { Dashboard } from './components/Dashboard'; 
 import { AuditorPortal } from './components/AuditorPortal'; 
 import { storageService } from './services/storage';
+import { authConfig } from './authConfig';
 
 // --- Render Helpers for Menu (Moved outside component to fix type issues) ---
 const NavDropdown = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
@@ -117,6 +118,24 @@ const App: React.FC = () => {
   }, [clients, clientDataStore, isDataLoading]);
 
   // --- Auth Handling ---
+
+  const handleLogout = () => {
+      // 1. Clear local storage tokens
+      auth.removeUser();
+      
+      // 2. Redirect to Cognito Logout Endpoint
+      const clientId = authConfig.client_id;
+      const logoutUri = window.location.origin;
+      const cognitoDomain = authConfig.cognito_domain;
+      
+      // If the domain isn't set yet or is the placeholder, simple reload
+      if (cognitoDomain.includes("your-domain")) {
+          window.location.href = logoutUri;
+      } else {
+          // Standard Cognito Logout URL structure
+          window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
+      }
+  };
   
   if (auth.isLoading) {
       return (
@@ -129,9 +148,18 @@ const App: React.FC = () => {
   }
 
   if (auth.error) {
+      console.error("Cognito Error:", auth.error);
       return (
-          <div className="flex h-screen items-center justify-center bg-slate-50">
-             <Login onLogin={() => auth.signinRedirect()} error={auth.error} />
+          <div className="flex h-screen items-center justify-center bg-slate-50 p-6">
+             <div className="max-w-md w-full">
+                 <Login 
+                    onLogin={() => auth.signinRedirect()} 
+                    error={auth.error} 
+                 />
+                 <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded text-xs text-red-800 font-mono break-all">
+                    Debug: {auth.error.message}
+                 </div>
+             </div>
           </div>
       );
   }
@@ -447,7 +475,7 @@ const App: React.FC = () => {
                                   </div>
                               )}
                               <button 
-                                onClick={() => auth.removeUser()}
+                                onClick={handleLogout}
                                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                               >
                                   <LogOut size={14} /> Sign Out
