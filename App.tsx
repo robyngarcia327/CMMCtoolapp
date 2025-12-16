@@ -99,14 +99,14 @@ const App: React.FC = () => {
 
   // --- 1. Load Organizations on Auth ---
   useEffect(() => {
-      // Use ID Token instead of Access Token
-      if (auth.isAuthenticated && auth.user?.id_token) {
+      // Use Access Token
+      if (auth.isAuthenticated && auth.user?.access_token) {
           const fetchOrgs = async () => {
               setIsDataLoading(true);
               setOrgFetchError(null);
               try {
-                  // Call API to get orgs using ID token
-                  const apiOrgs = await api.getOrgs(auth.user!.id_token!);
+                  // Call API to get orgs using access token
+                  const apiOrgs = await api.getOrgs(auth.user!.access_token!);
                   
                   // Map API response to Client type for internal app compatibility
                   const mappedClients: Client[] = apiOrgs.map((o: any) => ({
@@ -141,9 +141,9 @@ const App: React.FC = () => {
                   const newStore: Record<string, ClientData> = {};
                   for (const c of mappedClients) {
                       newStore[c.id] = createInitialClientData(false);
-                      // Fetch Evidence for this org using ID token
+                      // Fetch Evidence for this org using access token
                       try {
-                          const evidence = await api.getEvidenceList(auth.user!.id_token!, c.id);
+                          const evidence = await api.getEvidenceList(auth.user!.access_token!, c.id);
                           newStore[c.id].artifacts = evidence;
                       } catch (e) {
                           console.warn(`Failed to fetch evidence for ${c.id}`, e);
@@ -171,12 +171,12 @@ const App: React.FC = () => {
 
   // Handle Org Creation
   const handleCreateOrganization = async (name: string) => {
-      // Use ID Token
-      if (!auth.user?.id_token) return;
+      // Use Access Token
+      if (!auth.user?.access_token) return;
       
       try {
           setIsDataLoading(true);
-          const newOrg = await api.createOrg(auth.user.id_token, name);
+          const newOrg = await api.createOrg(auth.user.access_token, name);
           
           const newClient: Client = {
               id: newOrg.orgId,
