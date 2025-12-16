@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Shield, AlertTriangle, RefreshCw, LogOut, Copy, CheckCircle2, Lock } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { authConfig } from '../authConfig';
 
 interface LoginProps {
@@ -9,108 +9,64 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
-  const [copied, setCopied] = useState(false);
+  
+  // Auto-redirect to Cognito Hosted UI
+  // We use useEffect to trigger this immediately on mount
+  useEffect(() => {
+    if (!error && !isLoading) {
+        onLogin();
+    }
+  }, [error, isLoading, onLogin]);
 
-  const handleCopy = () => {
-      navigator.clipboard.writeText(authConfig.redirect_uri);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-  };
-
-  // ERROR STATE
+  // ERROR STATE: User returned from Cognito with an error, or config failed
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 font-sans">
-         <div className="max-w-xl w-full bg-white rounded-2xl shadow-xl border border-red-100 overflow-hidden animate-in fade-in zoom-in duration-300">
+         <div className="max-w-md w-full bg-white rounded-lg shadow-xl border border-red-100 overflow-hidden animate-in fade-in zoom-in duration-300">
              <div className="bg-red-50 p-6 flex items-center gap-4 border-b border-red-100">
-                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-600 shrink-0">
-                     <AlertTriangle size={24} />
+                 <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600 shrink-0">
+                     <AlertTriangle size={20} />
                  </div>
                  <div>
-                     <h2 className="text-xl font-bold text-red-900">Sign In Error</h2>
-                     <p className="text-red-700 text-sm">We couldn't log you in.</p>
+                     <h2 className="text-lg font-bold text-red-900">Login Error</h2>
+                     <p className="text-red-700 text-xs">Authentication could not be completed.</p>
                  </div>
              </div>
              
-             <div className="p-8">
-                 <div className="mb-6">
-                     <p className="text-xs font-bold text-slate-500 uppercase mb-2">Technical Details</p>
-                     <div className="bg-slate-50 border border-slate-200 rounded p-3 font-mono text-xs text-slate-700 break-all">
-                        {error.message || "Unknown Error"}
+             <div className="p-6">
+                 <div className="mb-4">
+                     <p className="text-xs font-bold text-slate-500 uppercase mb-1">Details</p>
+                     <div className="bg-slate-100 border border-slate-200 rounded p-3 font-mono text-xs text-slate-700 break-all">
+                        {error.message || "Unknown Authorization Error"}
                      </div>
                  </div>
 
-                 <div className="flex flex-col gap-3">
-                     <button 
-                        onClick={() => {
-                            window.history.replaceState({}, document.title, window.location.pathname);
-                            window.location.reload();
-                        }}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
-                     >
-                         <RefreshCw size={18} /> Reload Application
-                     </button>
-                 </div>
+                 <p className="text-sm text-slate-600 mb-6">
+                    If you are seeing a <strong>redirect_mismatch</strong> error, ensure your AWS User Pool "Allowed Callback URLs" includes exactly:
+                    <br/>
+                    <code className="bg-slate-100 px-1 py-0.5 rounded text-xs font-bold break-all mt-1 block">{authConfig.redirect_uri}</code>
+                 </p>
+
+                 <button 
+                    onClick={() => {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        window.location.reload();
+                    }}
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm"
+                 >
+                     <RefreshCw size={16} /> Try Again
+                 </button>
              </div>
          </div>
       </div>
     );
   }
 
-  // STANDARD LOGIN SCREEN (No Auto-Redirect to prevent loops)
+  // LOADING STATE (Transient - User barely sees this)
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        {/* Background Decorations */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[100px]"></div>
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[100px]"></div>
-        </div>
-
-        <div className="max-w-md w-full bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl relative z-10 animate-in fade-in zoom-in duration-500">
-            <div className="text-center mb-8">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/50 mx-auto mb-6">
-                    <Shield size={40} className="text-white" />
-                </div>
-                <h1 className="text-2xl font-bold text-white mb-2">Cuallee Cyber</h1>
-                <p className="text-slate-400 text-sm">Secure Compliance Gateway</p>
-            </div>
-
-            <button 
-                onClick={onLogin}
-                className="w-full bg-white text-slate-900 hover:bg-blue-50 font-bold py-4 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg hover:shadow-blue-500/20 hover:scale-[1.02] mb-8"
-            >
-                <Lock size={20} className="text-blue-600" />
-                Sign In with AWS Cognito
-            </button>
-
-            {/* Debug Info for Config Mismatch */}
-            <div className="bg-black/30 rounded-xl p-4 border border-white/5">
-                <h3 className="text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
-                    <AlertTriangle size={12} /> Config Debugger
-                </h3>
-                <p className="text-[10px] text-slate-400 mb-2">
-                    If you see a <strong>redirect_mismatch</strong> error after clicking Sign In, ensure this URL is in your AWS User Pool Allowed Callback URLs:
-                </p>
-                <div className="flex items-center gap-2">
-                    <code className="flex-1 bg-black/50 px-2 py-2 rounded text-[10px] font-mono text-blue-200 break-all border border-white/10">
-                        {authConfig.redirect_uri}
-                    </code>
-                    <button 
-                        onClick={handleCopy}
-                        className="p-2 bg-white/10 hover:bg-white/20 rounded text-white transition-colors"
-                        title="Copy to clipboard"
-                    >
-                        {copied ? <CheckCircle2 size={14} className="text-green-400"/> : <Copy size={14}/>}
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <div className="mt-8 text-center">
-            <p className="text-slate-600 text-xs">
-                &copy; {new Date().getFullYear()} Cuallee Cyber. Secure Infrastructure.
-            </p>
-        </div>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+      <Loader2 size={48} className="animate-spin text-blue-600 mb-4" />
+      <p className="text-slate-500 text-sm font-medium">Redirecting to Secure Login...</p>
     </div>
   );
 };
