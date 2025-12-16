@@ -51,9 +51,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
                 )}
              </button>
 
-             <div className="mt-6 flex justify-center">
+             <div className="mt-6 flex flex-col items-center gap-2">
                  <p className="text-xs text-slate-400 flex items-center gap-1">
-                     <Lock size={10} /> Powered by AWS Cognito
+                     <Lock size={10} /> Authenticated via us-east-1ky47rcgyh...
                  </p>
              </div>
          </div>
