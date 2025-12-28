@@ -6,49 +6,12 @@ import { Requirement, AuvikDevice } from '../types';
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const SYSTEM_INSTRUCTION_CHAT = `
-You are an expert cybersecurity compliance consultant specialized in CMMC 2.0 (Level 1 and 2) and NIST SP 800-171A.
-Your goal is to assist compliance teams who may be inexperienced.
+You are an expert cybersecurity compliance consultant specialized in CMMC 2.0 and NIST SP 800-171A.
+Your goal is to assist compliance teams by outlining what is required to reach compliance.
 - Explain complex requirements in simple terms.
-- Suggest types of evidence (artifacts) for specific controls.
-- Provide examples of policy language.
-- If asked about a specific requirement (e.g., 3.1.1), explain the Assessment Objectives clearly.
-- Maintain a professional but encouraging tone.
-`;
-
-const SYSTEM_INSTRUCTION_DOC_GEN = `
-You are a senior technical writer and compliance officer.
-Your task is to generate comprehensive cybersecurity documents, including System Security Plans (SSP), Incident Response Plans (IRP), Disaster Recovery Plans (DRP), and Table Top Exercise Reports.
-- Use formal, audit-ready language (shall, must, will).
-- For Plans (SSP, IRP, DRP): Structure them with clear roles, responsibilities, and procedural steps. Map to NIST 800-171 requirements where applicable.
-- For Reports (Table Top, Lessons Learned): Use an objective, analytical tone. Focus on observations, root causes, and corrective actions.
-- Do not hallucinate company details; use placeholders like [Company Name] if not provided.
-- Output the result in clean Markdown format with headers.
-`;
-
-const SYSTEM_INSTRUCTION_NETWORK = `
-You are a Lead Security Architect for CMMC and NIST 800-171 compliance, specializing in Zero Trust Architecture and Network Segmentation.
-Your task is to analyze network inputs (diagrams or device lists) and provide a strict security assessment.
-
-**Key Analysis Goals:**
-1. **Identify CUI Flow:** Determine where Controlled Unclassified Information (CUI) likely resides.
-2. **Detect Flat Networks:** Aggressively identify if critical assets (Servers) share the same network segment (VLAN) as high-risk assets (IoT, Guest Wi-Fi).
-3. **Recommend Enclaves:** If CUI is present, you MUST recommend a "CUI Enclave" strategy to isolate sensitive data.
-4. **Scope Reduction:** Advise on how to move assets "Out-of-Scope" to reduce assessment costs.
-
-**Output Format:**
-- **Executive Summary:** A brief health check.
-- **Vulnerability Analysis:** Specific issues (e.g., "Guest Wi-Fi on same VLAN as HR Server").
-- **Enclave Recommendation:** A specific section detailing how to build a CUI Enclave (e.g., "Create VLAN 20 for CUI, deploy a Jump Box").
-- **Asset List:** Categorize assets into "Likely In-Scope" and "Likely Out-of-Scope".
-`;
-
-const SYSTEM_INSTRUCTION_POLICY_AUDIT = `
-You are a strict CMMC Certified Assessor (CCA). 
-Your job is to compare a provided policy snippet against a specific NIST/CMMC Requirement.
-- Analyze if the provided text satisfies the requirement's "Assessment Objectives".
-- If it passes, say "COMPLIANT" and explain why.
-- If it fails, say "NON-COMPLIANT" or "PARTIAL" and list exactly what is missing.
-- Be specific. If the requirement asks for "frequency", and the text doesn't have it, flag it.
+- Suggest specific artifacts needed for evidence.
+- Help outline documentation requirements (SSP, POA&M).
+- Maintain a professional but helpful tone.
 `;
 
 export const sendChatMessage = async (
@@ -60,10 +23,8 @@ export const sendChatMessage = async (
         role: h.role,
         parts: [{ text: h.text }]
     }));
-    // Add current message
     contents.push({ role: 'user', parts: [{ text: message }] });
 
-    // Use gemini-3-pro-preview for complex reasoning tasks
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: contents,
@@ -78,19 +39,47 @@ export const sendChatMessage = async (
   }
 };
 
+export const outlineRequirementsRoadmap = async (
+  requirements: Requirement[]
+): Promise<string> => {
+  const gaps = requirements.filter(r => r.objectives.some(o => o.status === 'not_met' || o.status === 'pending'));
+  
+  const prompt = `
+    Based on the following list of unimplemented security controls, please provide a prioritized roadmap outlining exactly what is required to achieve full compliance.
+    
+    Controls to address:
+    ${gaps.map(g => `- ${g.id}: ${g.title}`).join('\n')}
+    
+    Provide a step-by-step outline:
+    1. Quick Wins (Easy implementation)
+    2. Critical Gaps (High impact on score)
+    3. Long-term technical projects.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: { systemInstruction: SYSTEM_INSTRUCTION_CHAT }
+    });
+    return response.text || "Failed to generate outline.";
+  } catch (e) {
+    return "Could not generate roadmap at this time.";
+  }
+};
+
 export const explainRequirement = async (req: Requirement): Promise<string> => {
   const prompt = `
-    Can you explain NIST 800-171 requirement ${req.id}: "${req.title}"?
+    Outline exactly what is required to satisfy NIST 800-171 requirement ${req.id}: "${req.title}"?
     Description: ${req.description}
     
-    Please explain:
-    1. What this actually means in plain English.
-    2. What are the key Assessment Objectives?
-    3. What kind of artifacts (screenshots, policies, logs) would satisfy this?
+    Explain:
+    1. Plain-English meaning.
+    2. Assessment Objectives required.
+    3. Types of evidence needed.
   `;
   
   try {
-    // Use gemini-3-pro-preview for complex reasoning tasks
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: prompt,
@@ -107,23 +96,16 @@ export const analyzePolicyGap = async (
   policyText: string
 ): Promise<string> => {
   const prompt = `
-    **Requirement:** ${req.id} - ${req.title}
-    **Description:** ${req.description}
-    **Objectives:** ${req.objectives.map(o => o.description).join(', ')}
-
-    **User's Policy Snippet:**
-    "${policyText}"
-
-    **Task:**
-    Perform a Gap Analysis. Does the snippet above fully satisfy the requirement?
+    Outline the gaps between this policy snippet and Requirement ${req.id}.
+    Requirement: ${req.description}
+    Policy Text: "${policyText}"
   `;
 
   try {
-    // Use gemini-3-pro-preview for complex reasoning tasks
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: prompt,
-        config: { systemInstruction: SYSTEM_INSTRUCTION_POLICY_AUDIT }
+        config: { systemInstruction: "You are a strict compliance auditor." }
     });
     return response.text || "Analysis failed.";
   } catch (e) {
@@ -131,115 +113,81 @@ export const analyzePolicyGap = async (
   }
 };
 
-export const generateComplianceDocument = async (
-  docType: string,
-  docTitle: string,
-  userInputs: Record<string, string>
-): Promise<string> => {
-  const inputString = Object.entries(userInputs)
-    .filter(([_, val]) => val.trim() !== '') // Only include answered questions
-    .map(([key, val]) => `**${key}**: ${val}`)
-    .join('\n');
-
-  const prompt = `
-    Generate a ${docTitle} (${docType}).
-    
-    Use the following context and interview answers provided by the user:
-    ${inputString}
-    
-    Instructions:
-    - If the document is a "Plan" (SSP, IRP, DRP), outline the policy, scope, roles, and specific procedures.
-    - If the document is a "Report" (Table Top, Lessons Learned), summarize the event, findings, and improvements.
-    - If specific details (like Company Name) were provided in the answers, insert them. Otherwise use placeholders.
-    - Ensure the content is aligned with NIST SP 800-171 and CMMC requirements.
-    - Provide a complete, professional draft structure.
-  `;
-
-  try {
-     // Use gemini-3-pro-preview for complex reasoning tasks
-     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: prompt,
-        config: { systemInstruction: SYSTEM_INSTRUCTION_DOC_GEN }
-    });
-    return response.text || "Could not generate document.";
-  } catch (e) {
-    console.error(e);
-    return "Error generating document.";
-  }
-};
-
 export const analyzeNetworkDiagram = async (
   base64DataUrl: string
 ): Promise<string> => {
-  // Extract base64 data and mime type
   const matches = base64DataUrl.match(/^data:(.+);base64,(.+)$/);
-  if (!matches || matches.length !== 3) {
-    throw new Error("Invalid data URL");
-  }
+  if (!matches || matches.length !== 3) throw new Error("Invalid data");
   const mimeType = matches[1];
   const data = matches[2];
 
-  const prompt = `
-    Analyze this network diagram for CMMC and NIST 800-171 compliance.
-    
-    Look specifically for:
-    1. **Flat Networks**: Are sensitive assets mixed with general traffic?
-    2. **Missing Boundary Protection**: Is there a firewall between the internet and the CUI?
-    3. **Enclave Opportunities**: Recommend where to place a CUI Enclave.
-  `;
-
   try {
-    // Use gemini-3-flash-preview for vision/analysis tasks
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview', 
       contents: {
         parts: [
           { inlineData: { mimeType, data } },
-          { text: prompt }
+          { text: "Analyze this network diagram and outline the security boundaries and CUI flows." }
         ]
       },
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION_NETWORK
-      }
     });
-    return response.text || "Analysis complete, but no text returned.";
+    return response.text || "Analysis complete.";
   } catch (error) {
-    console.error("Gemini Vision Error:", error);
-    return "Error analyzing the diagram. Please try again.";
+    return "Error analyzing diagram.";
   }
 };
 
-export const analyzeAuvikTopology = async (
-    devices: AuvikDevice[]
+// Added missing function to generate professional compliance documents in Markdown
+export const generateComplianceDocument = async (
+  type: string,
+  title: string,
+  answers: Record<string, string>
 ): Promise<string> => {
-    const deviceListStr = devices.map(d => 
-        `- ${d.name} (${d.type}): IP ${d.ipAddress}, VLAN ${d.vlan || 'None'}`
-    ).join('\n');
+  const prompt = `
+    Generate a professional ${type} titled "${title}" based on the following interview answers.
+    
+    Answers:
+    ${Object.entries(answers).map(([q, a]) => `${q}: ${a}`).join('\n')}
+    
+    The document should be formatted in Markdown, using professional compliance language, 
+    and organized with appropriate headings and subheadings. 
+    Ensure it meets the standards of NIST 800-171 and CMMC 2.0 where applicable.
+  `;
 
-    const prompt = `
-      I have performed a network scan using Auvik. Here is the list of discovered devices:
-      
-      ${deviceListStr}
-      
-      **Instructions:**
-      1. Analyze this topology for NIST 800-171 compliance (specifically SC.3.13.1 Boundary Protection).
-      2. Identify risks (e.g., Guest WiFi on same VLAN as Servers).
-      3. Propose a **Secure Enclave Architecture** for handling CUI. 
-      4. Suggest which devices should remain in the "Corporate" zone and which move to the "CUI Enclave".
-    `;
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: { systemInstruction: SYSTEM_INSTRUCTION_CHAT }
+    });
+    return response.text || "Failed to generate document.";
+  } catch (e) {
+    return "Error generating document.";
+  }
+};
 
-    try {
-        // Use gemini-3-pro-preview for complex reasoning tasks
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: prompt,
-            config: {
-                systemInstruction: SYSTEM_INSTRUCTION_NETWORK
-            }
-        });
-        return response.text || "No analysis generated.";
-    } catch (error) {
-        return "Error analyzing Auvik topology.";
-    }
+// Added missing function to analyze network topology from Auvik integration for CMMC compliance
+export const analyzeAuvikTopology = async (
+  devices: AuvikDevice[]
+): Promise<string> => {
+  const prompt = `
+    Analyze the following network device topology for cybersecurity compliance (NIST 800-171 / CMMC).
+    Identify potential risks such as flat networks, improper segmentation, or insecure configurations.
+    
+    Devices:
+    ${devices.map(d => `- ${d.name} (${d.type}): IP ${d.ipAddress}, VLAN ${d.vlan || 'Unknown'}, Firmware ${d.firmware || 'Unknown'}`).join('\n')}
+    
+    Provide a detailed security analysis and recommendations for improvement to ensure secure handling of CUI.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: { systemInstruction: "You are a network security architect specialized in CMMC." }
+    });
+    return response.text || "Analysis failed.";
+  } catch (e) {
+    return "Error analyzing topology.";
+  }
 };
