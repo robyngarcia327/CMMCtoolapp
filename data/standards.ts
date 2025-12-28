@@ -479,31 +479,39 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     ...HIPAA_CONTROLS
 ];
 
-export const NIST_FAMILIES = [
-    { id: 'AC', name: 'Access Control', count: 22 },
-    { id: 'AT', name: 'Awareness and Training', count: 3 },
-    { id: 'AU', name: 'Audit and Accountability', count: 9 },
-    { id: 'CM', name: 'Configuration Management', count: 9 },
-    { id: 'IA', name: 'Identification and Authentication', count: 11 },
-    { id: 'IR', name: 'Incident Response', count: 3 },
-    { id: 'MA', name: 'Maintenance', count: 6 },
-    { id: 'MP', name: 'Media Protection', count: 9 },
-    { id: 'PS', name: 'Personnel Security', count: 2 },
-    { id: 'PE', name: 'Physical Protection', count: 6 },
-    { id: 'RA', name: 'Risk Assessment', count: 3 },
-    { id: 'CA', name: 'Security Assessment', count: 4 },
-    { id: 'SC', name: 'System and Communications Protection', count: 16 },
-    { id: 'SI', name: 'System and Information Integrity', count: 7 },
-    // SOC 2 Families
-    { id: 'CC1', name: 'Control Environment', count: 5 },
-    { id: 'CC2', name: 'Communication and Information', count: 3 },
-    { id: 'CC3', name: 'Risk Assessment', count: 4 },
-    { id: 'CC4', name: 'Monitoring Activities', count: 2 },
-    { id: 'CC5', name: 'Control Activities', count: 3 },
-    { id: 'CC6', name: 'Logical and Physical Access', count: 8 },
-    { id: 'CC7', name: 'System Operations', count: 5 },
-    { id: 'CC8', name: 'Change Management', count: 1 },
-    { id: 'CC9', name: 'Risk Mitigation', count: 2 }
+export const NIST_CMMC_FAMILIES = [
+    { id: 'AC', name: 'Access Control' },
+    { id: 'AT', name: 'Awareness and Training' },
+    { id: 'AU', name: 'Audit and Accountability' },
+    { id: 'CM', name: 'Configuration Management' },
+    { id: 'IA', name: 'Identification and Authentication' },
+    { id: 'IR', name: 'Incident Response' },
+    { id: 'MA', name: 'Maintenance' },
+    { id: 'MP', name: 'Media Protection' },
+    { id: 'PS', name: 'Personnel Security' },
+    { id: 'PE', name: 'Physical Protection' },
+    { id: 'RA', name: 'Risk Assessment' },
+    { id: 'CA', name: 'Security Assessment' },
+    { id: 'SC', name: 'System and Communications Protection' },
+    { id: 'SI', name: 'System and Information Integrity' }
+];
+
+export const SOC2_FAMILIES = [
+    { id: 'CC1', name: 'Control Environment' },
+    { id: 'CC2', name: 'Communication and Information' },
+    { id: 'CC3', name: 'Risk Assessment' },
+    { id: 'CC4', name: 'Monitoring Activities' },
+    { id: 'CC5', name: 'Control Activities' },
+    { id: 'CC6', name: 'Logical and Physical Access' },
+    { id: 'CC7', name: 'System Operations' },
+    { id: 'CC8', name: 'Change Management' },
+    { id: 'CC9', name: 'Risk Mitigation' }
+];
+
+export const HIPAA_FAMILIES = [
+    { id: 'Administrative', name: 'Administrative Safeguards' },
+    { id: 'Physical', name: 'Physical Safeguards' },
+    { id: 'Technical', name: 'Technical Safeguards' }
 ];
 
 export const TRAINING_MODULES = [

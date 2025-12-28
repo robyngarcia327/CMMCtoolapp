@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { TRAINING_MODULES, NIST_FAMILIES } from '../data/standards';
+import { TRAINING_MODULES, NIST_CMMC_FAMILIES } from '../data/standards';
 import { BookOpen, Clock, CheckCircle2, ChevronRight, GraduationCap } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -8,8 +9,8 @@ export const TrainingCenter: React.FC = () => {
   
   const activeModule = TRAINING_MODULES.find((m: any) => m.id === activeModuleId);
 
-  // Group modules by family
-  const familiesWithTraining = NIST_FAMILIES.filter((f: any) => 
+  // Group modules by family using corrected NIST_CMMC_FAMILIES constant from standards.ts
+  const familiesWithTraining = NIST_CMMC_FAMILIES.filter((f: any) => 
       TRAINING_MODULES.some((m: any) => m.familyId === f.id)
   );
 

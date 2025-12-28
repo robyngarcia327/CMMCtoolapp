@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Requirement } from '../types';
-import { NIST_FAMILIES } from '../data/standards';
+import { NIST_CMMC_FAMILIES, SOC2_FAMILIES, HIPAA_FAMILIES } from '../data/standards';
 import { Info, Filter } from 'lucide-react';
 
 interface RequirementsListProps {
@@ -24,19 +24,25 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
   
   const filteredReqs = filterFamily === 'ALL'
     ? frameworkReqs
-    : frameworkReqs.filter(r => r.family === filterFamily || r.mappings.nist800_53?.some(m => m.startsWith(filterFamily)));
+    : frameworkReqs.filter(r => r.family === filterFamily);
 
-  // Extract unique families dynamically if using a framework other than NIST/CMMC
-  const families = activeFrameworkId === 'NIST-CMMC' 
-    ? NIST_FAMILIES 
-    : Array.from(new Set(frameworkReqs.map(r => r.family))).map(f => ({ id: f, name: f }));
+  // Extract families based on framework
+  let families: { id: string, name: string }[] = [];
+  if (activeFrameworkId === 'NIST-CMMC') families = NIST_CMMC_FAMILIES;
+  else if (activeFrameworkId === 'SOC2') families = SOC2_FAMILIES;
+  else if (activeFrameworkId === 'HIPAA') families = HIPAA_FAMILIES;
+  else {
+      // Fallback for custom or unidentified frameworks
+      // Explicitly cast to string to avoid 'unknown' type issues when mapping
+      families = Array.from(new Set(frameworkReqs.map(r => r.family))).map(f => ({ id: f as string, name: f as string }));
+  }
 
   return (
-    <div className="flex flex-col h-full bg-white border-r border-slate-200 w-80 md:w-96">
+    <div className="flex flex-col h-full bg-white border-r border-slate-200 w-80 md:w-96 shrink-0">
       <div className="p-4 border-b border-slate-200 bg-slate-50">
         <div className="flex items-center justify-between mb-3">
              <h2 className="font-bold text-slate-800">Requirements</h2>
-             <span className="text-xs bg-white border border-slate-300 px-2 py-0.5 rounded text-slate-500 font-mono">
+             <span className="text-[10px] bg-white border border-slate-300 px-2 py-0.5 rounded text-slate-500 font-mono font-bold">
                  {activeFrameworkId}
              </span>
         </div>
@@ -47,9 +53,9 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
             onChange={(e) => setFilterFamily(e.target.value)}
             className="w-full p-2 pl-9 bg-white border border-slate-300 rounded-lg text-sm appearance-none focus:ring-2 focus:ring-blue-500 outline-none"
             >
-            <option value="ALL">All Families / Domains</option>
+            <option value="ALL">All Domains</option>
             {families.map((f: any) => (
-                <option key={f.id} value={f.id}>{f.name}</option>
+                <option key={f.id} value={f.id}>{f.id}: {f.name}</option>
             ))}
             </select>
             <Filter size={14} className="absolute left-3 top-3 text-slate-400" />
@@ -66,14 +72,14 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
             }`}
           >
             <div className="flex justify-between items-start mb-1">
-              <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded ${
+              <span className={`font-mono text-[10px] font-black px-1.5 py-0.5 rounded ${
                   selectedReqId === req.id ? 'bg-blue-200 text-blue-800' : 'bg-slate-100 text-slate-600 group-hover:bg-white'
               }`}>
                 {req.id}
               </span>
-              <span className="text-xs text-slate-400 font-mono">{req.level.length < 5 ? `L${req.level}` : req.level}</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{req.family}</span>
             </div>
-            <h4 className={`text-sm font-semibold leading-tight mb-1 ${selectedReqId === req.id ? 'text-blue-900' : 'text-slate-800'}`}>
+            <h4 className={`text-sm font-bold leading-tight mb-1 ${selectedReqId === req.id ? 'text-blue-900' : 'text-slate-800'}`}>
                 {req.title}
             </h4>
             <p className="text-xs text-slate-500 line-clamp-2">{req.description}</p>
