@@ -100,7 +100,7 @@ const App: React.FC = () => {
   // Data State
   const [isDataLoading, setIsDataLoading] = useState(false); 
   const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState("Loading Organization...");
+  const [loadingMessage, setLoadingMessage] = useState("Authenticating...");
   const [clients, setClients] = useState<Client[]>([]);
   const [activeClientId, setActiveClientId] = useState<string>('');
   const [activeFramework, setActiveFramework] = useState<Framework>(FRAMEWORKS[0]);
@@ -111,15 +111,15 @@ const App: React.FC = () => {
   const [orgFetchError, setOrgFetchError] = useState<string | null>(null);
   const [creationStatus, setCreationStatus] = useState<'idle' | 'creating' | 'verifying' | 'failed_verification'>('idle');
 
-  // Prevent double-loading in strict mode
-  const initialLoadPerformed = useRef(false);
+  // Track if we have already performed the initial org fetch for this session
+  const fetchAttempted = useRef(false);
 
   // --- 1. Load Organizations on Auth ---
   const loadOrganizations = useCallback(async () => {
       if (!auth.isAuthenticated || !auth.user?.id_token) return;
 
       setIsDataLoading(true);
-      setLoadingMessage("Checking Organization Access...");
+      setLoadingMessage("Checking Organization Memberships...");
       setOrgFetchError(null);
       
       try {
@@ -128,7 +128,7 @@ const App: React.FC = () => {
           const mappedClients: Client[] = apiOrgs.map((o: any) => ({
               id: o.orgId,
               name: o.name,
-              industry: 'Unknown', 
+              industry: o.industry || 'Unknown', 
               contactName: auth.user?.profile.email || 'User',
               logoInitial: o.name.charAt(0).toUpperCase(),
               primaryFramework: 'NIST800-171',
@@ -147,22 +147,24 @@ const App: React.FC = () => {
               setActiveClientId(selectedId);
               localStorage.setItem('activeOrgId', selectedId);
 
-              // Initialize Data Store
-              const newStore: Record<string, ClientData> = {};
-              for (const c of mappedClients) {
-                  if (!clientDataStore[c.id]) {
-                      newStore[c.id] = createInitialClientData(false);
-                  }
-                  
-                  // Background fetch evidence
-                  api.getEvidenceList(auth.user.id_token, c.id).then(evidence => {
-                      setClientDataStore(prev => ({
-                          ...prev,
-                          [c.id]: { ...prev[c.id], artifacts: evidence }
-                      }));
-                  }).catch(e => console.warn(`Failed to fetch evidence for ${c.id}`, e));
-              }
-              setClientDataStore(prev => ({ ...prev, ...newStore }));
+              // Initialize Data Store for found clients
+              setClientDataStore(prev => {
+                  const nextStore = { ...prev };
+                  mappedClients.forEach(c => {
+                      if (!nextStore[c.id]) {
+                          nextStore[c.id] = createInitialClientData(false);
+                      }
+                  });
+                  return nextStore;
+              });
+
+              // Background fetch evidence for the active client
+              api.getEvidenceList(auth.user.id_token, selectedId).then(evidence => {
+                  setClientDataStore(prev => ({
+                      ...prev,
+                      [selectedId]: { ...prev[selectedId], artifacts: evidence }
+                  }));
+              }).catch(e => console.warn(`Failed to fetch evidence for ${selectedId}`, e));
           } else {
               setActiveClientId('');
           }
@@ -170,15 +172,16 @@ const App: React.FC = () => {
       } catch (e: any) {
           console.error("Failed to load organizations", e);
           setOrgFetchError(e.message || "Could not load organization data.");
-          // Don't set hasCheckedOrgs to true if error occurred, or do if it was a definitive 404
+          // If we failed to fetch, we haven't definitively checked
+          setHasCheckedOrgs(false); 
       } finally {
           setIsDataLoading(false);
       }
-  }, [auth.isAuthenticated, auth.user, clientDataStore]);
+  }, [auth.isAuthenticated, auth.user]);
 
   useEffect(() => {
-      if (auth.isAuthenticated && auth.user?.id_token && !initialLoadPerformed.current) {
-          initialLoadPerformed.current = true;
+      if (auth.isAuthenticated && auth.user?.id_token && !fetchAttempted.current) {
+          fetchAttempted.current = true;
           loadOrganizations();
       }
   }, [auth.isAuthenticated, auth.user?.id_token, loadOrganizations]);
@@ -189,7 +192,7 @@ const App: React.FC = () => {
       
       setCreationStatus('creating');
       setIsDataLoading(true);
-      setLoadingMessage("Creating Workspace...");
+      setLoadingMessage("Creating Secure Workspace...");
       setOrgFetchError(null);
 
       try {
@@ -197,7 +200,7 @@ const App: React.FC = () => {
           finishOrgCreation(newOrg);
       } catch (e: any) {
           setCreationStatus('verifying');
-          setLoadingMessage("Verifying Registration...");
+          setLoadingMessage("Synchronizing Account...");
           await verifyOrganizationExists(name, e.message);
       }
   };
@@ -215,10 +218,10 @@ const App: React.FC = () => {
                   finishOrgCreation(existing);
                   return;
               }
-          } catch (err) { console.warn("Sync polling failed", err); }
+          } catch (err) { console.warn("Retry poll failed", err); }
       }
       setCreationStatus('failed_verification');
-      setOrgFetchError(originalError || "Sync timeout.");
+      setOrgFetchError(originalError || "Account sync timed out.");
       setIsDataLoading(false);
   };
 
@@ -253,7 +256,7 @@ const App: React.FC = () => {
       return (
           <div className="flex h-screen items-center justify-center bg-slate-900 flex-col gap-4">
               <Loader2 size={48} className="animate-spin text-blue-500" />
-              <h2 className="text-xl font-bold text-white">Authenticating...</h2>
+              <h2 className="text-xl font-bold text-white">Connecting...</h2>
           </div>
       );
   }
@@ -262,18 +265,19 @@ const App: React.FC = () => {
       return <Login onLogin={() => auth.signinRedirect()} error={auth.error} />;
   }
 
-  // Show loading during ORG detection to prevent flicker of Onboarding screen
-  if (isDataLoading || (!hasCheckedOrgs && !orgFetchError)) {
+  // Show persistent loading during the very first check to avoid flashing onboarding
+  if (isDataLoading || !hasCheckedOrgs) {
       return (
           <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4">
               <Loader2 size={48} className="animate-spin text-blue-600" />
               <h2 className="text-xl font-bold text-slate-700">{loadingMessage}</h2>
-              <p className="text-slate-500">Syncing security credentials...</p>
+              <p className="text-slate-500 text-sm">Verifying secure session...</p>
           </div>
       );
   }
 
-  if (hasCheckedOrgs && !activeClientId) {
+  // If check is complete but no active ID exists, show Onboarding
+  if (!activeClientId) {
       return (
           <Onboarding 
             user={{
@@ -285,9 +289,7 @@ const App: React.FC = () => {
             onRefresh={() => loadOrganizations()}
             creationStatus={creationStatus}
             errorMessage={orgFetchError}
-            debugTokens={{
-                idToken: auth.user?.id_token
-            }}
+            debugTokens={{ idToken: auth.user?.id_token }}
           />
       );
   }
@@ -295,11 +297,18 @@ const App: React.FC = () => {
   const activeClient = clients.find(c => c.id === activeClientId) || clients[0];
   const activeData = clientDataStore[activeClientId];
   
-  if (!activeData) return <div className="p-10 flex flex-col items-center justify-center gap-4">
-      <AlertTriangle className="text-amber-500" size={48} />
-      <p>Error initializing client workspace.</p>
-      <button onClick={() => window.location.reload()} className="bg-blue-600 text-white px-4 py-2 rounded">Reload</button>
-  </div>;
+  if (!activeData) return (
+      <div className="p-10 flex flex-col items-center justify-center gap-4 h-screen bg-slate-50">
+          <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center max-w-sm">
+            <AlertTriangle className="text-amber-500 mx-auto mb-4" size={48} />
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Sync Interrupted</h2>
+            <p className="text-slate-500 text-sm mb-6">We found your organization but couldn't initialize the local workspace metadata.</p>
+            <button onClick={() => window.location.reload()} className="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                <RefreshCw size={16} /> Resume Session
+            </button>
+          </div>
+      </div>
+  );
 
   const currentUser = activeData.users.find(u => u.email === auth.user?.profile.email) || {
       id: auth.user?.profile.sub || 'unknown',
@@ -328,7 +337,6 @@ const App: React.FC = () => {
   const requirements = activeData.requirements;
   const artifacts = activeData.artifacts;
   const tickets = activeData.tickets;
-  const tasks = activeData.tasks;
   const mspBranding = activeData.mspBranding;
 
   const handleSelectReq = (req: Requirement) => setSelectedRequirementId(req.id);
@@ -426,7 +434,6 @@ const App: React.FC = () => {
                     )}
                 </>
             )}
-            {/* Other views omitted for brevity, but they are fully functional in the components list */}
       </main>
       <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>
