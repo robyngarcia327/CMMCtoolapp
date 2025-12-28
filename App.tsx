@@ -27,7 +27,8 @@ import {
   Briefcase,
   Loader2,
   RefreshCw,
-  Map
+  Map,
+  AlertCircle
 } from 'lucide-react';
 
 import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, REQUIREMENTS_DATA } from './data/standards';
@@ -92,33 +93,31 @@ const NavItem = ({ label, icon: Icon, isActive, onClick }: { label: string, icon
 const App: React.FC = () => {
   const auth = useAuth();
   
-  // App State
+  // App Navigation
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isFrameworkMenuOpen, setIsFrameworkMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   
-  // Data State
+  // Data & Lifecycle
   const [isDataLoading, setIsDataLoading] = useState(false); 
   const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState("Authenticating...");
+  const [orgFetchError, setOrgFetchError] = useState<string | null>(null);
+  
+  // Workspace State
   const [clients, setClients] = useState<Client[]>([]);
   const [activeClientId, setActiveClientId] = useState<string>('');
   const [activeFramework, setActiveFramework] = useState<Framework>(FRAMEWORKS[0]);
   const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>({});
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
-  
-  // Onboarding/Fetch State
-  const [orgFetchError, setOrgFetchError] = useState<string | null>(null);
-  const [creationStatus, setCreationStatus] = useState<'idle' | 'creating' | 'verifying' | 'failed_verification'>('idle');
 
+  // Load organizations exactly once per auth session
   const fetchAttempted = useRef(false);
 
   const loadOrganizations = useCallback(async () => {
       if (!auth.isAuthenticated || !auth.user?.id_token) return;
 
       setIsDataLoading(true);
-      setLoadingMessage("Checking Organization Memberships...");
       setOrgFetchError(null);
       
       try {
@@ -127,7 +126,7 @@ const App: React.FC = () => {
           const mappedClients: Client[] = apiOrgs.map((o: any) => ({
               id: o.orgId,
               name: o.name,
-              industry: o.industry || 'Unknown', 
+              industry: o.industry || 'General', 
               contactName: auth.user?.profile.email || 'User',
               logoInitial: o.name.charAt(0).toUpperCase(),
               primaryFramework: 'NIST800-171',
@@ -146,6 +145,7 @@ const App: React.FC = () => {
               setActiveClientId(selectedId);
               localStorage.setItem('activeOrgId', selectedId);
 
+              // Initialize Data Store for found clients
               setClientDataStore(prev => {
                   const nextStore = { ...prev };
                   mappedClients.forEach(c => {
@@ -156,20 +156,22 @@ const App: React.FC = () => {
                   return nextStore;
               });
 
+              // Background load evidence
               api.getEvidenceList(auth.user.id_token, selectedId).then(evidence => {
                   setClientDataStore(prev => ({
                       ...prev,
                       [selectedId]: { ...prev[selectedId], artifacts: evidence }
                   }));
-              }).catch(e => console.warn(`Failed to fetch evidence for ${selectedId}`, e));
+              }).catch(e => console.warn(`Background evidence fetch failed for ${selectedId}`, e));
           } else {
               setActiveClientId('');
           }
+          // Set checked to true ONLY after successful API return (empty or not)
           setHasCheckedOrgs(true);
       } catch (e: any) {
-          console.error("Failed to load organizations", e);
-          setOrgFetchError(e.message || "Could not load organization data.");
-          setHasCheckedOrgs(false); 
+          console.error("Critical: Failed to load organizations", e);
+          setOrgFetchError(e.message || "Failed to connect to the organization database.");
+          // Do NOT set hasCheckedOrgs to true here, so we can show the error/retry screen
       } finally {
           setIsDataLoading(false);
       }
@@ -201,17 +203,42 @@ const App: React.FC = () => {
       return <Login onLogin={() => auth.signinRedirect()} error={auth.error} />;
   }
 
-  if (isDataLoading || !hasCheckedOrgs) {
+  // --- LOADING / ERROR / ONBOARDING STATES ---
+
+  // 1. Initial Loading State (Circle Prevention: We show this while checking)
+  if (isDataLoading && !hasCheckedOrgs) {
       return (
-          <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4">
-              <Loader2 size={48} className="animate-spin text-blue-600" />
-              <h2 className="text-xl font-bold text-slate-700">{loadingMessage}</h2>
-              <p className="text-slate-500 text-sm">Verifying secure session...</p>
+          <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4 text-center">
+              <Loader2 size={48} className="animate-spin text-blue-600 mb-2" />
+              <h2 className="text-xl font-bold text-slate-800">Checking Organization...</h2>
+              <p className="text-slate-500 text-sm max-w-xs">Verifying your secure workspace access.</p>
           </div>
       );
   }
 
-  if (!activeClientId) {
+  // 2. Fetch Error State (Circle Prevention: We show an error if API fails instead of spinning)
+  if (orgFetchError && !hasCheckedOrgs) {
+      return (
+          <div className="flex h-screen items-center justify-center bg-slate-50 p-6">
+              <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-red-100 p-8 text-center">
+                  <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+                  <h2 className="text-xl font-bold text-slate-800 mb-2">Sync Error</h2>
+                  <p className="text-slate-500 text-sm mb-6">{orgFetchError}</p>
+                  <div className="space-y-3">
+                    <button onClick={() => loadOrganizations()} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                        <RefreshCw size={18} /> Retry Connection
+                    </button>
+                    <button onClick={handleLogout} className="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-medium hover:bg-slate-200 transition-colors">
+                        Sign Out
+                    </button>
+                  </div>
+              </div>
+          </div>
+      );
+  }
+
+  // 3. No Org Found State (Show Onboarding)
+  if (hasCheckedOrgs && !activeClientId) {
       return (
           <Onboarding 
             user={{
@@ -219,27 +246,31 @@ const App: React.FC = () => {
                 name: '', email: auth.user?.profile.email || '', role: 'CLIENT_USER', 
                 organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false 
             }}
-            onCreateOrganization={(name) => {}} // Placeholder logic
+            onCreateOrganization={async (name) => {
+                setIsDataLoading(true);
+                try {
+                    const newOrg = await api.createOrg(auth.user!.id_token, name);
+                    // Force a full reload of orgs after creation to ensure sync
+                    await loadOrganizations();
+                } catch (e: any) {
+                    setOrgFetchError(e.message);
+                    setIsDataLoading(false);
+                }
+            }}
             onRefresh={() => loadOrganizations()}
-            creationStatus={creationStatus}
-            errorMessage={orgFetchError}
             debugTokens={{ idToken: auth.user?.id_token }}
           />
       );
   }
 
+  // --- MAIN APP RENDER ---
+  
   const activeClient = clients.find(c => c.id === activeClientId) || clients[0];
   const activeData = clientDataStore[activeClientId];
   
   if (!activeData) return (
-      <div className="p-10 flex flex-col items-center justify-center gap-4 h-screen bg-slate-50">
-          <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center max-w-sm">
-            <AlertTriangle className="text-amber-500 mx-auto mb-4" size={48} />
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Sync Interrupted</h2>
-            <button onClick={() => window.location.reload()} className="w-full bg-blue-600 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2">
-                <RefreshCw size={16} /> Resume Session
-            </button>
-          </div>
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+          <Loader2 size={48} className="animate-spin text-blue-600" />
       </div>
   );
 
@@ -260,34 +291,14 @@ const App: React.FC = () => {
       setClientDataStore(prevStore => {
           const current = prevStore[activeClientId];
           const changes = updateFn(current);
-          return {
-              ...prevStore,
-              [activeClientId]: { ...current, ...changes }
-          };
+          return { ...prevStore, [activeClientId]: { ...current, ...changes } };
       });
   };
-
-  const requirements = activeData.requirements;
-  const artifacts = activeData.artifacts;
-  const tickets = activeData.tickets;
-
-  const handleSelectReq = (req: Requirement) => setSelectedRequirementId(req.id);
-  const handleUpdateRequirement = (updated: Requirement) => {
-    updateActiveClientData(prev => ({
-      requirements: prev.requirements.map(r => r.id === updated.id ? updated : r)
-    }));
-  };
-  const handleAddArtifact = (a: Artifact) => updateActiveClientData(prev => ({ artifacts: [...prev.artifacts, a] }));
-  const handleRemoveArtifact = (id: string) => updateActiveClientData(prev => ({ artifacts: prev.artifacts.filter(a => a.id !== id) }));
-  const handleAddTicket = (t: Ticket) => updateActiveClientData(prev => ({ tickets: [...prev.tickets, t] }));
-
-  const selectedRequirement = requirements.find(r => r.id === selectedRequirementId);
-  const isMSPUser = currentUser.role === 'MSP_ADMIN' || currentUser.role === 'MSP_TECH';
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
       
-      {/* Click-Away Backdrop for mobile/dropdowns */}
+      {/* Click-Away Overlay for dropdowns */}
       {(isProfileMenuOpen || isFrameworkMenuOpen) && (
           <div className="fixed inset-0 z-40 bg-transparent" onClick={() => { setIsProfileMenuOpen(false); setIsFrameworkMenuOpen(false); }}></div>
       )}
@@ -299,10 +310,10 @@ const App: React.FC = () => {
                       <Shield className="text-blue-500" size={24} />
                       <span>Cuallee Cyber</span>
                   </div>
-                  <div className="hidden md:flex items-center gap-2 h-16">
-                      <button onClick={() => setCurrentView(AppView.DASHBOARD)} className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === AppView.DASHBOARD ? 'bg-slate-800 text-white' : 'hover:bg-slate-800 hover:text-white'}`}>Dashboard</button>
+                  <nav className="hidden md:flex items-center gap-1 h-16">
+                      <button onClick={() => setCurrentView(AppView.DASHBOARD)} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === AppView.DASHBOARD ? 'bg-slate-800 text-white' : 'hover:bg-slate-800/50 hover:text-white'}`}>Dashboard</button>
                       <NavDropdown label="Compliance" icon={ListChecks}>
-                          <NavItem label="Outline Requirements" icon={Map} isActive={currentView === AppView.REQUIREMENTS} onClick={() => setCurrentView(AppView.REQUIREMENTS)} />
+                          <NavItem label="Requirement Detail" icon={ListChecks} isActive={currentView === AppView.REQUIREMENTS} onClick={() => setCurrentView(AppView.REQUIREMENTS)} />
                           <NavItem label="SPRS Scorecard" icon={TrendingUp} isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
                           <NavItem label="Onboarding Wizard" icon={Wand2} isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} />
                       </NavDropdown>
@@ -311,15 +322,15 @@ const App: React.FC = () => {
                           <NavItem label="Identity" icon={Users} isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
                           <NavItem label="Network Map" icon={Network} isActive={currentView === AppView.NETWORK_ANALYSIS} onClick={() => setCurrentView(AppView.NETWORK_ANALYSIS)} />
                       </NavDropdown>
-                  </div>
+                      <button onClick={() => setCurrentView(AppView.REPORTS)} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === AppView.REPORTS ? 'bg-slate-800 text-white' : 'hover:bg-slate-800/50 hover:text-white'}`}>Reports</button>
+                  </nav>
               </div>
 
               <div className="flex items-center gap-4">
-                  {/* Framework Dropdown (Click-based) */}
                   <div className="relative">
                         <button 
                           onClick={() => setIsFrameworkMenuOpen(!isFrameworkMenuOpen)}
-                          className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${isFrameworkMenuOpen ? 'bg-slate-700 text-white border-blue-500' : 'text-slate-400 bg-slate-800 border-slate-700 hover:border-slate-500'}`}
+                          className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${isFrameworkMenuOpen ? 'bg-slate-700 text-white border-blue-500' : 'text-slate-400 bg-slate-800 border-slate-700 hover:border-slate-500'}`}
                         >
                             <span>{activeFramework.id}</span>
                             <ChevronDown size={12} className={`transition-transform ${isFrameworkMenuOpen ? 'rotate-180' : ''}`} />
@@ -340,34 +351,36 @@ const App: React.FC = () => {
                         )}
                   </div>
 
-                  <button onClick={() => setIsChatOpen(!isChatOpen)} className={`p-2 rounded-full transition-all ${isChatOpen ? 'bg-blue-600 text-white' : 'bg-slate-800 text-blue-400'}`}><MessageSquare size={20} /></button>
+                  <button onClick={() => setIsChatOpen(!isChatOpen)} className={`p-2 rounded-full transition-all ${isChatOpen ? 'bg-blue-600 text-white' : 'bg-slate-800 text-blue-400 hover:bg-slate-700'}`}><MessageSquare size={20} /></button>
 
                   <div className="h-6 w-px bg-slate-700 mx-1"></div>
 
-                  {/* Profile Dropdown (Click-based) */}
                   <div className="flex items-center gap-3 relative">
-                      <div className="text-right hidden md:block">
+                      <div className="text-right hidden lg:block">
                           <div className="text-sm font-bold text-white">{currentUser.name}</div>
-                          <div className="text-[10px] font-bold text-slate-400">{activeClient.name}</div>
+                          <div className="text-[10px] font-bold text-slate-500 truncate max-w-[100px]">{activeClient.name}</div>
                       </div>
                       <button 
                         onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                        className={`w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold shadow border-2 transition-all ${isProfileMenuOpen ? 'border-white' : 'border-slate-700'}`}
+                        className={`w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold shadow-lg border-2 transition-all ${isProfileMenuOpen ? 'border-white scale-110' : 'border-slate-700 hover:border-slate-500'}`}
                       >
                           {currentUser.name.charAt(0)}
                       </button>
                       
                       {isProfileMenuOpen && (
-                          <div className="absolute top-full right-0 mt-3 w-56 bg-white text-slate-900 rounded-xl shadow-2xl border border-slate-200 py-2 z-[100] animate-in fade-in slide-in-from-top-1 duration-150">
-                              <div className="px-4 py-2 border-b border-slate-100 mb-2">
-                                  <div className="text-xs font-bold text-slate-400 uppercase">Organization</div>
-                                  <div className="text-sm font-bold truncate">{activeClient.name}</div>
+                          <div className="absolute top-full right-0 mt-3 w-56 bg-white text-slate-900 rounded-xl shadow-2xl border border-slate-200 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                              <div className="px-4 py-3 border-b border-slate-100 mb-2">
+                                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Organization</div>
+                                  <div className="text-sm font-bold truncate text-slate-800">{activeClient.name}</div>
                               </div>
                               <button 
                                 onClick={handleLogout}
-                                className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors font-medium"
+                                className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors font-bold group"
                               >
-                                  <LogOut size={16} /> Sign Out
+                                  <div className="bg-red-100 text-red-600 p-1.5 rounded-lg group-hover:bg-red-600 group-hover:text-white transition-colors">
+                                    <LogOut size={14} />
+                                  </div>
+                                  Sign Out
                               </button>
                           </div>
                       )}
@@ -377,20 +390,38 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-1 flex overflow-hidden relative">
-            {currentView === AppView.DASHBOARD && <Dashboard requirements={requirements} artifacts={artifacts} activeFramework={activeFramework} />}
+            {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} />}
             {currentView === AppView.REQUIREMENTS && (
                 <>
-                    <RequirementsList requirements={requirements} selectedReqId={selectedRequirementId} onSelectReq={handleSelectReq} activeFrameworkId={activeFramework.id} />
-                    {selectedRequirement ? (
-                        <RequirementDetail requirement={selectedRequirement} onUpdateRequirement={handleUpdateRequirement} allArtifacts={artifacts} onAddArtifact={handleAddArtifact} onRemoveArtifact={handleRemoveArtifact} tickets={tickets} onAddTicket={handleAddTicket} cwConfig={activeData.cwConfig} jiraConfig={activeData.jiraConfig} currentUser={currentUser} activeClientId={activeClientId} />
+                    <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => setSelectedRequirementId(r.id)} activeFrameworkId={activeFramework.id} />
+                    {selectedRequirementId ? (
+                        <RequirementDetail 
+                          requirement={activeData.requirements.find(r => r.id === selectedRequirementId)!} 
+                          onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} 
+                          allArtifacts={activeData.artifacts} 
+                          onAddArtifact={(a) => updateActiveClientData(prev => ({ artifacts: [...prev.artifacts, a] }))} 
+                          onRemoveArtifact={(id) => updateActiveClientData(prev => ({ artifacts: prev.artifacts.filter(a => a.id !== id) }))} 
+                          tickets={activeData.tickets} 
+                          onAddTicket={(t) => updateActiveClientData(prev => ({ tickets: [...prev.tickets, t] }))} 
+                          cwConfig={activeData.cwConfig} 
+                          jiraConfig={activeData.jiraConfig} 
+                          currentUser={currentUser} 
+                          activeClientId={activeClientId} 
+                        />
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50">
-                            <ListChecks size={64} className="mb-4 opacity-20" />
-                            <p className="text-lg font-medium">Select a requirement to outline your compliance strategy.</p>
+                            <ListChecks size={64} className="mb-4 opacity-10" />
+                            <p className="text-lg font-medium">Select a requirement to begin.</p>
                         </div>
                     )}
                 </>
             )}
+            {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} />}
+            {currentView === AppView.REPORTS && <Reports requirements={activeData.requirements} onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} />}
+            {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} wizardProgress={activeData.wizardProgress} onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} onAddArtifact={(a) => updateActiveClientData(prev => ({ artifacts: [...prev.artifacts, a] }))} onRemoveArtifact={(id) => updateActiveClientData(prev => ({ artifacts: prev.artifacts.filter(a => a.id !== id) }))} onUpdateProgress={(p) => updateActiveClientData(prev => ({ wizardProgress: p }))} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} />}
+            {currentView === AppView.INVENTORY && <Inventory assets={activeData.assets} onAddAsset={(a) => updateActiveClientData(prev => ({ assets: [...prev.assets, a] }))} onDeleteAsset={(id) => updateActiveClientData(prev => ({ assets: prev.assets.filter(a => a.id !== id) }))} />}
+            {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={(u) => updateActiveClientData(prev => ({ users: [...prev.users, u] }))} onUpdateUser={(u) => updateActiveClientData(prev => ({ users: prev.users.map(old => old.id === u.id ? u : old) }))} onDeleteUser={(id) => updateActiveClientData(prev => ({ users: prev.users.filter(u => u.id !== id) }))} />}
+            {currentView === AppView.NETWORK_ANALYSIS && <NetworkAnalyzer />}
       </main>
       <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>
