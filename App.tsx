@@ -99,9 +99,13 @@ const App: React.FC = () => {
       try {
           const apiOrgs = await api.getOrgs(idToken);
           
-          // CRITICAL FIX: Safe mapping to prevent charAt(0) error if name is missing
-          const mappedClients: Client[] = apiOrgs.map((o: any) => {
-              const safeName = o.name || 'Organization';
+          // CRITICAL FIX: Safe mapping to prevent charAt(0) error if name is missing or non-string
+          const mappedClients: Client[] = apiOrgs
+            .filter(o => o && typeof o === 'object') // Ensure o is an object
+            .map((o: any) => {
+              const nameValue = o.name;
+              const safeName = (typeof nameValue === 'string' && nameValue.trim() !== '') ? nameValue : 'Organization';
+              
               return {
                   id: o.orgId || `temp-${Math.random()}`,
                   name: safeName,
@@ -148,7 +152,8 @@ const App: React.FC = () => {
           setHasCheckedOrgs(true);
       } catch (e: any) {
           console.error("Critical: Failed to load organizations", e);
-          setOrgFetchError(e.message || "Failed to connect to the organization database.");
+          // If the error is from the API fetch failing, show a helpful message
+          setOrgFetchError(e.message || "Network Error: Could not connect to the security gateway. Check your internet or backend CORS settings.");
       } finally {
           setIsDataLoading(false);
       }
@@ -161,12 +166,15 @@ const App: React.FC = () => {
       }
   }, [auth.isAuthenticated, auth.user?.id_token, loadOrganizations]);
 
+  /**
+   * Performs a complete sign-out by redirecting to the Cognito logout endpoint
+   * and clearing local workspace identifiers.
+   */
   const handleLogout = () => {
-      auth.removeUser();
       localStorage.removeItem('activeOrgId');
-      // Force clear state
-      window.history.replaceState({}, document.title, window.location.pathname);
-      window.location.reload();
+      // Using signoutRedirect() instead of removeUser() ensures the Identity Provider
+      // session cookie is also invalidated, preventing immediate auto-login.
+      auth.signoutRedirect();
   };
   
   if (auth.isLoading) {
@@ -204,7 +212,7 @@ const App: React.FC = () => {
                   <h2 className="text-xl font-bold text-slate-800 mb-2">Sync Error</h2>
                   <p className="text-slate-500 text-sm mb-6">{orgFetchError}</p>
                   <div className="space-y-3">
-                    <button onClick={() => loadOrganizations()} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                    <button onClick={() => { fetchAttempted.current = false; loadOrganizations(); }} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
                         <RefreshCw size={18} /> Retry Connection
                     </button>
                     <button onClick={handleLogout} className="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-medium hover:bg-slate-200 transition-colors">
@@ -229,13 +237,14 @@ const App: React.FC = () => {
                 setIsDataLoading(true);
                 try {
                     await api.createOrg(auth.user.id_token, name);
+                    fetchAttempted.current = false;
                     await loadOrganizations();
                 } catch (e: any) {
                     setOrgFetchError(e.message);
                     setIsDataLoading(false);
                 }
             }}
-            onRefresh={() => loadOrganizations()}
+            onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }}
             debugTokens={{ idToken: auth.user?.id_token }}
           />
       );

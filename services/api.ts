@@ -10,15 +10,13 @@ const API_BASE_URL = 'https://irwrdtn81b.execute-api.us-east-1.amazonaws.com/Cua
  */
 const parseResponseData = async (response: Response) => {
     let data;
+    const text = await response.text();
+    
     try {
-        data = await response.json();
+        data = JSON.parse(text);
     } catch (e) {
-        const text = await response.text();
-        try {
-            data = JSON.parse(text);
-        } catch (e2) {
-            return text;
-        }
+        // Not JSON, return as is (could be an error string)
+        return text;
     }
     
     // AWS Lambda Proxy Integration Robustness:
@@ -46,14 +44,16 @@ const ensureArray = (data: any): any[] => {
     if (Array.isArray(data)) return data;
     
     // Check known wrappers returned by various backend versions
-    if (Array.isArray(data.items)) return data.items;
-    if (Array.isArray(data.organizations)) return data.organizations;
-    if (Array.isArray(data.orgs)) return data.orgs;
-    if (Array.isArray(data.data)) return data.data;
-    if (Array.isArray(data.evidence)) return data.evidence;
-    
-    // If it's a single object with an identifying field, wrap it
-    if (data.orgId || data.evidenceId || data.name) return [data];
+    if (data && typeof data === 'object') {
+        if (Array.isArray(data.items)) return data.items;
+        if (Array.isArray(data.organizations)) return data.organizations;
+        if (Array.isArray(data.orgs)) return data.orgs;
+        if (Array.isArray(data.data)) return data.data;
+        if (Array.isArray(data.evidence)) return data.evidence;
+        
+        // If it's a single object with an identifying field, wrap it
+        if (data.orgId || data.evidenceId || data.name) return [data];
+    }
     
     return [];
 };
@@ -65,11 +65,14 @@ export const api = {
    * Fetches the list of organizations the authenticated user belongs to.
    */
   getOrgs: async (token: string): Promise<{ orgId: string, name: string, role: string, industry?: string }[]> => {
+    console.debug("API: Fetching /orgs...");
     try {
       const response = await fetch(`${API_BASE_URL}/orgs`, {
+        method: 'GET',
+        mode: 'cors', // Explicitly request CORS
         headers: {
-          'Authorization': `Bearer ${token}`, 
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${token.trim()}`, // Ensure no extra spaces
+          'Accept': 'application/json'
         }
       });
 
@@ -79,13 +82,14 @@ export const api = {
             status: response.status,
             body: errorBody
         });
-        throw new Error(`API Error ${response.status}: ${errorBody || response.statusText}`);
+        throw new Error(`Server returned ${response.status}: ${errorBody || response.statusText}`);
       }
 
       const rawData = await parseResponseData(response);
+      console.debug("API: /orgs data received", rawData);
       return ensureArray(rawData);
     } catch (error) {
-      console.error("Network or parsing error in getOrgs:", error);
+      console.error("API: Network or CORS failure in getOrgs. Check AWS API Gateway CORS settings.", error);
       throw error;
     }
   },

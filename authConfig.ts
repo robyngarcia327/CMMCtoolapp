@@ -1,3 +1,4 @@
+
 // --- AWS COGNITO CONFIGURATION ---
 // 1. Go to AWS Console -> Cognito -> User Pools -> [Your Pool]
 // 2. Copy "User Pool ID"
@@ -17,15 +18,16 @@ const getRedirectUri = () => {
   }
   
   // IN PRODUCTION: Hardcode strictly to the allowed callback URL with trailing slash.
-  // DO NOT use window.location.origin here, as it lacks the trailing slash 
-  // and might vary (www vs non-www) causing mismatch errors.
   return "https://cualleecyber.com/";
 };
+
+const redirectUri = getRedirectUri();
 
 export const authConfig = {
   authority: `https://cognito-idp.us-east-1.amazonaws.com/${USER_POOL_ID}`,
   client_id: CLIENT_ID,
-  redirect_uri: getRedirectUri(), 
+  redirect_uri: redirectUri,
+  post_logout_redirect_uri: redirectUri, // Redirect back to home after sign-out
   response_type: "code",
   scope: "phone openid email",
   cognito_domain: COGNITO_DOMAIN,
@@ -36,7 +38,7 @@ export const authConfig = {
     authorization_endpoint: `${COGNITO_DOMAIN}/oauth2/authorize`,
     token_endpoint: `${COGNITO_DOMAIN}/oauth2/token`,
     userinfo_endpoint: `${COGNITO_DOMAIN}/oauth2/userInfo`,
-    end_session_endpoint: `${COGNITO_DOMAIN}/logout`,
+    end_session_endpoint: `${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(redirectUri)}`,
     jwks_uri: `https://cognito-idp.us-east-1.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`,
   }
 };
