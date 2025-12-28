@@ -35,7 +35,6 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
   const [selectedLevel, setSelectedLevel] = useState<1 | 2 | 3>(2);
   const [expandedReqId, setExpandedReqId] = useState<string | null>(null);
   
-  // Fixed: Added missing state variables and handler for the auditor invitation modal
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [auditorEmail, setAuditorEmail] = useState('');
 
@@ -46,8 +45,13 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
     setAuditorEmail('');
   };
 
-  // --- Filtering ---
-  const levelReqs = requirements.filter(r => r.framework === 'NIST-CMMC' && r.cmmcLevel === selectedLevel);
+  // --- Filtering (Cumulative: L2 includes L1) ---
+  const levelReqs = requirements.filter(r => 
+    r.framework === 'NIST-CMMC' && 
+    r.cmmcLevel !== undefined && 
+    r.cmmcLevel <= selectedLevel
+  );
+
   const filteredReqs = levelReqs.filter(r => 
       r.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
       r.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -93,7 +97,6 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
                   ))}
                </div>
                <div className="flex gap-3">
-                   {/* Fixed: Added button to open invite modal as it was missing a trigger */}
                    <button 
                         onClick={() => setShowInviteModal(true)}
                         className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 text-sm shadow-xl hover:bg-blue-700 transition-colors"
@@ -261,7 +264,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
           </div>
       </div>
 
-      {/* Invite Modal (Legacy logic) */}
+      {/* Invite Modal */}
       {showInviteModal && (
           <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border-t-8 border-blue-600">
