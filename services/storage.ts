@@ -37,13 +37,33 @@ export const storageService = {
               } else {
                   // Optional: Refresh labels or descriptions if they are default/empty
                   const idx = clientData.requirements.findIndex(r => r.id === officialReq.id);
-                  if (clientData.requirements[idx].description === "" || clientData.requirements[idx].title === "Placeholder") {
-                      clientData.requirements[idx].title = officialReq.title;
-                      clientData.requirements[idx].description = officialReq.description;
-                      clientData.requirements[idx].discussion = officialReq.discussion;
-                      clientData.requirements[idx].family = officialReq.family;
+                  const current = clientData.requirements[idx];
+                  
+                  // Force refresh if content is empty or placeholder to ensure data completeness
+                  if (!current.description || current.description === "" || current.title === "Placeholder") {
+                      current.title = officialReq.title;
+                      current.description = officialReq.description;
+                      current.discussion = officialReq.discussion;
+                      current.family = officialReq.family;
+                      current.cmmcLevel = officialReq.cmmcLevel;
+                      // Don't overwrite objectives if they have status work, unless they are empty
+                      if (!current.objectives || current.objectives.length === 0) {
+                          current.objectives = JSON.parse(JSON.stringify(officialReq.objectives));
+                      }
                   }
               }
+          });
+          
+          // Re-sort requirements by ID numerically to maintain order
+          clientData.requirements.sort((a, b) => {
+              const parseId = (id: string) => id.split('.').map(Number);
+              const aParts = parseId(a.id);
+              const bParts = parseId(b.id);
+              for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+                  if ((aParts[i] || 0) < (bParts[i] || 0)) return -1;
+                  if ((aParts[i] || 0) > (bParts[i] || 0)) return 1;
+              }
+              return 0;
           });
       });
 
