@@ -1,7 +1,6 @@
 
 import { Client, ClientData, Requirement } from '../types';
-// Fixed: Removed non-existent export INITIAL_CLIENTS from the import statement
-import { createInitialClientData, REQUIREMENTS_DATA } from '../data/standards';
+import { REQUIREMENTS_DATA } from '../data/standards';
 
 const STORAGE_KEY_CLIENTS = 'cybercomply_clients';
 const STORAGE_KEY_DATA_STORE = 'cybercomply_datastore';
@@ -24,26 +23,25 @@ export const storageService = {
       const stored = localStorage.getItem(STORAGE_KEY_DATA_STORE);
       let store: Record<string, ClientData> = stored ? JSON.parse(stored) : {};
       
-      // Upgrade logic: Ensure all "Real" requirements are present in every client
-      // This prevents "Placeholder" versions from persisting if we updated standards.ts
+      // Upgrade logic: Ensure all current requirements are present in every client's active dataset
       Object.keys(store).forEach(clientId => {
           const clientData = store[clientId];
+          if (!clientData.requirements) clientData.requirements = [];
+          
           const existingIds = new Set(clientData.requirements.map(r => r.id));
           
           REQUIREMENTS_DATA.forEach(officialReq => {
               if (!existingIds.has(officialReq.id)) {
-                  clientData.requirements.push(officialReq);
+                  // Add missing requirement from newest standards
+                  clientData.requirements.push(JSON.parse(JSON.stringify(officialReq)));
               } else {
-                  // Optional: Update text if it was a placeholder but keep the user's status
-                  const index = clientData.requirements.findIndex(r => r.id === officialReq.id);
-                  if (index !== -1 && clientData.requirements[index].description.includes("placeholder")) {
-                      const userStatus = clientData.requirements[index].objectives;
-                      const userResponse = clientData.requirements[index].response;
-                      clientData.requirements[index] = { 
-                          ...officialReq, 
-                          objectives: userStatus, 
-                          response: userResponse 
-                      };
+                  // Optional: Refresh labels or descriptions if they are default/empty
+                  const idx = clientData.requirements.findIndex(r => r.id === officialReq.id);
+                  if (clientData.requirements[idx].description === "" || clientData.requirements[idx].title === "Placeholder") {
+                      clientData.requirements[idx].title = officialReq.title;
+                      clientData.requirements[idx].description = officialReq.description;
+                      clientData.requirements[idx].discussion = officialReq.discussion;
+                      clientData.requirements[idx].family = officialReq.family;
                   }
               }
           });
