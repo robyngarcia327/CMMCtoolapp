@@ -262,27 +262,188 @@ const NIST_CMMC_CONTROLS: Requirement[] = [
 
 // --- OFFICIAL SOC 2 TRUST SERVICES CRITERIA (2017) ---
 const SOC2_CONTROLS: Requirement[] = [
+  // CC1: Control Environment
   {
     id: 'CC1.1',
     framework: 'SOC2',
-    family: 'Control Environment',
+    family: 'CC1',
     title: 'Integrity and Ethical Values',
     description: 'The entity demonstrates a commitment to integrity and ethical values.',
-    discussion: 'Tone at the top and standards of conduct.',
+    discussion: 'Requires established standards of conduct and a process to address deviations.',
     level: 'Common Criteria',
-    objectives: [{ id: 'a', description: 'Standards of conduct established.', status: 'pending' }],
+    objectives: [
+      { id: 'a', description: 'Tone at the top is established through formal policies.', status: 'pending' },
+      { id: 'b', description: 'Standards of conduct are communicated to all personnel.', status: 'pending' }
+    ],
     mappings: { iso27001: ['A.5.1'] }
   },
   {
+    id: 'CC1.2',
+    framework: 'SOC2',
+    family: 'CC1',
+    title: 'Board Oversight',
+    description: 'The board of directors demonstrates independence from management and exercises oversight of internal control.',
+    discussion: 'Auditors look for board meeting minutes and evidence of security status reporting to leadership.',
+    level: 'Common Criteria',
+    objectives: [{ id: 'a', description: 'Governance body reviews security posture quarterly.', status: 'pending' }],
+    mappings: {}
+  },
+  // CC2: Communication and Information
+  {
+    id: 'CC2.1',
+    framework: 'SOC2',
+    family: 'CC2',
+    title: 'Information for Internal Control',
+    description: 'The entity obtains or generates and uses relevant, quality information to support the functioning of internal control.',
+    discussion: 'Includes tracking system changes and data flow mapping.',
+    level: 'Common Criteria',
+    objectives: [{ id: 'a', description: 'System inventories are accurate and updated.', status: 'pending' }],
+    mappings: { cis_v8: ['1.1'] }
+  },
+  {
+    id: 'CC2.2',
+    framework: 'SOC2',
+    family: 'CC2',
+    title: 'Internal Communication',
+    description: 'The entity internally communicates information, including objectives and responsibilities for internal control.',
+    discussion: 'Whistleblower policies and security awareness messaging.',
+    level: 'Common Criteria',
+    objectives: [{ id: 'a', description: 'Security roles are defined in job descriptions.', status: 'pending' }],
+    mappings: {}
+  },
+  // CC3: Risk Assessment
+  {
+    id: 'CC3.1',
+    framework: 'SOC2',
+    family: 'CC3',
+    title: 'Objective Specification',
+    description: 'The entity specifies objectives with sufficient clarity to enable the identification and assessment of risks.',
+    discussion: 'Operational, reporting, and compliance objectives must be defined.',
+    level: 'Common Criteria',
+    objectives: [{ id: 'a', description: 'Annual risk assessment is performed.', status: 'pending' }],
+    mappings: { nist_csf: ['ID.RA-1'] }
+  },
+  {
+    id: 'CC3.2',
+    framework: 'SOC2',
+    family: 'CC3',
+    title: 'Risk Identification and Analysis',
+    description: 'The entity identifies risks to the achievement of its objectives across the entity.',
+    discussion: 'Requires a formal risk register and impact analysis.',
+    level: 'Common Criteria',
+    objectives: [{ id: 'a', description: 'Threat landscape is reviewed for emerging risks.', status: 'pending' }],
+    mappings: {}
+  },
+  // CC4: Monitoring Activities
+  {
+    id: 'CC4.1',
+    framework: 'SOC2',
+    family: 'CC4',
+    title: 'Ongoing and Separate Evaluations',
+    description: 'The entity selects, develops, and performs ongoing and/or separate evaluations to ascertain whether components of internal control are present.',
+    discussion: 'Internal audits and self-assessments.',
+    level: 'Common Criteria',
+    objectives: [{ id: 'a', description: 'Periodic control testing occurs throughout the year.', status: 'pending' }],
+    mappings: {}
+  },
+  // CC5: Control Activities
+  {
+    id: 'CC5.1',
+    framework: 'SOC2',
+    family: 'CC5',
+    title: 'Control Activity Selection',
+    description: 'The entity selects and develops control activities that contribute to the mitigation of risks.',
+    discussion: 'Requires linking specific controls to identified risks.',
+    level: 'Common Criteria',
+    objectives: [{ id: 'a', description: 'Controls are mapped to Trust Services Criteria.', status: 'pending' }],
+    mappings: {}
+  },
+  // CC6: Logical and Physical Access Controls
+  {
     id: 'CC6.1',
     framework: 'SOC2',
-    family: 'Logical & Physical Access',
+    family: 'CC6',
     title: 'Logical Access Security',
     description: 'The entity implements logical access security over relevant information assets.',
-    discussion: 'Restricting digital access to authorized staff.',
+    discussion: 'Restricting digital access to authorized staff through IAM.',
     level: 'Common Criteria',
-    objectives: [{ id: 'a', description: 'Access points managed.', status: 'pending' }],
+    objectives: [
+      { id: 'a', description: 'Access is granted based on Least Privilege.', status: 'pending' },
+      { id: 'b', description: 'Terminated users are removed within 24 hours.', status: 'pending' }
+    ],
     mappings: { nist_csf: ['PR.AC-1'] }
+  },
+  {
+    id: 'CC6.2',
+    framework: 'SOC2',
+    family: 'CC6',
+    title: 'User Credentials',
+    description: 'The entity issues and maintains unique user credentials.',
+    discussion: 'Requires complexity standards and MFA.',
+    level: 'Common Criteria',
+    objectives: [{ id: 'a', description: 'Multi-factor authentication is required for all production access.', status: 'pending' }],
+    mappings: {}
+  },
+  // CC7: System Operations
+  {
+    id: 'CC7.1',
+    framework: 'SOC2',
+    family: 'CC7',
+    title: 'System Monitoring',
+    description: 'The entity meets its objectives by monitoring the system and taking action when anomalies are detected.',
+    discussion: 'Requires centralized logging (SIEM) and alerting.',
+    level: 'Common Criteria',
+    objectives: [{ id: 'a', description: 'Anomalous activity triggers automated alerts.', status: 'pending' }],
+    mappings: {}
+  },
+  {
+    id: 'CC7.2',
+    framework: 'SOC2',
+    family: 'CC7',
+    title: 'Vulnerability Management',
+    description: 'The entity evaluates and remediates vulnerabilities in a timely manner.',
+    discussion: 'Requires periodic external and internal scanning.',
+    level: 'Common Criteria',
+    objectives: [{ id: 'a', description: 'Patch management policy is defined and followed.', status: 'pending' }],
+    mappings: {}
+  },
+  // CC8: Change Management
+  {
+    id: 'CC8.1',
+    framework: 'SOC2',
+    family: 'CC8',
+    title: 'System Changes',
+    description: 'The entity authorizes, designs, develops, tests, and documents system changes.',
+    discussion: 'Auditors look for PR (Pull Request) approvals and separation of duties between Dev and Ops.',
+    level: 'Common Criteria',
+    objectives: [
+      { id: 'a', description: 'All code changes require secondary review.', status: 'pending' },
+      { id: 'b', description: 'Rollback procedures are documented for major releases.', status: 'pending' }
+    ],
+    mappings: {}
+  },
+  // CC9: Risk Mitigation
+  {
+    id: 'CC9.1',
+    framework: 'SOC2',
+    family: 'CC9',
+    title: 'Business Resilience',
+    description: 'The entity specifies objectives to enable the identification and assessment of risks related to business resilience.',
+    discussion: 'Disaster Recovery (DR) and Business Continuity (BC) plans.',
+    level: 'Common Criteria',
+    objectives: [{ id: 'a', description: 'DR plan is tested annually.', status: 'pending' }],
+    mappings: {}
+  },
+  {
+    id: 'CC9.2',
+    framework: 'SOC2',
+    family: 'CC9',
+    title: 'Vendor Risk Management',
+    description: 'The entity evaluates and monitors the risks associated with third-party service providers.',
+    discussion: 'Includes reviewing SOC reports of vendors (e.g., AWS/GCP).',
+    level: 'Common Criteria',
+    objectives: [{ id: 'a', description: 'Critical vendors are reviewed for security compliance annually.', status: 'pending' }],
+    mappings: {}
   }
 ];
 
@@ -332,7 +493,17 @@ export const NIST_FAMILIES = [
     { id: 'RA', name: 'Risk Assessment', count: 3 },
     { id: 'CA', name: 'Security Assessment', count: 4 },
     { id: 'SC', name: 'System and Communications Protection', count: 16 },
-    { id: 'SI', name: 'System and Information Integrity', count: 7 }
+    { id: 'SI', name: 'System and Information Integrity', count: 7 },
+    // SOC 2 Families
+    { id: 'CC1', name: 'Control Environment', count: 5 },
+    { id: 'CC2', name: 'Communication and Information', count: 3 },
+    { id: 'CC3', name: 'Risk Assessment', count: 4 },
+    { id: 'CC4', name: 'Monitoring Activities', count: 2 },
+    { id: 'CC5', name: 'Control Activities', count: 3 },
+    { id: 'CC6', name: 'Logical and Physical Access', count: 8 },
+    { id: 'CC7', name: 'System Operations', count: 5 },
+    { id: 'CC8', name: 'Change Management', count: 1 },
+    { id: 'CC9', name: 'Risk Mitigation', count: 2 }
 ];
 
 export const TRAINING_MODULES = [
