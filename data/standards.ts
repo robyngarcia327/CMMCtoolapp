@@ -37,7 +37,8 @@ const CMMC_L1_CONTROLS: Requirement[] = [
     level: 'Level 1',
     objectives: [
       { id: 'a', description: 'External connections are identified.', status: 'pending', method: 'Examine' },
-      { id: 'b', description: 'Connections are controlled/limited.', status: 'pending', method: 'Test' }
+      { id: 'b', description: 'External connections are verified.', status: 'pending', method: 'Interview' },
+      { id: 'c', description: 'Use of external systems is controlled/limited.', status: 'pending', method: 'Test' }
     ],
     mappings: { nist800_53: ['AC-20'] },
     sprsWeight: 1
@@ -53,7 +54,8 @@ const CMMC_L1_CONTROLS: Requirement[] = [
     level: 'Level 1',
     objectives: [
       { id: 'a', description: 'System users are identified.', status: 'pending', method: 'Examine' },
-      { id: 'b', description: 'Processes acting on behalf of users are identified.', status: 'pending', method: 'Interview' }
+      { id: 'b', description: 'Processes acting on behalf of users are identified.', status: 'pending', method: 'Interview' },
+      { id: 'c', description: 'Devices are identified.', status: 'pending', method: 'Examine' }
     ],
     mappings: { nist800_53: ['IA-2'] },
     sprsWeight: 1
@@ -83,7 +85,8 @@ const CMMC_L1_CONTROLS: Requirement[] = [
     discussion: 'Locked doors, server racks, and badge access systems.',
     level: 'Level 1',
     objectives: [
-      { id: 'a', description: 'Physical access is limited to authorized persons.', status: 'pending', method: 'Examine' }
+      { id: 'a', description: 'Physical access is limited to authorized persons.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'Equipment and environments are protected from unauthorized access.', status: 'pending', method: 'Test' }
     ],
     mappings: { nist800_53: ['PE-2'] },
     sprsWeight: 1
@@ -104,7 +107,11 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     sprsWeight: 5,
     objectives: [
       { id: 'a', description: 'Authorized users are identified.', status: 'pending', method: 'Examine' },
-      { id: 'b', description: 'Processes acting on behalf of users are identified.', status: 'pending', method: 'Examine' }
+      { id: 'b', description: 'Processes acting on behalf of users are identified.', status: 'pending', method: 'Examine' },
+      { id: 'c', description: 'Devices (including other systems) are identified.', status: 'pending', method: 'Examine' },
+      { id: 'd', description: 'System access is limited to authorized users.', status: 'pending', method: 'Test' },
+      { id: 'e', description: 'System access is limited to authorized processes.', status: 'pending', method: 'Test' },
+      { id: 'f', description: 'System access is limited to authorized devices.', status: 'pending', method: 'Test' }
     ],
     mappings: { nist800_53: ['AC-2', 'AC-3'] }
   },
@@ -119,8 +126,8 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     level: 'Level 2',
     sprsWeight: 5,
     objectives: [
-      { id: 'a', description: 'Permitted transactions are defined.', status: 'pending', method: 'Examine' },
-      { id: 'b', description: 'System access is limited to permitted actions.', status: 'pending', method: 'Test' }
+      { id: 'a', description: 'Permitted transactions and functions are defined.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'System access is limited to the defined types of transactions and functions.', status: 'pending', method: 'Test' }
     ],
     mappings: { nist800_53: ['AC-6'] }
   },
@@ -135,9 +142,26 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     level: 'Level 2',
     sprsWeight: 5,
     objectives: [
-      { id: 'a', description: 'Information flow is controlled according to policy.', status: 'pending', method: 'Examine' }
+      { id: 'a', description: 'Authorizations for CUI flow are defined.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'The flow of CUI is controlled in accordance with authorizations.', status: 'pending', method: 'Test' }
     ],
     mappings: { nist800_53: ['AC-4'] }
+  },
+  {
+    id: '3.1.18',
+    framework: 'NIST-CMMC',
+    family: 'AC',
+    cmmcLevel: 2,
+    title: 'Monitor and Control Remote Access',
+    description: 'Monitor and control remote access sessions.',
+    discussion: 'Maintain audit records of remote connections.',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'Remote access sessions are monitored.', status: 'pending', method: 'Test' },
+      { id: 'b', description: 'Remote access sessions are controlled.', status: 'pending', method: 'Test' }
+    ],
+    mappings: { nist800_53: ['AC-17'] }
   },
   {
     id: '3.3.1',
@@ -150,8 +174,10 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     level: 'Level 2',
     sprsWeight: 3,
     objectives: [
-      { id: 'a', description: 'Audit records are created.', status: 'pending', method: 'Examine' },
-      { id: 'b', description: 'Audit records enable monitoring/investigation.', status: 'pending', method: 'Test' }
+      { id: 'a', description: 'System audit logs and records are created.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'System audit logs and records are retained.', status: 'pending', method: 'Examine' },
+      { id: 'c', description: 'Logs enable monitoring of unauthorized activity.', status: 'pending', method: 'Test' },
+      { id: 'd', description: 'Logs enable analysis and investigation of activity.', status: 'pending', method: 'Test' }
     ],
     mappings: { nist800_53: ['AU-2'] }
   },
@@ -166,7 +192,7 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     level: 'Level 2',
     sprsWeight: 3,
     objectives: [
-      { id: 'a', description: 'Audit logs uniquely identify individuals.', status: 'pending', method: 'Test' }
+      { id: 'a', description: 'Actions of individual system users are uniquely traced.', status: 'pending', method: 'Test' }
     ],
     mappings: { nist800_53: ['AU-3'] }
   },
@@ -182,9 +208,27 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     sprsWeight: 3,
     objectives: [
       { id: 'a', description: 'Baseline configurations are established.', status: 'pending', method: 'Examine' },
-      { id: 'b', description: 'Baseline configs are maintained.', status: 'pending', method: 'Examine' }
+      { id: 'b', description: 'Baseline configurations are maintained.', status: 'pending', method: 'Examine' },
+      { id: 'c', description: 'Inventories of organizational systems are established.', status: 'pending', method: 'Examine' },
+      { id: 'd', description: 'Inventories of organizational systems are maintained.', status: 'pending', method: 'Examine' }
     ],
     mappings: { nist800_53: ['CM-2'] }
+  },
+  {
+    id: '3.4.2',
+    framework: 'NIST-CMMC',
+    family: 'CM',
+    cmmcLevel: 2,
+    title: 'Configuration Change Control',
+    description: 'Establish and enforce security configuration settings for information technology products employed in organizational systems.',
+    discussion: 'Apply secure configuration settings to IT products.',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'Security configuration settings are established.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'Security configuration settings are enforced.', status: 'pending', method: 'Test' }
+    ],
+    mappings: { nist800_53: ['CM-6'] }
   },
   {
     id: '3.5.3',
@@ -197,11 +241,27 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     level: 'Level 2',
     sprsWeight: 5,
     objectives: [
-      { id: 'a', description: 'MFA for local privileged access.', status: 'pending', method: 'Test' },
-      { id: 'b', description: 'MFA for network privileged access.', status: 'pending', method: 'Test' },
-      { id: 'c', description: 'MFA for network non-privileged access.', status: 'pending', method: 'Test' }
+      { id: 'a', description: 'MFA is used for network access to privileged accounts.', status: 'pending', method: 'Test' },
+      { id: 'b', description: 'MFA is used for network access to non-privileged accounts.', status: 'pending', method: 'Test' },
+      { id: 'c', description: 'MFA is used for local access to privileged accounts.', status: 'pending', method: 'Test' }
     ],
     mappings: { nist800_53: ['IA-2'] }
+  },
+  {
+    id: '3.11.1',
+    framework: 'NIST-CMMC',
+    family: 'RA',
+    cmmcLevel: 2,
+    title: 'Vulnerability Risk Assessment',
+    description: 'Periodically assess the risk to organizational operations (including mission, functions, image, or reputation), organizational assets, and individuals, resulting from the operation of organizational systems and the associated processing, storage, or transmission of CUI.',
+    discussion: 'Scan and review vulnerabilities on a scheduled basis.',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'Risks result from system operation are identified.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'Risks are assessed periodically.', status: 'pending', method: 'Examine' }
+    ],
+    mappings: { nist800_53: ['RA-3'] }
   },
   {
     id: '3.13.1',
@@ -214,10 +274,46 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     level: 'Level 2',
     sprsWeight: 5,
     objectives: [
-      { id: 'a', description: 'External communications are monitored.', status: 'pending', method: 'Test' },
-      { id: 'b', description: 'Boundaries are protected.', status: 'pending', method: 'Examine' }
+      { id: 'a', description: 'External boundaries are identified.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'Transmit-receive points are identified.', status: 'pending', method: 'Examine' },
+      { id: 'c', description: 'Communications at external boundaries are monitored.', status: 'pending', method: 'Test' },
+      { id: 'd', description: 'Communications at external boundaries are controlled.', status: 'pending', method: 'Test' },
+      { id: 'e', description: 'Communications at external boundaries are protected.', status: 'pending', method: 'Test' }
     ],
     mappings: { nist800_53: ['SC-7'] }
+  },
+  {
+    id: '3.13.11',
+    framework: 'NIST-CMMC',
+    family: 'SC',
+    cmmcLevel: 2,
+    title: 'CUI Cryptography',
+    description: 'Employ FIPS-validated cryptography when used to protect the confidentiality of CUI.',
+    discussion: 'Ensure bitlocker or HTTPS uses FIPS 140-2 validated modules.',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'FIPS-validated cryptography is identified for use.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'FIPS-validated cryptography is employed to protect CUI confidentiality.', status: 'pending', method: 'Test' }
+    ],
+    mappings: { nist800_53: ['SC-13'] }
+  },
+  {
+    id: '3.14.1',
+    framework: 'NIST-CMMC',
+    family: 'SI',
+    cmmcLevel: 2,
+    title: 'Flaw Remediation',
+    description: 'Identify, report, and correct system flaws in a timely manner.',
+    discussion: 'Patching software and firmware vulnerabilities.',
+    level: 'Level 2',
+    sprsWeight: 5,
+    objectives: [
+      { id: 'a', description: 'System flaws are identified.', status: 'pending', method: 'Test' },
+      { id: 'b', description: 'System flaws are reported.', status: 'pending', method: 'Interview' },
+      { id: 'c', description: 'System flaws are corrected in a timely manner.', status: 'pending', method: 'Test' }
+    ],
+    mappings: { nist800_53: ['SI-2'] }
   }
 ];
 
