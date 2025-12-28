@@ -39,8 +39,8 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, onUpdateRequirem
   };
 
   // Derive active families purely from current requirement set
-  // Explicitly type as string[] to avoid 'unknown' issues in mapping
-  const activeFamilies: string[] = Array.from(new Set(requirements.map(r => r.family))).sort();
+  // Fixed: Added type assertion to Array.from to satisfy TypeScript compiler which was inferring unknown[]
+  const activeFamilies: string[] = (Array.from(new Set(requirements.map(r => r.family))) as string[]).sort();
 
   const handlePrint = () => {
     window.print();

@@ -3,6 +3,7 @@ export interface AssessmentObjective {
   id: string;
   description: string;
   status: 'met' | 'not_met' | 'na' | 'pending';
+  method?: 'Examine' | 'Interview' | 'Test'; // From Guide Methodology
 }
 
 export interface ReferenceLink {
@@ -29,12 +30,11 @@ export interface Comment {
   timestamp: number;
 }
 
-// New Interface for Manual POA&M Editing
 export interface PoamEntry {
-    weaknessName?: string; // Allow overriding the generic control title
+    weaknessName?: string;
     scheduledCompletionDate?: string;
     milestones?: string;
-    poc?: string; // Point of Contact
+    poc?: string;
     status?: 'Ongoing' | 'Completed' | 'Planned' | 'Delayed' | 'Risk Accepted';
     comments?: string;
 }
@@ -47,6 +47,7 @@ export interface Requirement {
   description: string;
   discussion: string;
   level: string;
+  cmmcLevel?: 1 | 2 | 3; // New Field for CMMC Specificity
   objectives: AssessmentObjective[];
   sprsWeight?: number;
   interviewQuestion?: string;
@@ -56,7 +57,6 @@ export interface Requirement {
   references?: ReferenceLink[];
   comments?: Comment[];
   evidenceEmail?: string;
-  // New Field: Stores manual POA&M data
   poam?: PoamEntry; 
   mappings: {
     nist800_53?: string[];
