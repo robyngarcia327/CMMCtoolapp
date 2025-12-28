@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Requirement, Artifact, Framework } from '../types';
+import { Requirement, Artifact, Framework, AppView } from '../types';
 import { ShieldCheck, AlertTriangle, Map, Sparkles, Loader2, CheckCircle2, ChevronRight } from 'lucide-react';
 import { outlineRequirementsRoadmap } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
@@ -9,9 +9,17 @@ interface DashboardProps {
   requirements: Requirement[];
   artifacts: Artifact[];
   activeFramework: Framework;
+  onNavigate: (view: AppView) => void;
+  onToggleChat: () => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, activeFramework }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ 
+  requirements, 
+  artifacts, 
+  activeFramework, 
+  onNavigate,
+  onToggleChat
+}) => {
   const [roadmap, setRoadmap] = useState<string | null>(null);
   const [isGeneratingRoadmap, setIsGeneratingRoadmap] = useState(false);
 
@@ -28,7 +36,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, a
 
   const metReqs = activeReqs.filter(r => getReqStatus(r) === 'met').length;
   const gapsReqs = activeReqs.filter(r => getReqStatus(r) === 'not_met').length;
-  const pendingReqs = activeReqs.filter(r => getReqStatus(r) === 'pending').length;
+  const pendingReqs = activeReqs.length - metReqs - gapsReqs;
   const complianceScore = Math.round((metReqs / totalReqs) * 100);
 
   const handleGenerateRoadmap = async () => {
@@ -91,8 +99,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, a
 
         {/* AI Roadmap (Expands when generated) */}
         {roadmap && (
-            <div className="bg-white border-2 border-blue-100 rounded-3xl p-8 animate-in fade-in slide-in-from-top-4 duration-500 relative">
-                <button onClick={() => setRoadmap(null)} className="absolute top-4 right-6 text-slate-300 hover:text-slate-500 font-bold text-xs uppercase tracking-widest">Dismiss</button>
+            <div className="bg-white border-2 border-blue-100 rounded-3xl p-8 animate-in fade-in slide-in-from-top-4 duration-500 relative shadow-xl">
+                <button onClick={() => setRoadmap(null)} className="absolute top-4 right-6 text-slate-300 hover:text-slate-500 font-bold text-xs uppercase tracking-widest transition-colors">Dismiss</button>
                 <div className="flex items-center gap-4 mb-6">
                     <div className="bg-blue-600 p-3 rounded-2xl text-white shadow-lg shadow-blue-200"><Map size={24} /></div>
                     <div>
@@ -108,14 +116,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, a
 
         {/* Action Center Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-slate-900 rounded-3xl p-8 text-white flex flex-col justify-between h-56 group cursor-pointer hover:bg-slate-800 transition-colors">
+            <div 
+              onClick={() => onNavigate(AppView.REQUIREMENTS)}
+              className="bg-slate-900 rounded-3xl p-8 text-white flex flex-col justify-between h-56 group cursor-pointer hover:bg-slate-800 transition-all hover:scale-[1.02] shadow-xl"
+            >
                 <div>
                     <h3 className="text-xl font-black mb-2 flex items-center gap-2">Assessment Hub <ChevronRight className="text-blue-500 group-hover:translate-x-1 transition-transform" /></h3>
                     <p className="text-slate-400 text-sm leading-relaxed">
-                        You have <span className="text-white font-bold">{pendingReqs} controls</span> currently awaiting implementation or review.
+                        You have <span className="text-white font-bold">{pendingReqs + gapsReqs} controls</span> currently awaiting implementation or review.
                     </p>
                 </div>
-                <div className="text-xs font-bold text-blue-400 tracking-widest uppercase">Start Remediation →</div>
+                <div className="text-xs font-bold text-blue-400 tracking-widest uppercase flex items-center gap-2">
+                    Start Remediation <ChevronRight size={14} />
+                </div>
             </div>
 
             <div className="bg-white border border-slate-200 rounded-3xl p-8 flex flex-col justify-between h-56 shadow-sm">
@@ -141,7 +154,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, a
         {/* Guidance Footer */}
         <div className="pt-8 border-t border-slate-100 flex justify-center">
             <p className="text-slate-400 text-xs font-medium flex items-center gap-2">
-                <AlertTriangle size={14} className="text-amber-500" /> Need help outlining requirements? Use the <span className="text-slate-900 font-bold">Requirement Detail</span> view or the <span className="text-blue-600 font-bold underline cursor-pointer">AI Assistant</span>.
+                <AlertTriangle size={14} className="text-amber-500" /> Need help outlining requirements? Use the 
+                <button onClick={() => onNavigate(AppView.REQUIREMENTS)} className="text-slate-900 font-bold hover:underline">Requirement Detail</button> 
+                view or the 
+                <button onClick={onToggleChat} className="text-blue-600 font-bold underline">AI Assistant</button>.
             </p>
         </div>
     </div>

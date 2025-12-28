@@ -373,7 +373,15 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-1 flex overflow-hidden relative">
-            {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} />}
+            {currentView === AppView.DASHBOARD && (
+              <Dashboard 
+                requirements={activeData.requirements} 
+                artifacts={activeData.artifacts} 
+                activeFramework={activeFramework} 
+                onNavigate={setCurrentView}
+                onToggleChat={() => setIsChatOpen(!isChatOpen)}
+              />
+            )}
             {currentView === AppView.REQUIREMENTS && (
                 <>
                     <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => setSelectedRequirementId(r.id)} activeFrameworkId={activeFramework.id} />
@@ -415,7 +423,7 @@ const App: React.FC = () => {
             )}
             {currentView === AppView.REPORTS && <Reports requirements={activeData.requirements} onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} />}
             {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} wizardProgress={activeData.wizardProgress} onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} onAddArtifact={(a) => updateActiveClientData(prev => ({ artifacts: [...prev.artifacts, a] }))} onRemoveArtifact={(id) => updateActiveClientData(prev => ({ artifacts: prev.artifacts.filter(a => a.id !== id) }))} onUpdateProgress={(p) => updateActiveClientData(prev => ({ wizardProgress: p }))} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} />}
-            {currentView === AppView.INVENTORY && <Inventory assets={activeData.assets} onAddAsset={(a) => updateActiveClientData(prev => ({ assets: [...prev.assets, a] }))} onDeleteAsset={(id) => updateActiveClientData(prev => ({ assets: prev.assets.filter(a => a.id !== id) }))} />}
+            {currentView === AppView.INVENTORY && <Inventory assets={activeData.assets} onAddAsset={(a) => updateActiveClientData(prev => ({ assets: [...prev.artifacts, a] }))} onDeleteAsset={(id) => updateActiveClientData(prev => ({ assets: prev.assets.filter(a => a.id !== id) }))} />}
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={(u) => updateActiveClientData(prev => ({ users: [...prev.users, u] }))} onUpdateUser={(u) => updateActiveClientData(prev => ({ users: prev.users.map(old => old.id === u.id ? u : old) }))} onDeleteUser={(id) => updateActiveClientData(prev => ({ users: prev.users.filter(u => u.id !== id) }))} />}
             {currentView === AppView.NETWORK_ANALYSIS && <NetworkAnalyzer />}
       </main>
