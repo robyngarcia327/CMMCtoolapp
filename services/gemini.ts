@@ -18,15 +18,12 @@ export const sendChatMessage = async (
   history: { role: 'user' | 'model'; text: string }[]
 ): Promise<string> => {
   try {
-    const contents = history.map(h => ({
-        role: h.role,
-        parts: [{ text: h.text }]
-    }));
-    contents.push({ role: 'user', parts: [{ text: message }] });
-
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: contents,
+      contents: [
+          ...history.map(h => ({ role: h.role, parts: [{ text: h.text }] })),
+          { role: 'user', parts: [{ text: message }] }
+      ],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION_CHAT,
       },
@@ -40,25 +37,33 @@ export const sendChatMessage = async (
 
 export const explainRequirement = async (req: Requirement): Promise<string> => {
   const prompt = `
-    Outline exactly what is required to satisfy NIST 800-171 requirement ${req.id}: "${req.title}"?
+    Requirement ID: ${req.id}
+    Title: ${req.title}
     Description: ${req.description}
     
-    Explain:
-    1. Plain-English meaning.
-    2. Assessment Objectives required (NIST 800-171A).
-    3. Specific examples of evidence (Examine, Interview, Test).
+    Please provide a detailed compliance outline including:
+    1. A plain-English explanation of what this control means.
+    2. The official assessment objectives (NIST 800-171A) required for validation.
+    3. Examples of evidence (Policy, Logs, Screenshots) that would satisfy an auditor.
   `;
   
   try {
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        config: { systemInstruction: SYSTEM_INSTRUCTION_CHAT }
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+          systemInstruction: SYSTEM_INSTRUCTION_CHAT
+      }
     });
-    return response.text || "No explanation available.";
+    
+    if (!response.text) {
+        throw new Error("Empty response from AI");
+    }
+    
+    return response.text;
   } catch (e) {
-    console.error("Explain AI Error:", e);
-    return "Failed to retrieve explanation from AI gateway. Please try again in a few moments.";
+    console.error("AI Explanation Error:", e);
+    return "I was unable to synthesize an explanation for this control. Please verify the Control ID and try again.";
   }
 };
 
@@ -68,24 +73,19 @@ export const outlineRequirementsRoadmap = async (
   const gaps = requirements.filter(r => r.objectives.some(o => o.status === 'not_met' || o.status === 'pending'));
   
   const prompt = `
-    Based on the following list of unimplemented security controls, provide a prioritized roadmap for compliance.
+    Based on the following unimplemented security controls, provide a prioritized roadmap for compliance.
     
-    Controls to address:
+    Controls:
     ${gaps.slice(0, 20).map(g => `- ${g.id}: ${g.title}`).join('\n')}
-    
-    Provide:
-    1. Quick Wins (Documentation/Policies)
-    2. Critical Technical Gaps
-    3. Evidence collection strategies.
   `;
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      contents: prompt,
       config: { systemInstruction: SYSTEM_INSTRUCTION_CHAT }
     });
-    return response.text || "Failed to generate outline.";
+    return response.text || "Failed to generate roadmap.";
   } catch (e) {
     return "Could not generate roadmap at this time.";
   }
@@ -99,14 +99,12 @@ export const analyzePolicyGap = async (
     Analyze the gaps between this policy text and NIST 800-171 Requirement ${req.id}.
     Requirement Description: ${req.description}
     Policy Text: "${policyText}"
-    
-    Identify what is missing or insufficient.
   `;
 
   try {
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        contents: prompt,
         config: { systemInstruction: "You are a strict compliance auditor." }
     });
     return response.text || "Analysis failed.";
@@ -144,33 +142,24 @@ export const generateComplianceDocument = async (
   title: string,
   answers: Record<string, string>
 ): Promise<string> => {
-  const auditContext = answers['Audit_Intelligence_Context'] || "";
-  const filteredAnswers = { ...answers };
-  delete filteredAnswers['Audit_Intelligence_Context'];
-
   const prompt = `
-    Generate a professional ${type} titled "${title}" strictly aligned with NIST 800-18 guidelines.
+    Generate a professional ${type} titled "${title}" aligned with NIST 800-18.
     
-    Front Matter:
-    ${Object.entries(filteredAnswers).map(([q, a]) => `${q}: ${a}`).join('\n')}
-    
-    Control Context:
-    ${auditContext}
+    Answers:
+    ${Object.entries(answers).map(([q, a]) => `${q}: ${a}`).join('\n')}
   `;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
       config: { 
-        systemInstruction: "You are a senior federal cybersecurity architect. Output in professional Markdown.",
-        temperature: 0.1 
+        systemInstruction: "You are a senior federal cybersecurity architect.",
       }
     });
     return response.text || "Failed to generate document.";
   } catch (e) {
-    console.error("DocGen AI Error:", e);
-    return "Error generating document. Please check the API logs.";
+    return "Error generating document.";
   }
 };
 
@@ -187,7 +176,7 @@ export const analyzeAuvikTopology = async (
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      contents: prompt,
       config: { systemInstruction: "You are a network security architect." }
     });
     return response.text || "Analysis failed.";
