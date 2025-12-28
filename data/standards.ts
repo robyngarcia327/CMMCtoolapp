@@ -1,5 +1,6 @@
 
-import { Requirement, Framework, ClientData } from '../types';
+
+import { Requirement, Framework, ClientData, TrainingModule } from '../types';
 
 export const FRAMEWORKS: Framework[] = [
   { id: 'NIST-CMMC', name: 'CMMC 2.0 / NIST 800-171', description: 'Comprehensive DoD Compliance Portfolio (Levels 1-3)' },
@@ -112,7 +113,7 @@ const CMMC_L3_CONTROLS: Requirement[] = [
   }
 ];
 
-// --- OFFICIAL SOC 2 TRUST SERVICES CRITERIA (2017) ---
+// --- SOC 2 ---
 const SOC2_CONTROLS: Requirement[] = [
   {
     id: 'CC1.1',
@@ -129,7 +130,7 @@ const SOC2_CONTROLS: Requirement[] = [
   }
 ];
 
-// --- OFFICIAL HIPAA SECURITY RULE SAFEGUARDS ---
+// --- HIPAA ---
 const HIPAA_CONTROLS: Requirement[] = [
   {
     id: '164.308(a)(1)(i)',
@@ -169,34 +170,33 @@ export const NIST_CMMC_FAMILIES = [
     { id: 'SI', name: 'System and Information Integrity' }
 ];
 
+// Added to resolve import error in RequirementsList.tsx
 export const SOC2_FAMILIES = [
-    { id: 'CC1', name: 'Control Environment' },
-    { id: 'CC2', name: 'Communication and Information' },
-    { id: 'CC3', name: 'Risk Assessment' },
-    { id: 'CC4', name: 'Monitoring Activities' },
-    { id: 'CC5', name: 'Control Activities' },
-    { id: 'CC6', name: 'Logical and Physical Access' },
-    { id: 'CC7', name: 'System Operations' },
-    { id: 'CC8', name: 'Change Management' },
-    { id: 'CC9', name: 'Risk Mitigation' }
+  { id: 'CC1', name: 'Control Environment' },
+  { id: 'CC2', name: 'Communication and Information' },
+  { id: 'CC3', name: 'Risk Assessment' },
+  { id: 'CC4', name: 'Monitoring Activities' },
+  { id: 'CC5', name: 'Control Activities' }
 ];
 
+// Added to resolve import error in RequirementsList.tsx
 export const HIPAA_FAMILIES = [
-    { id: 'Administrative', name: 'Administrative Safeguards' },
-    { id: 'Physical', name: 'Physical Safeguards' },
-    { id: 'Technical', name: 'Technical Safeguards' }
+  { id: 'Administrative', name: 'Administrative Safeguards' },
+  { id: 'Physical', name: 'Physical Safeguards' },
+  { id: 'Technical', name: 'Technical Safeguards' }
 ];
 
-export const TRAINING_MODULES = [
-    {
-        id: 'MOD-AT-01',
-        familyId: 'AT',
-        title: 'Foundational Security Awareness',
-        description: 'Standard security training for all personnel.',
-        durationMinutes: 15,
-        difficulty: 'Beginner',
-        content: '# Security Awareness\n\nRecognize and report phishing, handle CUI properly...'
-    }
+// Added to resolve import error in TrainingCenter.tsx
+export const TRAINING_MODULES: TrainingModule[] = [
+  {
+    id: 'TR-AC-01',
+    familyId: 'AC',
+    title: 'Mastering Access Control',
+    description: 'How to implement identity and access management for CMMC compliance.',
+    content: '# Access Control Mastery\n\nUnderstand how to limit information system access to authorized users.',
+    durationMinutes: 20,
+    difficulty: 'Intermediate'
+  }
 ];
 
 export const createInitialClientData = (useMockData = false): ClientData => {
@@ -210,7 +210,6 @@ export const createInitialClientData = (useMockData = false): ClientData => {
         vendors: [],
         artifacts: [],
         tickets: [],
-        versions: [],
         wizardProgress: { currentStep: 'INTRO', currentQuestionIndex: 0 },
         cwConfig: { siteUrl: '', companyId: '', publicKey: '', privateKey: '', serviceBoard: 'Compliance Remediation', enabled: true },
         jiraConfig: { baseUrl: '', email: '', apiToken: '', projectKey: '', issueType: 'Task', enabled: false },
@@ -219,6 +218,20 @@ export const createInitialClientData = (useMockData = false): ClientData => {
         m365Config: { enabled: false },
         awsConfig: { enabled: false },
         googleConfig: { enabled: false },
-        siemConfig: { enabled: false }
+        siemConfig: { enabled: false },
+        sspMetadata: {
+          systemName: 'Corporate IT Infrastructure',
+          systemIdentifier: 'CORP-IT-001',
+          categorization: 'MODERATE',
+          systemOwner: '',
+          authorizingOfficial: '',
+          assignmentOfSecurityResponsibility: '',
+          operationalStatus: 'Operational',
+          systemType: 'Major Application' | 'General Support System',
+          generalDescription: 'Primary business processing network.',
+          systemEnvironment: 'Hybrid cloud environment (Azure/On-prem).',
+          interconnections: '',
+          lawsAndPolicies: 'FISMA, DFARS 252.204-7012, Privacy Act 1974'
+        }
     };
 };

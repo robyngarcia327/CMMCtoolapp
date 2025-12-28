@@ -139,38 +139,37 @@ export const analyzeNetworkDiagram = async (
 
 /**
  * Enhanced Compliance Document Generator
- * Specifically designed to handle System Security Plans (SSP) and Incident Response Plans (IRP).
+ * Specifically designed to handle System Security Plans (SSP) aligned with NIST 800-18 Rev 1.
  */
 export const generateComplianceDocument = async (
   type: string,
   title: string,
   answers: Record<string, string>
 ): Promise<string> => {
-  // Extract audit context if provided
   const auditContext = answers['Audit_Intelligence_Context'] || "";
   const filteredAnswers = { ...answers };
   delete filteredAnswers['Audit_Intelligence_Context'];
 
   const prompt = `
-    Generate a professional ${type} titled "${title}".
+    Generate a professional ${type} titled "${title}" strictly aligned with NIST Special Publication 800-18 Revision 1 guidelines.
     
-    ### Organization Details:
+    ### System Identification & Front Matter:
     ${Object.entries(filteredAnswers).map(([q, a]) => `${q}: ${a}`).join('\n')}
     
     ${auditContext ? `
-    ### COMPLIANCE AUDIT DATA (USE THIS FOR THE CONTROLS SECTION):
-    Below are the actual implementation narratives and evidence metadata from our live system. 
-    You MUST incorporate these details into the relevant sections of the ${type}.
+    ### CONTROL IMPLEMENTATION DATA:
+    Use the following implementation narratives and evidence metadata from the live assessment. 
+    Incorporate these into Section 13 (Minimum Security Controls) of the NIST 800-18 structure.
     
     ${auditContext}
     ` : ""}
     
-    ### FORMATTING GUIDELINES:
-    1. Output in Markdown.
-    2. Use professional, clear, and assertive compliance language.
-    3. For System Security Plans (SSP): Structure by Domain (Access Control, Identification & Authentication, etc.).
-    4. For Incident Response Plans (IRP): Ensure NIST SP 800-61 Rev 2 methodology is used.
-    5. Always reference provided digital evidence (filenames) where applicable to demonstrate "Institutionalized" status.
+    ### GUIDELINES FOR THE MODEL:
+    1. Structure the document using the 15 sections defined in Appendix A of NIST 800-18.
+    2. Use formal federal regulatory language (e.g., "The system employs...", "The organization maintains...").
+    3. Ensure FIPS 199 impact levels (Low/Moderate/High) are clearly defined in Section 2.
+    4. Provide clear distinction between Common, Hybrid, and System-Specific controls.
+    5. Output in professional Markdown with hierarchical headers.
   `;
 
   try {
@@ -178,8 +177,8 @@ export const generateComplianceDocument = async (
       model: 'gemini-3-pro-preview',
       contents: prompt,
       config: { 
-        systemInstruction: "You are a master federal compliance architect and auditor. Your goal is to produce highly professional, audit-ready documentation.",
-        temperature: 0.2 // Lower temperature for more consistent compliance language
+        systemInstruction: "You are a senior federal cybersecurity architect. Your goal is to produce NIST 800-18 Rev 1 compliant System Security Plans (SSP) that are ready for an Authorizing Official (AO) review.",
+        temperature: 0.1 
       }
     });
     return response.text || "Failed to generate document.";

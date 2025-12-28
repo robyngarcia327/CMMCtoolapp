@@ -107,16 +107,13 @@ const App: React.FC = () => {
       
       try {
           const apiOrgs = await api.getOrgs(idToken);
-          
           const mappedClients: Client[] = apiOrgs
             .filter(o => o && typeof o === 'object')
             .map((o: any) => {
               const nameValue = o.name || o.Name || o.orgName || o.organizationName || o.displayName;
               const orgIdValue = o.orgId || o.OrgId || o.id || o.organizationId;
-              
               const safeName = (typeof nameValue === 'string' && nameValue.trim() !== '') ? nameValue : 'Organization';
               const safeId = orgIdValue || `temp-${Math.random()}`;
-              
               return {
                   id: safeId,
                   name: safeName,
@@ -135,7 +132,6 @@ const App: React.FC = () => {
           if (mappedClients.length > 0) {
               const storedOrgId = localStorage.getItem('activeOrgId');
               const validStored = storedOrgId ? mappedClients.find(c => c.id === storedOrgId) : null;
-              
               const selectedId = validStored ? validStored.id : mappedClients[0].id;
               setActiveClientId(selectedId);
               localStorage.setItem('activeOrgId', selectedId);
@@ -449,6 +445,7 @@ const App: React.FC = () => {
                     artifacts={activeData.artifacts}
                     clientName={activeClient.name}
                     confluenceConfig={activeData.confluenceConfig}
+                    sspMetadata={activeData.sspMetadata}
                 />
             )}
             {currentView === AppView.REPORTS && (
@@ -457,6 +454,7 @@ const App: React.FC = () => {
                     artifacts={activeData.artifacts}
                     activeFrameworkId={activeFramework.id}
                     onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} 
+                    sspMetadata={activeData.sspMetadata}
                 />
             )}
             {currentView === AppView.WIZARD && (

@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { generateComplianceDocument } from '../services/gemini';
 import { publishToConfluence } from '../services/atlassian';
-/* Added Shield to imports to fix 'Cannot find name Shield' error */
-import { Wand2, Save, Copy, FileText, Loader2, Shield, ShieldCheck, AlertTriangle, BookOpen, Activity, UploadCloud, Printer, Edit3, Eye, RefreshCw } from 'lucide-react';
+import { Wand2, Save, Copy, FileText, Loader2, Shield, ShieldCheck, AlertTriangle, BookOpen, Activity, UploadCloud, Printer, Edit3, Eye, RefreshCw, Info } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { ConfluenceConfig, Requirement, Artifact, BrandingConfig } from '../types';
+import { ConfluenceConfig, Requirement, Artifact, BrandingConfig, SspMetadata } from '../types';
 
 interface DocTemplate {
   id: string;
@@ -22,16 +21,23 @@ const TEMPLATES: DocTemplate[] = [
     title: 'System Security Plan (SSP)',
     type: 'Plan',
     icon: <ShieldCheck className="text-blue-500" />,
-    description: 'The primary document describing the system boundary, operational environment, and implementation of security controls.',
+    description: 'Formal document defined by NIST 800-18 describing system boundary, operational environment, and control implementation.',
     questions: [
-      "Company Name",
-      "System Name",
-      "System Owner (Name/Title)",
-      "General System Description",
-      "Types of Information Processed (e.g., CUI, FCI)",
-      "System Boundary Description (Network/Physical)",
-      "Locations where CUI is stored",
-      "Cloud Service Providers used (e.g., AWS, Azure, O365)"
+      "1. Information System Name and Identifier",
+      "2. Information System Categorization (FIPS 199 Impact)",
+      "3. Information System Owner Information",
+      "4. Authorizing Official Information",
+      "5. Other Designated Contacts (POCs)",
+      "6. Assignment of Security Responsibility",
+      "7. Information System Operational Status (Operational, Under Dev, etc.)",
+      "8. Information System Type (Major Application or GSS)",
+      "9. General System Description/Purpose",
+      "10. System Environment (Hardware/Software/Comms)",
+      "11. System Interconnections / Information Sharing (ISA/MOU)",
+      "12. Related Laws, Regulations, and Policies",
+      "13. Implementation Statement (Detailed description of controls)",
+      "14. Completion Date",
+      "15. Approval Date"
     ]
   },
   {
@@ -65,39 +71,6 @@ const TEMPLATES: DocTemplate[] = [
       "Alternative Processing Site (if any)",
       "Emergency Contact List Location"
     ]
-  },
-  {
-    id: 'tabletop',
-    title: 'Table Top Exercise Report',
-    type: 'Report',
-    icon: <BookOpen className="text-purple-500" />,
-    description: 'A report documenting a simulation exercise to test the IRP.',
-    questions: [
-      "Date of Exercise",
-      "Exercise Facilitator",
-      "Participants (Names/Roles)",
-      "Scenario Tested (e.g., Ransomware, Insider Threat)",
-      "Objectives of the Exercise",
-      "Key Findings & Observations",
-      "Gaps Identified in Current Plans",
-      "Action Items for Improvement"
-    ]
-  },
-  {
-    id: 'lessons_learned',
-    title: 'Lessons Learned / After Action',
-    type: 'Report',
-    icon: <FileText className="text-green-500" />,
-    description: 'Formal documentation of a security incident or event to prevent recurrence.',
-    questions: [
-      "Company Name",
-      "Incident Reference ID/Date",
-      "Brief Incident Summary",
-      "Root Cause Analysis (Why did it happen?)",
-      "What went well during the response?",
-      "What did not go well?",
-      "Corrective Actions Implemented"
-    ]
   }
 ];
 
@@ -108,54 +81,57 @@ interface DocGeneratorProps {
   confluenceConfig?: ConfluenceConfig;
   requirements: Requirement[];
   artifacts: Artifact[];
+  sspMetadata?: SspMetadata;
 }
 
-export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBranding, mspBranding, confluenceConfig, requirements, artifacts }) => {
+export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBranding, mspBranding, confluenceConfig, requirements, artifacts, sspMetadata }) => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(TEMPLATES[0].id);
   const [allAnswers, setAllAnswers] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedDoc, setGeneratedDoc] = useState('');
   const [viewMode, setViewMode] = useState<'EDIT' | 'PREVIEW'>('EDIT');
-  
   const [isPublishing, setIsPublishing] = useState(false);
 
   const selectedTemplate = TEMPLATES.find(t => t.id === selectedTemplateId) || TEMPLATES[0];
 
-  // Auto-fill company name if clientName changes
+  // Auto-fill metadata if available
   useEffect(() => {
-    if (clientName) {
-      setAllAnswers(prev => ({ ...prev, "Company Name": clientName }));
+    if (selectedTemplateId === 'ssp' && sspMetadata) {
+        setAllAnswers(prev => ({
+            ...prev,
+            "1. Information System Name and Identifier": `${sspMetadata.systemName} (${sspMetadata.systemIdentifier})`,
+            "2. Information System Categorization (FIPS 199 Impact)": sspMetadata.categorization,
+            "7. Information System Operational Status (Operational, Under Dev, etc.)": sspMetadata.operationalStatus,
+            "8. Information System Type (Major Application or GSS)": sspMetadata.systemType,
+            "9. General System Description/Purpose": sspMetadata.generalDescription,
+            "10. System Environment (Hardware/Software/Comms)": sspMetadata.systemEnvironment,
+            "12. Related Laws, Regulations, and Policies": sspMetadata.lawsAndPolicies
+        }));
     }
-  }, [clientName]);
+  }, [selectedTemplateId, sspMetadata]);
 
   const handleInputChange = (question: string, value: string) => {
-    setAllAnswers(prev => ({
-      ...prev,
-      [question]: value
-    }));
+    setAllAnswers(prev => ({ ...prev, [question]: value }));
   };
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     const relevantAnswers: Record<string, string> = {};
     
-    // 1. Manual Answers from the UI fields
     selectedTemplate.questions.forEach(q => {
         relevantAnswers[q] = allAnswers[q] || "";
     });
 
-    // 2. Data-Driven Auto-Fill for SSP (Control Implementation + Proof)
     if (selectedTemplate.id === 'ssp' && requirements) {
-        // Build a structured context of our assessment and our proof
         const assessmentContext = requirements
             .filter(r => (r.response && r.response.length > 5) || artifacts.some(a => a.requirementId === r.id))
             .map(r => {
                 const proof = artifacts.filter(a => a.requirementId === r.id);
                 const proofList = proof.length > 0 
-                    ? `Proof provided: ${proof.map(p => `[${p.name} - uploaded ${new Date(p.timestamp).toLocaleDateString()}]`).join(', ')}`
-                    : "No specific digital evidence files linked yet.";
+                    ? `Evidence: ${proof.map(p => `[${p.name}]`).join(', ')}`
+                    : "No digital evidence attached.";
                 
-                return `### Control ${r.id}: ${r.title}\nImplementation: ${r.response || "Not yet implemented."}\n${proofList}`;
+                return `## Control ${r.id}: ${r.title}\nImplementation: ${r.response || "Not implemented."}\n${proofList}`;
             })
             .join('\n\n');
         
@@ -167,7 +143,7 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
     const result = await generateComplianceDocument(selectedTemplate.type, selectedTemplate.title, relevantAnswers);
     setGeneratedDoc(result);
     setIsGenerating(false);
-    setViewMode('PREVIEW'); // Switch to preview automatically
+    setViewMode('PREVIEW');
   };
 
   const handlePublish = async () => {
@@ -193,7 +169,7 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
         <div>
             <h2 className="text-3xl font-black text-slate-900 mb-2">Policy Center</h2>
             <p className="text-slate-600 font-medium">
-            Generate professional, evidence-backed security documentation.
+            Generate professional documentation based on NIST 800-18 standards.
             </p>
         </div>
         <div className="flex bg-slate-200 p-1 rounded-xl">
@@ -214,16 +190,13 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Template Selector Sidebar */}
         {viewMode === 'EDIT' && (
             <div className="lg:col-span-3 space-y-3">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Document Library</h3>
                 {TEMPLATES.map(template => (
                     <button
                         key={template.id}
-                        onClick={() => {
-                            setSelectedTemplateId(template.id);
-                        }}
+                        onClick={() => setSelectedTemplateId(template.id)}
                         className={`w-full text-left p-4 rounded-xl flex items-start gap-3 transition-all border-2 ${
                             selectedTemplateId === template.id 
                             ? 'bg-blue-50 border-blue-600 shadow-md' 
@@ -244,7 +217,6 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
             </div>
         )}
 
-        {/* Center: Interview Form */}
         {viewMode === 'EDIT' && (
             <div className="lg:col-span-5 flex flex-col h-full">
                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 h-full flex flex-col">
@@ -253,12 +225,9 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                             {selectedTemplate.icon}
                             {selectedTemplate.title}
                         </h3>
-                        {selectedTemplate.id === 'ssp' && (
-                            <div className="mt-3 text-[10px] bg-green-50 text-green-700 px-3 py-2 rounded-lg font-bold flex items-center gap-2 border border-green-100">
-                                <RefreshCw size={14} className="animate-spin-slow" /> DATA SYNC ENABLED: Ingesting implementation narratives and evidence metadata.
-                            </div>
-                        )}
-                        <p className="text-sm text-slate-500 mt-2 font-medium">Basic information to contextualize the document.</p>
+                        <div className="mt-3 text-[10px] bg-blue-50 text-blue-700 px-3 py-2 rounded-lg font-bold flex items-center gap-2 border border-blue-100">
+                            <Info size={14} /> NIST 800-18 Alignment: Providing context for the full security boundary.
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto space-y-6 pr-2">
@@ -267,7 +236,7 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">{q}</label>
                                 <textarea 
                                     className="w-full border-2 border-slate-100 bg-slate-50 rounded-xl p-4 text-sm min-h-[90px] focus:ring-4 focus:ring-blue-50 focus:border-blue-500 focus:bg-white transition-all font-medium"
-                                    placeholder={`e.g. ${q}...`}
+                                    placeholder={`Required info for ${q}...`}
                                     value={allAnswers[q] || ''}
                                     onChange={(e) => handleInputChange(q, e.target.value)}
                                 />
@@ -289,7 +258,6 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
             </div>
         )}
 
-        {/* Right: Output Editor */}
         {viewMode === 'EDIT' && (
             <div className="lg:col-span-4 bg-slate-900 p-8 rounded-2xl shadow-inner border border-slate-800 flex flex-col h-full min-h-[600px]">
                 <div className="flex justify-between items-center mb-6">
@@ -320,11 +288,8 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
             </div>
         )}
 
-        {/* --- PREVIEW MODE --- */}
         {viewMode === 'PREVIEW' && (
             <div className="col-span-12 flex flex-col items-center">
-                
-                {/* Actions Toolbar */}
                 <div className="w-full max-w-[21cm] mb-6 flex justify-between items-center bg-white p-5 rounded-2xl shadow-sm border border-slate-200 print:hidden">
                     <div className="flex items-center gap-4">
                         <button onClick={() => window.print()} className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:bg-black transition-all">
@@ -348,14 +313,10 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                     </div>
                 </div>
 
-                {/* Document Canvas */}
                 <div className="bg-white shadow-2xl w-full max-w-[21cm] min-h-[29.7cm] p-[2.5cm] relative print:shadow-none print:w-full print:max-w-none rounded-2xl mb-12">
-                    
                     {generatedDoc ? (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                            {/* --- COVER PAGE --- */}
                             <div className="flex flex-col h-[23cm] justify-between text-center border-b-8 border-slate-900 mb-12 pb-12 page-break-after">
-                                {/* Branding */}
                                 <div className="flex justify-between items-start">
                                     <div className="flex items-center gap-2 text-slate-900 font-black text-xl">
                                         <Shield className="text-blue-600" size={32} />
@@ -365,16 +326,12 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                                         <img src={clientBranding.logoUrl} className="h-16 object-contain" alt="Client Logo" />
                                     )}
                                 </div>
-
-                                {/* Title Block */}
                                 <div className="mt-24">
-                                    <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mb-4">Official Governance Framework</div>
+                                    <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mb-4">NIST 800-18 Rev 1 ALIGNED</div>
                                     <h1 className="text-5xl font-black text-slate-900 mb-6 tracking-tighter uppercase leading-none">{selectedTemplate.title}</h1>
                                     <div className="w-32 h-2 bg-blue-600 mx-auto mb-8"></div>
                                     <h2 className="text-3xl text-slate-500 font-medium tracking-tight italic">{clientName || 'Client Name'}</h2>
                                 </div>
-
-                                {/* Classification */}
                                 <div className="space-y-4">
                                     <div className="inline-block border-2 border-red-600 px-6 py-2 text-red-600 font-black tracking-widest text-sm uppercase">CUI / INTERNAL USE ONLY</div>
                                     <div className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-8">
@@ -383,16 +340,8 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                                     </div>
                                 </div>
                             </div>
-
-                            {/* --- CONTENT --- */}
                             <div className="prose prose-slate max-w-none prose-headings:text-slate-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tight prose-h1:text-3xl prose-h2:text-2xl prose-h2:mt-12 prose-h2:border-b-2 prose-h2:pb-3 prose-p:text-slate-700 prose-p:leading-relaxed prose-strong:text-slate-900 prose-li:text-slate-700">
                                 <ReactMarkdown>{generatedDoc}</ReactMarkdown>
-                            </div>
-
-                            {/* --- FOOTER --- */}
-                            <div className="mt-24 pt-6 border-t border-slate-200 flex justify-between text-[10px] text-slate-400 font-black uppercase tracking-widest print:fixed print:bottom-8 print:left-[2.5cm] print:right-[2.5cm]">
-                                <span>{clientName} // Confidential Security Asset</span>
-                                <span>Page <span className="after:content-[counter(page)]"></span></span>
                             </div>
                         </div>
                     ) : (
@@ -401,13 +350,11 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                                 <FileText size={64} className="opacity-20" />
                             </div>
                             <p className="text-xl font-black text-slate-400 uppercase tracking-widest">Awaiting Synthesis</p>
-                            <button onClick={() => setViewMode('EDIT')} className="mt-4 text-blue-600 hover:underline font-bold text-sm">Go to Entry Form</button>
                         </div>
                     )}
                 </div>
             </div>
         )}
-
       </div>
     </div>
   );
