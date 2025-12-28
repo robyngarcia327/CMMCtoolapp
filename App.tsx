@@ -296,7 +296,6 @@ const App: React.FC = () => {
                       <NavDropdown label="Compliance" icon={ListChecks}>
                           <NavItem label="Requirement Detail" icon={ListChecks} isActive={currentView === AppView.REQUIREMENTS} onClick={() => setCurrentView(AppView.REQUIREMENTS)} />
                           <NavItem label="SPRS Scorecard" icon={TrendingUp} isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
-                          <NavItem label="Auditor Portal" icon={Eye} isActive={currentView === AppView.AUDITOR_PORTAL} onClick={() => setCurrentView(AppView.AUDITOR_PORTAL)} />
                           <NavItem label="Bulk Import" icon={FileSpreadsheet} isActive={currentView === AppView.BULK_IMPORT} onClick={() => setCurrentView(AppView.BULK_IMPORT)} />
                           <NavItem label="Onboarding Wizard" icon={Wand2} isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} />
                       </NavDropdown>
@@ -305,6 +304,7 @@ const App: React.FC = () => {
                           <NavItem label="Identity" icon={Users} isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
                           <NavItem label="Network Map" icon={Network} isActive={currentView === AppView.NETWORK_ANALYSIS} onClick={() => setCurrentView(AppView.NETWORK_ANALYSIS)} />
                       </NavDropdown>
+                      <button onClick={() => setCurrentView(AppView.AUDITOR_PORTAL)} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === AppView.AUDITOR_PORTAL ? 'bg-slate-800 text-white' : 'hover:bg-slate-800/50 hover:text-white'}`}>Auditor Portal</button>
                       <button onClick={() => setCurrentView(AppView.REPORTS)} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === AppView.REPORTS ? 'bg-slate-800 text-white' : 'hover:bg-slate-800/50 hover:text-white'}`}>Reports</button>
                   </nav>
               </div>
