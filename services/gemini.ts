@@ -2,7 +2,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { Requirement, AuvikDevice } from '../types';
 
-// Use process.env.API_KEY directly as per guidelines
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const SYSTEM_INSTRUCTION_CHAT = `
@@ -26,7 +25,7 @@ export const sendChatMessage = async (
     contents.push({ role: 'user', parts: [{ text: message }] });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       contents: contents,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION_CHAT,
@@ -39,27 +38,51 @@ export const sendChatMessage = async (
   }
 };
 
+export const explainRequirement = async (req: Requirement): Promise<string> => {
+  const prompt = `
+    Outline exactly what is required to satisfy NIST 800-171 requirement ${req.id}: "${req.title}"?
+    Description: ${req.description}
+    
+    Explain:
+    1. Plain-English meaning.
+    2. Assessment Objectives required (NIST 800-171A).
+    3. Specific examples of evidence (Examine, Interview, Test).
+  `;
+  
+  try {
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: { systemInstruction: SYSTEM_INSTRUCTION_CHAT }
+    });
+    return response.text || "No explanation available.";
+  } catch (e) {
+    console.error("Explain AI Error:", e);
+    return "Failed to retrieve explanation from AI gateway. Please try again in a few moments.";
+  }
+};
+
 export const outlineRequirementsRoadmap = async (
   requirements: Requirement[]
 ): Promise<string> => {
   const gaps = requirements.filter(r => r.objectives.some(o => o.status === 'not_met' || o.status === 'pending'));
   
   const prompt = `
-    Based on the following list of unimplemented security controls, please provide a prioritized roadmap outlining exactly what is required to achieve full compliance.
+    Based on the following list of unimplemented security controls, provide a prioritized roadmap for compliance.
     
     Controls to address:
-    ${gaps.map(g => `- ${g.id}: ${g.title}`).join('\n')}
+    ${gaps.slice(0, 20).map(g => `- ${g.id}: ${g.title}`).join('\n')}
     
-    Provide a step-by-step outline:
-    1. Quick Wins (Easy implementation)
-    2. Critical Gaps (High impact on score)
-    3. Long-term technical projects.
+    Provide:
+    1. Quick Wins (Documentation/Policies)
+    2. Critical Technical Gaps
+    3. Evidence collection strategies.
   `;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: prompt,
+      model: 'gemini-3-flash-preview',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: { systemInstruction: SYSTEM_INSTRUCTION_CHAT }
     });
     return response.text || "Failed to generate outline.";
@@ -68,43 +91,22 @@ export const outlineRequirementsRoadmap = async (
   }
 };
 
-export const explainRequirement = async (req: Requirement): Promise<string> => {
-  const prompt = `
-    Outline exactly what is required to satisfy NIST 800-171 requirement ${req.id}: "${req.title}"?
-    Description: ${req.description}
-    
-    Explain:
-    1. Plain-English meaning.
-    2. Assessment Objectives required.
-    3. Types of evidence needed.
-  `;
-  
-  try {
-    const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: prompt,
-        config: { systemInstruction: SYSTEM_INSTRUCTION_CHAT }
-    });
-    return response.text || "No explanation available.";
-  } catch (e) {
-    return "Failed to retrieve explanation.";
-  }
-};
-
 export const analyzePolicyGap = async (
   req: Requirement,
   policyText: string
 ): Promise<string> => {
   const prompt = `
-    Outline the gaps between this policy snippet and Requirement ${req.id}.
-    Requirement: ${req.description}
+    Analyze the gaps between this policy text and NIST 800-171 Requirement ${req.id}.
+    Requirement Description: ${req.description}
     Policy Text: "${policyText}"
+    
+    Identify what is missing or insufficient.
   `;
 
   try {
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: prompt,
+        model: 'gemini-3-flash-preview',
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
         config: { systemInstruction: "You are a strict compliance auditor." }
     });
     return response.text || "Analysis failed.";
@@ -137,10 +139,6 @@ export const analyzeNetworkDiagram = async (
   }
 };
 
-/**
- * Enhanced Compliance Document Generator
- * Specifically designed to handle System Security Plans (SSP) aligned with NIST 800-18 Rev 1.
- */
 export const generateComplianceDocument = async (
   type: string,
   title: string,
@@ -151,33 +149,21 @@ export const generateComplianceDocument = async (
   delete filteredAnswers['Audit_Intelligence_Context'];
 
   const prompt = `
-    Generate a professional ${type} titled "${title}" strictly aligned with NIST Special Publication 800-18 Revision 1 guidelines.
+    Generate a professional ${type} titled "${title}" strictly aligned with NIST 800-18 guidelines.
     
-    ### System Identification & Front Matter:
+    Front Matter:
     ${Object.entries(filteredAnswers).map(([q, a]) => `${q}: ${a}`).join('\n')}
     
-    ${auditContext ? `
-    ### CONTROL IMPLEMENTATION DATA:
-    Use the following implementation narratives and evidence metadata from the live assessment. 
-    Incorporate these into Section 13 (Minimum Security Controls) of the NIST 800-18 structure.
-    
+    Control Context:
     ${auditContext}
-    ` : ""}
-    
-    ### GUIDELINES FOR THE MODEL:
-    1. Structure the document using the 15 sections defined in Appendix A of NIST 800-18.
-    2. Use formal federal regulatory language (e.g., "The system employs...", "The organization maintains...").
-    3. Ensure FIPS 199 impact levels (Low/Moderate/High) are clearly defined in Section 2.
-    4. Provide clear distinction between Common, Hybrid, and System-Specific controls.
-    5. Output in professional Markdown with hierarchical headers.
   `;
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: prompt,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: { 
-        systemInstruction: "You are a senior federal cybersecurity architect. Your goal is to produce NIST 800-18 Rev 1 compliant System Security Plans (SSP) that are ready for an Authorizing Official (AO) review.",
+        systemInstruction: "You are a senior federal cybersecurity architect. Output in professional Markdown.",
         temperature: 0.1 
       }
     });
@@ -192,20 +178,17 @@ export const analyzeAuvikTopology = async (
   devices: AuvikDevice[]
 ): Promise<string> => {
   const prompt = `
-    Analyze the following network device topology for cybersecurity compliance (NIST 800-171 / CMMC).
-    Identify potential risks such as flat networks, improper segmentation, or insecure configurations.
+    Analyze the following network device topology for NIST 800-171 compliance.
     
     Devices:
-    ${devices.map(d => `- ${d.name} (${d.type}): IP ${d.ipAddress}, VLAN ${d.vlan || 'Unknown'}, Firmware ${d.firmware || 'Unknown'}`).join('\n')}
-    
-    Provide a detailed security analysis and recommendations for improvement to ensure secure handling of CUI.
+    ${devices.map(d => `- ${d.name} (${d.type}): IP ${d.ipAddress}, VLAN ${d.vlan || 'Unknown'}`).join('\n')}
   `;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: prompt,
-      config: { systemInstruction: "You are a network security architect specialized in CMMC." }
+      model: 'gemini-3-flash-preview',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: { systemInstruction: "You are a network security architect." }
     });
     return response.text || "Analysis failed.";
   } catch (e) {
