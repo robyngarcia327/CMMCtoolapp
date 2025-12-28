@@ -2,18 +2,17 @@
 import { Requirement, Framework, ClientData } from '../types';
 
 export const FRAMEWORKS: Framework[] = [
-  { id: 'NIST800-171', name: 'NIST SP 800-171 r2', description: 'Protecting CUI in Nonfederal Systems' },
-  { id: 'CMMC-L2', name: 'CMMC 2.0 Level 2', description: 'Advanced Cyber Hygiene (Aligned with NIST 800-171)' },
+  { id: 'NIST-CMMC', name: 'NIST 800-171 / CMMC 2.0', description: 'Protecting CUI & CMMC Level 2 Compliance' },
   { id: 'SOC2', name: 'SOC 2 Type II', description: 'Trust Services Criteria 2017' },
   { id: 'HIPAA', name: 'HIPAA Security Rule', description: 'Administrative, Physical, and Technical Safeguards' }
 ];
 
-// --- OFFICIAL NIST 800-171 R2 DATA ---
-const NIST_171_CONTROLS: Requirement[] = [
+// --- OFFICIAL NIST 800-171 R2 DATA (Shares same controls as CMMC L2) ---
+const NIST_CMMC_CONTROLS: Requirement[] = [
   // ACCESS CONTROL (AC)
   {
     id: '3.1.1',
-    framework: 'NIST800-171',
+    framework: 'NIST-CMMC',
     family: 'AC',
     title: 'Authorized Access Control',
     description: 'Limit system access to authorized users, processes acting on behalf of authorized users, and devices (including other systems).',
@@ -30,7 +29,7 @@ const NIST_171_CONTROLS: Requirement[] = [
   },
   {
     id: '3.1.2',
-    framework: 'NIST800-171',
+    framework: 'NIST-CMMC',
     family: 'AC',
     title: 'Transaction & Function Control',
     description: 'Limit system access to the types of transactions and functions that authorized users are permitted to execute.',
@@ -43,10 +42,10 @@ const NIST_171_CONTROLS: Requirement[] = [
     ],
     mappings: { nist800_53: ['AC-17'] }
   },
-  // AWARENESS AND TRAINING (AT) - Fixing the empty view from user screenshot
+  // AWARENESS AND TRAINING (AT)
   {
     id: '3.2.1',
-    framework: 'NIST800-171',
+    framework: 'NIST-CMMC',
     family: 'AT',
     title: 'Security Awareness Training',
     description: 'Ensure that managers, systems administrators, and users of organizational systems are made aware of the security risks associated with their activities and of the applicable policies, standards, and procedures related to the security of those systems.',
@@ -62,7 +61,7 @@ const NIST_171_CONTROLS: Requirement[] = [
   },
   {
     id: '3.2.2',
-    framework: 'NIST800-171',
+    framework: 'NIST-CMMC',
     family: 'AT',
     title: 'Role-Based Security Training',
     description: 'Ensure that personnel are adequately trained to carry out their assigned information security-related duties and responsibilities.',
@@ -78,7 +77,7 @@ const NIST_171_CONTROLS: Requirement[] = [
   // AUDIT AND ACCOUNTABILITY (AU)
   {
     id: '3.3.1',
-    framework: 'NIST800-171',
+    framework: 'NIST-CMMC',
     family: 'AU',
     title: 'Audit Record Creation',
     description: 'Create and retain system audit logs and records to the extent needed to enable the monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity.',
@@ -94,7 +93,7 @@ const NIST_171_CONTROLS: Requirement[] = [
   // IDENTIFICATION AND AUTHENTICATION (IA)
   {
     id: '3.5.3',
-    framework: 'NIST800-171',
+    framework: 'NIST-CMMC',
     family: 'IA',
     title: 'Multi-Factor Authentication',
     description: 'Use multifactor authentication for local and network access to privileged accounts and for network access to non-privileged accounts.',
@@ -111,7 +110,7 @@ const NIST_171_CONTROLS: Requirement[] = [
   // SYSTEM AND COMMUNICATIONS PROTECTION (SC)
   {
       id: '3.13.1',
-      framework: 'NIST800-171',
+      framework: 'NIST-CMMC',
       family: 'SC',
       title: 'Boundary Protection',
       description: 'Monitor, control, and protect organizational communications at the external and key internal boundaries.',
@@ -120,7 +119,8 @@ const NIST_171_CONTROLS: Requirement[] = [
       sprsWeight: 5,
       objectives: [
           { id: 'a', description: 'External boundaries are identified.', status: 'pending' },
-          { id: 'b', description: 'Key internal boundaries are identified.', status: 'pending' }
+          { id: 'b', description: 'Key internal boundaries are identified.', status: 'pending' },
+          { id: 'c', description: 'Communications are monitored at external/internal boundaries.', status: 'pending' }
       ],
       mappings: { nist800_53: ['SC-7'] }
   }
@@ -188,31 +188,11 @@ const HIPAA_CONTROLS: Requirement[] = [
         { id: 'c', description: 'Automatic logoff (A).', status: 'pending' }
     ],
     mappings: {}
-  },
-  {
-      id: '164.312(e)(1)',
-      framework: 'HIPAA',
-      family: 'Technical',
-      title: 'Transmission Security',
-      description: 'Implement technical security measures to guard against unauthorized access to electronic protected health information that is being transmitted over an electronic communications network.',
-      discussion: 'Focuses on integrity controls and encryption during transit.',
-      level: 'Addressable',
-      objectives: [
-          { id: 'a', description: 'Integrity controls (A).', status: 'pending' },
-          { id: 'b', description: 'Encryption (A).', status: 'pending' }
-      ],
-      mappings: {}
   }
 ];
 
 export const REQUIREMENTS_DATA: Requirement[] = [
-    ...NIST_171_CONTROLS,
-    // CMMC L2 mirrors NIST 800-171 1:1
-    ...NIST_171_CONTROLS.map(r => ({ 
-        ...r, 
-        framework: 'CMMC-L2', 
-        id: r.id.replace('3.', `${r.family}.L2-3.`) 
-    })),
+    ...NIST_CMMC_CONTROLS,
     ...SOC2_CONTROLS,
     ...HIPAA_CONTROLS
 ];

@@ -9,9 +9,9 @@ interface SPRSScorecardProps {
 }
 
 export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, activeFrameworkId }) => {
-  // Only NIST 800-171 uses SPRS
-  const isApplicable = activeFrameworkId === 'NIST800-171';
-  const relevantReqs = requirements.filter(r => r.framework === 'NIST800-171');
+  // NIST 800-171 / CMMC 2.0 uses SPRS
+  const isApplicable = activeFrameworkId === 'NIST-CMMC';
+  const relevantReqs = requirements.filter(r => r.framework === 'NIST-CMMC');
 
   if (!isApplicable) {
     return (
@@ -21,21 +21,18 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
         <p className="text-slate-500 mt-2">
           The Supplier Performance Risk System (SPRS) scoring methodology is specific to NIST 800-171 (DFARS 252.204-7012/7019/7020).
           <br />
-          Please switch the active framework to <strong>NIST 800-171</strong> to view your DoD assessment score.
+          Please switch the active framework to <strong>NIST 800-171 / CMMC 2.0</strong> to view your DoD assessment score.
         </p>
       </div>
     );
   }
 
   // --- SPRS Calculation Logic ---
-  // Max score is 110. Points are subtracted for unimplemented requirements.
   const MAX_SCORE = 110;
   
-  // Identify status
   const getReqStatus = (req: Requirement) => {
     const statuses = req.objectives.map(o => o.status);
     if (statuses.some(s => s === 'not_met')) return 'not_met';
-    // In SPRS, "Pending" is effectively "not met" because you don't get credit until implemented.
     if (statuses.some(s => s === 'pending')) return 'pending'; 
     if (statuses.every(s => s === 'met' || s === 'na')) return 'met';
     return 'pending';
@@ -44,7 +41,7 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
   const scoredReqs = relevantReqs.map(req => {
       const status = getReqStatus(req);
       const isMet = status === 'met';
-      const weight = req.sprsWeight || 1; // Default to 1 if not specified, though standard is 1,3,5
+      const weight = req.sprsWeight || 1;
       return {
           ...req,
           computedStatus: status,
@@ -53,14 +50,8 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
   });
 
   const totalDeductions = scoredReqs.reduce((sum, r) => sum + r.deduction, 0);
-  // Important: In the real DoD tool, they track ALL 110. Here we track a subset in the mock data.
-  // To make the visual logic consistent for the demo, we calculate score based on 110.
-  // This means if we only have 5 controls loaded, and 1 is missing, score is 105.
-  // Note: If the user hasn't loaded the full database, this might feel artificially high, 
-  // but it's mathematically correct for the methodology relative to the controls we know about.
   const currentScore = MAX_SCORE - totalDeductions;
 
-  // Determine Gauge Color
   const getScoreColor = (score: number) => {
       if (score === 110) return 'text-green-600';
       if (score >= 90) return 'text-blue-600';
@@ -68,18 +59,10 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
       return 'text-red-600';
   };
 
-  const getScoreBg = (score: number) => {
-    if (score === 110) return 'bg-green-100';
-    if (score >= 90) return 'bg-blue-100';
-    if (score >= 70) return 'bg-amber-100';
-    return 'bg-red-100';
-  };
-
   const notMetList = scoredReqs.filter(r => r.deduction > 0).sort((a,b) => b.deduction - a.deduction);
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <TrendingUp className="text-blue-600" /> SPRS Scorecard
@@ -90,7 +73,6 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Main Score Gauge */}
           <div className="md:col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 p-8 flex flex-col items-center justify-center text-center">
               <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Current Assessment Score</h3>
               
@@ -115,7 +97,6 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
               </div>
           </div>
 
-          {/* Breakdown / Action Items */}
           <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
               <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
                   <h3 className="font-bold text-slate-800 flex items-center gap-2">
@@ -173,7 +154,6 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
           </div>
       </div>
         
-      {/* Information Section */}
       <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex gap-4">
           <Info className="text-indigo-600 shrink-0 mt-1" size={24} />
           <div>
@@ -183,12 +163,11 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
                   The score starts at <strong>110</strong>. Points are deducted for every requirement that is not "Met". 
                   <br/>
                   <span className="italic opacity-80 mt-1 block">
-                    *Evidence collection status (Assessment Objectives) determines if a requirement is Met. If any objective is 'Pending' or 'Not Met', the full point deduction applies.
+                    *Evidence collection status determines if a requirement is Met. If any objective is 'Pending' or 'Not Met', the full point deduction applies.
                   </span>
               </p>
           </div>
       </div>
-
     </div>
   );
 };

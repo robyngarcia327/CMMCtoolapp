@@ -99,11 +99,9 @@ const App: React.FC = () => {
       try {
           const apiOrgs = await api.getOrgs(idToken);
           
-          // CRITICAL FIX: Robust search for organization name and ID keys
           const mappedClients: Client[] = apiOrgs
             .filter(o => o && typeof o === 'object')
             .map((o: any) => {
-              // Try multiple casing/naming conventions found in different backend environments
               const nameValue = o.name || o.Name || o.orgName || o.organizationName || o.displayName;
               const orgIdValue = o.orgId || o.OrgId || o.id || o.organizationId;
               
@@ -116,7 +114,7 @@ const App: React.FC = () => {
                   industry: o.industry || o.Industry || 'General', 
                   contactName: auth.user?.profile.email || 'User',
                   logoInitial: safeName.charAt(0).toUpperCase(),
-                  primaryFramework: 'NIST800-171',
+                  primaryFramework: 'NIST-CMMC',
                   nextAuditDate: Date.now() + 31536000000,
                   accountManager: 'Self-Managed',
                   isParent: false
@@ -143,7 +141,6 @@ const App: React.FC = () => {
                   return nextStore;
               });
 
-              // Background load evidence
               api.getEvidenceList(idToken, selectedId).then(evidence => {
                   setClientDataStore(prev => ({
                       ...prev,

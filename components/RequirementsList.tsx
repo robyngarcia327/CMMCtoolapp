@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Requirement } from '../types';
 import { NIST_FAMILIES } from '../data/standards';
@@ -25,8 +26,8 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
     ? frameworkReqs
     : frameworkReqs.filter(r => r.family === filterFamily || r.mappings.nist800_53?.some(m => m.startsWith(filterFamily)));
 
-  // Extract unique families dynamically if using a framework other than NIST
-  const families = activeFrameworkId === 'NIST800-171' 
+  // Extract unique families dynamically if using a framework other than NIST/CMMC
+  const families = activeFrameworkId === 'NIST-CMMC' 
     ? NIST_FAMILIES 
     : Array.from(new Set(frameworkReqs.map(r => r.family))).map(f => ({ id: f, name: f }));
 
