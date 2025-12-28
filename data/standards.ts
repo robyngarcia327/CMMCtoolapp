@@ -16,14 +16,13 @@ const NIST_CMMC_CONTROLS: Requirement[] = [
     family: 'AC',
     title: 'Authorized Access Control',
     description: 'Limit system access to authorized users, processes acting on behalf of authorized users, and devices (including other systems).',
-    discussion: 'Access control policies (e.g., identity-based, role-based) and mechanisms control access between users and objects.',
+    discussion: 'Access control policies and mechanisms control access between users and objects.',
     level: '2',
     sprsWeight: 5,
     objectives: [
       { id: 'a', description: 'Authorized users are identified.', status: 'pending' },
-      { id: 'b', description: 'Processes acting on behalf of authorized users are identified.', status: 'pending' },
-      { id: 'c', description: 'Devices (including other systems) are identified.', status: 'pending' },
-      { id: 'd', description: 'System access is limited to authorized users.', status: 'pending' }
+      { id: 'b', description: 'Processes acting on behalf of users are identified.', status: 'pending' },
+      { id: 'c', description: 'Devices are identified.', status: 'pending' }
     ],
     mappings: { nist800_53: ['AC-2', 'AC-3'] }
   },
@@ -37,10 +36,25 @@ const NIST_CMMC_CONTROLS: Requirement[] = [
     level: '2',
     sprsWeight: 5,
     objectives: [
-      { id: 'a', description: 'Types of transactions that authorized users are permitted to execute are defined.', status: 'pending' },
-      { id: 'b', description: 'Functions that authorized users are permitted to execute are defined.', status: 'pending' }
+      { id: 'a', description: 'Transactions are defined.', status: 'pending' },
+      { id: 'b', description: 'Functions are defined.', status: 'pending' }
     ],
     mappings: { nist800_53: ['AC-17'] }
+  },
+  {
+    id: '3.1.3',
+    framework: 'NIST-CMMC',
+    family: 'AC',
+    title: 'Control Flow',
+    description: 'Control the flow of CUI in accordance with approved authorizations.',
+    discussion: 'Ensures data does not traverse unauthorized boundaries.',
+    level: '2',
+    sprsWeight: 1,
+    objectives: [
+      { id: 'a', description: 'Data flow paths are identified.', status: 'pending' },
+      { id: 'b', description: 'Authorizations are enforced.', status: 'pending' }
+    ],
+    mappings: { nist800_53: ['AC-4'] }
   },
   // AWARENESS AND TRAINING (AT)
   {
@@ -48,14 +62,13 @@ const NIST_CMMC_CONTROLS: Requirement[] = [
     framework: 'NIST-CMMC',
     family: 'AT',
     title: 'Security Awareness Training',
-    description: 'Ensure that managers, systems administrators, and users of organizational systems are made aware of the security risks associated with their activities and of the applicable policies, standards, and procedures related to the security of those systems.',
-    discussion: 'Training typically includes recognizing social engineering, phishing, and proper handling of CUI.',
+    description: 'Ensure that managers, systems administrators, and users of organizational systems are made aware of the security risks associated with their activities.',
+    discussion: 'Training typically includes recognizing social engineering and phishing.',
     level: '2',
     sprsWeight: 1,
     objectives: [
-      { id: 'a', description: 'Managers are made aware of security risks.', status: 'pending' },
-      { id: 'b', description: 'System administrators are made aware of security risks.', status: 'pending' },
-      { id: 'c', description: 'Users are made aware of security risks.', status: 'pending' }
+      { id: 'a', description: 'Managers are trained.', status: 'pending' },
+      { id: 'b', description: 'Users are trained.', status: 'pending' }
     ],
     mappings: { nist800_53: ['AT-2'] }
   },
@@ -64,13 +77,13 @@ const NIST_CMMC_CONTROLS: Requirement[] = [
     framework: 'NIST-CMMC',
     family: 'AT',
     title: 'Role-Based Security Training',
-    description: 'Ensure that personnel are adequately trained to carry out their assigned information security-related duties and responsibilities.',
-    discussion: 'Provides specialized training for individuals with significant security roles (e.g., ISSOs, Admins).',
+    description: 'Ensure that personnel are adequately trained to carry out their assigned information security-related duties.',
+    discussion: 'Provides specialized training for privileged accounts.',
     level: '2',
     sprsWeight: 1,
     objectives: [
-      { id: 'a', description: 'Assigned info security duties/responsibilities are identified.', status: 'pending' },
-      { id: 'b', description: 'Personnel are adequately trained for assigned duties.', status: 'pending' }
+      { id: 'a', description: 'Roles are identified.', status: 'pending' },
+      { id: 'b', description: 'Training content matches roles.', status: 'pending' }
     ],
     mappings: { nist800_53: ['AT-3'] }
   },
@@ -80,15 +93,37 @@ const NIST_CMMC_CONTROLS: Requirement[] = [
     framework: 'NIST-CMMC',
     family: 'AU',
     title: 'Audit Record Creation',
-    description: 'Create and retain system audit logs and records to the extent needed to enable the monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity.',
-    discussion: 'Logging is critical for incident response and forensic analysis.',
+    description: 'Create and retain system audit logs and records to the extent needed to enable monitoring.',
+    discussion: 'Logging is critical for incident response.',
     level: '2',
     sprsWeight: 3,
-    objectives: [
-      { id: 'a', description: 'Audit logs/records are created.', status: 'pending' },
-      { id: 'b', description: 'Logs are retained.', status: 'pending' }
-    ],
+    objectives: [{ id: 'a', description: 'Logs are generated.', status: 'pending' }],
     mappings: { nist800_53: ['AU-2'] }
+  },
+  {
+    id: '3.3.2',
+    framework: 'NIST-CMMC',
+    family: 'AU',
+    title: 'Audit Events',
+    description: 'Ensure that the actions of individual system users can be uniquely traced to those users.',
+    discussion: 'Accountability requires unique user IDs in logs.',
+    level: '2',
+    sprsWeight: 3,
+    objectives: [{ id: 'a', description: 'Individual users are traced.', status: 'pending' }],
+    mappings: { nist800_53: ['AU-3'] }
+  },
+  // CONFIGURATION MANAGEMENT (CM)
+  {
+    id: '3.4.1',
+    framework: 'NIST-CMMC',
+    family: 'CM',
+    title: 'Baseline Configurations',
+    description: 'Establish and maintain baseline configurations and inventories of organizational systems.',
+    discussion: 'Includes hardware and software manifests.',
+    level: '2',
+    sprsWeight: 3,
+    objectives: [{ id: 'a', description: 'Baselines are established.', status: 'pending' }],
+    mappings: { nist800_53: ['CM-2'] }
   },
   // IDENTIFICATION AND AUTHENTICATION (IA)
   {
@@ -96,33 +131,132 @@ const NIST_CMMC_CONTROLS: Requirement[] = [
     framework: 'NIST-CMMC',
     family: 'IA',
     title: 'Multi-Factor Authentication',
-    description: 'Use multifactor authentication for local and network access to privileged accounts and for network access to non-privileged accounts.',
-    discussion: 'MFA requires at least two factors (knowledge, possession, or inherence).',
+    description: 'Use multifactor authentication for local and network access to privileged accounts.',
+    discussion: 'MFA requires knowledge, possession, and/or inherence.',
     level: '2',
     sprsWeight: 5,
     objectives: [
-      { id: 'a', description: 'MFA is implemented for local access to privileged accounts.', status: 'pending' },
-      { id: 'b', description: 'MFA is implemented for network access to privileged accounts.', status: 'pending' },
-      { id: 'c', description: 'MFA is implemented for network access to non-privileged accounts.', status: 'pending' }
+      { id: 'a', description: 'MFA for local privileged access.', status: 'pending' },
+      { id: 'b', description: 'MFA for network privileged access.', status: 'pending' }
     ],
-    mappings: { nist800_53: ['IA-2(1)', 'IA-2(2)'] }
+    mappings: { nist800_53: ['IA-2'] }
+  },
+  // INCIDENT RESPONSE (IR)
+  {
+    id: '3.6.1',
+    framework: 'NIST-CMMC',
+    family: 'IR',
+    title: 'Incident Handling',
+    description: 'Establish an operational incident-handling capability for organizational systems.',
+    discussion: 'Includes detection, analysis, and containment.',
+    level: '2',
+    sprsWeight: 5,
+    objectives: [{ id: 'a', description: 'IR capability established.', status: 'pending' }],
+    mappings: { nist800_53: ['IR-4'] }
+  },
+  // MAINTENANCE (MA)
+  {
+    id: '3.7.1',
+    framework: 'NIST-CMMC',
+    family: 'MA',
+    title: 'System Maintenance',
+    description: 'Perform maintenance on organizational systems.',
+    discussion: 'Ensures system reliability and patching.',
+    level: '2',
+    sprsWeight: 3,
+    objectives: [{ id: 'a', description: 'Maintenance is performed.', status: 'pending' }],
+    mappings: { nist800_53: ['MA-2'] }
+  },
+  // MEDIA PROTECTION (MP)
+  {
+    id: '3.8.1',
+    framework: 'NIST-CMMC',
+    family: 'MP',
+    title: 'Media Access',
+    description: 'Protect (i.e., physically control and securely store) system media containing CUI.',
+    discussion: 'Includes flash drives and external hard drives.',
+    level: '2',
+    sprsWeight: 3,
+    objectives: [{ id: 'a', description: 'Media is physically controlled.', status: 'pending' }],
+    mappings: { nist800_53: ['MP-2'] }
+  },
+  // PERSONNEL SECURITY (PS)
+  {
+    id: '3.9.1',
+    framework: 'NIST-CMMC',
+    family: 'PS',
+    title: 'Personnel Screening',
+    description: 'Screen individuals prior to authorizing access to systems containing CUI.',
+    discussion: 'Background checks or interviews.',
+    level: '2',
+    sprsWeight: 3,
+    objectives: [{ id: 'a', description: 'Individuals are screened.', status: 'pending' }],
+    mappings: { nist800_53: ['PS-3'] }
+  },
+  // PHYSICAL PROTECTION (PE)
+  {
+    id: '3.10.1',
+    framework: 'NIST-CMMC',
+    family: 'PE',
+    title: 'Physical Access Control',
+    description: 'Limit physical access to organizational systems, equipment, and the respective operating environments to authorized individuals.',
+    discussion: 'Locks, badges, and server room security.',
+    level: '2',
+    sprsWeight: 3,
+    objectives: [{ id: 'a', description: 'Physical access is limited.', status: 'pending' }],
+    mappings: { nist800_53: ['PE-2'] }
+  },
+  // RISK ASSESSMENT (RA)
+  {
+    id: '3.11.1',
+    framework: 'NIST-CMMC',
+    family: 'RA',
+    title: 'Risk Assessment',
+    description: 'Periodically assess the risk to organizational operations resulting from the operation of systems.',
+    discussion: 'Formal risk assessment process.',
+    level: '2',
+    sprsWeight: 3,
+    objectives: [{ id: 'a', description: 'Risks are assessed.', status: 'pending' }],
+    mappings: { nist800_53: ['RA-3'] }
+  },
+  // SECURITY ASSESSMENT (CA)
+  {
+    id: '3.12.1',
+    framework: 'NIST-CMMC',
+    family: 'CA',
+    title: 'Security Control Assessment',
+    description: 'Periodically assess the security controls in organizational systems.',
+    discussion: 'Validating that controls work as intended.',
+    level: '2',
+    sprsWeight: 5,
+    objectives: [{ id: 'a', description: 'Assessments are performed.', status: 'pending' }],
+    mappings: { nist800_53: ['CA-2'] }
   },
   // SYSTEM AND COMMUNICATIONS PROTECTION (SC)
   {
-      id: '3.13.1',
-      framework: 'NIST-CMMC',
-      family: 'SC',
-      title: 'Boundary Protection',
-      description: 'Monitor, control, and protect organizational communications at the external and key internal boundaries.',
-      discussion: 'Boundary protection is typically achieved via firewalls, proxies, and gateways.',
-      level: '2',
-      sprsWeight: 5,
-      objectives: [
-          { id: 'a', description: 'External boundaries are identified.', status: 'pending' },
-          { id: 'b', description: 'Key internal boundaries are identified.', status: 'pending' },
-          { id: 'c', description: 'Communications are monitored at external/internal boundaries.', status: 'pending' }
-      ],
-      mappings: { nist800_53: ['SC-7'] }
+    id: '3.13.1',
+    framework: 'NIST-CMMC',
+    family: 'SC',
+    title: 'Boundary Protection',
+    description: 'Monitor, control, and protect organizational communications at the external and key internal boundaries.',
+    discussion: 'Firewalls and proxies.',
+    level: '2',
+    sprsWeight: 5,
+    objectives: [{ id: 'a', description: 'Boundaries are identified.', status: 'pending' }],
+    mappings: { nist800_53: ['SC-7'] }
+  },
+  // SYSTEM AND INFORMATION INTEGRITY (SI)
+  {
+    id: '3.14.1',
+    framework: 'NIST-CMMC',
+    family: 'SI',
+    title: 'Flaw Remediation',
+    description: 'Identify, report, and correct system flaws in a timely manner.',
+    discussion: 'Patch management and vulnerability fixing.',
+    level: '2',
+    sprsWeight: 5,
+    objectives: [{ id: 'a', description: 'Flaws are identified.', status: 'pending' }],
+    mappings: { nist800_53: ['SI-2'] }
   }
 ];
 
@@ -134,12 +268,9 @@ const SOC2_CONTROLS: Requirement[] = [
     family: 'Control Environment',
     title: 'Integrity and Ethical Values',
     description: 'The entity demonstrates a commitment to integrity and ethical values.',
-    discussion: 'Tone at the top, standards of conduct, and addressing deviations.',
+    discussion: 'Tone at the top and standards of conduct.',
     level: 'Common Criteria',
-    objectives: [
-        { id: 'a', description: 'Standards of conduct are established.', status: 'pending' },
-        { id: 'b', description: 'Compliance with standards is evaluated.', status: 'pending' }
-    ],
+    objectives: [{ id: 'a', description: 'Standards of conduct established.', status: 'pending' }],
     mappings: { iso27001: ['A.5.1'] }
   },
   {
@@ -147,13 +278,10 @@ const SOC2_CONTROLS: Requirement[] = [
     framework: 'SOC2',
     family: 'Logical & Physical Access',
     title: 'Logical Access Security',
-    description: 'The entity implements logical access security software, infrastructure, and architectures over relevant information assets.',
-    discussion: 'Restricting access to only authorized individuals.',
+    description: 'The entity implements logical access security over relevant information assets.',
+    discussion: 'Restricting digital access to authorized staff.',
     level: 'Common Criteria',
-    objectives: [
-        { id: 'a', description: 'Access points are managed.', status: 'pending' },
-        { id: 'b', description: 'Segregation of duties is enforced.', status: 'pending' }
-    ],
+    objectives: [{ id: 'a', description: 'Access points managed.', status: 'pending' }],
     mappings: { nist_csf: ['PR.AC-1'] }
   }
 ];
@@ -165,13 +293,10 @@ const HIPAA_CONTROLS: Requirement[] = [
     framework: 'HIPAA',
     family: 'Administrative',
     title: 'Security Management Process',
-    description: 'Implement policies and procedures to prevent, detect, contain, and correct security violations.',
-    discussion: 'Requires Risk Analysis and Risk Management as core components.',
+    description: 'Implement policies to prevent, detect, contain, and correct security violations.',
+    discussion: 'Requires Risk Analysis and Risk Management.',
     level: 'Required',
-    objectives: [
-        { id: 'a', description: 'Risk Analysis (R) conducted.', status: 'pending' },
-        { id: 'b', description: 'Risk Management (R) implemented.', status: 'pending' }
-    ],
+    objectives: [{ id: 'a', description: 'Risk Analysis conducted.', status: 'pending' }],
     mappings: {}
   },
   {
@@ -179,14 +304,10 @@ const HIPAA_CONTROLS: Requirement[] = [
     framework: 'HIPAA',
     family: 'Technical',
     title: 'Access Control',
-    description: 'Implement technical policies and procedures for electronic information systems that maintain ePHI to allow access only to those persons or software programs that have been granted access rights.',
-    discussion: 'Includes Unique User ID, Emergency Access, and Encryption.',
+    description: 'Limit access only to those persons or programs granted access rights.',
+    discussion: 'Unique user IDs and encryption.',
     level: 'Required',
-    objectives: [
-        { id: 'a', description: 'Unique user identification (R).', status: 'pending' },
-        { id: 'b', description: 'Emergency access procedures (R).', status: 'pending' },
-        { id: 'c', description: 'Automatic logoff (A).', status: 'pending' }
-    ],
+    objectives: [{ id: 'a', description: 'Unique IDs implemented.', status: 'pending' }],
     mappings: {}
   }
 ];
