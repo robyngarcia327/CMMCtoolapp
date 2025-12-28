@@ -18,7 +18,8 @@ import {
   Map,
   AlertCircle,
   Eye,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Building2
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData } from './data/standards';
@@ -37,6 +38,8 @@ import { Onboarding } from './components/Onboarding';
 import { Dashboard } from './components/Dashboard'; 
 import { AuditorPortal } from './components/AuditorPortal';
 import { BulkImport } from './components/BulkImport';
+import { MSPDashboard } from './components/MSPDashboard';
+import { OrganizationManager } from './components/OrganizationManager';
 import { api } from './services/api';
 
 // --- Render Helpers ---
@@ -277,6 +280,14 @@ const App: React.FC = () => {
       });
   };
 
+  // Fixed: Helper for OrganizationManager to update any client data by ID
+  const updateClientDataById = (clientId: string, data: Partial<ClientData>) => {
+      setClientDataStore(prev => ({
+          ...prev,
+          [clientId]: { ...prev[clientId], ...data }
+      }));
+  };
+
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
       
@@ -357,6 +368,15 @@ const App: React.FC = () => {
                                   <div className="text-sm font-bold truncate text-slate-800">{activeClient.name}</div>
                               </div>
                               <button 
+                                onClick={() => setCurrentView(AppView.ORGANIZATION_MANAGER)}
+                                className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors font-medium group"
+                              >
+                                  <div className="bg-slate-100 text-slate-500 p-1.5 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                    <Building2 size={14} />
+                                  </div>
+                                  Admin Settings
+                              </button>
+                              <button 
                                 onClick={handleLogout}
                                 className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors font-bold group"
                               >
@@ -422,10 +442,42 @@ const App: React.FC = () => {
                 />
             )}
             {currentView === AppView.REPORTS && <Reports requirements={activeData.requirements} onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} />}
-            {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} wizardProgress={activeData.wizardProgress} onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} onAddArtifact={(a) => updateActiveClientData(prev => ({ artifacts: [...prev.artifacts, a] }))} onRemoveArtifact={(id) => updateActiveClientData(prev => ({ artifacts: prev.artifacts.filter(a => a.id !== id) }))} onUpdateProgress={(p) => updateActiveClientData(prev => ({ wizardProgress: p }))} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} />}
-            {currentView === AppView.INVENTORY && <Inventory assets={activeData.assets} onAddAsset={(a) => updateActiveClientData(prev => ({ assets: [...prev.artifacts, a] }))} onDeleteAsset={(id) => updateActiveClientData(prev => ({ assets: prev.assets.filter(a => a.id !== id) }))} />}
+            {currentView === AppView.WIZARD && (
+                <ComplianceWizard 
+                    requirements={activeData.requirements} 
+                    artifacts={activeData.artifacts} 
+                    assets={activeData.assets}
+                    wizardProgress={activeData.wizardProgress} 
+                    onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} 
+                    onAddArtifact={(a) => updateActiveClientData(prev => ({ artifacts: [...prev.artifacts, a] }))} 
+                    onRemoveArtifact={(id) => updateActiveClientData(prev => ({ artifacts: prev.artifacts.filter(a => a.id !== id) }))} 
+                    onAddAsset={(a) => updateActiveClientData(prev => ({ assets: [...prev.assets, a] }))}
+                    onDeleteAsset={(id) => updateActiveClientData(prev => ({ assets: prev.assets.filter(a => a.id !== id) }))}
+                    onUpdateProgress={(p) => updateActiveClientData(prev => ({ wizardProgress: p }))} 
+                    activeFrameworkId={activeFramework.id} 
+                    onComplete={() => setCurrentView(AppView.DASHBOARD)} 
+                />
+            )}
+            {currentView === AppView.INVENTORY && (
+                <Inventory 
+                    assets={activeData.assets} 
+                    onAddAsset={(a) => updateActiveClientData(prev => ({ assets: [...prev.assets, a] }))} 
+                    onDeleteAsset={(id) => updateActiveClientData(prev => ({ assets: prev.assets.filter(a => a.id !== id) }))} 
+                />
+            )}
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={(u) => updateActiveClientData(prev => ({ users: [...prev.users, u] }))} onUpdateUser={(u) => updateActiveClientData(prev => ({ users: prev.users.map(old => old.id === u.id ? u : old) }))} onDeleteUser={(id) => updateActiveClientData(prev => ({ users: prev.users.filter(u => u.id !== id) }))} />}
             {currentView === AppView.NETWORK_ANALYSIS && <NetworkAnalyzer />}
+            {currentView === AppView.MSP_DASHBOARD && <MSPDashboard clients={clients} clientDataStore={clientDataStore} onSelectClient={(id) => { setActiveClientId(id); setCurrentView(AppView.DASHBOARD); }} />}
+            {currentView === AppView.ORGANIZATION_MANAGER && (
+                <OrganizationManager 
+                    clients={clients} 
+                    clientDataStore={clientDataStore}
+                    onAddClient={(c) => setClients([...clients, c])}
+                    onUpdateClient={(c) => setClients(clients.map(old => old.id === c.id ? c : old))}
+                    onDeleteClient={(id) => setClients(clients.filter(c => c.id !== id))}
+                    onUpdateClientData={updateClientDataById}
+                />
+            )}
       </main>
       <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>

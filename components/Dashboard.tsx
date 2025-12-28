@@ -70,31 +70,43 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* High-Level KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden">
+            <button 
+              onClick={() => onNavigate(AppView.REPORTS)}
+              className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-left relative overflow-hidden group hover:border-blue-300 transition-all"
+            >
                 <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-2">Posture Score</h3>
-                <div className="text-5xl font-black text-slate-900">{complianceScore}%</div>
+                <div className="text-5xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">{complianceScore}%</div>
                 <div className="w-full bg-slate-100 h-2 mt-4 rounded-full overflow-hidden">
                     <div className="bg-blue-500 h-full transition-all duration-1000" style={{ width: `${complianceScore}%` }}></div>
                 </div>
-            </div>
+            </button>
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <button 
+              onClick={() => onNavigate(AppView.REQUIREMENTS)}
+              className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-left hover:border-green-300 transition-all group"
+            >
                 <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-2">Met Controls</h3>
                 <div className="text-4xl font-black text-green-600">{metReqs}</div>
                 <p className="text-xs text-slate-500 mt-2">Validated & Secured</p>
-            </div>
+            </button>
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <button 
+              onClick={() => onNavigate(AppView.REQUIREMENTS)}
+              className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-left hover:border-red-300 transition-all group"
+            >
                 <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-2">Open Gaps</h3>
                 <div className="text-4xl font-black text-red-600">{gapsReqs}</div>
                 <p className="text-xs text-slate-500 mt-2">Remediation Needed</p>
-            </div>
+            </button>
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <button 
+              onClick={() => onNavigate(AppView.INVENTORY)}
+              className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-left hover:border-indigo-300 transition-all group"
+            >
                 <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-2">Evidence Repository</h3>
                 <div className="text-4xl font-black text-blue-600">{artifacts.length}</div>
                 <p className="text-xs text-slate-500 mt-2">Secure Artifacts</p>
-            </div>
+            </button>
         </div>
 
         {/* AI Roadmap (Expands when generated) */}
@@ -116,9 +128,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Action Center Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div 
+            <button 
               onClick={() => onNavigate(AppView.REQUIREMENTS)}
-              className="bg-slate-900 rounded-3xl p-8 text-white flex flex-col justify-between h-56 group cursor-pointer hover:bg-slate-800 transition-all hover:scale-[1.02] shadow-xl"
+              className="bg-slate-900 rounded-3xl p-8 text-white flex flex-col justify-between h-56 text-left group transition-all hover:scale-[1.02] shadow-xl hover:bg-slate-800"
             >
                 <div>
                     <h3 className="text-xl font-black mb-2 flex items-center gap-2">Assessment Hub <ChevronRight className="text-blue-500 group-hover:translate-x-1 transition-transform" /></h3>
@@ -129,7 +141,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <div className="text-xs font-bold text-blue-400 tracking-widest uppercase flex items-center gap-2">
                     Start Remediation <ChevronRight size={14} />
                 </div>
-            </div>
+            </button>
 
             <div className="bg-white border border-slate-200 rounded-3xl p-8 flex flex-col justify-between h-56 shadow-sm">
                 <div>
