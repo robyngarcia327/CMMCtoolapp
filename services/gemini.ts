@@ -137,36 +137,58 @@ export const analyzeNetworkDiagram = async (
   }
 };
 
-// Added missing function to generate professional compliance documents in Markdown
+/**
+ * Enhanced Compliance Document Generator
+ * Specifically designed to handle System Security Plans (SSP) and Incident Response Plans (IRP).
+ */
 export const generateComplianceDocument = async (
   type: string,
   title: string,
   answers: Record<string, string>
 ): Promise<string> => {
+  // Extract audit context if provided
+  const auditContext = answers['Audit_Intelligence_Context'] || "";
+  const filteredAnswers = { ...answers };
+  delete filteredAnswers['Audit_Intelligence_Context'];
+
   const prompt = `
-    Generate a professional ${type} titled "${title}" based on the following interview answers.
+    Generate a professional ${type} titled "${title}".
     
-    Answers:
-    ${Object.entries(answers).map(([q, a]) => `${q}: ${a}`).join('\n')}
+    ### Organization Details:
+    ${Object.entries(filteredAnswers).map(([q, a]) => `${q}: ${a}`).join('\n')}
     
-    The document should be formatted in Markdown, using professional compliance language, 
-    and organized with appropriate headings and subheadings. 
-    Ensure it meets the standards of NIST 800-171 and CMMC 2.0 where applicable.
+    ${auditContext ? `
+    ### COMPLIANCE AUDIT DATA (USE THIS FOR THE CONTROLS SECTION):
+    Below are the actual implementation narratives and evidence metadata from our live system. 
+    You MUST incorporate these details into the relevant sections of the ${type}.
+    
+    ${auditContext}
+    ` : ""}
+    
+    ### FORMATTING GUIDELINES:
+    1. Output in Markdown.
+    2. Use professional, clear, and assertive compliance language.
+    3. For System Security Plans (SSP): Structure by Domain (Access Control, Identification & Authentication, etc.).
+    4. For Incident Response Plans (IRP): Ensure NIST SP 800-61 Rev 2 methodology is used.
+    5. Always reference provided digital evidence (filenames) where applicable to demonstrate "Institutionalized" status.
   `;
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: prompt,
-      config: { systemInstruction: SYSTEM_INSTRUCTION_CHAT }
+      config: { 
+        systemInstruction: "You are a master federal compliance architect and auditor. Your goal is to produce highly professional, audit-ready documentation.",
+        temperature: 0.2 // Lower temperature for more consistent compliance language
+      }
     });
     return response.text || "Failed to generate document.";
   } catch (e) {
-    return "Error generating document.";
+    console.error("DocGen AI Error:", e);
+    return "Error generating document. Please check the API logs.";
   }
 };
 
-// Added missing function to analyze network topology from Auvik integration for CMMC compliance
 export const analyzeAuvikTopology = async (
   devices: AuvikDevice[]
 ): Promise<string> => {

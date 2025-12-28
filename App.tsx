@@ -19,7 +19,8 @@ import {
   AlertCircle,
   Eye,
   FileSpreadsheet,
-  Building2
+  Building2,
+  FileText
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData } from './data/standards';
@@ -40,6 +41,7 @@ import { AuditorPortal } from './components/AuditorPortal';
 import { BulkImport } from './components/BulkImport';
 import { MSPDashboard } from './components/MSPDashboard';
 import { OrganizationManager } from './components/OrganizationManager';
+import { DocGenerator } from './components/DocGenerator';
 import { api } from './services/api';
 
 // --- Render Helpers ---
@@ -51,7 +53,7 @@ const NavDropdown = ({ label, icon: Icon, children }: React.PropsWithChildren<{ 
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
     >
-        <button className="flex items-center gap-1 px-3 py-2 text-slate-300 hover:text-white font-medium transition-colors">
+        <button className="flex items-center gap-1 px-3 py-2 text-slate-300 hover:text-white font-medium transition-colors text-sm">
             <Icon size={16} /> {label} <ChevronDown size={14} className={`opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
         {isOpen && (
@@ -66,7 +68,7 @@ const NavDropdown = ({ label, icon: Icon, children }: React.PropsWithChildren<{ 
 const NavItem = ({ label, icon: Icon, isActive, onClick }: { label: string, icon: any, isActive: boolean, onClick: () => void }) => (
   <button 
     onClick={onClick}
-    className={`w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors ${isActive ? 'text-blue-600 font-bold bg-blue-50' : 'text-slate-700'}`}
+    className={`w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors ${isActive ? 'text-blue-600 font-bold bg-blue-50' : 'text-slate-700 text-sm'}`}
   >
       <Icon size={16} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
       {label}
@@ -280,7 +282,6 @@ const App: React.FC = () => {
       });
   };
 
-  // Fixed: Helper for OrganizationManager to update any client data by ID
   const updateClientDataById = (clientId: string, data: Partial<ClientData>) => {
       setClientDataStore(prev => ({
           ...prev,
@@ -310,9 +311,10 @@ const App: React.FC = () => {
                           <NavItem label="Bulk Import" icon={FileSpreadsheet} isActive={currentView === AppView.BULK_IMPORT} onClick={() => setCurrentView(AppView.BULK_IMPORT)} />
                           <NavItem label="Onboarding Wizard" icon={Wand2} isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} />
                       </NavDropdown>
-                      <NavDropdown label="Assets" icon={Package}>
+                      <NavDropdown label="Governance" icon={FileText}>
+                          <NavItem label="Policy Center" icon={FileText} isActive={currentView === AppView.DOC_GENERATOR} onClick={() => setCurrentView(AppView.DOC_GENERATOR)} />
                           <NavItem label="Asset Inventory" icon={Package} isActive={currentView === AppView.INVENTORY} onClick={() => setCurrentView(AppView.INVENTORY)} />
-                          <NavItem label="Identity" icon={Users} isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
+                          <NavItem label="Identity Management" icon={Users} isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
                           <NavItem label="Network Map" icon={Network} isActive={currentView === AppView.NETWORK_ANALYSIS} onClick={() => setCurrentView(AppView.NETWORK_ANALYSIS)} />
                       </NavDropdown>
                       <button onClick={() => setCurrentView(AppView.AUDITOR_PORTAL)} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === AppView.AUDITOR_PORTAL ? 'bg-slate-800 text-white' : 'hover:bg-slate-800/50 hover:text-white'}`}>Auditor Portal</button>
@@ -441,7 +443,21 @@ const App: React.FC = () => {
                     }))}
                 />
             )}
-            {currentView === AppView.REPORTS && <Reports requirements={activeData.requirements} onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} />}
+            {currentView === AppView.DOC_GENERATOR && (
+                <DocGenerator 
+                    requirements={activeData.requirements} 
+                    artifacts={activeData.artifacts}
+                    clientName={activeClient.name}
+                    confluenceConfig={activeData.confluenceConfig}
+                />
+            )}
+            {currentView === AppView.REPORTS && (
+                <Reports 
+                    requirements={activeData.requirements} 
+                    activeFrameworkId={activeFramework.id}
+                    onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} 
+                />
+            )}
             {currentView === AppView.WIZARD && (
                 <ComplianceWizard 
                     requirements={activeData.requirements} 

@@ -5,18 +5,18 @@ import { Printer, BarChart3, AlertOctagon, CheckSquare, Presentation, ShieldChec
 
 interface ReportsProps {
   requirements: Requirement[];
+  activeFrameworkId: string;
   onUpdateRequirement?: (req: Requirement) => void;
 }
 
 type ReportType = 'EXECUTIVE' | 'POAM' | 'MATRIX' | 'QBR';
 
-export const Reports: React.FC<ReportsProps> = ({ requirements, onUpdateRequirement }) => {
+export const Reports: React.FC<ReportsProps> = ({ requirements, activeFrameworkId, onUpdateRequirement }) => {
   const [activeReport, setActiveReport] = useState<ReportType>('EXECUTIVE');
   const [isEditing, setIsEditing] = useState(false);
 
-  // Identify the active framework from the current requirements set (assuming single active framework context)
-  // We determine this by finding the most common framework in the provided list
-  const activeFrameworkId = requirements.length > 0 ? requirements[0].framework : 'UNKNOWN';
+  // CRITICAL: Filter requirements by the active framework selected in the main app
+  const filteredRequirements = requirements.filter(r => r.framework === activeFrameworkId);
 
   // --- Calculation Helpers ---
   const getReqStatus = (req: Requirement) => {
@@ -26,21 +26,19 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, onUpdateRequirem
     return 'pending';
   };
 
-  const unmetRequirements = requirements.filter(r => {
+  const unmetRequirements = filteredRequirements.filter(r => {
       const s = getReqStatus(r);
       return s === 'not_met' || s === 'pending';
   });
 
   const getFamilyScore = (familyId: string) => {
-     const reqs = requirements.filter(r => r.family === familyId);
+     const reqs = filteredRequirements.filter(r => r.family === familyId);
      if (!reqs.length) return 0;
      const met = reqs.filter(r => getReqStatus(r) === 'met').length;
      return Math.round((met / reqs.length) * 100);
   };
 
-  // Derive active families purely from current requirement set
-  // Fixed: Added type assertion to Array.from to satisfy TypeScript compiler which was inferring unknown[]
-  const activeFamilies: string[] = (Array.from(new Set(requirements.map(r => r.family))) as string[]).sort();
+  const activeFamilies: string[] = (Array.from(new Set(filteredRequirements.map(r => r.family))) as string[]).sort();
 
   const handlePrint = () => {
     window.print();
@@ -108,7 +106,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, onUpdateRequirem
                      <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center shadow-sm">
                         <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2">Overall Compliance</div>
                         <div className="text-5xl font-black text-blue-600">
-                            {Math.round((requirements.filter(r => getReqStatus(r) === 'met').length / requirements.length) * 100) || 0}%
+                            {Math.round((filteredRequirements.filter(r => getReqStatus(r) === 'met').length / filteredRequirements.length) * 100) || 0}%
                         </div>
                      </div>
                      <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center shadow-sm">
@@ -120,14 +118,13 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, onUpdateRequirem
                     <h3 className="text-xl font-black text-slate-800 mb-4 border-b-2 border-slate-100 pb-2">Status by Domain</h3>
                     <div className="grid grid-cols-1 gap-4">
                         {activeFamilies.map((familyId) => {
-                            // Cast familyId to string to satisfy function signature
-                            const score = getFamilyScore(familyId as string);
+                            const score = getFamilyScore(familyId);
                             return (
-                                <div key={familyId as string} className="flex items-center gap-4">
-                                    <div className="w-16 font-mono font-black text-slate-400 text-xs">{familyId as string}</div>
+                                <div key={familyId} className="flex items-center gap-4">
+                                    <div className="w-16 font-mono font-black text-slate-400 text-xs">{familyId}</div>
                                     <div className="flex-1">
                                         <div className="flex justify-between text-xs mb-1 font-bold uppercase tracking-wide">
-                                            <span className="text-slate-700">{familyId as string} Family</span>
+                                            <span className="text-slate-700">{familyId} Family</span>
                                             <span className="text-slate-900">{score}%</span>
                                         </div>
                                         <div className="h-2 bg-slate-100 rounded-full overflow-hidden print:border print:border-slate-200">
@@ -151,7 +148,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, onUpdateRequirem
                      {onUpdateRequirement && (
                          <button 
                             onClick={() => setIsEditing(!isEditing)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${isEditing ? 'bg-green-600 text-white shadow-lg scale-105' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${isEditing ? 'bg-green-600 text-white shadow-lg scale-105' : 'bg-slate-100 text-slate-700 hover:bg-slate-50'}`}
                          >
                              {isEditing ? <><Save size={14} /> Save Entries</> : <><Edit2 size={14} /> Edit Table</>}
                          </button>
@@ -244,17 +241,16 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, onUpdateRequirem
               <div className="space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {activeFamilies.map((familyId) => {
-                          // Cast familyId to string to satisfy function signature
-                          const score = getFamilyScore(familyId as string);
+                          const score = getFamilyScore(familyId);
                           let statusColor = score === 100 ? 'bg-green-600' : score >= 70 ? 'bg-amber-500' : 'bg-red-600';
                           return (
-                              <div key={familyId as string} className="bg-white border-2 border-slate-100 rounded-2xl overflow-hidden flex shadow-sm">
+                              <div key={familyId} className="bg-white border-2 border-slate-100 rounded-2xl overflow-hidden flex shadow-sm">
                                   <div className={`w-14 flex items-center justify-center ${statusColor}`}>
                                       {score === 100 ? <ShieldCheck className="text-white" size={24} /> : <AlertOctagon className="text-white" size={24} />}
                                   </div>
                                   <div className="p-4 flex-1">
                                       <div className="flex justify-between items-start mb-1">
-                                          <h4 className="font-black text-slate-900 text-xs uppercase tracking-widest">{familyId as string} Domain</h4>
+                                          <h4 className="font-black text-slate-900 text-xs uppercase tracking-widest">{familyId} Domain</h4>
                                           <span className="font-black text-slate-900 text-xs">{score}%</span>
                                       </div>
                                       <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-2 border border-slate-200">
@@ -281,7 +277,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, onUpdateRequirem
                         </tr>
                     </thead>
                     <tbody>
-                        {requirements.map(req => {
+                        {filteredRequirements.map(req => {
                             const status = getReqStatus(req);
                             return (
                                 <tr key={req.id} className={status === 'met' ? 'bg-white' : 'bg-slate-50'}>
