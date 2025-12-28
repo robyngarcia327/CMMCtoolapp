@@ -3,60 +3,36 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from "react-oidc-context";
 import { 
   Shield, 
-  LayoutDashboard, 
   ListChecks, 
-  FileText, 
-  Settings as SettingsIcon, 
   MessageSquare,
   AlertTriangle,
   Network,
   Package,
   Users,
-  Building2,
-  KanbanSquare,
-  Calculator,
-  GraduationCap,
-  BarChart3,
   TrendingUp,
   Wand2,
   LogOut,
-  User as UserIcon,
-  ChevronsUpDown,
-  Menu,
   ChevronDown,
-  Briefcase,
   Loader2,
   RefreshCw,
   Map,
   AlertCircle
 } from 'lucide-react';
 
-import { INITIAL_CLIENTS, FRAMEWORKS, createInitialClientData, REQUIREMENTS_DATA } from './data/standards';
-import { Requirement, Artifact, AppView, Ticket, ConnectWiseConfig, JiraConfig, ConfluenceConfig, Risk, Asset, User, Framework, Client, ClientData, ProjectTask, WizardProgress, UserRole, BudgetLineItem, BrandingConfig, Vendor, IntegrationConfig } from './types';
+import { FRAMEWORKS, createInitialClientData } from './data/standards';
+import { Requirement, Artifact, AppView, Ticket, ConnectWiseConfig, JiraConfig, User, Framework, Client, ClientData, WizardProgress, IntegrationConfig } from './types';
 import { RequirementsList } from './components/RequirementsList';
 import { RequirementDetail } from './components/RequirementDetail';
-import { DocGenerator } from './components/DocGenerator';
 import { AIChat } from './components/AIChat';
-import { Settings } from './components/Settings';
 import { NetworkAnalyzer } from './components/NetworkAnalyzer';
-import { RiskRegister } from './components/RiskRegister';
 import { Inventory } from './components/Inventory';
 import { UserManagement } from './components/UserManagement';
-import { OrganizationManager } from './components/OrganizationManager';
-import { ProjectBoard } from './components/ProjectBoard';
-import { BudgetCalculator } from './components/BudgetCalculator';
-import { TrainingCenter } from './components/TrainingCenter';
 import { Reports } from './components/Reports';
 import { SPRSScorecard } from './components/SPRSScorecard';
 import { ComplianceWizard } from './components/ComplianceWizard';
-import { VendorManager } from './components/VendorManager';
-import { MSPDashboard } from './components/MSPDashboard';
 import { Login } from './components/Login';
 import { Onboarding } from './components/Onboarding'; 
 import { Dashboard } from './components/Dashboard'; 
-import { AuditorPortal } from './components/AuditorPortal'; 
-import { storageService } from './services/storage';
-import { authConfig } from './authConfig';
 import { api } from './services/api';
 
 // --- Render Helpers ---
@@ -111,17 +87,17 @@ const App: React.FC = () => {
   const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>({});
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
 
-  // Load organizations exactly once per auth session
   const fetchAttempted = useRef(false);
 
   const loadOrganizations = useCallback(async () => {
-      if (!auth.isAuthenticated || !auth.user?.id_token) return;
+      const idToken = auth.user?.id_token;
+      if (!auth.isAuthenticated || !idToken) return;
 
       setIsDataLoading(true);
       setOrgFetchError(null);
       
       try {
-          const apiOrgs = await api.getOrgs(auth.user.id_token);
+          const apiOrgs = await api.getOrgs(idToken);
           
           const mappedClients: Client[] = apiOrgs.map((o: any) => ({
               id: o.orgId,
@@ -145,7 +121,6 @@ const App: React.FC = () => {
               setActiveClientId(selectedId);
               localStorage.setItem('activeOrgId', selectedId);
 
-              // Initialize Data Store for found clients
               setClientDataStore(prev => {
                   const nextStore = { ...prev };
                   mappedClients.forEach(c => {
@@ -157,7 +132,7 @@ const App: React.FC = () => {
               });
 
               // Background load evidence
-              api.getEvidenceList(auth.user.id_token, selectedId).then(evidence => {
+              api.getEvidenceList(idToken, selectedId).then(evidence => {
                   setClientDataStore(prev => ({
                       ...prev,
                       [selectedId]: { ...prev[selectedId], artifacts: evidence }
@@ -166,12 +141,11 @@ const App: React.FC = () => {
           } else {
               setActiveClientId('');
           }
-          // Set checked to true ONLY after successful API return (empty or not)
           setHasCheckedOrgs(true);
       } catch (e: any) {
           console.error("Critical: Failed to load organizations", e);
           setOrgFetchError(e.message || "Failed to connect to the organization database.");
-          // Do NOT set hasCheckedOrgs to true here, so we can show the error/retry screen
+          // If we encounter a hard error, we don't mark as checked so the error screen shows
       } finally {
           setIsDataLoading(false);
       }
@@ -205,7 +179,6 @@ const App: React.FC = () => {
 
   // --- LOADING / ERROR / ONBOARDING STATES ---
 
-  // 1. Initial Loading State (Circle Prevention: We show this while checking)
   if (isDataLoading && !hasCheckedOrgs) {
       return (
           <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4 text-center">
@@ -216,7 +189,6 @@ const App: React.FC = () => {
       );
   }
 
-  // 2. Fetch Error State (Circle Prevention: We show an error if API fails instead of spinning)
   if (orgFetchError && !hasCheckedOrgs) {
       return (
           <div className="flex h-screen items-center justify-center bg-slate-50 p-6">
@@ -237,7 +209,6 @@ const App: React.FC = () => {
       );
   }
 
-  // 3. No Org Found State (Show Onboarding)
   if (hasCheckedOrgs && !activeClientId) {
       return (
           <Onboarding 
@@ -247,10 +218,10 @@ const App: React.FC = () => {
                 organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false 
             }}
             onCreateOrganization={async (name) => {
+                if (!auth.user?.id_token) return;
                 setIsDataLoading(true);
                 try {
-                    const newOrg = await api.createOrg(auth.user!.id_token, name);
-                    // Force a full reload of orgs after creation to ensure sync
+                    await api.createOrg(auth.user.id_token, name);
                     await loadOrganizations();
                 } catch (e: any) {
                     setOrgFetchError(e.message);
@@ -263,8 +234,6 @@ const App: React.FC = () => {
       );
   }
 
-  // --- MAIN APP RENDER ---
-  
   const activeClient = clients.find(c => c.id === activeClientId) || clients[0];
   const activeData = clientDataStore[activeClientId];
   
@@ -274,7 +243,7 @@ const App: React.FC = () => {
       </div>
   );
 
-  const currentUser = activeData.users.find(u => u.email === auth.user?.profile.email) || {
+  const currentUser: User = activeData.users.find(u => u.email === auth.user?.profile.email) || {
       id: auth.user?.profile.sub || 'unknown',
       name: (auth.user?.profile.email || 'User').split('@')[0],
       email: auth.user?.profile.email || '',
@@ -290,6 +259,7 @@ const App: React.FC = () => {
   const updateActiveClientData = (updateFn: (prev: ClientData) => Partial<ClientData>) => {
       setClientDataStore(prevStore => {
           const current = prevStore[activeClientId];
+          if (!current) return prevStore;
           const changes = updateFn(current);
           return { ...prevStore, [activeClientId]: { ...current, ...changes } };
       });
@@ -298,7 +268,6 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
       
-      {/* Click-Away Overlay for dropdowns */}
       {(isProfileMenuOpen || isFrameworkMenuOpen) && (
           <div className="fixed inset-0 z-40 bg-transparent" onClick={() => { setIsProfileMenuOpen(false); setIsFrameworkMenuOpen(false); }}></div>
       )}

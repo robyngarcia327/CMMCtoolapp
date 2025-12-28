@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
 import { Requirement, Artifact, Framework } from '../types';
-import { NIST_FAMILIES } from '../data/standards';
-import { ShieldCheck, AlertTriangle, TrendingUp, Map, Sparkles, Loader2, FileText, CheckCircle2, ChevronRight } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, Map, Sparkles, Loader2, CheckCircle2, ChevronRight } from 'lucide-react';
 import { outlineRequirementsRoadmap } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
 
@@ -79,7 +78,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ requirements, artifacts, a
 
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                 <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-2">Open Gaps</h3>
-                <div className="text-4xl font-black text-red-500">{gapsReqs}</div>
+                <div className="text-4xl font-black text-red-600">{gapsReqs}</div>
                 <p className="text-xs text-slate-500 mt-2">Remediation Needed</p>
             </div>
 
