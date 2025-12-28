@@ -99,17 +99,21 @@ const App: React.FC = () => {
       try {
           const apiOrgs = await api.getOrgs(idToken);
           
-          const mappedClients: Client[] = apiOrgs.map((o: any) => ({
-              id: o.orgId,
-              name: o.name,
-              industry: o.industry || 'General', 
-              contactName: auth.user?.profile.email || 'User',
-              logoInitial: o.name.charAt(0).toUpperCase(),
-              primaryFramework: 'NIST800-171',
-              nextAuditDate: Date.now() + 31536000000,
-              accountManager: 'Self-Managed',
-              isParent: false
-          }));
+          // CRITICAL FIX: Safe mapping to prevent charAt(0) error if name is missing
+          const mappedClients: Client[] = apiOrgs.map((o: any) => {
+              const safeName = o.name || 'Organization';
+              return {
+                  id: o.orgId || `temp-${Math.random()}`,
+                  name: safeName,
+                  industry: o.industry || 'General', 
+                  contactName: auth.user?.profile.email || 'User',
+                  logoInitial: safeName.charAt(0).toUpperCase(),
+                  primaryFramework: 'NIST800-171',
+                  nextAuditDate: Date.now() + 31536000000,
+                  accountManager: 'Self-Managed',
+                  isParent: false
+              };
+          });
 
           setClients(mappedClients);
 
@@ -145,7 +149,6 @@ const App: React.FC = () => {
       } catch (e: any) {
           console.error("Critical: Failed to load organizations", e);
           setOrgFetchError(e.message || "Failed to connect to the organization database.");
-          // If we encounter a hard error, we don't mark as checked so the error screen shows
       } finally {
           setIsDataLoading(false);
       }
@@ -161,6 +164,8 @@ const App: React.FC = () => {
   const handleLogout = () => {
       auth.removeUser();
       localStorage.removeItem('activeOrgId');
+      // Force clear state
+      window.history.replaceState({}, document.title, window.location.pathname);
       window.location.reload();
   };
   
@@ -192,8 +197,10 @@ const App: React.FC = () => {
   if (orgFetchError && !hasCheckedOrgs) {
       return (
           <div className="flex h-screen items-center justify-center bg-slate-50 p-6">
-              <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-red-100 p-8 text-center">
-                  <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+              <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-red-100 p-8 text-center animate-in fade-in zoom-in duration-300">
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle size={32} className="text-red-500" />
+                  </div>
                   <h2 className="text-xl font-bold text-slate-800 mb-2">Sync Error</h2>
                   <p className="text-slate-500 text-sm mb-6">{orgFetchError}</p>
                   <div className="space-y-3">
