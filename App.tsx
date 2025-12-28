@@ -16,7 +16,8 @@ import {
   Loader2,
   RefreshCw,
   Map,
-  AlertCircle
+  AlertCircle,
+  Eye
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData } from './data/standards';
@@ -33,6 +34,7 @@ import { ComplianceWizard } from './components/ComplianceWizard';
 import { Login } from './components/Login';
 import { Onboarding } from './components/Onboarding'; 
 import { Dashboard } from './components/Dashboard'; 
+import { AuditorPortal } from './components/AuditorPortal';
 import { api } from './services/api';
 
 // --- Render Helpers ---
@@ -292,6 +294,7 @@ const App: React.FC = () => {
                       <NavDropdown label="Compliance" icon={ListChecks}>
                           <NavItem label="Requirement Detail" icon={ListChecks} isActive={currentView === AppView.REQUIREMENTS} onClick={() => setCurrentView(AppView.REQUIREMENTS)} />
                           <NavItem label="SPRS Scorecard" icon={TrendingUp} isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
+                          <NavItem label="Auditor Portal" icon={Eye} isActive={currentView === AppView.AUDITOR_PORTAL} onClick={() => setCurrentView(AppView.AUDITOR_PORTAL)} />
                           <NavItem label="Onboarding Wizard" icon={Wand2} isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} />
                       </NavDropdown>
                       <NavDropdown label="Assets" icon={Package}>
@@ -394,6 +397,7 @@ const App: React.FC = () => {
                 </>
             )}
             {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} />}
+            {currentView === AppView.AUDITOR_PORTAL && <AuditorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} risks={activeData.risks} />}
             {currentView === AppView.REPORTS && <Reports requirements={activeData.requirements} onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} />}
             {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} wizardProgress={activeData.wizardProgress} onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} onAddArtifact={(a) => updateActiveClientData(prev => ({ artifacts: [...prev.artifacts, a] }))} onRemoveArtifact={(id) => updateActiveClientData(prev => ({ artifacts: prev.artifacts.filter(a => a.id !== id) }))} onUpdateProgress={(p) => updateActiveClientData(prev => ({ wizardProgress: p }))} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} />}
             {currentView === AppView.INVENTORY && <Inventory assets={activeData.assets} onAddAsset={(a) => updateActiveClientData(prev => ({ assets: [...prev.assets, a] }))} onDeleteAsset={(id) => updateActiveClientData(prev => ({ assets: prev.assets.filter(a => a.id !== id) }))} />}
