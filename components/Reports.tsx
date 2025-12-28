@@ -1,17 +1,18 @@
 
 import React, { useState } from 'react';
-import { Requirement, PoamEntry } from '../types';
-import { Printer, BarChart3, AlertOctagon, CheckSquare, Presentation, ShieldCheck, XCircle, Edit2, Save, X } from 'lucide-react';
+import { Requirement, PoamEntry, Artifact } from '../types';
+import { Printer, BarChart3, AlertOctagon, CheckSquare, Presentation, ShieldCheck, XCircle, Edit2, Save, X, FileText, Lock, Shield } from 'lucide-react';
 
 interface ReportsProps {
   requirements: Requirement[];
+  artifacts?: Artifact[];
   activeFrameworkId: string;
   onUpdateRequirement?: (req: Requirement) => void;
 }
 
-type ReportType = 'EXECUTIVE' | 'POAM' | 'MATRIX' | 'QBR';
+type ReportType = 'EXECUTIVE' | 'POAM' | 'MATRIX' | 'QBR' | 'SSP';
 
-export const Reports: React.FC<ReportsProps> = ({ requirements, activeFrameworkId, onUpdateRequirement }) => {
+export const Reports: React.FC<ReportsProps> = ({ requirements, artifacts = [], activeFrameworkId, onUpdateRequirement }) => {
   const [activeReport, setActiveReport] = useState<ReportType>('EXECUTIVE');
   const [isEditing, setIsEditing] = useState(false);
 
@@ -55,10 +56,13 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, activeFrameworkI
     <div className="h-full flex flex-col md:flex-row bg-slate-100 overflow-hidden">
       {/* Sidebar Controls */}
       <div className="w-full md:w-64 bg-white border-r border-slate-200 p-4 flex flex-col gap-2 shrink-0 no-print">
-        <h2 className="text-lg font-bold text-slate-800 mb-4 px-2">Instant Reports</h2>
+        <h2 className="text-lg font-bold text-slate-800 mb-4 px-2">Compliance Reports</h2>
         
         <button onClick={() => setActiveReport('EXECUTIVE')} className={`text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeReport === 'EXECUTIVE' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
           <BarChart3 size={18} /> Executive Summary
+        </button>
+        <button onClick={() => setActiveReport('SSP')} className={`text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeReport === 'SSP' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
+          <Shield size={18} /> System Security Plan
         </button>
         <button onClick={() => setActiveReport('QBR')} className={`text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-colors ${activeReport === 'QBR' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}>
           <Presentation size={18} /> Audit Readiness (QBR)
@@ -71,7 +75,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, activeFrameworkI
         </button>
 
         <div className="mt-auto pt-4 border-t border-slate-100">
-            <button onClick={handlePrint} className="w-full bg-slate-900 text-white py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors font-bold text-sm">
+            <button onClick={handlePrint} className="w-full bg-slate-900 text-white py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors font-bold text-sm text-sm">
                 <Printer size={16} /> Print / PDF
             </button>
         </div>
@@ -88,6 +92,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, activeFrameworkI
                     {activeReport === 'QBR' && 'Audit Readiness Scorecard'}
                     {activeReport === 'POAM' && 'Plan of Action & Milestones (POA&M)'}
                     {activeReport === 'MATRIX' && 'Compliance Traceability Matrix'}
+                    {activeReport === 'SSP' && 'System Security Plan (SSP)'}
                 </h1>
                 <div className="flex items-center gap-3 mt-1">
                     <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">{activeFrameworkId}</span>
@@ -136,6 +141,78 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, activeFrameworkI
                         })}
                     </div>
                 </div>
+            </div>
+          )}
+
+          {activeReport === 'SSP' && (
+            <div className="space-y-12">
+               <div className="grid grid-cols-2 gap-8 p-6 bg-slate-50 rounded-xl border border-slate-200 mb-8">
+                  <div>
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2">System Boundary</h4>
+                    <p className="text-sm font-bold text-slate-800">All information resources owned or provisioned by the organization.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2">Operational Status</h4>
+                    <p className="text-sm font-bold text-slate-800">Operational / In Production</p>
+                  </div>
+               </div>
+
+               {activeFamilies.map(familyId => {
+                  const familyReqs = filteredRequirements.filter(r => r.family === familyId);
+                  return (
+                    <div key={familyId} className="space-y-6">
+                      <h2 className="text-xl font-black text-slate-900 border-b-2 border-slate-900 pb-2 uppercase tracking-tight flex items-center gap-2">
+                        <Lock size={20} className="text-blue-600"/> {familyId} - {familyReqs[0]?.family || "Domain"}
+                      </h2>
+                      <div className="space-y-8">
+                        {familyReqs.map(req => {
+                          const reqMet = getReqStatus(req) === 'met';
+                          const reqArtifacts = artifacts.filter(a => a.requirementId === req.id);
+                          
+                          return (
+                            <div key={req.id} className="page-break-inside-avoid">
+                              <div className="flex justify-between items-start mb-3">
+                                <div className="flex items-center gap-3">
+                                  <span className="font-mono text-xs font-black bg-slate-900 text-white px-2 py-0.5 rounded">{req.id}</span>
+                                  <h3 className="font-bold text-slate-800">{req.title}</h3>
+                                </div>
+                                <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${reqMet ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                                  {reqMet ? 'Implemented' : 'Not Implemented'}
+                                </span>
+                              </div>
+                              <div className="bg-white border-l-4 border-slate-200 pl-4 py-1 space-y-4">
+                                <div>
+                                  <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Requirement Statement</h4>
+                                  <p className="text-xs text-slate-600 italic">{req.description}</p>
+                                </div>
+                                <div>
+                                  <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Implementation Statement</h4>
+                                  <div className="text-sm text-slate-800 font-medium leading-relaxed">
+                                    {req.response || (
+                                      <span className="text-red-500 font-bold italic">REMEDIATION REQUIRED: No implementation statement provided.</span>
+                                    )}
+                                  </div>
+                                </div>
+                                {reqArtifacts.length > 0 && (
+                                  <div>
+                                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Verification Artifacts</h4>
+                                    <ul className="text-[11px] text-slate-500 space-y-0.5">
+                                      {reqArtifacts.map(art => (
+                                        <li key={art.id} className="flex items-center gap-1">
+                                          <FileText size={10} className="text-blue-500" /> {art.name} ({new Date(art.timestamp).toLocaleDateString()})
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+               })}
             </div>
           )}
 

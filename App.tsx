@@ -454,6 +454,7 @@ const App: React.FC = () => {
             {currentView === AppView.REPORTS && (
                 <Reports 
                     requirements={activeData.requirements} 
+                    artifacts={activeData.artifacts}
                     activeFrameworkId={activeFramework.id}
                     onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} 
                 />
