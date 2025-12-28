@@ -99,17 +99,21 @@ const App: React.FC = () => {
       try {
           const apiOrgs = await api.getOrgs(idToken);
           
-          // CRITICAL FIX: Safe mapping to prevent charAt(0) error if name is missing or non-string
+          // CRITICAL FIX: Robust search for organization name and ID keys
           const mappedClients: Client[] = apiOrgs
-            .filter(o => o && typeof o === 'object') // Ensure o is an object
+            .filter(o => o && typeof o === 'object')
             .map((o: any) => {
-              const nameValue = o.name;
+              // Try multiple casing/naming conventions found in different backend environments
+              const nameValue = o.name || o.Name || o.orgName || o.organizationName || o.displayName;
+              const orgIdValue = o.orgId || o.OrgId || o.id || o.organizationId;
+              
               const safeName = (typeof nameValue === 'string' && nameValue.trim() !== '') ? nameValue : 'Organization';
+              const safeId = orgIdValue || `temp-${Math.random()}`;
               
               return {
-                  id: o.orgId || `temp-${Math.random()}`,
+                  id: safeId,
                   name: safeName,
-                  industry: o.industry || 'General', 
+                  industry: o.industry || o.Industry || 'General', 
                   contactName: auth.user?.profile.email || 'User',
                   logoInitial: safeName.charAt(0).toUpperCase(),
                   primaryFramework: 'NIST800-171',
@@ -152,8 +156,7 @@ const App: React.FC = () => {
           setHasCheckedOrgs(true);
       } catch (e: any) {
           console.error("Critical: Failed to load organizations", e);
-          // If the error is from the API fetch failing, show a helpful message
-          setOrgFetchError(e.message || "Network Error: Could not connect to the security gateway. Check your internet or backend CORS settings.");
+          setOrgFetchError(e.message || "Network Error: Could not connect to the security gateway.");
       } finally {
           setIsDataLoading(false);
       }
@@ -166,14 +169,8 @@ const App: React.FC = () => {
       }
   }, [auth.isAuthenticated, auth.user?.id_token, loadOrganizations]);
 
-  /**
-   * Performs a complete sign-out by redirecting to the Cognito logout endpoint
-   * and clearing local workspace identifiers.
-   */
   const handleLogout = () => {
       localStorage.removeItem('activeOrgId');
-      // Using signoutRedirect() instead of removeUser() ensures the Identity Provider
-      // session cookie is also invalidated, preventing immediate auto-login.
       auth.signoutRedirect();
   };
   
@@ -189,8 +186,6 @@ const App: React.FC = () => {
   if (auth.error || !auth.isAuthenticated) {
       return <Login onLogin={() => auth.signinRedirect()} error={auth.error} />;
   }
-
-  // --- LOADING / ERROR / ONBOARDING STATES ---
 
   if (isDataLoading && !hasCheckedOrgs) {
       return (

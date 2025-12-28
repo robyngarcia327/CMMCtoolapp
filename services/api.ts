@@ -52,7 +52,7 @@ const ensureArray = (data: any): any[] => {
         if (Array.isArray(data.evidence)) return data.evidence;
         
         // If it's a single object with an identifying field, wrap it
-        if (data.orgId || data.evidenceId || data.name) return [data];
+        if (data.orgId || data.OrgId || data.evidenceId || data.name || data.Name) return [data];
     }
     
     return [];
@@ -65,13 +65,13 @@ export const api = {
    * Fetches the list of organizations the authenticated user belongs to.
    */
   getOrgs: async (token: string): Promise<{ orgId: string, name: string, role: string, industry?: string }[]> => {
-    console.debug("API: Fetching /orgs...");
+    console.debug("API Request: GET /orgs");
     try {
       const response = await fetch(`${API_BASE_URL}/orgs`, {
         method: 'GET',
-        mode: 'cors', // Explicitly request CORS
+        mode: 'cors',
         headers: {
-          'Authorization': `Bearer ${token.trim()}`, // Ensure no extra spaces
+          'Authorization': `Bearer ${token.trim()}`,
           'Accept': 'application/json'
         }
       });
@@ -86,10 +86,17 @@ export const api = {
       }
 
       const rawData = await parseResponseData(response);
-      console.debug("API: /orgs data received", rawData);
-      return ensureArray(rawData);
+      const items = ensureArray(rawData);
+      
+      // DIAGNOSTIC LOG: This will show you exactly what keys your backend is sending
+      console.log("API Success: Received Organizations List", items);
+      if (items.length > 0) {
+          console.table(items); // Prints a nice table to the browser console
+      }
+      
+      return items;
     } catch (error) {
-      console.error("API: Network or CORS failure in getOrgs. Check AWS API Gateway CORS settings.", error);
+      console.error("API Network/CORS failure:", error);
       throw error;
     }
   },
@@ -207,10 +214,10 @@ export const api = {
         const items = ensureArray(rawData);
 
         return items.map((item: any) => ({
-          id: item.evidenceId,
-          requirementId: item.requirementId,
-          name: item.filename,
-          type: item.contentType?.startsWith('image/') ? 'image' : 'document',
+          id: item.evidenceId || item.EvidenceId,
+          requirementId: item.requirementId || item.RequirementId,
+          name: item.filename || item.Filename || item.name,
+          type: (item.contentType || item.ContentType || '').startsWith('image/') ? 'image' : 'document',
           url: '', 
           timestamp: item.createdAt ? new Date(item.createdAt).getTime() : Date.now(),
           source: 'USER_UPLOAD'
