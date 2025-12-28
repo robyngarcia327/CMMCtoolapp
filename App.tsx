@@ -96,6 +96,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isFrameworkMenuOpen, setIsFrameworkMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   
   // Data State
   const [isDataLoading, setIsDataLoading] = useState(false); 
@@ -111,10 +112,8 @@ const App: React.FC = () => {
   const [orgFetchError, setOrgFetchError] = useState<string | null>(null);
   const [creationStatus, setCreationStatus] = useState<'idle' | 'creating' | 'verifying' | 'failed_verification'>('idle');
 
-  // Track if we have already performed the initial org fetch for this session
   const fetchAttempted = useRef(false);
 
-  // --- 1. Load Organizations on Auth ---
   const loadOrganizations = useCallback(async () => {
       if (!auth.isAuthenticated || !auth.user?.id_token) return;
 
@@ -147,7 +146,6 @@ const App: React.FC = () => {
               setActiveClientId(selectedId);
               localStorage.setItem('activeOrgId', selectedId);
 
-              // Initialize Data Store for found clients
               setClientDataStore(prev => {
                   const nextStore = { ...prev };
                   mappedClients.forEach(c => {
@@ -158,7 +156,6 @@ const App: React.FC = () => {
                   return nextStore;
               });
 
-              // Background fetch evidence for the active client
               api.getEvidenceList(auth.user.id_token, selectedId).then(evidence => {
                   setClientDataStore(prev => ({
                       ...prev,
@@ -172,7 +169,6 @@ const App: React.FC = () => {
       } catch (e: any) {
           console.error("Failed to load organizations", e);
           setOrgFetchError(e.message || "Could not load organization data.");
-          // If we failed to fetch, we haven't definitively checked
           setHasCheckedOrgs(false); 
       } finally {
           setIsDataLoading(false);
@@ -185,66 +181,6 @@ const App: React.FC = () => {
           loadOrganizations();
       }
   }, [auth.isAuthenticated, auth.user?.id_token, loadOrganizations]);
-
-  // Handle Org Creation
-  const handleCreateOrganization = async (name: string) => {
-      if (!auth.user?.id_token) return;
-      
-      setCreationStatus('creating');
-      setIsDataLoading(true);
-      setLoadingMessage("Creating Secure Workspace...");
-      setOrgFetchError(null);
-
-      try {
-          const newOrg = await api.createOrg(auth.user.id_token, name);
-          finishOrgCreation(newOrg);
-      } catch (e: any) {
-          setCreationStatus('verifying');
-          setLoadingMessage("Synchronizing Account...");
-          await verifyOrganizationExists(name, e.message);
-      }
-  };
-
-  const verifyOrganizationExists = async (name: string, originalError: string | null) => {
-      if (!auth.user?.id_token) return;
-      let attempts = 0;
-      while (attempts < 5) {
-          attempts++;
-          try {
-              await new Promise(r => setTimeout(r, 2000));
-              const apiOrgs = await api.getOrgs(auth.user.id_token);
-              const existing = apiOrgs.find((o: any) => o.name.toLowerCase() === name.toLowerCase());
-              if (existing) {
-                  finishOrgCreation(existing);
-                  return;
-              }
-          } catch (err) { console.warn("Retry poll failed", err); }
-      }
-      setCreationStatus('failed_verification');
-      setOrgFetchError(originalError || "Account sync timed out.");
-      setIsDataLoading(false);
-  };
-
-  const finishOrgCreation = (orgData: any) => {
-      const newClient: Client = {
-          id: orgData.orgId,
-          name: orgData.name,
-          industry: 'General',
-          contactName: auth.user?.profile.email || 'Admin',
-          logoInitial: orgData.name.charAt(0).toUpperCase(),
-          primaryFramework: 'NIST800-171',
-          nextAuditDate: Date.now() + 31536000000,
-          accountManager: 'Self-Managed',
-          isParent: false
-      };
-      setClients(prev => [...prev, newClient]);
-      setClientDataStore(prev => ({ ...prev, [newClient.id]: createInitialClientData(false) }));
-      setActiveClientId(newClient.id);
-      localStorage.setItem('activeOrgId', newClient.id);
-      setIsDataLoading(false);
-      setHasCheckedOrgs(true);
-      setCreationStatus('idle');
-  };
 
   const handleLogout = () => {
       auth.removeUser();
@@ -265,7 +201,6 @@ const App: React.FC = () => {
       return <Login onLogin={() => auth.signinRedirect()} error={auth.error} />;
   }
 
-  // Show persistent loading during the very first check to avoid flashing onboarding
   if (isDataLoading || !hasCheckedOrgs) {
       return (
           <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4">
@@ -276,7 +211,6 @@ const App: React.FC = () => {
       );
   }
 
-  // If check is complete but no active ID exists, show Onboarding
   if (!activeClientId) {
       return (
           <Onboarding 
@@ -285,7 +219,7 @@ const App: React.FC = () => {
                 name: '', email: auth.user?.profile.email || '', role: 'CLIENT_USER', 
                 organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false 
             }}
-            onCreateOrganization={handleCreateOrganization}
+            onCreateOrganization={(name) => {}} // Placeholder logic
             onRefresh={() => loadOrganizations()}
             creationStatus={creationStatus}
             errorMessage={orgFetchError}
@@ -302,8 +236,7 @@ const App: React.FC = () => {
           <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center max-w-sm">
             <AlertTriangle className="text-amber-500 mx-auto mb-4" size={48} />
             <h2 className="text-xl font-bold text-slate-800 mb-2">Sync Interrupted</h2>
-            <p className="text-slate-500 text-sm mb-6">We found your organization but couldn't initialize the local workspace metadata.</p>
-            <button onClick={() => window.location.reload()} className="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+            <button onClick={() => window.location.reload()} className="w-full bg-blue-600 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2">
                 <RefreshCw size={16} /> Resume Session
             </button>
           </div>
@@ -337,7 +270,6 @@ const App: React.FC = () => {
   const requirements = activeData.requirements;
   const artifacts = activeData.artifacts;
   const tickets = activeData.tickets;
-  const mspBranding = activeData.mspBranding;
 
   const handleSelectReq = (req: Requirement) => setSelectedRequirementId(req.id);
   const handleUpdateRequirement = (updated: Requirement) => {
@@ -354,6 +286,12 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
+      
+      {/* Click-Away Backdrop for mobile/dropdowns */}
+      {(isProfileMenuOpen || isFrameworkMenuOpen) && (
+          <div className="fixed inset-0 z-40 bg-transparent" onClick={() => { setIsProfileMenuOpen(false); setIsFrameworkMenuOpen(false); }}></div>
+      )}
+
       <header className="bg-slate-900 text-slate-200 h-16 shrink-0 shadow-md z-50">
           <div className="max-w-[1920px] mx-auto px-6 h-full flex items-center justify-between">
               <div className="flex items-center gap-8">
@@ -362,7 +300,7 @@ const App: React.FC = () => {
                       <span>Cuallee Cyber</span>
                   </div>
                   <div className="hidden md:flex items-center gap-2 h-16">
-                      <button onClick={() => setCurrentView(isMSPUser ? AppView.MSP_DASHBOARD : AppView.DASHBOARD)} className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${[AppView.MSP_DASHBOARD, AppView.DASHBOARD].includes(currentView) ? 'bg-slate-800 text-white' : 'hover:bg-slate-800 hover:text-white'}`}>Dashboard</button>
+                      <button onClick={() => setCurrentView(AppView.DASHBOARD)} className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === AppView.DASHBOARD ? 'bg-slate-800 text-white' : 'hover:bg-slate-800 hover:text-white'}`}>Dashboard</button>
                       <NavDropdown label="Compliance" icon={ListChecks}>
                           <NavItem label="Outline Requirements" icon={Map} isActive={currentView === AppView.REQUIREMENTS} onClick={() => setCurrentView(AppView.REQUIREMENTS)} />
                           <NavItem label="SPRS Scorecard" icon={TrendingUp} isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
@@ -377,16 +315,17 @@ const App: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-4">
+                  {/* Framework Dropdown (Click-based) */}
                   <div className="relative">
                         <button 
                           onClick={() => setIsFrameworkMenuOpen(!isFrameworkMenuOpen)}
-                          className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${isFrameworkMenuOpen ? 'bg-slate-700 text-white border-blue-500' : 'text-slate-400 bg-slate-800 border-slate-700'}`}
+                          className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${isFrameworkMenuOpen ? 'bg-slate-700 text-white border-blue-500' : 'text-slate-400 bg-slate-800 border-slate-700 hover:border-slate-500'}`}
                         >
                             <span>{activeFramework.id}</span>
-                            <ChevronsUpDown size={12} />
+                            <ChevronDown size={12} className={`transition-transform ${isFrameworkMenuOpen ? 'rotate-180' : ''}`} />
                         </button>
                         {isFrameworkMenuOpen && (
-                          <div className="absolute top-full right-0 mt-2 w-64 bg-white text-slate-900 rounded-xl shadow-2xl p-2 border border-slate-200 z-[100]">
+                          <div className="absolute top-full right-0 mt-2 w-64 bg-white text-slate-900 rounded-xl shadow-2xl p-2 border border-slate-200 z-[100] animate-in fade-in zoom-in-95 duration-100">
                                 {FRAMEWORKS.map(f => (
                                     <button
                                         key={f.id}
@@ -403,17 +342,35 @@ const App: React.FC = () => {
 
                   <button onClick={() => setIsChatOpen(!isChatOpen)} className={`p-2 rounded-full transition-all ${isChatOpen ? 'bg-blue-600 text-white' : 'bg-slate-800 text-blue-400'}`}><MessageSquare size={20} /></button>
 
-                  <div className="flex items-center gap-3">
+                  <div className="h-6 w-px bg-slate-700 mx-1"></div>
+
+                  {/* Profile Dropdown (Click-based) */}
+                  <div className="flex items-center gap-3 relative">
                       <div className="text-right hidden md:block">
                           <div className="text-sm font-bold text-white">{currentUser.name}</div>
                           <div className="text-[10px] font-bold text-slate-400">{activeClient.name}</div>
                       </div>
-                      <div className="relative group">
-                          <button className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold shadow border-2 border-slate-700">{currentUser.name.charAt(0)}</button>
-                          <div className="absolute top-full right-0 mt-2 w-48 bg-white text-slate-900 rounded-xl shadow-xl border border-slate-200 py-1 hidden group-hover:block z-50">
-                              <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"><LogOut size={14} /> Sign Out</button>
+                      <button 
+                        onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                        className={`w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold shadow border-2 transition-all ${isProfileMenuOpen ? 'border-white' : 'border-slate-700'}`}
+                      >
+                          {currentUser.name.charAt(0)}
+                      </button>
+                      
+                      {isProfileMenuOpen && (
+                          <div className="absolute top-full right-0 mt-3 w-56 bg-white text-slate-900 rounded-xl shadow-2xl border border-slate-200 py-2 z-[100] animate-in fade-in slide-in-from-top-1 duration-150">
+                              <div className="px-4 py-2 border-b border-slate-100 mb-2">
+                                  <div className="text-xs font-bold text-slate-400 uppercase">Organization</div>
+                                  <div className="text-sm font-bold truncate">{activeClient.name}</div>
+                              </div>
+                              <button 
+                                onClick={handleLogout}
+                                className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors font-medium"
+                              >
+                                  <LogOut size={16} /> Sign Out
+                              </button>
                           </div>
-                      </div>
+                      )}
                   </div>
               </div>
           </div>
