@@ -1,3 +1,4 @@
+
 export interface AssessmentObjective {
   id: string;
   description: string;
@@ -315,4 +316,5 @@ export enum AppView {
   SPRS_SCORECARD = 'SPRS_SCORECARD',
   WIZARD = 'WIZARD',
   AUDITOR_PORTAL = 'AUDITOR_PORTAL',
+  BULK_IMPORT = 'BULK_IMPORT'
 }

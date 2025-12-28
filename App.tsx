@@ -17,7 +17,8 @@ import {
   RefreshCw,
   Map,
   AlertCircle,
-  Eye
+  Eye,
+  FileSpreadsheet
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData } from './data/standards';
@@ -35,6 +36,7 @@ import { Login } from './components/Login';
 import { Onboarding } from './components/Onboarding'; 
 import { Dashboard } from './components/Dashboard'; 
 import { AuditorPortal } from './components/AuditorPortal';
+import { BulkImport } from './components/BulkImport';
 import { api } from './services/api';
 
 // --- Render Helpers ---
@@ -295,6 +297,95 @@ const App: React.FC = () => {
                           <NavItem label="Requirement Detail" icon={ListChecks} isActive={currentView === AppView.REQUIREMENTS} onClick={() => setCurrentView(AppView.REQUIREMENTS)} />
                           <NavItem label="SPRS Scorecard" icon={TrendingUp} isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
                           <NavItem label="Auditor Portal" icon={Eye} isActive={currentView === AppView.AUDITOR_PORTAL} onClick={() => setCurrentView(AppView.AUDITOR_PORTAL)} />
+                          <NavItem label="Bulk Import" icon={FileSpreadsheet} isActive={currentView === AppView.BULK_IMPORT} onClick={() => setCurrentView(AppView.BULK_IMPORT)} />
+                          <NavItem label="Onboarding Wizard" icon={Wand2} isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} />
+                      </NavDropdown>
+                      <NavDropdown label="Assets" icon={Package}>
+                          <NavItem label="Asset Inventory" icon={Package} isActive={currentView === AppView.INVENTORY} onClick={() => setCurrentView(AppView.INVENTORY)} />
+                          <NavItem label="Identity" icon={Users} isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
+                          <NavItem label="Network Map" icon={Network} isActive={currentView === AppView.NETWORK_ANALYSIS} onClick={() => setCurrentView(AppView.NETWORK_ANALYSIS)} />
+                      </NavDropdown>
+                      <button onClick={() => setCurrentView(AppView.REPORTS)} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === AppView.REPORTS ? 'bg-slate-800 text-white' : 'hover:bg-slate-800/50 hover:text-white'}`}>Reports</button>
+                  </nav>
+              </div>
+
+              <div className="flex items-center gap-4">
+                  <div className="relative">
+                        <button 
+                          onClick={() => setIsFrameworkMenuOpen(!isFrameworkMenuOpen)}
+                          className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${isFrameworkMenuOpen ? 'bg-slate-700 text-white border-blue-500' : 'text-slate-400 bg-slate-800 border-slate-700 hover:border-slate-500'}`}
+                        >
+                            <span>{activeFramework.id}</span>
+                            <ChevronDown size={12} className={`transition-transform ${isFrameworkMenuOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isFrameworkMenuOpen && (
+                          <div className="absolute top-full right-0 mt-2 w-64 bg-white text-slate-900 rounded-xl shadow-2xl p-2 border border-slate-200 z-[100] animate-in fade-in zoom-in-95 duration-100">
+                                {FRAMEWORKS.map(f => (
+                                    <button
+                                        key={f.id}
+                                        onClick={() => { setActiveFramework(f); setIsFrameworkMenuOpen(false); }}
+                                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm mb-1 ${activeFramework.id === f.id ? 'bg-blue-600 text-white font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
+                                    >
+                                        <div className="font-bold">{f.id}</div>
+                                        <div className="text-[10px] opacity-70">{f.name}</div>
+                                    </button>
+                                ))}
+                          </div>
+                        )}
+                  </div>
+
+                  <button onClick={() => setIsChatOpen(!isChatOpen)} className={`p-2 rounded-full transition-all ${isChatOpen ? 'bg-blue-600 text-white' : 'bg-slate-800 text-blue-400 hover:bg-slate-700'}`}><MessageSquare size={20} /></button>
+
+                  <div className="h-6 w-px bg-slate-700 mx-1"></div>
+
+                  <div className="flex items-center gap-3 relative">
+                      <div className="text-right hidden lg:block">
+                          <div className="text-sm font-bold text-white">{currentUser.name}</div>
+                          <div className="text-[10px] font-bold text-slate-500 truncate max-w-[100px]">{activeClient.name}</div>
+                      </div>
+                      <button 
+                        onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                        className={`w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold shadow-lg border-2 transition-all ${isProfileMenuOpen ? 'border-white scale-110' : 'border-slate-700 hover:border-slate-500'}`}
+                      >
+                          {currentUser.name.charAt(0)}
+                      </button>
+                      
+                      {isProfileMenuOpen && (
+                          <div className="absolute top-full right-0 mt-3 w-56 bg-white text-slate-900 rounded-xl shadow-2xl border border-slate-200 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                              <div className="px-4 py-3 border-b border-slate-100 mb-2">
+                                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Organization</div>
+                                  <div className="text-sm font-bold truncate text-slate-800">{activeClient.name}</div>
+                              </div>
+                              <button 
+                                onClick={handleLogout}
+                                className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors font-bold group"
+                              >
+                                  <div className="bg-red-100 text-red-600 p-1.5 rounded-lg group-hover:bg-red-600 group-hover:text-white transition-colors">
+                                    <LogOut size={14} />
+                                  </div>
+                                  Sign Out
+                              </button>
+                          </div>
+                      )}
+                  </div>
+              </div>
+          </div>
+      </header>
+
+      <header className="bg-slate-900 text-slate-200 h-16 shrink-0 shadow-md z-50">
+          <div className="max-w-[1920px] mx-auto px-6 h-full flex items-center justify-between">
+              <div className="flex items-center gap-8">
+                  <div className="flex items-center gap-2 text-white font-bold text-lg">
+                      <Shield className="text-blue-500" size={24} />
+                      <span>Cuallee Cyber</span>
+                  </div>
+                  <nav className="hidden md:flex items-center gap-1 h-16">
+                      <button onClick={() => setCurrentView(AppView.DASHBOARD)} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${currentView === AppView.DASHBOARD ? 'bg-slate-800 text-white' : 'hover:bg-slate-800/50 hover:text-white'}`}>Dashboard</button>
+                      <NavDropdown label="Compliance" icon={ListChecks}>
+                          <NavItem label="Requirement Detail" icon={ListChecks} isActive={currentView === AppView.REQUIREMENTS} onClick={() => setCurrentView(AppView.REQUIREMENTS)} />
+                          <NavItem label="SPRS Scorecard" icon={TrendingUp} isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
+                          <NavItem label="Auditor Portal" icon={Eye} isActive={currentView === AppView.AUDITOR_PORTAL} onClick={() => setCurrentView(AppView.AUDITOR_PORTAL)} />
+                          <NavItem label="Bulk Import" icon={FileSpreadsheet} isActive={currentView === AppView.BULK_IMPORT} onClick={() => setCurrentView(AppView.BULK_IMPORT)} />
                           <NavItem label="Onboarding Wizard" icon={Wand2} isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} />
                       </NavDropdown>
                       <NavDropdown label="Assets" icon={Package}>
@@ -398,6 +489,18 @@ const App: React.FC = () => {
             )}
             {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} />}
             {currentView === AppView.AUDITOR_PORTAL && <AuditorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} risks={activeData.risks} />}
+            {currentView === AppView.BULK_IMPORT && (
+                <BulkImport 
+                    requirements={activeData.requirements} 
+                    activeFrameworkId={activeFramework.id} 
+                    onBatchUpdate={(updated) => updateActiveClientData(prev => ({
+                        requirements: prev.requirements.map(r => {
+                            const match = updated.find(u => u.id === r.id);
+                            return match ? match : r;
+                        })
+                    }))}
+                />
+            )}
             {currentView === AppView.REPORTS && <Reports requirements={activeData.requirements} onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} />}
             {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} wizardProgress={activeData.wizardProgress} onUpdateRequirement={(updated) => updateActiveClientData(prev => ({ requirements: prev.requirements.map(r => r.id === updated.id ? updated : r) }))} onAddArtifact={(a) => updateActiveClientData(prev => ({ artifacts: [...prev.artifacts, a] }))} onRemoveArtifact={(id) => updateActiveClientData(prev => ({ artifacts: prev.artifacts.filter(a => a.id !== id) }))} onUpdateProgress={(p) => updateActiveClientData(prev => ({ wizardProgress: p }))} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} />}
             {currentView === AppView.INVENTORY && <Inventory assets={activeData.assets} onAddAsset={(a) => updateActiveClientData(prev => ({ assets: [...prev.assets, a] }))} onDeleteAsset={(id) => updateActiveClientData(prev => ({ assets: prev.assets.filter(a => a.id !== id) }))} />}
