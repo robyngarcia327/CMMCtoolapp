@@ -1,8 +1,9 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { Requirement, AuvikDevice } from '../types';
 
-// Fix: Ensure apiKey is treated as a string, even if env is undefined during check
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Use process.env.API_KEY directly as per guidelines
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const SYSTEM_INSTRUCTION_CHAT = `
 You are an expert cybersecurity compliance consultant specialized in CMMC 2.0 (Level 1 and 2) and NIST SP 800-171A.
@@ -62,8 +63,9 @@ export const sendChatMessage = async (
     // Add current message
     contents.push({ role: 'user', parts: [{ text: message }] });
 
+    // Use gemini-3-pro-preview for complex reasoning tasks
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-preview',
       contents: contents,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION_CHAT,
@@ -88,8 +90,9 @@ export const explainRequirement = async (req: Requirement): Promise<string> => {
   `;
   
   try {
+    // Use gemini-3-pro-preview for complex reasoning tasks
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-pro-preview',
         contents: prompt,
         config: { systemInstruction: SYSTEM_INSTRUCTION_CHAT }
     });
@@ -116,8 +119,9 @@ export const analyzePolicyGap = async (
   `;
 
   try {
+    // Use gemini-3-pro-preview for complex reasoning tasks
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-pro-preview',
         contents: prompt,
         config: { systemInstruction: SYSTEM_INSTRUCTION_POLICY_AUDIT }
     });
@@ -152,8 +156,9 @@ export const generateComplianceDocument = async (
   `;
 
   try {
+     // Use gemini-3-pro-preview for complex reasoning tasks
      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-pro-preview',
         contents: prompt,
         config: { systemInstruction: SYSTEM_INSTRUCTION_DOC_GEN }
     });
@@ -185,8 +190,9 @@ export const analyzeNetworkDiagram = async (
   `;
 
   try {
+    // Use gemini-3-flash-preview for vision/analysis tasks
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash', // Using flash for vision capabilities
+      model: 'gemini-3-flash-preview', 
       contents: {
         parts: [
           { inlineData: { mimeType, data } },
@@ -224,8 +230,9 @@ export const analyzeAuvikTopology = async (
     `;
 
     try {
+        // Use gemini-3-pro-preview for complex reasoning tasks
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3-pro-preview',
             contents: prompt,
             config: {
                 systemInstruction: SYSTEM_INSTRUCTION_NETWORK

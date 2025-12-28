@@ -1,7 +1,49 @@
-import { Artifact, Client } from '../types';
+
+import { Artifact } from '../types';
 
 // Configuration - Updated API Gateway Endpoint
 const API_BASE_URL = 'https://irwrdtn81b.execute-api.us-east-1.amazonaws.com/CualleeCyberEvidence'; 
+
+/**
+ * Robustly parses API response bodies which might be double-encoded or wrapped 
+ * in standard AWS Lambda Proxy Integration formats.
+ */
+const parseResponseData = async (response: Response) => {
+    let data = await response.json();
+    
+    // AWS Lambda Proxy Integration Robustness:
+    if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch(e) {}
+    }
+    
+    // If Lambda returns { "statusCode": 200, "body": "{...}" }
+    if (data && data.body) {
+        if (typeof data.body === 'string') {
+            try { data = JSON.parse(data.body); } catch(e) {}
+        } else {
+            data = data.body;
+        }
+    }
+
+    return data;
+};
+
+/**
+ * Ensures a data object is transformed into an array, checking common wrappers.
+ */
+const ensureArray = (data: any): any[] => {
+    if (Array.isArray(data)) return data;
+    if (!data) return [];
+    if (Array.isArray(data.items)) return data.items;
+    if (Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data.organizations)) return data.organizations;
+    if (Array.isArray(data.evidence)) return data.evidence;
+    
+    // If it's a single object with an ID, it might be the only item
+    if (data.orgId || data.evidenceId) return [data];
+    
+    return [];
+};
 
 export const api = {
   
@@ -27,31 +69,8 @@ export const api = {
         throw new Error(`API Error ${response.status}: ${errorBody || response.statusText}`);
       }
 
-      let data = await response.json();
-      
-      // AWS Lambda Proxy Integration Robustness:
-      // Sometimes the body is double-encoded or wrapped in a "body" property
-      if (typeof data === 'string') {
-          try { data = JSON.parse(data); } catch(e) { console.warn("Failed to parse string response", e); }
-      }
-      if (data && data.body && typeof data.body === 'string') {
-          try { data = JSON.parse(data.body); } catch(e) { console.warn("Failed to parse inner body", e); }
-      }
-
-      // Handle wrapped arrays (e.g. { data: [...] } or { items: [...] })
-      if (!Array.isArray(data)) {
-          if (Array.isArray(data.data)) data = data.data;
-          else if (Array.isArray(data.items)) data = data.items;
-          else if (Array.isArray(data.organizations)) data = data.organizations;
-          else {
-              console.warn("getOrgs response is not an array:", data);
-              // Fallback: if it's a single object, maybe wrap it?
-              if (data && data.orgId) return [data];
-              return [];
-          }
-      }
-
-      return data;
+      const data = await parseResponseData(response);
+      return ensureArray(data);
     } catch (error) {
       console.error("Network or parsing error in getOrgs:", error);
       throw error;
@@ -75,22 +94,10 @@ export const api = {
     if (!response.ok) {
         const errorText = await response.text();
         console.error("API Error (createOrg):", { status: response.status, body: errorText });
-        // We throw, but the frontend app will catch this and try to verify existence
-        // in case the backend wrote to DB but crashed on return.
         throw new Error(errorText || 'Failed to create organization');
     }
 
-    let data = await response.json();
-    
-    // Robust parsing for POST response as well
-    if (typeof data === 'string') {
-        try { data = JSON.parse(data); } catch(e) {}
-    }
-    if (data && data.body && typeof data.body === 'string') {
-        try { data = JSON.parse(data.body); } catch(e) {}
-    }
-
-    return data;
+    return await parseResponseData(response);
   },
 
   /**
@@ -117,11 +124,7 @@ export const api = {
         throw new Error(`Failed to initiate upload: ${err}`);
     }
     
-    let initData = await initResponse.json();
-    if (initData.body && typeof initData.body === 'string') {
-        initData = JSON.parse(initData.body);
-    }
-    
+    const initData = await parseResponseData(initResponse);
     const { uploadUrl, evidenceId, requiredHeaders } = initData;
 
     // Step B: PUT file to uploadUrl (S3 Presigned URL)
@@ -169,9 +172,7 @@ export const api = {
 
     if (!response.ok) throw new Error('Failed to get download link');
 
-    let data = await response.json();
-    if (data.body && typeof data.body === 'string') data = JSON.parse(data.body);
-    
+    const data = await parseResponseData(response);
     return data.downloadUrl; 
   },
 
@@ -188,19 +189,10 @@ export const api = {
 
     if (!response.ok) return [];
 
-    let data = await response.json();
-    
-    // Robust parsing
-    if (typeof data === 'string') { try { data = JSON.parse(data); } catch(e){} }
-    if (data && data.body && typeof data.body === 'string') { try { data = JSON.parse(data.body); } catch(e){} }
-    if (!Array.isArray(data)) {
-        // Try common wrappers
-        if (Array.isArray(data.items)) data = data.items;
-        else if (Array.isArray(data.data)) data = data.data;
-        else return [];
-    }
+    const data = await parseResponseData(response);
+    const items = ensureArray(data);
 
-    return data.map((item: any) => ({
+    return items.map((item: any) => ({
       id: item.evidenceId,
       requirementId: item.requirementId,
       name: item.filename,

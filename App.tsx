@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from "react-oidc-context";
 import { 
   Shield, 
@@ -40,7 +42,6 @@ import { RiskRegister } from './components/RiskRegister';
 import { Inventory } from './components/Inventory';
 import { UserManagement } from './components/UserManagement';
 import { OrganizationManager } from './components/OrganizationManager';
-import { ClientSwitcher } from './components/ClientSwitcher';
 import { ProjectBoard } from './components/ProjectBoard';
 import { BudgetCalculator } from './components/BudgetCalculator';
 import { TrainingCenter } from './components/TrainingCenter';
@@ -58,16 +59,26 @@ import { authConfig } from './authConfig';
 import { api } from './services/api';
 
 // --- Render Helpers ---
-const NavDropdown = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
-  <div className="relative group h-full flex items-center">
-      <button className="flex items-center gap-1 px-3 py-2 text-slate-300 hover:text-white font-medium transition-colors">
-          <Icon size={16} /> {label} <ChevronDown size={14} className="opacity-50 group-hover:opacity-100 transition-opacity" />
-      </button>
-      <div className="absolute top-full left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-2 hidden group-hover:block animate-in fade-in zoom-in-95 duration-100 z-50">
-          {children}
-      </div>
-  </div>
-);
+// Fix: Use React.PropsWithChildren to resolve TS errors about missing children prop in JSX
+const NavDropdown = ({ label, icon: Icon, children }: React.PropsWithChildren<{ label: string, icon: any }>) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div 
+      className="relative h-full flex items-center"
+      onMouseEnter={() => setIsOpen(true)}
+      onMouseLeave={() => setIsOpen(false)}
+    >
+        <button className="flex items-center gap-1 px-3 py-2 text-slate-300 hover:text-white font-medium transition-colors">
+            <Icon size={16} /> {label} <ChevronDown size={14} className={`opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {isOpen && (
+          <div className="absolute top-[80%] left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-2 animate-in fade-in zoom-in-95 duration-100 z-[100]">
+              {children}
+          </div>
+        )}
+    </div>
+  );
+};
 
 const NavItem = ({ label, icon: Icon, isActive, onClick }: { label: string, icon: any, isActive: boolean, onClick: () => void }) => (
   <button 
@@ -85,6 +96,7 @@ const App: React.FC = () => {
   // App State
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isFrameworkMenuOpen, setIsFrameworkMenuOpen] = useState(false);
   
   // Data State
   const [isDataLoading, setIsDataLoading] = useState(false); 
@@ -100,12 +112,11 @@ const App: React.FC = () => {
   const [creationStatus, setCreationStatus] = useState<'idle' | 'creating' | 'verifying' | 'failed_verification'>('idle');
 
   // --- 1. Load Organizations on Auth ---
-  const loadOrganizations = async (forceRefresh = false) => {
-      // Use ID TOKEN for API Authorization
+  const loadOrganizations = useCallback(async (forceRefresh = false) => {
       if (!auth.isAuthenticated || !auth.user?.id_token) return;
 
       setIsDataLoading(true);
-      setLoadingMessage("Loading Organization...");
+      setLoadingMessage("Loading Organizations...");
       setOrgFetchError(null);
       
       try {
@@ -142,7 +153,7 @@ const App: React.FC = () => {
                       newStore[c.id] = clientDataStore[c.id];
                   }
                   
-                  // Fetch Evidence using ID TOKEN
+                  // Fetch Evidence Background
                   api.getEvidenceList(auth.user.id_token, c.id).then(evidence => {
                       setClientDataStore(prev => ({
                           ...prev,
@@ -161,14 +172,13 @@ const App: React.FC = () => {
       } finally {
           setIsDataLoading(false);
       }
-  };
+  }, [auth.isAuthenticated, auth.user, clientDataStore]);
 
   useEffect(() => {
-      // Check for id_token instead of access_token
       if (auth.isAuthenticated && auth.user?.id_token) {
           loadOrganizations();
       }
-  }, [auth.isAuthenticated, auth.user]);
+  }, [auth.isAuthenticated, auth.user?.id_token]);
 
   // Auto-save
   useEffect(() => {
@@ -181,77 +191,54 @@ const App: React.FC = () => {
   const handleCreateOrganization = async (name: string) => {
       if (!auth.user?.id_token) return;
       
+      // Check for existing organization with the same name (case-insensitive)
+      if (clients.some(c => c.name.trim().toLowerCase() === name.trim().toLowerCase())) {
+          setOrgFetchError("An organization with this name already exists. Please choose a unique name.");
+          return;
+      }
+
       setCreationStatus('creating');
       setIsDataLoading(true);
       setLoadingMessage("Creating Organization...");
       setOrgFetchError(null);
 
-      let initialError = null;
-
       try {
-          // Attempt creation using ID TOKEN
           const newOrg = await api.createOrg(auth.user.id_token, name);
-          // If successful response, use it immediately
           finishOrgCreation(newOrg);
       } catch (e: any) {
           console.warn("API Error during creation. Attempting background verification...", e);
-          // Don't show error yet. Wait for verification loop.
-          initialError = e.message;
-          
           setCreationStatus('verifying');
           setLoadingMessage("Verifying creation (Backend syncing)...");
-          
-          await verifyOrganizationExists(name, initialError);
+          await verifyOrganizationExists(name, e.message);
       }
   };
 
   const verifyOrganizationExists = async (name: string, originalError: string | null) => {
       if (!auth.user?.id_token) return;
 
-      // Poll up to 10 times (30+ seconds) to handle DB Index Propagation Latency
       let attempts = 0;
       const maxAttempts = 10;
 
       while (attempts < maxAttempts) {
           attempts++;
-          
           try {
-              // Wait 3s between checks
               await new Promise(resolve => setTimeout(resolve, 3000));
-              
-              // Use ID TOKEN
               const apiOrgs = await api.getOrgs(auth.user.id_token);
-              console.log("Verification check:", apiOrgs);
 
               if (apiOrgs && apiOrgs.length > 0) {
-                  // 1. Strict Match
                   const existing = apiOrgs.find((o: any) => o.name && o.name.trim().toLowerCase() === name.trim().toLowerCase());
                   if (existing) {
                       finishOrgCreation(existing);
                       return;
                   }
-
-                  // 2. Fuzzy/First Match (Fallback if this is the only org)
-                  if (clients.length === 0 && apiOrgs.length === 1) {
-                      console.log("Strict match failed, but found single new organization. Proceeding.", apiOrgs[0]);
-                      finishOrgCreation(apiOrgs[0]);
-                      return;
-                  }
               }
-
           } catch (err) {
               console.warn("Polling error:", err);
           }
       }
 
-      // If loop completes without success
       setCreationStatus('failed_verification');
-      // NOW we show the error because even verification failed
-      if (originalError) {
-          setOrgFetchError(`Creation failed: ${originalError}`);
-      } else {
-          setOrgFetchError("Verification timed out. Organization not found.");
-      }
+      setOrgFetchError(originalError || "Verification timed out. Organization not found.");
       setIsDataLoading(false);
   };
 
@@ -269,7 +256,6 @@ const App: React.FC = () => {
       };
 
       setClients(prev => [...prev, newClient]);
-      
       setClientDataStore(prev => ({
           ...prev,
           [newClient.id]: createInitialClientData(false)
@@ -279,9 +265,8 @@ const App: React.FC = () => {
       localStorage.setItem('activeOrgId', newClient.id);
       setIsDataLoading(false);
       setCreationStatus('idle');
+      setOrgFetchError(null);
   };
-
-  // --- Auth Handling ---
 
   const handleLogout = () => {
       auth.removeUser();
@@ -311,7 +296,6 @@ const App: React.FC = () => {
       return <Login onLogin={() => auth.signinRedirect()} error={auth.error} />;
   }
 
-  // --- Data Loading State (Global) ---
   if (isDataLoading) {
       return (
           <div className="flex h-screen items-center justify-center bg-slate-50 flex-col gap-4">
@@ -322,7 +306,6 @@ const App: React.FC = () => {
       );
   }
 
-  // --- ONBOARDING / CREATION FLOW ---
   if (!activeClientId) {
       return (
           <Onboarding 
@@ -344,13 +327,11 @@ const App: React.FC = () => {
       );
   }
 
-  // --- MAIN APPLICATION ---
   const activeClient = clients.find(c => c.id === activeClientId) || clients[0];
   const activeData = clientDataStore[activeClientId];
   
   if (!activeData) return <div className="p-10">Error loading organization data. Please refresh.</div>;
 
-  // Find current user object
   const currentUser = activeData.users.find(u => u.email === auth.user?.profile.email) || {
       id: auth.user?.profile.sub || 'unknown',
       name: (auth.user?.profile.email || 'User').split('@')[0],
@@ -382,7 +363,6 @@ const App: React.FC = () => {
       }));
   };
 
-  // Data Selectors
   const requirements = activeData.requirements;
   const risks = activeData.risks;
   const assets = activeData.assets;
@@ -402,7 +382,6 @@ const App: React.FC = () => {
   const googleConfig = activeData.googleConfig;
   const siemConfig = activeData.siemConfig;
 
-  // Handlers
   const handleSelectReq = (req: Requirement) => setSelectedRequirementId(req.id);
   const handleUpdateRequirement = (updated: Requirement) => {
     updateActiveClientData(prev => ({
@@ -542,23 +521,36 @@ const App: React.FC = () => {
 
               {/* Right: Controls & User */}
               <div className="flex items-center gap-4">
-                  {/* Framework Selector */}
-                  <div className="relative group hidden lg:block">
-                        <button className="flex items-center gap-2 text-xs font-bold text-slate-400 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-600 transition-colors">
+                  {/* Framework Selector Dropdown */}
+                  <div className="relative hidden lg:block">
+                        <button 
+                          onClick={() => setIsFrameworkMenuOpen(!isFrameworkMenuOpen)}
+                          className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg border transition-all ${isFrameworkMenuOpen ? 'bg-slate-700 text-white border-blue-500' : 'text-slate-400 bg-slate-800 border-slate-700 hover:border-slate-600'}`}
+                        >
                             <span>{activeFramework.id}</span>
-                            <ChevronsUpDown size={12} />
+                            <ChevronsUpDown size={12} className={isFrameworkMenuOpen ? 'text-blue-400' : ''} />
                         </button>
-                        <div className="absolute top-full right-0 mt-2 w-56 bg-white text-slate-900 rounded-xl shadow-xl p-2 hidden group-hover:block border border-slate-200 z-50">
-                            {FRAMEWORKS.map(f => (
-                                <button
-                                    key={f.id}
-                                    onClick={() => setActiveFramework(f)}
-                                    className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-1 ${activeFramework.id === f.id ? 'bg-blue-50 text-blue-700 font-bold' : 'hover:bg-slate-50'}`}
-                                >
-                                    {f.name}
-                                </button>
-                            ))}
-                        </div>
+                        {isFrameworkMenuOpen && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setIsFrameworkMenuOpen(false)}></div>
+                            <div className="absolute top-full right-0 mt-2 w-64 bg-white text-slate-900 rounded-xl shadow-2xl p-2 border border-slate-200 z-50 animate-in fade-in slide-in-from-top-1">
+                                <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-50 mb-1">Select Framework</div>
+                                {FRAMEWORKS.map(f => (
+                                    <button
+                                        key={f.id}
+                                        onClick={() => {
+                                            setActiveFramework(f);
+                                            setIsFrameworkMenuOpen(false);
+                                        }}
+                                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm mb-1 transition-colors ${activeFramework.id === f.id ? 'bg-blue-600 text-white font-bold shadow-md' : 'hover:bg-slate-50 text-slate-700'}`}
+                                    >
+                                        <div className="font-bold">{f.id}</div>
+                                        <div className={`text-[10px] ${activeFramework.id === f.id ? 'text-blue-100' : 'text-slate-400'}`}>{f.name}</div>
+                                    </button>
+                                ))}
+                            </div>
+                          </>
+                        )}
                   </div>
 
                   {/* AI Chat Toggle */}
@@ -584,7 +576,6 @@ const App: React.FC = () => {
                           </button>
                           {/* Profile Dropdown */}
                           <div className="absolute top-full right-0 mt-2 w-48 bg-white text-slate-900 rounded-xl shadow-xl border border-slate-200 py-1 hidden group-hover:block z-50">
-                              {/* Client Switching via dropdown if more than 1 available */}
                               {clients.length > 1 && (
                                   <div className="px-4 py-2 border-b border-slate-100 mb-1">
                                       <p className="text-xs text-slate-500 mb-1">Switch Client:</p>
@@ -700,7 +691,7 @@ const App: React.FC = () => {
                             m365Config={m365Config}
                             awsConfig={awsConfig}
                             siemConfig={siemConfig}
-                            activeClientId={activeClientId} // PASS ACTIVE CLIENT ID FOR UPLOADS
+                            activeClientId={activeClientId}
                         />
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50">
