@@ -1,5 +1,4 @@
 
-
 export interface AssessmentObjective {
   id: string;
   description: string;
@@ -146,13 +145,16 @@ export interface SspMetadata {
   categorization: 'LOW' | 'MODERATE' | 'HIGH';
   systemOwner: string;
   authorizingOfficial: string;
+  otherDesignatedContacts: string;
   assignmentOfSecurityResponsibility: string;
   operationalStatus: 'Operational' | 'Under Development' | 'Major Modification';
   systemType: 'Major Application' | 'General Support System';
   generalDescription: string;
   systemEnvironment: string;
-  interconnections: string; // Serialized JSON or narrative
+  interconnections: string; 
   lawsAndPolicies: string;
+  completionDate: string;
+  approvalDate: string;
 }
 
 export interface Risk {
@@ -172,7 +174,6 @@ export interface Risk {
   riskScore: number;
 }
 
-// Added to resolve import error in RiskRegister.tsx
 export interface RiskProfileVersion {
   id: string;
   versionNumber: string;
@@ -181,7 +182,6 @@ export interface RiskProfileVersion {
   risks: Risk[];
 }
 
-// Added to resolve import error in Inventory.tsx
 export type CmmcAssetCategory = 'CUI' | 'FCI' | 'SPA' | 'CRMA' | 'Out-of-Scope';
 
 export interface Asset {
@@ -209,7 +209,6 @@ export interface Vendor {
   nextAssessmentDate?: number;
 }
 
-// Added to resolve import error in UserManagement.tsx and OrganizationManager.tsx
 export type UserRole = 'MSP_ADMIN' | 'MSP_TECH' | 'CLIENT_ADMIN' | 'CLIENT_USER';
 
 export interface User {

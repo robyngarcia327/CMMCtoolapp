@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { Requirement, PoamEntry, Artifact, SspMetadata } from '../types';
-import { Printer, BarChart3, AlertOctagon, CheckSquare, Presentation, ShieldCheck, XCircle, Edit2, Save, X, FileText, Lock, Shield, Info, Building, Globe } from 'lucide-react';
+// Added missing icon imports Activity, CheckCircle2, and AlertTriangle
+import { Printer, BarChart3, AlertOctagon, CheckSquare, Presentation, ShieldCheck, XCircle, Edit2, Save, X, FileText, Lock, Shield, Info, Building, Globe, Map, User, Key, ClipboardList, Calendar, Activity, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface ReportsProps {
   requirements: Requirement[];
@@ -85,83 +86,190 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, artifacts = [], 
 
           {activeReport === 'SSP' && (
             <div className="space-y-12">
-               {/* NIST 800-18 Identification Blocks */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <div className="p-5 bg-slate-50 border rounded-xl">
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 flex items-center gap-2"><Info size={12}/> System Information</h4>
-                      <div className="space-y-3">
-                          <div>
-                              <div className="text-[11px] text-slate-500 font-bold uppercase">System Name / ID</div>
-                              <div className="text-sm font-black text-slate-900">{sspMetadata?.systemName || 'Not Set'} ({sspMetadata?.systemIdentifier || 'ID-XXX'})</div>
-                          </div>
-                          <div>
-                              <div className="text-[11px] text-slate-500 font-bold uppercase">System Type</div>
-                              <div className="text-sm font-bold text-slate-800">{sspMetadata?.systemType || 'General Support System'}</div>
-                          </div>
-                          <div>
-                              <div className="text-[11px] text-slate-500 font-bold uppercase">Operational Status</div>
-                              <div className="text-sm font-bold text-slate-800">{sspMetadata?.operationalStatus || 'Operational'}</div>
-                          </div>
-                      </div>
+               {/* 1-8: System Identification Sections */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 flex items-center gap-2"><Info size={12}/> 1. System Name & Identifier</h4>
+                      <div className="text-sm font-black text-slate-900">{sspMetadata?.systemName || 'Not Set'}</div>
+                      <div className="text-[11px] text-slate-500 font-mono mt-1">ID: {sspMetadata?.systemIdentifier || 'ID-XXX'}</div>
                   </div>
+
                   <div className="p-5 bg-blue-50/50 border border-blue-100 rounded-xl">
-                      <h4 className="text-[10px] font-black text-blue-400 uppercase mb-3 flex items-center gap-2"><Shield size={12}/> FIPS 199 Categorization</h4>
-                      <div className="flex items-center gap-4 mb-4">
+                      <h4 className="text-[10px] font-black text-blue-400 uppercase mb-3 flex items-center gap-2"><Shield size={12}/> 2. Information System Categorization</h4>
+                      <div className="flex items-center gap-3 mb-2">
                           {['LOW', 'MODERATE', 'HIGH'].map(lvl => (
-                              <div key={lvl} className={`px-3 py-1 rounded font-black text-xs border-2 ${sspMetadata?.categorization === lvl ? 'bg-blue-600 text-white border-blue-700 shadow-md' : 'bg-white text-slate-300 border-slate-200'}`}>
+                              <div key={lvl} className={`px-3 py-0.5 rounded font-black text-[10px] border-2 ${sspMetadata?.categorization === lvl ? 'bg-blue-600 text-white border-blue-700 shadow-md' : 'bg-white text-slate-200 border-slate-100'}`}>
                                   {lvl}
                               </div>
                           ))}
                       </div>
-                      <p className="text-[10px] text-slate-500 italic">Determined by the "High Watermark" of Confidentiality, Integrity, and Availability impact levels.</p>
+                      <p className="text-[10px] text-slate-500 italic">Per FIPS 199 Impact Level Analysis.</p>
+                  </div>
+
+                  <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 flex items-center gap-2"><User size={12}/> 3/4. System Ownership</h4>
+                      <div className="grid grid-cols-1 gap-2 text-[11px]">
+                          <div><span className="font-bold text-slate-500">System Owner:</span> <span className="text-slate-900 font-medium">{sspMetadata?.systemOwner || 'TBD'}</span></div>
+                          <div><span className="font-bold text-slate-500">Authorizing Official:</span> <span className="text-slate-900 font-medium">{sspMetadata?.authorizingOfficial || 'TBD'}</span></div>
+                      </div>
+                  </div>
+
+                  <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 flex items-center gap-2"><Key size={12}/> 6. Security Responsibility</h4>
+                      <div className="text-[11px] text-slate-700 leading-relaxed font-medium">
+                          {sspMetadata?.assignmentOfSecurityResponsibility || 'No responsibility assignment defined.'}
+                      </div>
+                  </div>
+
+                   <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 flex items-center gap-2"><Activity size={12}/> 7. Operational Status</h4>
+                      <div className="flex gap-2">
+                           {['Operational', 'Under Development', 'Major Modification'].map(status => (
+                               <div key={status} className={`px-2 py-0.5 rounded text-[9px] font-bold border ${sspMetadata?.operationalStatus === status ? 'bg-green-600 text-white border-green-700' : 'bg-white text-slate-300 border-slate-100'}`}>
+                                   {status}
+                               </div>
+                           ))}
+                      </div>
+                  </div>
+
+                   <div className="p-5 bg-slate-50 border border-slate-200 rounded-xl">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase mb-3 flex items-center gap-2"><Building size={12}/> 8. System Type</h4>
+                      <div className="text-sm font-bold text-slate-800">{sspMetadata?.systemType || 'General Support System'}</div>
                   </div>
                </div>
 
-               <div className="p-5 bg-slate-900 text-white rounded-xl mb-8">
-                  <h4 className="text-[10px] font-black text-blue-400 uppercase mb-2 flex items-center gap-2"><Globe size={12}/> System Environment & Boundaries</h4>
-                  <p className="text-sm text-slate-300 leading-relaxed italic">{sspMetadata?.systemEnvironment || 'No environment description provided. Describe hardware, software, and physical boundaries here.'}</p>
+               {/* 9: General Description */}
+               <div className="p-6 bg-slate-50 border border-slate-200 rounded-xl">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2 flex items-center gap-2">9. General System Description/Purpose</h4>
+                  <p className="text-sm text-slate-700 leading-relaxed">{sspMetadata?.generalDescription || 'No description provided.'}</p>
                </div>
 
-               {/* Control Groups */}
-               {activeFamilies.map(familyId => {
-                  const familyReqs = filteredRequirements.filter(r => r.family === familyId);
-                  return (
-                    <div key={familyId} className="space-y-6">
-                      <h2 className="text-xl font-black text-slate-900 border-b-2 border-slate-900 pb-2 uppercase tracking-tight flex items-center gap-2">
-                        <Lock size={20} className="text-blue-600"/> {familyId} - {familyReqs[0]?.family || "Domain"}
-                      </h2>
-                      <div className="space-y-8">
-                        {familyReqs.map(req => {
-                          const reqMet = getReqStatus(req) === 'met';
-                          const reqArtifacts = artifacts.filter(a => a.requirementId === req.id);
-                          return (
-                            <div key={req.id} className="page-break-inside-avoid">
-                              <div className="flex justify-between items-start mb-3">
-                                <div className="flex items-center gap-3">
-                                  <span className="font-mono text-xs font-black bg-slate-900 text-white px-2 py-0.5 rounded">{req.id}</span>
-                                  <h3 className="font-bold text-slate-800">{req.title}</h3>
-                                </div>
-                                <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${reqMet ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                                  {reqMet ? 'Implemented' : 'Not Implemented'}
-                                </span>
-                              </div>
-                              <div className="bg-white border-l-4 border-slate-200 pl-4 py-1 space-y-4">
-                                <div><h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Requirement Statement</h4><p className="text-xs text-slate-600 italic">{req.description}</p></div>
-                                <div><h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Implementation Statement</h4><div className="text-sm text-slate-800 font-medium leading-relaxed">{req.response || <span className="text-red-500 font-bold italic">REMEDIATION REQUIRED: No implementation statement provided.</span>}</div></div>
-                                {reqArtifacts.length > 0 && (
-                                  <div>
-                                    <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Verification Artifacts</h4>
-                                    <ul className="text-[11px] text-slate-500 space-y-0.5">{reqArtifacts.map(art => (<li key={art.id} className="flex items-center gap-1"><FileText size={10} className="text-blue-500" /> {art.name} ({new Date(art.timestamp).toLocaleDateString()})</li>))}</ul>
-                                  </div>
-                                )}
-                              </div>
+               {/* 10: System Environment */}
+               <div className="p-6 bg-slate-900 text-white rounded-xl shadow-lg">
+                  <h4 className="text-[10px] font-black text-blue-400 uppercase mb-2 flex items-center gap-2"><Globe size={12}/> 10. System Environment</h4>
+                  <p className="text-sm text-slate-300 leading-relaxed italic">{sspMetadata?.systemEnvironment || 'No environment data provided. Describe boundaries, hardware, and locations.'}</p>
+               </div>
+
+               {/* 11: Interconnections */}
+               <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2"><Map size={12}/> 11. System Interconnections</h4>
+                  <div className="overflow-x-auto border rounded-xl border-slate-200">
+                      <table className="w-full text-left text-[11px]">
+                          <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                              <tr><th className="p-3">Connected System</th><th className="p-3">Organization</th><th className="p-3">Type</th><th className="p-3">ISA/MOU Date</th></tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                              {sspMetadata?.interconnections ? (
+                                  <tr><td className="p-3 font-medium" colSpan={4}>{sspMetadata.interconnections}</td></tr>
+                              ) : (
+                                  <tr><td className="p-6 text-center text-slate-400 italic" colSpan={4}>No interconnections defined.</td></tr>
+                              )}
+                          </tbody>
+                      </table>
+                  </div>
+               </div>
+
+               {/* 12: Laws and Policies */}
+               <div className="p-6 bg-slate-50 border border-slate-200 rounded-xl">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2 flex items-center gap-2"><ClipboardList size={12}/> 12. Related Laws, Regulations, and Policies</h4>
+                  <p className="text-sm text-slate-700 font-medium leading-relaxed">{sspMetadata?.lawsAndPolicies || 'None defined.'}</p>
+               </div>
+
+               {/* 13: The Controls */}
+               <div className="pt-8 border-t-4 border-slate-900">
+                    <h2 className="text-2xl font-black text-slate-900 mb-8 uppercase tracking-tighter">13. Minimum Security Controls</h2>
+                    {activeFamilies.map(familyId => {
+                        const familyReqs = filteredRequirements.filter(r => r.family === familyId);
+                        return (
+                            <div key={familyId} className="mb-12 space-y-6">
+                            <h2 className="text-xl font-black text-slate-900 border-b-2 border-slate-900 pb-2 uppercase tracking-tight flex items-center gap-2">
+                                <Lock size={20} className="text-blue-600"/> {familyId} Family
+                            </h2>
+                            <div className="space-y-8">
+                                {familyReqs.map(req => {
+                                const reqMet = getReqStatus(req) === 'met';
+                                const reqArtifacts = artifacts.filter(a => a.requirementId === req.id);
+                                return (
+                                    <div key={req.id} className="page-break-inside-avoid">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div className="flex items-center gap-3">
+                                        <span className="font-mono text-xs font-black bg-slate-900 text-white px-2 py-0.5 rounded">{req.id}</span>
+                                        <h3 className="font-bold text-slate-800">{req.title}</h3>
+                                        </div>
+                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${reqMet ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                                        {reqMet ? 'Implemented' : 'Not Implemented'}
+                                        </span>
+                                    </div>
+                                    <div className="bg-white border-l-4 border-slate-200 pl-4 py-1 space-y-4">
+                                        <div><h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Requirement Statement</h4><p className="text-xs text-slate-600 italic">{req.description}</p></div>
+                                        <div><h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Implementation Statement</h4><div className="text-sm text-slate-800 font-medium leading-relaxed">{req.response || <span className="text-red-500 font-bold italic">REMEDIATION REQUIRED: No implementation statement provided.</span>}</div></div>
+                                        {reqArtifacts.length > 0 && (
+                                        <div>
+                                            <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Verification Artifacts</h4>
+                                            <ul className="text-[11px] text-slate-500 space-y-0.5">{reqArtifacts.map(art => (<li key={art.id} className="flex items-center gap-1"><FileText size={10} className="text-blue-500" /> {art.name} ({new Date(art.timestamp).toLocaleDateString()})</li>))}</ul>
+                                        </div>
+                                        )}
+                                    </div>
+                                    </div>
+                                )
+                                })}
                             </div>
-                          )
+                            </div>
+                        )
+                    })}
+               </div>
+
+               {/* 14/15: Completion & Approval */}
+               <div className="grid grid-cols-2 gap-8 pt-12 border-t-2 border-slate-100">
+                  <div className="p-6 border border-slate-200 rounded-xl">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase mb-4 flex items-center gap-2"><Calendar size={12}/> 14. Plan Completion Date</h4>
+                      <div className="text-sm font-bold text-slate-900 border-b-2 border-slate-100 pb-1">{sspMetadata?.completionDate || 'Not Completed'}</div>
+                  </div>
+                  <div className="p-6 border border-slate-200 rounded-xl">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase mb-4 flex items-center gap-2"><CheckCircle2 size={12}/> 15. Plan Approval Date</h4>
+                      <div className="text-sm font-bold text-slate-900 border-b-2 border-slate-100 pb-1">{sspMetadata?.approvalDate || 'Pending Approval'}</div>
+                      <div className="mt-4 text-[9px] text-slate-400 italic">Digitally signed by the Authorizing Official (AO).</div>
+                  </div>
+               </div>
+            </div>
+          )}
+
+          {activeReport === 'EXECUTIVE' && (
+            <div className="space-y-8">
+                <div className="grid grid-cols-2 gap-8 mb-8">
+                     <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center shadow-sm">
+                        <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2">Overall Compliance</div>
+                        <div className="text-5xl font-black text-blue-600">
+                            {Math.round((filteredRequirements.filter(r => getReqStatus(r) === 'met').length / filteredRequirements.length) * 100) || 0}%
+                        </div>
+                     </div>
+                     <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center shadow-sm">
+                        <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2">Open Action Items</div>
+                        <div className="text-5xl font-black text-amber-600">{unmetRequirements.length}</div>
+                     </div>
+                </div>
+                <div>
+                    <h3 className="text-xl font-black text-slate-800 mb-4 border-b-2 border-slate-100 pb-2">Status by Domain</h3>
+                    <div className="grid grid-cols-1 gap-4">
+                        {activeFamilies.map((familyId) => {
+                            const score = getFamilyScore(familyId);
+                            return (
+                                <div key={familyId} className="flex items-center gap-4">
+                                    <div className="w-16 font-mono font-black text-slate-400 text-xs">{familyId}</div>
+                                    <div className="flex-1">
+                                        <div className="flex justify-between text-xs mb-1 font-bold uppercase tracking-wide">
+                                            <span className="text-slate-700">{familyId} Family</span>
+                                            <span className="text-slate-900">{score}%</span>
+                                        </div>
+                                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden print:border print:border-slate-200">
+                                            <div className="h-full bg-slate-900 print:bg-black transition-all duration-1000" style={{ width: `${score}%` }}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
                         })}
-                      </div>
                     </div>
-                  )
-               })}
+                </div>
             </div>
           )}
 

@@ -1,5 +1,4 @@
 
-
 import { Requirement, Framework, ClientData, TrainingModule } from '../types';
 
 export const FRAMEWORKS: Framework[] = [
@@ -170,7 +169,6 @@ export const NIST_CMMC_FAMILIES = [
     { id: 'SI', name: 'System and Information Integrity' }
 ];
 
-// Added to resolve import error in RequirementsList.tsx
 export const SOC2_FAMILIES = [
   { id: 'CC1', name: 'Control Environment' },
   { id: 'CC2', name: 'Communication and Information' },
@@ -179,14 +177,12 @@ export const SOC2_FAMILIES = [
   { id: 'CC5', name: 'Control Activities' }
 ];
 
-// Added to resolve import error in RequirementsList.tsx
 export const HIPAA_FAMILIES = [
   { id: 'Administrative', name: 'Administrative Safeguards' },
   { id: 'Physical', name: 'Physical Safeguards' },
   { id: 'Technical', name: 'Technical Safeguards' }
 ];
 
-// Added to resolve import error in TrainingCenter.tsx
 export const TRAINING_MODULES: TrainingModule[] = [
   {
     id: 'TR-AC-01',
@@ -223,15 +219,18 @@ export const createInitialClientData = (useMockData = false): ClientData => {
           systemName: 'Corporate IT Infrastructure',
           systemIdentifier: 'CORP-IT-001',
           categorization: 'MODERATE',
-          systemOwner: '',
-          authorizingOfficial: '',
-          assignmentOfSecurityResponsibility: '',
+          systemOwner: 'Chief Information Officer',
+          authorizingOfficial: 'Chief Security Officer',
+          otherDesignatedContacts: 'IT Manager, Security Engineer',
+          assignmentOfSecurityResponsibility: 'Senior Information Security Officer (SISO)',
           operationalStatus: 'Operational',
-          systemType: 'Major Application' | 'General Support System',
-          generalDescription: 'Primary business processing network.',
-          systemEnvironment: 'Hybrid cloud environment (Azure/On-prem).',
-          interconnections: '',
-          lawsAndPolicies: 'FISMA, DFARS 252.204-7012, Privacy Act 1974'
+          systemType: 'General Support System',
+          generalDescription: 'Primary business processing network supporting all corporate operations and data storage.',
+          systemEnvironment: 'Hybrid cloud environment (Azure/On-prem) with segmented VLANs for production and testing.',
+          interconnections: 'VPN tunnels to AWS regions; dedicated fiber to data center.',
+          lawsAndPolicies: 'FISMA, DFARS 252.204-7012, Privacy Act 1974, NIST SP 800-171',
+          completionDate: new Date().toISOString().split('T')[0],
+          approvalDate: ''
         }
     };
 };
