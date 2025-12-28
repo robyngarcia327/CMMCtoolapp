@@ -1,24 +1,16 @@
 
 import React, { useState } from 'react';
-import { Requirement, Artifact, Client, Risk, AssessmentObjective } from '../types';
+import { Requirement, Artifact, Client, Risk } from '../types';
 import { 
   ShieldCheck, 
   FileText, 
   Download, 
-  CheckCircle2, 
-  AlertOctagon, 
   Search, 
   Lock, 
-  ExternalLink, 
-  Briefcase, 
   UserPlus, 
   Mail, 
   X, 
-  Check, 
-  ShieldAlert,
-  Clock,
   ChevronDown,
-  ChevronUp,
   Eye,
   Activity
 } from 'lucide-react';
@@ -54,7 +46,8 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
 
   const filteredReqs = levelReqs.filter(r => 
       r.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      r.title.toLowerCase().includes(searchTerm.toLowerCase())
+      r.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.family.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // --- Metrics ---
@@ -138,9 +131,9 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
                       <div className="bg-slate-800 p-3 rounded-xl border border-slate-700">
                           <div className="text-[10px] font-black text-slate-500 uppercase mb-1">Level {selectedLevel} Focus</div>
                           <p className="text-xs leading-relaxed text-slate-300">
-                              {selectedLevel === 1 && "FCI basic protection via self-assessment."}
-                              {selectedLevel === 2 && "CUI comprehensive protection via C3PAO review."}
-                              {selectedLevel === 3 && "APT protection via DIBCAC enhanced review."}
+                              {selectedLevel === 1 && "Basic safeguarding of FCI (15 controls)."}
+                              {selectedLevel === 2 && "Comprehensive protection of CUI (110 controls)."}
+                              {selectedLevel === 3 && "Enhanced protection for high-value assets."}
                           </p>
                       </div>
                   </div>
@@ -149,20 +142,20 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
 
           {/* Main Review Area */}
           <div className="lg:col-span-3">
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[700px]">
                   <div className="p-6 border-b border-slate-200 flex items-center gap-4 bg-slate-50/50">
                       <div className="relative flex-1">
                           <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
                           <input 
                             className="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                            placeholder="Filter controls by ID or Keyword..."
+                            placeholder="Filter controls by ID, Domain, or Keyword..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                           />
                       </div>
                   </div>
 
-                  <div className="divide-y divide-slate-100">
+                  <div className="divide-y divide-slate-100 overflow-y-auto flex-1">
                       {filteredReqs.map(req => {
                           const isExpanded = expandedReqId === req.id;
                           const reqMet = req.objectives.every(o => o.status === 'met' || o.status === 'na');
@@ -180,18 +173,16 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
                                       <div className="flex-1">
                                           <h4 className="font-bold text-slate-900 leading-snug">{req.title}</h4>
                                           <div className="flex gap-2 mt-1.5">
+                                              <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-black uppercase tracking-wider">{req.family}</span>
                                               {reqArtifacts.length > 0 && (
-                                                  <span className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-bold uppercase border border-indigo-100 flex items-center gap-1">
-                                                      <FileText size={10}/> {reqArtifacts.length} Artifacts
+                                                  <span className="text-[9px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-bold uppercase border border-indigo-100 flex items-center gap-1">
+                                                      <FileText size={10}/> {reqArtifacts.length} Evidence Pieces
                                                   </span>
-                                              )}
-                                              {req.cmmcLevel === 3 && (
-                                                  <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-bold uppercase border border-amber-100">Enhanced</span>
                                               )}
                                           </div>
                                       </div>
                                       <div className="flex items-center gap-3 shrink-0">
-                                          <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border-2 ${
+                                          <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border-2 ${
                                               reqMet ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
                                           }`}>
                                               {reqMet ? 'MET' : 'GAP'}
@@ -204,8 +195,8 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
                                       <div className="px-14 pb-8 pt-2 animate-in fade-in slide-in-from-top-2">
                                           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
                                               <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
-                                                  <h5 className="text-xs font-black uppercase tracking-widest">Assessment Objectives</h5>
-                                                  <div className="text-[10px] text-slate-400">DOD GUIDE REF: NIST SP 800-171A</div>
+                                                  <h5 className="text-[10px] font-black uppercase tracking-widest">Assessment Objectives (NIST 800-171A)</h5>
+                                                  <div className="text-[9px] text-slate-400 font-mono">REF: {req.id} OBJECTIVES</div>
                                               </div>
                                               <div className="divide-y divide-slate-100">
                                                   {req.objectives.map(obj => (
@@ -217,7 +208,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
                                                           </div>
                                                           <div className="flex-1 text-sm text-slate-700 font-medium">{obj.description}</div>
                                                           {obj.method && (
-                                                              <div className="bg-slate-100 px-2 py-0.5 rounded text-[10px] font-bold text-slate-500 uppercase border border-slate-200">
+                                                              <div className="bg-slate-100 px-2 py-0.5 rounded text-[9px] font-black text-slate-500 uppercase border border-slate-200">
                                                                   {obj.method}
                                                               </div>
                                                           )}
@@ -228,7 +219,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
 
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                               <div>
-                                                  <h5 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                  <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                                                       <Lock size={14}/> Implementation Narrative
                                                   </h5>
                                                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm text-slate-700 italic leading-relaxed min-h-[100px]">
@@ -236,20 +227,20 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
                                                   </div>
                                               </div>
                                               <div>
-                                                  <h5 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                  <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                                                       <FileText size={14}/> Evidence Artifacts
                                                   </h5>
                                                   <div className="space-y-2">
                                                       {reqArtifacts.map(art => (
-                                                          <button key={art.id} className="w-full flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-blue-400 hover:shadow-md transition-all text-sm group">
+                                                          <button key={art.id} className="w-full flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-blue-400 hover:shadow-md transition-all text-xs group">
                                                               <div className="flex items-center gap-3">
                                                                   <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Eye size={16}/></div>
-                                                                  <span className="font-bold text-slate-800">{art.name}</span>
+                                                                  <span className="font-bold text-slate-800 truncate max-w-[200px]">{art.name}</span>
                                                               </div>
                                                               <Download size={16} className="text-slate-400 group-hover:text-blue-600" />
                                                           </button>
                                                       ))}
-                                                      {reqArtifacts.length === 0 && <div className="text-center py-6 text-slate-400 italic text-sm bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">No evidence uploaded for this control.</div>}
+                                                      {reqArtifacts.length === 0 && <div className="text-center py-6 text-slate-400 italic text-xs bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">No evidence uploaded.</div>}
                                                   </div>
                                               </div>
                                           </div>
@@ -258,7 +249,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({ client, requiremen
                               </div>
                           );
                       })}
-                      {filteredReqs.length === 0 && <div className="p-12 text-center text-slate-400 italic">No matching requirements found in Level {selectedLevel}.</div>}
+                      {filteredReqs.length === 0 && <div className="p-12 text-center text-slate-400 italic">No matching requirements found.</div>}
                   </div>
               </div>
           </div>

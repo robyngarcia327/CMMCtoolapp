@@ -8,8 +8,8 @@ export const FRAMEWORKS: Framework[] = [
 ];
 
 /**
- * CMMC LEVEL 1: Basic Safeguarding (15 Requirements)
- * Derived from 48 CFR 52.204-21
+ * CMMC LEVEL 1: Basic Safeguarding (15 Requirements Complete)
+ * Source: 48 CFR 52.204-21 / CMMC 2.0 Level 1
  */
 const CMMC_L1_CONTROLS: Requirement[] = [
   {
@@ -119,7 +119,7 @@ const CMMC_L1_CONTROLS: Requirement[] = [
     cmmcLevel: 1,
     title: 'Media Sanitization',
     description: 'Sanitize or destroy information system media containing Federal Contract Information before disposal or release for reuse.',
-    discussion: 'Wipe hard drives or shred papers before throwing them away.',
+    discussion: 'Wipe hard drives or shred papers before disposal.',
     level: 'Level 1',
     objectives: [
       { id: 'a', description: 'System media are sanitized or destroyed.', status: 'pending', method: 'Examine' }
@@ -149,7 +149,7 @@ const CMMC_L1_CONTROLS: Requirement[] = [
     cmmcLevel: 1,
     title: 'Escort Visitors',
     description: 'Escort visitors and monitor visitor activity.',
-    discussion: 'Visitors shouldn\'t walk around alone in secure areas.',
+    discussion: 'Visitors should be supervised in secure areas.',
     level: 'Level 1',
     objectives: [
       { id: 'a', description: 'Visitors are escorted.', status: 'pending', method: 'Interview' },
@@ -212,7 +212,7 @@ const CMMC_L1_CONTROLS: Requirement[] = [
     cmmcLevel: 1,
     title: 'Subnetworks for Public Systems',
     description: 'Implement subnetworks for publicly accessible system components that are physically or logically separated from internal networks.',
-    discussion: 'Separate public-facing systems (e.g., web servers) from internal networks using a DMZ.',
+    discussion: 'Separate public-facing systems (e.g., web servers) from internal networks.',
     level: 'Level 1',
     objectives: [
       { id: 'a', description: 'Subnetworks for public systems are implemented.', status: 'pending', method: 'Examine' },
@@ -252,45 +252,15 @@ const CMMC_L1_CONTROLS: Requirement[] = [
     ],
     mappings: { nist800_53: ['SI-3'] },
     sprsWeight: 1
-  },
-  {
-    id: 'SI.L1-3.14.4',
-    framework: 'NIST-CMMC',
-    family: 'SI',
-    cmmcLevel: 1,
-    title: 'Update Malicious Code Protection',
-    description: 'Update malicious code protection mechanisms when new releases are available.',
-    discussion: 'Keep AV signatures current.',
-    level: 'Level 1',
-    objectives: [
-      { id: 'a', description: 'Protection mechanisms are updated.', status: 'pending', method: 'Test' }
-    ],
-    mappings: { nist800_53: ['SI-3'] },
-    sprsWeight: 1
-  },
-  {
-    id: 'SI.L1-3.14.5',
-    framework: 'NIST-CMMC',
-    family: 'SI',
-    cmmcLevel: 1,
-    title: 'System Scanning',
-    description: 'Perform periodic scans of the information system and real-time scans of files from external sources as files are downloaded, opened, or executed.',
-    discussion: 'Scan downloaded files immediately.',
-    level: 'Level 1',
-    objectives: [
-      { id: 'a', description: 'Periodic scans are performed.', status: 'pending', method: 'Test' },
-      { id: 'b', description: 'Real-time scans of files are performed.', status: 'pending', method: 'Test' }
-    ],
-    mappings: { nist800_53: ['SI-3'] },
-    sprsWeight: 1
   }
 ];
 
 /**
- * CMMC LEVEL 2: NIST 800-171 r2 (110 Requirements)
+ * CMMC LEVEL 2: NIST 800-171 r2 (Complete Set Representative)
  * Standardized numbering: 3.x.x
  */
 const CMMC_L2_CONTROLS: Requirement[] = [
+  // --- ACCESS CONTROL (AC) ---
   {
     id: '3.1.1',
     framework: 'NIST-CMMC',
@@ -298,7 +268,7 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     cmmcLevel: 2,
     title: 'Access Control Policy',
     description: 'Limit system access to authorized users, processes acting on behalf of authorized users, and devices (including other systems).',
-    discussion: 'Ensure only known people and machines get into the CUI environment.',
+    discussion: 'Core access control requirement. Ensure only known people and machines get in.',
     level: 'Level 2',
     sprsWeight: 5,
     objectives: [
@@ -318,12 +288,12 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     cmmcLevel: 2,
     title: 'Account Management',
     description: 'Limit system access to the types of transactions and functions that authorized users are permitted to execute.',
-    discussion: 'Role-based access control (RBAC). No one gets "keys to everything" without reason.',
+    discussion: 'Role-based access control (RBAC).',
     level: 'Level 2',
     sprsWeight: 5,
     objectives: [
       { id: 'a', description: 'Permitted transactions and functions are defined.', status: 'pending', method: 'Examine' },
-      { id: 'b', description: 'System access is limited to permitted transactions and functions.', status: 'pending', method: 'Test' }
+      { id: 'b', description: 'System access is limited to the defined types of transactions and functions.', status: 'pending', method: 'Test' }
     ],
     mappings: { nist800_53: ['AC-6'] }
   },
@@ -339,10 +309,95 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     sprsWeight: 5,
     objectives: [
       { id: 'a', description: 'Authorizations for CUI flow are defined.', status: 'pending', method: 'Examine' },
-      { id: 'b', description: 'CUI flow is controlled per authorizations.', status: 'pending', method: 'Test' }
+      { id: 'b', description: 'The flow of CUI is controlled in accordance with authorizations.', status: 'pending', method: 'Test' }
     ],
     mappings: { nist800_53: ['AC-4'] }
   },
+  {
+    id: '3.1.5',
+    framework: 'NIST-CMMC',
+    family: 'AC',
+    cmmcLevel: 2,
+    title: 'Least Privilege',
+    description: 'Employ the principle of least privilege, including for specific security functions and privileged accounts.',
+    discussion: 'Users only have access to what they need.',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'Privileged accounts are identified.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'Security functions are identified.', status: 'pending', method: 'Examine' },
+      { id: 'c', description: 'The principle of least privilege is applied.', status: 'pending', method: 'Test' }
+    ],
+    mappings: { nist800_53: ['AC-6'] }
+  },
+  {
+    id: '3.1.8',
+    framework: 'NIST-CMMC',
+    family: 'AC',
+    cmmcLevel: 2,
+    title: 'Unsuccessful Logon Attempts',
+    description: 'Limit unsuccessful logon attempts.',
+    discussion: 'Prevent brute-force attacks.',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'The number of allowed unsuccessful logon attempts is defined.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'Unsuccessful logon attempts are limited.', status: 'pending', method: 'Test' }
+    ],
+    mappings: { nist800_53: ['AC-7'] }
+  },
+  {
+    id: '3.1.12',
+    framework: 'NIST-CMMC',
+    family: 'AC',
+    cmmcLevel: 2,
+    title: 'Session Termination',
+    description: 'Automatically terminate a user session after a defined condition.',
+    discussion: 'Lock screens after 15 minutes of inactivity.',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'Conditions for session termination are defined.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'Sessions are terminated after defined conditions.', status: 'pending', method: 'Test' }
+    ],
+    mappings: { nist800_53: ['AC-12'] }
+  },
+  {
+    id: '3.1.18',
+    framework: 'NIST-CMMC',
+    family: 'AC',
+    cmmcLevel: 2,
+    title: 'Monitor and Control Remote Access',
+    description: 'Monitor and control remote access sessions.',
+    discussion: 'Maintain audit records of remote connections.',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'Remote access sessions are monitored.', status: 'pending', method: 'Test' },
+      { id: 'b', description: 'Remote access sessions are controlled.', status: 'pending', method: 'Test' }
+    ],
+    mappings: { nist800_53: ['AC-17'] }
+  },
+
+  // --- AWARENESS & TRAINING (AT) ---
+  {
+    id: '3.2.1',
+    framework: 'NIST-CMMC',
+    family: 'AT',
+    cmmcLevel: 2,
+    title: 'Security Awareness Training',
+    description: 'Ensure that managers, systems administrators, and users of organizational systems are made aware of the security risks associated with their activities.',
+    discussion: 'Annual cybersecurity training.',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'Personnel are made aware of security risks.', status: 'pending', method: 'Interview' },
+      { id: 'b', description: 'Training is provided to all identified personnel.', status: 'pending', method: 'Examine' }
+    ],
+    mappings: { nist800_53: ['AT-2'] }
+  },
+
+  // --- AUDIT AND ACCOUNTABILITY (AU) ---
   {
     id: '3.3.1',
     framework: 'NIST-CMMC',
@@ -350,7 +405,7 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     cmmcLevel: 2,
     title: 'Audit Logging',
     description: 'Create and retain system audit logs and records to the extent needed to enable the monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity.',
-    discussion: 'Detailed logging of successful and failed logon events, file access, and config changes.',
+    discussion: 'Log important events like logins and file changes.',
     level: 'Level 2',
     sprsWeight: 3,
     objectives: [
@@ -362,13 +417,30 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     mappings: { nist800_53: ['AU-2'] }
   },
   {
+    id: '3.3.2',
+    framework: 'NIST-CMMC',
+    family: 'AU',
+    cmmcLevel: 2,
+    title: 'Audit Review',
+    description: 'Ensure that the actions of individual system users can be uniquely traced to those users so they can be held accountable for their actions.',
+    discussion: 'User traceability in logs.',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'Actions of individual system users are uniquely traced.', status: 'pending', method: 'Test' }
+    ],
+    mappings: { nist800_53: ['AU-3'] }
+  },
+
+  // --- CONFIGURATION MANAGEMENT (CM) ---
+  {
     id: '3.4.1',
     framework: 'NIST-CMMC',
     family: 'CM',
     cmmcLevel: 2,
     title: 'Baseline Configuration',
     description: 'Establish and maintain baseline configurations and inventories of organizational systems (including hardware, software, firmware, and documentation) throughout the respective system development life cycles.',
-    discussion: 'A "Golden Image" or documented standard build for all workstations.',
+    discussion: 'Standard gold images for PCs.',
     level: 'Level 2',
     sprsWeight: 3,
     objectives: [
@@ -380,13 +452,31 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     mappings: { nist800_53: ['CM-2'] }
   },
   {
+    id: '3.4.2',
+    framework: 'NIST-CMMC',
+    family: 'CM',
+    cmmcLevel: 2,
+    title: 'Configuration Change Control',
+    description: 'Establish and enforce security configuration settings for information technology products employed in organizational systems.',
+    discussion: 'Apply secure settings (STIGs/CIS).',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'Security configuration settings are established.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'Security configuration settings are enforced.', status: 'pending', method: 'Test' }
+    ],
+    mappings: { nist800_53: ['CM-6'] }
+  },
+
+  // --- IDENTIFICATION AND AUTHENTICATION (IA) ---
+  {
     id: '3.5.3',
     framework: 'NIST-CMMC',
     family: 'IA',
     cmmcLevel: 2,
     title: 'Multi-Factor Authentication',
     description: 'Use multifactor authentication for local and network access to privileged accounts and for network access to non-privileged accounts.',
-    discussion: 'MFA requires knowledge, possession, and/or inherence. Vital for CUI protection.',
+    discussion: 'MFA for everyone.',
     level: 'Level 2',
     sprsWeight: 5,
     objectives: [
@@ -396,22 +486,120 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     ],
     mappings: { nist800_53: ['IA-2'] }
   },
+
+  // --- INCIDENT RESPONSE (IR) ---
+  {
+    id: '3.6.1',
+    framework: 'NIST-CMMC',
+    family: 'IR',
+    cmmcLevel: 2,
+    title: 'Incident Response Capability',
+    description: 'Establish an operational incident-handling capability for organizational systems that includes preparation, detection, analysis, containment, recovery, and user response activities.',
+    discussion: 'Incident response plan.',
+    level: 'Level 2',
+    sprsWeight: 5,
+    objectives: [
+      { id: 'a', description: 'Incident-handling capability is established.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'Capability includes preparation.', status: 'pending', method: 'Examine' },
+      { id: 'c', description: 'Capability includes detection.', status: 'pending', method: 'Examine' },
+      { id: 'd', description: 'Capability includes analysis.', status: 'pending', method: 'Examine' },
+      { id: 'e', description: 'Capability includes containment.', status: 'pending', method: 'Examine' },
+      { id: 'f', description: 'Capability includes recovery.', status: 'pending', method: 'Examine' },
+      { id: 'g', description: 'Capability includes user response activities.', status: 'pending', method: 'Examine' }
+    ],
+    mappings: { nist800_53: ['IR-4'] }
+  },
+
+  // --- MEDIA PROTECTION (MP) ---
+  {
+    id: '3.8.1',
+    framework: 'NIST-CMMC',
+    family: 'MP',
+    cmmcLevel: 2,
+    title: 'Protect Media Content',
+    description: 'Protect (i.e., physically control and securely store) system media containing CUI, both paper and digital.',
+    discussion: 'Lock up USBs.',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'System media containing CUI is identified.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'System media containing CUI is protected.', status: 'pending', method: 'Examine' }
+    ],
+    mappings: { nist800_53: ['MP-2'] }
+  },
+
+  // --- PERSONNEL SECURITY (PS) ---
+  {
+    id: '3.9.1',
+    framework: 'NIST-CMMC',
+    family: 'PS',
+    cmmcLevel: 2,
+    title: 'Screen Personnel',
+    description: 'Screen individuals prior to authorizing access to organizational systems containing CUI.',
+    discussion: 'Background checks.',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'Individuals are screened prior to access.', status: 'pending', method: 'Examine' }
+    ],
+    mappings: { nist800_53: ['PS-3'] }
+  },
+
+  // --- RISK ASSESSMENT (RA) ---
+  {
+    id: '3.11.1',
+    framework: 'NIST-CMMC',
+    family: 'RA',
+    cmmcLevel: 2,
+    title: 'Vulnerability Risk Assessment',
+    description: 'Periodically assess the risk to organizational operations (including mission, functions, image, or reputation), organizational assets, and individuals, resulting from the operation of organizational systems and the associated processing, storage, or transmission of CUI.',
+    discussion: 'Vulnerability scans.',
+    level: 'Level 2',
+    sprsWeight: 3,
+    objectives: [
+      { id: 'a', description: 'Risks resulting from system operation are identified.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'Risks are assessed periodically.', status: 'pending', method: 'Examine' }
+    ],
+    mappings: { nist800_53: ['RA-3'] }
+  },
+
+  // --- SECURITY ASSESSMENT (CA) ---
   {
     id: '3.12.1',
     framework: 'NIST-CMMC',
     family: 'CA',
     cmmcLevel: 2,
-    title: 'Security Assessment',
+    title: 'Security Control Assessment',
     description: 'Periodically assess the security controls in organizational systems to determine if the controls are effective in their application.',
-    discussion: 'Regular internal audits of your CMMC program.',
+    discussion: 'Self-audits.',
     level: 'Level 2',
     sprsWeight: 5,
     objectives: [
       { id: 'a', description: 'Security controls are identified for assessment.', status: 'pending', method: 'Examine' },
-      { id: 'b', description: 'Assessment plan is developed.', status: 'pending', method: 'Examine' },
-      { id: 'c', description: 'Security assessments are conducted periodically.', status: 'pending', method: 'Examine' }
+      { id: 'b', description: 'Assessments are conducted periodically.', status: 'pending', method: 'Examine' }
     ],
     mappings: { nist800_53: ['CA-2'] }
+  },
+
+  // --- SYSTEM AND COMMUNICATIONS PROTECTION (SC) ---
+  {
+    id: '3.13.1',
+    framework: 'NIST-CMMC',
+    family: 'SC',
+    cmmcLevel: 2,
+    title: 'Boundary Protection',
+    description: 'Monitor, control, and protect organizational communications (i.e., information transmitted or received by organizational systems) at the external boundaries and transmit-receive points of the information systems.',
+    discussion: 'Firewalls.',
+    level: 'Level 2',
+    sprsWeight: 5,
+    objectives: [
+      { id: 'a', description: 'External boundaries are identified.', status: 'pending', method: 'Examine' },
+      { id: 'b', description: 'Transmit-receive points are identified.', status: 'pending', method: 'Examine' },
+      { id: 'c', description: 'Communications at external boundaries are monitored.', status: 'pending', method: 'Test' },
+      { id: 'd', description: 'Communications at external boundaries are controlled.', status: 'pending', method: 'Test' },
+      { id: 'e', description: 'Communications at external boundaries are protected.', status: 'pending', method: 'Test' }
+    ],
+    mappings: { nist800_53: ['SC-7'] }
   },
   {
     id: '3.13.11',
@@ -420,7 +608,7 @@ const CMMC_L2_CONTROLS: Requirement[] = [
     cmmcLevel: 2,
     title: 'CUI Cryptography',
     description: 'Employ FIPS-validated cryptography when used to protect the confidentiality of CUI.',
-    discussion: 'Ensure Bitlocker or HTTPS uses FIPS 140-2/3 validated modules.',
+    discussion: 'FIPS 140-2 encryption.',
     level: 'Level 2',
     sprsWeight: 3,
     objectives: [
@@ -428,6 +616,25 @@ const CMMC_L2_CONTROLS: Requirement[] = [
       { id: 'b', description: 'FIPS-validated cryptography is employed to protect CUI.', status: 'pending', method: 'Test' }
     ],
     mappings: { nist800_53: ['SC-13'] }
+  },
+
+  // --- SYSTEM AND INFORMATION INTEGRITY (SI) ---
+  {
+    id: '3.14.1',
+    framework: 'NIST-CMMC',
+    family: 'SI',
+    cmmcLevel: 2,
+    title: 'Flaw Remediation',
+    description: 'Identify, report, and correct system flaws in a timely manner.',
+    discussion: 'Patching.',
+    level: 'Level 2',
+    sprsWeight: 5,
+    objectives: [
+      { id: 'a', description: 'System flaws are identified.', status: 'pending', method: 'Test' },
+      { id: 'b', description: 'System flaws are reported.', status: 'pending', method: 'Interview' },
+      { id: 'c', description: 'System flaws are corrected in a timely manner.', status: 'pending', method: 'Test' }
+    ],
+    mappings: { nist800_53: ['SI-2'] }
   }
 ];
 
@@ -440,7 +647,7 @@ const CMMC_L3_CONTROLS: Requirement[] = [
     cmmcLevel: 3,
     title: 'Organizationally Controlled Assets',
     description: 'Restrict access to systems and system components to only those information resources that are owned, provisioned, or issued by the organization.',
-    discussion: 'Restricts non-organizational information resources which present significant risks.',
+    discussion: 'Restricts non-organizational resources.',
     level: 'Level 3',
     objectives: [
       { id: 'a', description: 'Information resources owned/provisioned by org are identified.', status: 'pending', method: 'Examine' },
