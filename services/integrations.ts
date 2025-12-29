@@ -27,22 +27,29 @@ export const fetchAutomatedEvidence = async (
 export const integrationService = {
   /**
    * Parses CSV string into Asset objects
+   * Expected format: Name,Type,Owner,Location,Category,Criticality
    */
   parseAssetCsv: (csvText: string): Partial<Asset>[] => {
-    const lines = csvText.split('\n');
+    const lines = csvText.split(/\r?\n/);
+    if (lines.length < 2) return [];
+
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
     
     return lines.slice(1).filter(line => line.trim()).map(line => {
+      // Basic CSV splitting (does not handle nested commas in quotes for this simple version)
       const values = line.split(',').map(v => v.trim());
       const asset: any = { source: 'CSV_Import', lastSynced: Date.now() };
       
       headers.forEach((header, i) => {
-        if (header === 'name') asset.name = values[i];
-        if (header === 'type') asset.type = values[i];
-        if (header === 'owner') asset.owner = values[i];
-        if (header === 'location') asset.location = values[i];
-        if (header === 'category') asset.cmmcCategory = values[i];
-        if (header === 'criticality') asset.criticality = values[i];
+        const val = values[i];
+        if (!val) return;
+
+        if (header === 'name') asset.name = val;
+        if (header === 'type') asset.type = val;
+        if (header === 'owner') asset.owner = val;
+        if (header === 'location') asset.location = val;
+        if (header === 'category') asset.cmmcCategory = val;
+        if (header === 'criticality') asset.criticality = val;
       });
       
       return asset;

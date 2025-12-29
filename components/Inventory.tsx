@@ -20,7 +20,7 @@ export const Inventory: React.FC<InventoryProps> = ({
   assets, 
   onAddAsset, 
   onDeleteAsset, 
-  intuneConfig = { enabled: true }, // Default enabled for demo
+  intuneConfig = { enabled: true }, // Default enabled for demo purposes
   variant = 'default' 
 }) => {
   const [isAdding, setIsAdding] = useState(false);
@@ -43,10 +43,13 @@ export const Inventory: React.FC<InventoryProps> = ({
       const text = event.target?.result as string;
       const parsedAssets = integrationService.parseAssetCsv(text);
       
+      let importCount = 0;
       parsedAssets.forEach(pa => {
+        if (!pa.name) return;
+
         onAddAsset({
           id: `CSV-${Math.floor(Math.random() * 100000)}`,
-          name: pa.name || 'Unknown Asset',
+          name: pa.name,
           owner: pa.owner || 'Unassigned',
           location: pa.location || 'Unknown',
           type: (pa.type as any) || 'Workstation',
@@ -55,10 +58,12 @@ export const Inventory: React.FC<InventoryProps> = ({
           source: 'CSV_Import',
           lastSynced: Date.now()
         });
+        importCount++;
       });
-      alert(`Imported ${parsedAssets.length} assets successfully.`);
+      alert(`Imported ${importCount} assets successfully.`);
     };
     reader.readAsText(file);
+    // Reset file input
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -66,6 +71,7 @@ export const Inventory: React.FC<InventoryProps> = ({
     setIsSyncing(true);
     try {
       const syncedAssets = await integrationService.syncIntuneAssets(intuneConfig);
+      let newCount = 0;
       syncedAssets.forEach(sa => {
         // Check for duplicates by externalId or Name
         const exists = assets.find(a => a.externalId === sa.externalId || a.name === sa.name);
@@ -74,9 +80,10 @@ export const Inventory: React.FC<InventoryProps> = ({
             ...sa as Asset,
             id: `SYNC-${Math.floor(Math.random() * 100000)}`,
           });
+          newCount++;
         }
       });
-      alert(`Sync Complete: Found ${syncedAssets.length} devices in Intune.`);
+      alert(`Sync Complete: Discovered ${syncedAssets.length} devices. Added ${newCount} new assets.`);
     } catch (e: any) {
       alert(e.message);
     } finally {
@@ -121,14 +128,17 @@ export const Inventory: React.FC<InventoryProps> = ({
       setNewAsset({ type: 'Workstation', criticality: 'Medium', cmmcCategory: 'Out-of-Scope', name: '', owner: '', location: '' });
   };
 
-  const filteredAssets = assets.filter(a => a.name.toLowerCase().includes(searchTerm.toLowerCase()) || a.owner.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredAssets = assets.filter(a => 
+    a.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    a.owner.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className={variant === 'wizard' ? '' : 'max-w-7xl mx-auto p-6'}>
+    <div className={variant === 'wizard' ? '' : 'max-w-7xl mx-auto p-6 overflow-y-auto h-full'}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
         <div>
             <h2 className="text-2xl font-bold text-slate-900">Asset Inventory</h2>
-            <p className="text-slate-600 text-sm">Track physical and logical assets for CMMC scoping.</p>
+            <p className="text-slate-600 text-sm">Track physical and logical assets for compliance scoping.</p>
         </div>
         
         <div className="flex flex-wrap gap-2">
@@ -259,7 +269,9 @@ export const Inventory: React.FC<InventoryProps> = ({
                               </td>
                               <td className="p-4">
                                   <div className="flex items-center gap-1.5">
-                                      {asset.source === 'Intune' ? <Cloud size={14} className="text-blue-500" /> : <Info size={14} className="text-slate-400" />}
+                                      {asset.source === 'Intune' ? <Cloud size={14} className="text-blue-500" title="Synced from Intune" /> : 
+                                       asset.source === 'CSV_Import' ? <FileSpreadsheet size={14} className="text-green-500" title="Imported via CSV" /> : 
+                                       <Info size={14} className="text-slate-400" title="Manually entered" />}
                                       <span className="text-xs font-medium text-slate-500">{asset.source || 'Manual'}</span>
                                   </div>
                               </td>

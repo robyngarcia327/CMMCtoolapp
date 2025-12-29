@@ -6,7 +6,6 @@ export interface AssessmentObjective {
   method?: 'Examine' | 'Interview' | 'Test';
 }
 
-// Added missing properties: poam, comments, evidenceEmail, interviewQuestion
 export interface Requirement {
   id: string;
   framework: string;
@@ -81,7 +80,6 @@ export interface IntegrationConfig {
     tenantId?: string;
 }
 
-// Added branding property
 export interface Client {
   id: string;
   name: string;
@@ -100,7 +98,6 @@ export interface WizardProgress {
   currentQuestionIndex: number;
 }
 
-// Added missing metadata properties
 export interface SspMetadata {
   systemName: string;
   systemIdentifier: string;
@@ -119,7 +116,6 @@ export interface SspMetadata {
   approvalDate?: string;
 }
 
-// Added missing properties for client data state
 export interface ClientData {
   requirements: Requirement[];
   assets: Asset[];
@@ -144,7 +140,6 @@ export interface ClientData {
   siemConfig: IntegrationConfig;
 }
 
-// Added missing view enums
 export enum AppView {
   DASHBOARD = 'DASHBOARD',
   REQUIREMENTS = 'REQUIREMENTS',
@@ -161,8 +156,6 @@ export enum AppView {
   ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
   MSP_DASHBOARD = 'MSP_DASHBOARD'
 }
-
-// --- Added Interfaces for Application Extensions ---
 
 export interface Framework {
   id: string;

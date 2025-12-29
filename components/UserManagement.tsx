@@ -36,6 +36,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       setIsSyncing(true);
       try {
           const syncedUsers = await integrationService.syncEntraUsers(entraConfig);
+          let addedCount = 0;
+          let updatedCount = 0;
+
           syncedUsers.forEach(su => {
               const exists = users.find(u => u.email === su.email);
               if (!exists) {
@@ -46,12 +49,19 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                       lastLogin: 0,
                       hasPasskey: false
                   });
+                  addedCount++;
               } else {
                   // Update existing user metadata if synced from Entra
-                  onUpdateUser({ ...exists, iamSource: 'EntraID', lastSynced: Date.now() });
+                  onUpdateUser({ 
+                      ...exists, 
+                      iamSource: 'EntraID', 
+                      lastSynced: Date.now(),
+                      mfaEnabled: su.mfaEnabled || exists.mfaEnabled
+                  });
+                  updatedCount++;
               }
           });
-          alert(`Identity Sync Complete: Processed ${syncedUsers.length} users.`);
+          alert(`Identity Sync Complete: Found ${syncedUsers.length} users. Added ${addedCount}, Updated ${updatedCount}.`);
       } catch (e: any) {
           alert(e.message);
       } finally {
@@ -82,10 +92,13 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       setNewUser({ role: 'CLIENT_USER', isCuiAuthorized: false });
   };
 
-  const filteredUsers = users.filter(u => u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredUsers = users.filter(u => 
+    u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-6 overflow-y-auto h-full">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div>
             <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
@@ -193,7 +206,10 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                           </td>
                           <td className="p-4">
                               <div className="flex flex-col">
-                                <span className="text-xs font-bold text-slate-500">{user.iamSource || 'Manual'}</span>
+                                <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                                    {user.iamSource === 'EntraID' && <Cloud size={12} className="text-blue-500" />}
+                                    {user.iamSource || 'Manual'}
+                                </span>
                                 {user.lastSynced && <span className="text-[9px] text-slate-400">Synced {new Date(user.lastSynced).toLocaleDateString()}</span>}
                               </div>
                           </td>
@@ -204,6 +220,9 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                           </td>
                       </tr>
                   ))}
+                  {filteredUsers.length === 0 && (
+                      <tr><td colSpan={5} className="p-8 text-center text-slate-400 italic">No identities found.</td></tr>
+                  )}
               </tbody>
           </table>
       </div>

@@ -103,13 +103,13 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
     if (selectedTemplateId === 'ssp' && sspMetadata) {
         setAllAnswers(prev => ({
             ...prev,
-            "1. Information System Name and Identifier": `${sspMetadata.systemName} (${sspMetadata.systemIdentifier})`,
-            "2. Information System Categorization (FIPS 199 Impact)": sspMetadata.categorization,
-            "7. Information System Operational Status (Operational, Under Dev, etc.)": sspMetadata.operationalStatus,
-            "8. Information System Type (Major Application or GSS)": sspMetadata.systemType,
-            "9. General System Description/Purpose": sspMetadata.generalDescription,
-            "10. System Environment (Hardware/Software/Comms)": sspMetadata.systemEnvironment,
-            "12. Related Laws, Regulations, and Policies": sspMetadata.lawsAndPolicies
+            "1. Information System Name and Identifier": `${sspMetadata.systemName || ''} (${sspMetadata.systemIdentifier || ''})`,
+            "2. Information System Categorization (FIPS 199 Impact)": sspMetadata.categorization || "LOW",
+            "7. Information System Operational Status (Operational, Under Dev, etc.)": sspMetadata.operationalStatus || "",
+            "8. Information System Type (Major Application or GSS)": sspMetadata.systemType || "",
+            "9. General System Description/Purpose": sspMetadata.generalDescription || "",
+            "10. System Environment (Hardware/Software/Comms)": sspMetadata.systemEnvironment || "",
+            "12. Related Laws, Regulations, and Policies": sspMetadata.lawsAndPolicies || ""
         }));
     }
   }, [selectedTemplateId, sspMetadata]);

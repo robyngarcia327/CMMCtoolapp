@@ -44,7 +44,14 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, artifacts = [], 
 
   const handlePoamChange = (req: Requirement, field: keyof PoamEntry, value: string) => {
       if (onUpdateRequirement) {
-          const updatedPoam = { ...req.poam, [field]: value };
+          const updatedPoam: PoamEntry = { 
+              weaknessName: req.poam?.weaknessName || req.title,
+              scheduledCompletionDate: req.poam?.scheduledCompletionDate || '',
+              milestones: req.poam?.milestones || '',
+              status: req.poam?.status || 'Planned',
+              ...req.poam, 
+              [field]: value 
+          };
           onUpdateRequirement({ ...req, poam: updatedPoam });
       }
   };
