@@ -188,7 +188,7 @@ const SI_CONTROLS: Requirement[] = [
   { id: 'SI.L2-3.14.1', framework: 'NIST-CMMC', family: 'SI', cmmcLevel: 1, title: 'Flaw Remediation', description: 'Identify and correct system flaws in a timely manner.', level: 'Level 1', sprsWeight: 1, objectives: createObjs(['a', 'b', 'c']), mappings: { nist800_53: ['SI-2'] }, discussion: 'Security patching.' },
   { id: 'SI.L2-3.14.2', framework: 'NIST-CMMC', family: 'SI', cmmcLevel: 1, title: 'Malicious Code Protection', description: 'Provide protection from malicious code.', level: 'Level 1', sprsWeight: 1, objectives: createObjs(['a', 'b', 'c', 'd']), mappings: { nist800_53: ['SI-3'] }, discussion: 'Antivirus.' },
   { id: 'SI.L2-3.14.3', framework: 'NIST-CMMC', family: 'SI', cmmcLevel: 2, title: 'Alerts & Advisories', description: 'Monitor security alerts and advisories.', level: 'Level 2', sprsWeight: 3, objectives: createObjs(['a', 'b', 'c']), mappings: { nist800_53: ['SI-5'] }, discussion: 'CISA advisories.' },
-  { id: 'SI.L2-3.14.4', framework: 'NIST-CMMC', family: 'SI', cmmcLevel: 1, title: 'Signature Updates', description: 'Update malicious code protection mechanisms.', level: 'Level 1', sprsWeight: 1, objectives: createObjs(['a']), mappings: { nist800_53: ['SI-3'] }, discussion: 'AV updates.' },
+  { id: 'SI.L2-3.14.4', framework: 'NIST-CMMC', family: 'SI', cmmcLevel: 1, title: 'Signature Updates', description: 'Provide malicious code protection updates.', level: 'Level 1', sprsWeight: 1, objectives: createObjs(['a']), mappings: { nist800_53: ['SI-3'] }, discussion: 'AV updates.' },
   { id: 'SI.L2-3.14.5', framework: 'NIST-CMMC', family: 'SI', cmmcLevel: 1, title: 'System Scanning', description: 'Perform periodic scans of organizational systems.', level: 'Level 1', sprsWeight: 1, objectives: createObjs(['a', 'b', 'c', 'd']), mappings: { nist800_53: ['SI-3'] }, discussion: 'Full scans.' },
   { id: 'SI.L2-3.14.6', framework: 'NIST-CMMC', family: 'SI', cmmcLevel: 2, title: 'Monitor Communications', description: 'Monitor systems to detect attacks.', level: 'Level 2', sprsWeight: 3, objectives: createObjs(['a', 'b', 'c', 'd']), mappings: { nist800_53: ['SI-4'] }, discussion: 'IDS/IPS.' },
   { id: 'SI.L2-3.14.7', framework: 'NIST-CMMC', family: 'SI', cmmcLevel: 2, title: 'Unauthorized Use Detection', description: 'Identify unauthorized use of organizational systems.', level: 'Level 2', sprsWeight: 3, objectives: createObjs(['a']), mappings: { nist800_53: ['SI-4'] }, discussion: 'Log analysis.' }
@@ -210,29 +210,32 @@ export const TRAINING_MODULES: TrainingModule[] = [
   }
 ];
 
+// Updated to match ClientData interface with all missing configs and properties
 export const createInitialClientData = (isParent: boolean): ClientData => ({
   requirements: JSON.parse(JSON.stringify(REQUIREMENTS_DATA)),
-  risks: [],
   assets: [],
-  vendors: [],
   users: [],
   artifacts: [],
+  risks: [],
+  vendors: [],
   tickets: [],
   tasks: [],
   budgetItems: [],
-  cwConfig: { companyId: '', publicKey: '', privateKey: '', siteUrl: '', serviceBoard: '', enabled: false },
-  jiraConfig: { baseUrl: '', email: '', apiToken: '', projectKey: '', issueType: 'Task', enabled: false },
-  confluenceConfig: { baseUrl: '', email: '', apiToken: '', spaceKey: '', enabled: false },
-  auvikConfig: { apiKey: '', tenantId: '', region: 'US', enabled: false },
-  m365Config: { enabled: false },
-  awsConfig: { enabled: false },
-  googleConfig: { enabled: false },
-  siemConfig: { enabled: false },
   wizardProgress: { currentStep: 'INTRO', currentQuestionIndex: 0 },
   sspMetadata: {
     systemName: '', systemIdentifier: '', categorization: 'LOW', systemOwner: '', authorizingOfficial: '',
     otherDesignatedContacts: '', assignmentOfSecurityResponsibility: '', operationalStatus: 'Operational',
     systemType: 'General Support System', generalDescription: '', systemEnvironment: '', interconnections: '',
     lawsAndPolicies: '', completionDate: '', approvalDate: ''
-  }
+  },
+  m365Config: { enabled: false },
+  intuneConfig: { enabled: false },
+  adConfig: { enabled: false },
+  cwConfig: { companyId: '', publicKey: '', privateKey: '', siteUrl: '', serviceBoard: '', enabled: false },
+  jiraConfig: { baseUrl: '', email: '', apiToken: '', projectKey: '', issueType: 'Task', enabled: false },
+  confluenceConfig: { baseUrl: '', spaceKey: '', enabled: false },
+  auvikConfig: { apiKey: '', tenantId: '', region: 'US', enabled: false },
+  awsConfig: { enabled: false },
+  googleConfig: { enabled: false },
+  siemConfig: { enabled: false }
 });

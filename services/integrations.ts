@@ -1,86 +1,116 @@
-import { Artifact, IntegrationConfig } from '../types';
 
-// Mock data responses for different integrations
-const MOCK_M365_DATA = {
-    users: [
-        { displayName: 'Alice Admin', userPrincipalName: 'alice@msp.com', mfaEnabled: true },
-        { displayName: 'Bob Sales', userPrincipalName: 'bob@client.com', mfaEnabled: true },
-    ],
-    secureScore: 85,
-    policies: [
-        { name: 'Global MFA Policy', state: 'Enabled' },
-        { name: 'Block Legacy Auth', state: 'Enabled' }
-    ]
-};
+import { Asset, User, IntegrationConfig } from '../types';
 
-const MOCK_AWS_DATA = {
-    buckets: [
-        { name: 'cui-data-store', encryption: 'AES-256', publicAccess: 'Blocked' },
-        { name: 'public-web-assets', encryption: 'None', publicAccess: 'Allowed' }
-    ],
-    iamPolicies: [
-        { name: 'AdminAccess', mfaRequired: true }
-    ]
-};
-
+/**
+ * Mock automated evidence collection
+ */
 export const fetchAutomatedEvidence = async (
-    source: 'M365' | 'AWS' | 'Google' | 'SIEM',
-    requirementId: string,
-    config: IntegrationConfig
-): Promise<Artifact | null> => {
+  source: 'M365' | 'AWS' | 'SIEM',
+  requirementId: string,
+  config: IntegrationConfig
+): Promise<any> => {
+    if (!config.enabled) throw new Error(`${source} integration not enabled`);
     
-    if (!config.enabled) {
-        throw new Error(`${source} integration is not enabled.`);
-    }
-
-    console.log(`Fetching evidence from ${source} for Req ${requirementId}...`);
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Simulate API Latency
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    let content = "";
-    let title = "";
-
-    // Simple logic to map specific requirements to specific API calls
-    if (source === 'M365') {
-        if (requirementId === '3.5.3' || requirementId.includes('MFA') || requirementId === '3.1.1') {
-            title = 'Entra ID MFA Report.json';
-            content = JSON.stringify(MOCK_M365_DATA.users, null, 2);
-        } else if (requirementId === '3.12.1' || requirementId === '3.11.1') {
-            title = 'Microsoft Secure Score.json';
-            content = JSON.stringify({ score: MOCK_M365_DATA.secureScore, date: new Date().toISOString() }, null, 2);
-        } else {
-            title = 'M365 Tenant Configuration.json';
-            content = JSON.stringify(MOCK_M365_DATA, null, 2);
-        }
-    } else if (source === 'AWS') {
-        if (requirementId === '3.13.1' || requirementId === '3.1.3') {
-            title = 'AWS S3 Bucket Policy Audit.json';
-            content = JSON.stringify(MOCK_AWS_DATA.buckets, null, 2);
-        } else {
-            title = 'AWS IAM Report.json';
-            content = JSON.stringify(MOCK_AWS_DATA.iamPolicies, null, 2);
-        }
-    } else if (source === 'SIEM') {
-        title = 'SIEM Log Sample.log';
-        content = `[${new Date().toISOString()}] EVENT: User_Login_Success USER: alice@msp.com IP: 192.168.1.5\n[${new Date().toISOString()}] EVENT: File_Access_CUI FILE: secrets.pdf`;
-    } else {
-        title = `${source} Generic Export.json`;
-        content = JSON.stringify({ status: "OK", timestamp: Date.now() }, null, 2);
-    }
-
-    // Create the artifact
-    const blob = new Blob([content], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
     return {
         id: `AUTO-${Date.now()}`,
-        requirementId: requirementId,
-        name: title,
-        type: source === 'SIEM' ? 'document' : 'json',
-        url: url,
+        requirementId,
+        name: `${source}_Evidence_${requirementId.replace(/\./g, '_')}.json`,
+        type: 'json',
+        url: '',
         timestamp: Date.now(),
-        source: 'API_AUTO',
-        notes: `Automatically collected from ${source} API`
+        source: 'API_AUTO'
     };
+};
+
+export const integrationService = {
+  /**
+   * Parses CSV string into Asset objects
+   */
+  parseAssetCsv: (csvText: string): Partial<Asset>[] => {
+    const lines = csvText.split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    
+    return lines.slice(1).filter(line => line.trim()).map(line => {
+      const values = line.split(',').map(v => v.trim());
+      const asset: any = { source: 'CSV_Import', lastSynced: Date.now() };
+      
+      headers.forEach((header, i) => {
+        if (header === 'name') asset.name = values[i];
+        if (header === 'type') asset.type = values[i];
+        if (header === 'owner') asset.owner = values[i];
+        if (header === 'location') asset.location = values[i];
+        if (header === 'category') asset.cmmcCategory = values[i];
+        if (header === 'criticality') asset.criticality = values[i];
+      });
+      
+      return asset;
+    });
+  },
+
+  /**
+   * Mock sync with Microsoft Entra ID
+   */
+  syncEntraUsers: async (config: IntegrationConfig): Promise<Partial<User>[]> => {
+    if (!config.enabled) throw new Error("Entra ID integration not enabled");
+    
+    // Simulate API latency
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    return [
+      {
+        name: 'John Cloud',
+        email: 'john.c@entra.local',
+        department: 'Engineering',
+        role: 'CLIENT_USER',
+        mfaEnabled: true,
+        iamSource: 'EntraID',
+        lastSynced: Date.now()
+      },
+      {
+        name: 'Sarah Admin',
+        email: 'sarah.a@entra.local',
+        department: 'IT',
+        role: 'CLIENT_ADMIN',
+        mfaEnabled: true,
+        iamSource: 'EntraID',
+        lastSynced: Date.now()
+      }
+    ];
+  },
+
+  /**
+   * Mock sync with Microsoft Intune
+   */
+  syncIntuneAssets: async (config: IntegrationConfig): Promise<Partial<Asset>[]> => {
+    if (!config.enabled) throw new Error("Intune integration not enabled");
+
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    return [
+      {
+        name: 'INTUNE-LP-9921',
+        type: 'Workstation',
+        owner: 'John Cloud',
+        location: 'Remote',
+        cmmcCategory: 'FCI',
+        criticality: 'Medium',
+        source: 'Intune',
+        lastSynced: Date.now(),
+        externalId: 'device-uuid-1'
+      },
+      {
+        name: 'INTUNE-SVR-DC01',
+        type: 'Server',
+        owner: 'IT Infrastructure',
+        location: 'Azure East US',
+        cmmcCategory: 'SPA',
+        criticality: 'High',
+        source: 'Intune',
+        lastSynced: Date.now(),
+        externalId: 'device-uuid-2'
+      }
+    ];
+  }
 };

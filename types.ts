@@ -3,42 +3,10 @@ export interface AssessmentObjective {
   id: string;
   description: string;
   status: 'met' | 'not_met' | 'na' | 'pending';
-  method?: 'Examine' | 'Interview' | 'Test'; // From Guide Methodology
+  method?: 'Examine' | 'Interview' | 'Test';
 }
 
-export interface ReferenceLink {
-  title: string;
-  url: string;
-  type: 'Guide' | 'Video' | 'Template' | 'Official';
-}
-
-export interface TrainingModule {
-  id: string;
-  familyId: string;
-  title: string;
-  description: string;
-  content: string;
-  durationMinutes: number;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-}
-
-export interface Comment {
-  id: string;
-  userId: string;
-  userName: string;
-  text: string;
-  timestamp: number;
-}
-
-export interface PoamEntry {
-    weaknessName?: string;
-    scheduledCompletionDate?: string;
-    milestones?: string;
-    poc?: string;
-    status?: 'Ongoing' | 'Completed' | 'Planned' | 'Delayed' | 'Risk Accepted';
-    comments?: string;
-}
-
+// Added missing properties: poam, comments, evidenceEmail, interviewQuestion
 export interface Requirement {
   id: string;
   framework: string;
@@ -50,22 +18,17 @@ export interface Requirement {
   cmmcLevel?: 1 | 2 | 3; 
   objectives: AssessmentObjective[];
   sprsWeight?: number;
-  interviewQuestion?: string;
   response?: string;
   scopeStatus?: 'IN_SCOPE' | 'OUT_OF_SCOPE';
-  scopeJustification?: string;
-  references?: ReferenceLink[];
-  comments?: Comment[];
-  evidenceEmail?: string;
-  poam?: PoamEntry; 
   mappings: {
     nist800_53?: string[];
     iso27001?: string[];
     nist_csf?: string[];
-    cis_v8?: string[];
-    soc2?: string[];
-    hipaa?: string[];
   };
+  poam?: PoamEntry;
+  comments?: Comment[];
+  evidenceEmail?: string;
+  interviewQuestion?: string;
 }
 
 export interface Artifact {
@@ -75,111 +38,7 @@ export interface Artifact {
   type: 'image' | 'document' | 'link' | 'email' | 'json';
   url: string;
   timestamp: number;
-  notes?: string;
-  expiryDate?: number;
-  containsCui?: boolean;
   source?: 'USER_UPLOAD' | 'API_AUTO';
-}
-
-export interface Ticket {
-  id: string;
-  requirementId: string;
-  summary: string;
-  description: string;
-  priority: 'Low' | 'Medium' | 'High' | 'Critical';
-  status: 'New' | 'In Progress' | 'Resolved';
-  board: string;
-  createdAt: number;
-  ticketNumber: string;
-  source: 'ConnectWise' | 'Jira';
-  url?: string;
-}
-
-export interface ConnectWiseConfig {
-  companyId: string;
-  publicKey: string;
-  privateKey: string;
-  siteUrl: string;
-  serviceBoard: string;
-  enabled: boolean;
-}
-
-export interface JiraConfig {
-  baseUrl: string;
-  email: string;
-  apiToken: string;
-  projectKey: string;
-  issueType: string;
-  enabled: boolean;
-}
-
-export interface ConfluenceConfig {
-  baseUrl: string;
-  email: string;
-  apiToken: string;
-  spaceKey: string;
-  parentPageId?: string;
-  enabled: boolean;
-}
-
-export interface AuvikConfig {
-  apiKey: string;
-  tenantId: string;
-  region: 'US' | 'EU';
-  enabled: boolean;
-}
-
-export interface AuvikDevice {
-  id: string;
-  name: string;
-  type: 'Switch' | 'Firewall' | 'Server' | 'Workstation' | 'Printer' | 'AccessPoint';
-  ipAddress: string;
-  vlan?: string;
-  firmware?: string;
-  isOnline: boolean;
-}
-
-export interface SspMetadata {
-  systemName: string;
-  systemIdentifier: string;
-  categorization: 'LOW' | 'MODERATE' | 'HIGH';
-  systemOwner: string;
-  authorizingOfficial: string;
-  otherDesignatedContacts: string;
-  assignmentOfSecurityResponsibility: string;
-  operationalStatus: 'Operational' | 'Under Development' | 'Major Modification';
-  systemType: 'Major Application' | 'General Support System';
-  generalDescription: string;
-  systemEnvironment: string;
-  interconnections: string; 
-  lawsAndPolicies: string;
-  completionDate: string;
-  approvalDate: string;
-}
-
-export interface Risk {
-  id: string;
-  description: string;
-  category: 'Technical' | 'Administrative' | 'Physical' | 'External';
-  remediation: string;
-  owner: string;
-  status: 'Open' | 'Mitigated' | 'Accepted' | 'Transferred';
-  dateIdentified: number;
-  assessmentType: 'Qualitative' | 'Quantitative';
-  likelihood?: 1 | 2 | 3 | 4 | 5;
-  impact?: 1 | 2 | 3 | 4 | 5;
-  threatEventFrequency?: number;
-  vulnerability?: number;
-  lossMagnitude?: number;
-  riskScore: number;
-}
-
-export interface RiskProfileVersion {
-  id: string;
-  versionNumber: string;
-  timestamp: number;
-  createdBy: string;
-  risks: Risk[];
 }
 
 export type CmmcAssetCategory = 'CUI' | 'FCI' | 'SPA' | 'CRMA' | 'Out-of-Scope';
@@ -193,20 +52,9 @@ export interface Asset {
   cmmcCategory: CmmcAssetCategory;
   enclave?: string;
   criticality: 'Low' | 'Medium' | 'High';
-}
-
-export interface Vendor {
-  id: string;
-  name: string;
-  serviceProvided: string;
-  criticality: 'Low' | 'Medium' | 'High' | 'Critical';
-  contactPerson: string;
-  contactEmail: string;
-  status: 'Active' | 'Under Review' | 'Rejected';
-  hasNDASigned: boolean;
-  hasDPA: boolean;
-  lastAssessmentDate?: number;
-  nextAssessmentDate?: number;
+  source?: 'Manual' | 'Intune' | 'CSV_Import' | 'ActiveDirectory';
+  lastSynced?: number;
+  externalId?: string;
 }
 
 export type UserRole = 'MSP_ADMIN' | 'MSP_TECH' | 'CLIENT_ADMIN' | 'CLIENT_USER';
@@ -222,49 +70,18 @@ export interface User {
   mfaEnabled: boolean;
   hasPasskey: boolean;
   isCuiAuthorized: boolean;
-  iamSource?: 'Manual' | 'Microsoft365' | 'GoogleWorkspace' | 'Okta';
-}
-
-export interface ProjectTask {
-  id: string;
-  title: string;
-  description: string;
-  status: 'backlog' | 'in_progress' | 'review' | 'done';
-  priority: 'Low' | 'Medium' | 'High';
-  assigneeId?: string;
-  linkedRequirementId?: string;
-  linkedRiskId?: string;
-  dueDate?: number;
-}
-
-export interface BudgetLineItem {
-  id: string;
-  linkedRequirementId: string;
-  name: string;
-  category: 'Software' | 'Hardware' | 'Labor' | 'Consulting';
-  costType: 'One-Time' | 'Recurring/Year';
-  amount: number;
-  notes?: string;
+  iamSource?: 'Manual' | 'Microsoft365' | 'EntraID' | 'ActiveDirectory';
+  lastSynced?: number;
 }
 
 export interface IntegrationConfig {
     enabled: boolean;
     connectedAt?: number;
     accountName?: string;
+    tenantId?: string;
 }
 
-export interface Framework {
-  id: string;
-  name: string;
-  description: string;
-}
-
-export interface BrandingConfig {
-  logoUrl?: string;
-  primaryColor?: string;
-  secondaryColor?: string;
-}
-
+// Added branding property
 export interface Client {
   id: string;
   name: string;
@@ -283,48 +100,219 @@ export interface WizardProgress {
   currentQuestionIndex: number;
 }
 
+// Added missing metadata properties
+export interface SspMetadata {
+  systemName: string;
+  systemIdentifier: string;
+  categorization: 'LOW' | 'MODERATE' | 'HIGH';
+  systemOwner: string;
+  authorizingOfficial: string;
+  otherDesignatedContacts?: string;
+  assignmentOfSecurityResponsibility?: string;
+  operationalStatus?: 'Operational' | 'Under Development' | 'Major Modification';
+  systemType?: string;
+  generalDescription?: string;
+  systemEnvironment?: string;
+  interconnections?: string;
+  lawsAndPolicies?: string;
+  completionDate?: string;
+  approvalDate?: string;
+}
+
+// Added missing properties for client data state
 export interface ClientData {
   requirements: Requirement[];
-  risks: Risk[];
   assets: Asset[];
-  vendors: Vendor[];
   users: User[];
   artifacts: Artifact[];
+  risks: Risk[];
+  vendors: Vendor[];
   tickets: Ticket[];
   tasks: ProjectTask[];
   budgetItems: BudgetLineItem[];
+  wizardProgress: WizardProgress;
+  sspMetadata: SspMetadata;
+  m365Config: IntegrationConfig;
+  intuneConfig: IntegrationConfig;
+  adConfig: IntegrationConfig;
   cwConfig: ConnectWiseConfig;
   jiraConfig: JiraConfig;
   confluenceConfig: ConfluenceConfig;
   auvikConfig: AuvikConfig;
-  m365Config: IntegrationConfig;
   awsConfig: IntegrationConfig;
   googleConfig: IntegrationConfig;
   siemConfig: IntegrationConfig;
-  mspBranding?: BrandingConfig;
-  wizardProgress: WizardProgress;
-  sspMetadata: SspMetadata;
 }
 
+// Added missing view enums
 export enum AppView {
-  MSP_DASHBOARD = 'MSP_DASHBOARD',
-  ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
   DASHBOARD = 'DASHBOARD',
   REQUIREMENTS = 'REQUIREMENTS',
-  DOC_GENERATOR = 'DOC_GENERATOR',
-  NETWORK_ANALYSIS = 'NETWORK_ANALYSIS',
-  RISK_REGISTER = 'RISK_REGISTER',
   INVENTORY = 'INVENTORY',
-  VENDORS = 'VENDORS',
   USERS = 'USERS',
-  PROJECTS = 'PROJECTS',
-  BUDGET = 'BUDGET',
-  TRAINING = 'TRAINING',
+  BULK_IMPORT = 'BULK_IMPORT',
   SETTINGS = 'SETTINGS',
-  CHAT = 'CHAT',
   REPORTS = 'REPORTS',
   SPRS_SCORECARD = 'SPRS_SCORECARD',
   WIZARD = 'WIZARD',
+  DOC_GENERATOR = 'DOC_GENERATOR',
+  NETWORK_ANALYSIS = 'NETWORK_ANALYSIS',
   AUDITOR_PORTAL = 'AUDITOR_PORTAL',
-  BULK_IMPORT = 'BULK_IMPORT'
+  ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
+  MSP_DASHBOARD = 'MSP_DASHBOARD'
+}
+
+// --- Added Interfaces for Application Extensions ---
+
+export interface Framework {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface TrainingModule {
+  id: string;
+  familyId: string;
+  title: string;
+  description: string;
+  content: string;
+  durationMinutes: number;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+}
+
+export interface AuvikDevice {
+  id: string;
+  name: string;
+  type: string;
+  ipAddress: string;
+  vlan?: string;
+  firmware?: string;
+  isOnline: boolean;
+}
+
+export interface AuvikConfig extends IntegrationConfig {
+  apiKey: string;
+  region: 'US' | 'EU';
+}
+
+export interface ConfluenceConfig extends IntegrationConfig {
+  baseUrl: string;
+  email?: string;
+  apiToken?: string;
+  spaceKey: string;
+}
+
+export interface JiraConfig extends IntegrationConfig {
+  baseUrl: string;
+  email: string;
+  apiToken: string;
+  projectKey: string;
+  issueType: string;
+}
+
+export interface ConnectWiseConfig extends IntegrationConfig {
+  companyId: string;
+  publicKey: string;
+  privateKey: string;
+  siteUrl: string;
+  serviceBoard: string;
+}
+
+export interface BrandingConfig {
+  primaryColor: string;
+  logoUrl: string;
+}
+
+export interface Ticket {
+  id: string;
+  requirementId: string;
+  summary: string;
+  description: string;
+  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  status: string;
+  board: string;
+  createdAt: number;
+  ticketNumber?: string;
+  source: 'ConnectWise' | 'Jira';
+  url?: string;
+}
+
+export interface Comment {
+  id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  timestamp: number;
+}
+
+export interface PoamEntry {
+  weaknessName: string;
+  scheduledCompletionDate: string;
+  milestones: string;
+  status: string;
+}
+
+export type RiskCategory = 'Technical' | 'Administrative' | 'Physical' | 'External';
+export type RiskStatus = 'Open' | 'Mitigated' | 'Risk Accepted' | 'Closed';
+export type RiskAssessmentType = 'Qualitative' | 'Quantitative';
+
+export interface Risk {
+  id: string;
+  description: string;
+  category: RiskCategory;
+  remediation: string;
+  owner: string;
+  status: RiskStatus;
+  dateIdentified: number;
+  assessmentType: RiskAssessmentType;
+  threatEventFrequency?: number;
+  vulnerability?: number;
+  lossMagnitude?: number;
+  likelihood?: 1 | 2 | 3 | 4 | 5;
+  impact?: 1 | 2 | 3 | 4 | 5;
+  riskScore: number;
+}
+
+export interface RiskProfileVersion {
+  id: string;
+  versionNumber: string;
+  timestamp: number;
+  createdBy: string;
+  risks: Risk[];
+}
+
+export interface ProjectTask {
+  id: string;
+  title: string;
+  description: string;
+  status: 'backlog' | 'in_progress' | 'review' | 'done';
+  priority: 'Low' | 'Medium' | 'High';
+  assigneeId?: string;
+  dueDate?: number;
+  linkedRequirementId?: string;
+  linkedRiskId?: string;
+}
+
+export interface BudgetLineItem {
+  id: string;
+  linkedRequirementId: string;
+  name: string;
+  category: 'Software' | 'Hardware' | 'Labor' | 'Consulting';
+  costType: 'One-Time' | 'Recurring/Year';
+  amount: number;
+  notes?: string;
+}
+
+export interface Vendor {
+  id: string;
+  name: string;
+  serviceProvided: string;
+  criticality: 'Low' | 'Medium' | 'High' | 'Critical';
+  contactPerson: string;
+  contactEmail: string;
+  status: 'Active' | 'Under Review' | 'Rejected';
+  hasNDASigned: boolean;
+  hasDPA: boolean;
+  lastAssessmentDate: number;
+  nextAssessmentDate: number;
 }
