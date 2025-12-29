@@ -478,7 +478,16 @@ const App: React.FC = () => {
                 </>
             )}
             {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} />}
-            {currentView === AppView.AUDITOR_PORTAL && <AuditorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} risks={activeData.risks} />}
+            {currentView === AppView.AUDITOR_PORTAL && (
+                <AuditorPortal 
+                  client={activeClient} 
+                  requirements={activeData.requirements} 
+                  artifacts={activeData.artifacts} 
+                  risks={activeData.risks} 
+                  assets={activeData.assets}
+                  activeFramework={activeFramework}
+                />
+            )}
             {currentView === AppView.BULK_IMPORT && (
                 <div className="flex-1 w-full h-full">
                     <BulkImport 
