@@ -269,9 +269,9 @@ export const Inventory: React.FC<InventoryProps> = ({
                               </td>
                               <td className="p-4">
                                   <div className="flex items-center gap-1.5">
-                                      {asset.source === 'Intune' ? <Cloud size={14} className="text-blue-500" title="Synced from Intune" /> : 
-                                       asset.source === 'CSV_Import' ? <FileSpreadsheet size={14} className="text-green-500" title="Imported via CSV" /> : 
-                                       <Info size={14} className="text-slate-400" title="Manually entered" />}
+                                      {asset.source === 'Intune' ? <span title="Synced from Intune"><Cloud size={14} className="text-blue-500" /></span> : 
+                                       asset.source === 'CSV_Import' ? <span title="Imported via CSV"><FileSpreadsheet size={14} className="text-green-500" /></span> : 
+                                       <span title="Manually entered"><Info size={14} className="text-slate-400" /></span>}
                                       <span className="text-xs font-medium text-slate-500">{asset.source || 'Manual'}</span>
                                   </div>
                               </td>

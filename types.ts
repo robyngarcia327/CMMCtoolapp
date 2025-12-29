@@ -69,7 +69,7 @@ export interface User {
   mfaEnabled: boolean;
   hasPasskey: boolean;
   isCuiAuthorized: boolean;
-  iamSource?: 'Manual' | 'Microsoft365' | 'EntraID' | 'ActiveDirectory';
+  iamSource?: 'Manual' | 'Microsoft365' | 'EntraID' | 'ActiveDirectory' | 'CSV_Import';
   lastSynced?: number;
 }
 
