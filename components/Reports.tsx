@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { Requirement, PoamEntry, Artifact, SspMetadata } from '../types';
-// Added missing icon imports Activity, CheckCircle2, and AlertTriangle
 import { Printer, BarChart3, AlertOctagon, CheckSquare, Presentation, ShieldCheck, XCircle, Edit2, Save, X, FileText, Lock, Shield, Info, Building, Globe, Map, User, Key, ClipboardList, Calendar, Activity, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface ReportsProps {
@@ -50,6 +49,43 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, artifacts = [], 
       }
   };
 
+  const getReportHeader = () => {
+    switch(activeReport) {
+        case 'SSP':
+            return {
+                title: 'System Security Plan (SSP)',
+                citation: 'NIST 800-18 Rev 1 ALIGNED',
+                confidential: true
+            };
+        case 'QBR':
+            return {
+                title: 'Quarterly Business Review (QBR)',
+                citation: 'Executive Governance Summary',
+                confidential: false
+            };
+        case 'POAM':
+            return {
+                title: 'Plan of Action & Milestones (POA&M)',
+                citation: 'Remediation Roadmap',
+                confidential: true
+            };
+        case 'EXECUTIVE':
+            return {
+                title: 'Executive Compliance Summary',
+                citation: 'Cybersecurity Posture Overview',
+                confidential: false
+            };
+        case 'MATRIX':
+            return {
+                title: 'Compliance Traceability Matrix',
+                citation: 'Detailed Control Mapping',
+                confidential: false
+            };
+    }
+  };
+
+  const headerMeta = getReportHeader();
+
   return (
     <div className="h-full flex flex-col md:flex-row bg-slate-100 overflow-hidden">
       <div className="w-full md:w-64 bg-white border-r border-slate-200 p-4 flex flex-col gap-2 shrink-0 no-print">
@@ -67,11 +103,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, artifacts = [], 
           <div className="border-b-4 border-slate-900 pb-4 mb-8 flex justify-between items-end">
             <div>
                 <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">
-                    {activeReport === 'EXECUTIVE' && 'Executive Compliance Summary'}
-                    {activeReport === 'QBR' && 'Audit Readiness Scorecard'}
-                    {activeReport === 'POAM' && 'Plan of Action & Milestones (POA&M)'}
-                    {activeReport === 'MATRIX' && 'Compliance Traceability Matrix'}
-                    {activeReport === 'SSP' && 'System Security Plan (SSP)'}
+                    {headerMeta.title}
                 </h1>
                 <div className="flex items-center gap-3 mt-1">
                     <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">{activeFrameworkId}</span>
@@ -79,8 +111,10 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, artifacts = [], 
                 </div>
             </div>
             <div className="text-right">
-                <div className="font-black text-slate-900 text-xs uppercase tracking-widest">Confidential</div>
-                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">NIST 800-18 Rev 1 ALIGNED</div>
+                {headerMeta.confidential && (
+                    <div className="font-black text-slate-900 text-xs uppercase tracking-widest">Confidential</div>
+                )}
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{headerMeta.citation}</div>
             </div>
           </div>
 
@@ -299,7 +333,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, artifacts = [], 
 
           <div className="mt-12 border-t-2 border-slate-100 pt-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest flex justify-between">
             <span>&copy; {new Date().getFullYear()} Cuallee Cyber Compliance Report</span>
-            <span>Document Integrity Verified // Ref: NIST 800-18 Rev 1</span>
+            <span>Document Integrity Verified // {headerMeta.citation}</span>
           </div>
         </div>
       </div>

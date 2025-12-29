@@ -47,7 +47,7 @@ const TEMPLATES: DocTemplate[] = [
     title: 'Incident Response Plan (IRP)',
     type: 'Plan',
     icon: <AlertTriangle className="text-orange-500" />,
-    description: 'Procedures for detecting, responding to, and limiting the effect of security incidents per NIST 800-61.',
+    description: 'Standalone organizational policy for detecting, responding to, and limiting security incidents per NIST 800-61.',
     standardCitation: 'NIST SP 800-61 REV 2 ALIGNED',
     questions: [
       "Company Name",

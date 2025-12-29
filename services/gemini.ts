@@ -155,22 +155,26 @@ export const generateComplianceDocument = async (
 ): Promise<string> => {
   // Map document types to their correct NIST standards
   let standard = "NIST SP 800-18 Rev. 1 (Guide for Developing Security Plans)";
+  let scopeInstruction = "This is a System Security Plan.";
+  
   if (title.includes("Incident Response")) {
     standard = "NIST SP 800-61 Rev. 2 (Computer Security Incident Handling Guide)";
+    scopeInstruction = "STRICT: This is an organization-wide Incident Response Plan. It IS NOT an SSP or an SSP Annex. Do not refer to it as such.";
   } else if (title.includes("Disaster Recovery")) {
-    standard = "NIST SP 800-34 Rev. 1 (Contingency Planning Guide)";
+    standard = "NIST SP 800-34 Rev. 1 (Contingency Planning Guide for Federal Information Systems)";
+    scopeInstruction = "STRICT: This is a standalone Disaster Recovery Plan.";
   }
 
   const prompt = `
-    Generate a formal compliance document following ${standard} standards.
+    Generate a professional compliance document following ${standard} methodology.
     Document Title: ${title}
     
-    STRICT REQUIREMENT: 
-    If this is an Incident Response Plan (IRP), DO NOT refer to it as an SSP or an SSP Annex. 
-    It must be a standalone organizational policy document.
+    ${scopeInstruction}
     
-    Details provided:
+    Details provided for synthesis:
     ${Object.entries(answers).map(([q, a]) => `${q}: ${a}`).join('\n')}
+
+    Please ensure the tone is formal and suitable for a federal auditor's review.
   `;
 
   try {
@@ -179,7 +183,7 @@ export const generateComplianceDocument = async (
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: { 
-        systemInstruction: "You are a lead federal cybersecurity architect writing mission-critical documentation. You strictly follow NIST standards without conflating different document types.",
+        systemInstruction: "You are a lead federal cybersecurity architect writing mission-critical documentation. You strictly follow NIST standards and never conflate different document types or standards.",
       }
     });
     return response.text || "Failed to generate document.";
