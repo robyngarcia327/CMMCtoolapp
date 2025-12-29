@@ -121,13 +121,14 @@ const App: React.FC = () => {
               return {
                   id: safeId,
                   name: safeName,
+                  domain: o.domain || o.Domain || auth.user?.profile.email?.split('@')[1],
                   industry: o.industry || o.Industry || 'General', 
                   contactName: auth.user?.profile.email || 'User',
                   logoInitial: safeName.charAt(0).toUpperCase(),
                   primaryFramework: 'NIST-CMMC',
                   nextAuditDate: Date.now() + 31536000000,
                   accountManager: 'Self-Managed',
-                  isParent: false
+                  isParent: !!o.isParent
               };
           });
 
@@ -281,11 +282,11 @@ const App: React.FC = () => {
                 name: '', email: auth.user?.profile.email || '', role: 'CLIENT_USER', 
                 organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false 
             }}
-            onCreateOrganization={async (name) => {
+            onCreateOrganization={async (name, domain) => {
                 if (!auth.user?.id_token) return;
                 setIsDataLoading(true);
                 try {
-                    await api.createOrg(auth.user.id_token, name);
+                    await api.createOrg(auth.user.id_token, name, domain);
                     fetchAttempted.current = false;
                     await loadOrganizations();
                 } catch (e: any) {

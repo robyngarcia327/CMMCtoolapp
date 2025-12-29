@@ -12,9 +12,7 @@ export interface Requirement {
   family: string;
   title: string;
   description: string;
-  // Made optional to match data/standards.ts entries
   discussion?: string;
-  // Made optional to match data/standards.ts entries
   level?: string;
   cmmcLevel?: 1 | 2 | 3; 
   objectives: AssessmentObjective[];
@@ -86,6 +84,7 @@ export interface IntegrationConfig {
 export interface Client {
   id: string;
   name: string;
+  domain?: string; // New: Added domain for automatic user grouping
   industry: string;
   contactName: string;
   logoInitial: string;

@@ -1,5 +1,5 @@
 
-import { Artifact } from '../types';
+import { Artifact, Client } from '../types';
 
 // Configuration - API Gateway Endpoint
 const API_BASE_URL = 'https://irwrdtn81b.execute-api.us-east-1.amazonaws.com/CualleeCyberEvidence'; 
@@ -64,7 +64,7 @@ export const api = {
    * 1. GET /orgs
    * Fetches the list of organizations the authenticated user belongs to.
    */
-  getOrgs: async (token: string): Promise<{ orgId: string, name: string, role: string, industry?: string }[]> => {
+  getOrgs: async (token: string): Promise<{ orgId: string, name: string, role: string, industry?: string, domain?: string }[]> => {
     console.debug("API Request: GET /orgs");
     try {
       const response = await fetch(`${API_BASE_URL}/orgs`, {
@@ -88,12 +88,6 @@ export const api = {
       const rawData = await parseResponseData(response);
       const items = ensureArray(rawData);
       
-      // DIAGNOSTIC LOG: This will show you exactly what keys your backend is sending
-      console.log("API Success: Received Organizations List", items);
-      if (items.length > 0) {
-          console.table(items); // Prints a nice table to the browser console
-      }
-      
       return items;
     } catch (error) {
       console.error("API Network/CORS failure:", error);
@@ -105,14 +99,14 @@ export const api = {
    * Create Organization
    * POST /orgs
    */
-  createOrg: async (token: string, name: string): Promise<{ orgId: string, name: string }> => {
+  createOrg: async (token: string, name: string, domain?: string): Promise<{ orgId: string, name: string }> => {
     const response = await fetch(`${API_BASE_URL}/orgs`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ name })
+      body: JSON.stringify({ name, domain })
     });
 
     if (!response.ok) {
@@ -122,6 +116,40 @@ export const api = {
     }
 
     return await parseResponseData(response);
+  },
+
+  /**
+   * Domain Discovery (Simulated)
+   * GET /orgs/suggested?domain=xyz.com
+   */
+  getSuggestedOrgs: async (token: string, domain: string): Promise<any[]> => {
+      // In a real implementation, this would call a specialized endpoint 
+      // that returns organizations matching a domain even if the user isn't a member yet.
+      console.debug(`Discovering organizations for domain: ${domain}`);
+      
+      // For this prototype, we simulate finding a matching org if the domain matches
+      // the existing established organizations in the pool.
+      try {
+        const allOrgs = await api.getOrgs(token);
+        return allOrgs.filter(o => o.domain === domain);
+      } catch (e) {
+        return [];
+      }
+  },
+
+  /**
+   * Join Organization
+   * POST /orgs/{id}/join
+   */
+  joinOrg: async (token: string, orgId: string): Promise<void> => {
+      const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/join`, {
+          method: 'POST',
+          headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+          }
+      });
+      if (!response.ok) throw new Error("Failed to join organization");
   },
 
   /**

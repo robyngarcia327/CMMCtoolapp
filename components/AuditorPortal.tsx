@@ -1,26 +1,25 @@
 
 import React, { useState, useMemo } from 'react';
 import { Requirement, Artifact, Client, Risk, Asset, Framework } from '../types';
+import { NIST_CMMC_FAMILIES } from '../data/standards';
 import { 
   ShieldCheck, 
   FileText, 
   Download, 
   Search, 
-  Lock, 
   UserPlus, 
   Mail, 
   X, 
   ChevronDown,
   Eye,
   Activity,
-  BarChart3,
   Package,
   AlertTriangle,
   CheckCircle2,
-  Filter,
   FileSearch,
   BookOpen,
-  ChevronRight
+  ChevronRight,
+  Filter
 } from 'lucide-react';
 
 interface AuditorPortalProps {
@@ -46,6 +45,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'MET' | 'GAP' | 'NO_EVIDENCE'>('ALL');
   const [expandedReqId, setExpandedReqId] = useState<string | null>(null);
+  const [expandedFamilies, setExpandedFamilies] = useState<Set<string>>(new Set());
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [auditorEmail, setAuditorEmail] = useState('');
 
@@ -73,7 +73,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
   }, [frameworkReqs, artifacts]);
 
   // Grouping by Family
-  const groupedReqs = useMemo(() => {
+  const { groupedReqs, families } = useMemo(() => {
     const groups: Record<string, Requirement[]> = {};
     
     const filtered = frameworkReqs.filter(r => {
@@ -93,20 +93,34 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
       if (!groups[r.family]) groups[r.family] = [];
       groups[r.family].push(r);
     });
-    return groups;
+
+    const familyIds = Object.keys(groups).sort();
+    return { groupedReqs: groups, families: familyIds };
   }, [frameworkReqs, searchTerm, filterStatus, artifacts]);
 
-  const families = Object.keys(groupedReqs).sort();
+  const toggleFamily = (familyId: string) => {
+    const next = new Set(expandedFamilies);
+    if (next.has(familyId)) {
+        next.delete(familyId);
+    } else {
+        next.add(familyId);
+    }
+    setExpandedFamilies(next);
+  };
 
-  // Added handleInviteAuditor to fix line 432 error
+  const expandAll = () => setExpandedFamilies(new Set(families));
+  const collapseAll = () => setExpandedFamilies(new Set());
+
+  // Added handleInviteAuditor
   const handleInviteAuditor = (e: React.FormEvent) => {
     e.preventDefault();
     if (!auditorEmail) return;
-    // Mock invitation logic
     alert(`Invitation sent to ${auditorEmail}. They will receive a secure access token shortly.`);
     setAuditorEmail('');
     setShowInviteModal(false);
   };
+
+  const getFamilyName = (id: string) => NIST_CMMC_FAMILIES.find(f => f.id === id)?.name || 'Security Domain';
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8 overflow-y-auto h-full bg-slate-50/50">
@@ -183,25 +197,35 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm w-fit">
-          <button 
-            onClick={() => setActiveTab('CONTROLS')}
-            className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'CONTROLS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
-          >
-              <FileSearch size={16} /> Requirements List
-          </button>
-          <button 
-            onClick={() => setActiveTab('BOUNDARY')}
-            className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'BOUNDARY' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
-          >
-              <Package size={16} /> Boundary Context
-          </button>
-          <button 
-            onClick={() => setActiveTab('RISKS')}
-            className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'RISKS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
-          >
-              <AlertTriangle size={16} /> Risk Register
-          </button>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm w-fit">
+            <button 
+                onClick={() => setActiveTab('CONTROLS')}
+                className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'CONTROLS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+            >
+                <FileSearch size={16} /> Requirements List
+            </button>
+            <button 
+                onClick={() => setActiveTab('BOUNDARY')}
+                className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'BOUNDARY' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+            >
+                <Package size={16} /> Boundary Context
+            </button>
+            <button 
+                onClick={() => setActiveTab('RISKS')}
+                className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'RISKS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+            >
+                <AlertTriangle size={16} /> Risk Register
+            </button>
+        </div>
+
+        {activeTab === 'CONTROLS' && (
+            <div className="flex gap-2">
+                <button onClick={expandAll} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors">Expand All</button>
+                <span className="text-slate-200">|</span>
+                <button onClick={collapseAll} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors">Collapse All</button>
+            </div>
+        )}
       </div>
 
       {/* Main View Area */}
@@ -241,115 +265,147 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
                       </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                      {families.map(familyId => (
-                          <div key={familyId} className="space-y-3">
-                              <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                                  <div className="h-px flex-1 bg-slate-200" />
-                                  {familyId} Domain
-                                  <div className="h-px flex-1 bg-slate-200" />
-                              </h3>
-                              
-                              <div className="space-y-2">
-                                  {groupedReqs[familyId].map(req => {
-                                      const isExpanded = expandedReqId === req.id;
-                                      const isMet = req.objectives.every(o => o.status === 'met');
-                                      const reqArtifacts = artifacts.filter(a => a.requirementId === req.id);
+                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                      {families.map(familyId => {
+                          const familyRequirements = groupedReqs[familyId];
+                          const isFamilyExpanded = expandedFamilies.has(familyId);
+                          const metCount = familyRequirements.filter(r => r.objectives.every(o => o.status === 'met')).length;
+                          const totalCount = familyRequirements.length;
+                          const familyReadiness = Math.round((metCount / totalCount) * 100);
 
-                                      return (
-                                          <div key={req.id} className={`rounded-2xl border transition-all ${isExpanded ? 'border-blue-400 bg-blue-50/20 ring-1 ring-blue-100 shadow-lg' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
-                                              <div 
-                                                onClick={() => setExpandedReqId(isExpanded ? null : req.id)}
-                                                className="p-5 flex items-center gap-4 cursor-pointer"
-                                              >
-                                                  <div className={`transition-transform duration-300 ${isExpanded ? 'rotate-90 text-blue-600' : 'text-slate-400'}`}>
-                                                      <ChevronRight size={20} />
-                                                  </div>
-                                                  <div className="w-24 shrink-0 font-mono text-xs font-black text-slate-400 group-hover:text-blue-600">{req.id}</div>
-                                                  <div className="flex-1">
-                                                      <div className="font-bold text-slate-900">{req.title}</div>
-                                                  </div>
-                                                  
-                                                  <div className="flex items-center gap-3">
-                                                      {reqArtifacts.length > 0 && (
-                                                          <div className="flex -space-x-2">
-                                                              {reqArtifacts.slice(0,3).map((_,i) => (
-                                                                  <div key={i} className="w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center text-blue-500">
-                                                                      <FileText size={12} />
-                                                                  </div>
-                                                              ))}
-                                                              {reqArtifacts.length > 3 && (
-                                                                  <div className="w-6 h-6 rounded-full bg-slate-900 border border-slate-900 flex items-center justify-center text-[8px] font-bold text-white">
-                                                                      +{reqArtifacts.length - 3}
-                                                                  </div>
-                                                              )}
-                                                          </div>
-                                                      )}
-                                                      <span className={`px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase border-2 ${
-                                                          isMet ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
-                                                      }`}>
-                                                          {isMet ? 'MET' : 'GAP'}
-                                                      </span>
-                                                  </div>
-                                              </div>
+                          return (
+                            <div key={familyId} className="rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm transition-all duration-300">
+                                {/* Domain Header Dropdown */}
+                                <button 
+                                    onClick={() => toggleFamily(familyId)}
+                                    className={`w-full flex items-center justify-between p-5 text-left transition-colors ${isFamilyExpanded ? 'bg-slate-900 text-white' : 'bg-white hover:bg-slate-50 text-slate-900'}`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className={`p-2 rounded-xl transition-colors ${isFamilyExpanded ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                                            <ChevronDown size={20} className={`transition-transform duration-300 ${isFamilyExpanded ? '' : '-rotate-90'}`} />
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${isFamilyExpanded ? 'text-blue-400' : 'text-slate-400'}`}>{familyId} Domain</span>
+                                                <div className={`w-1 h-1 rounded-full ${isFamilyExpanded ? 'bg-blue-400' : 'bg-slate-200'}`} />
+                                                <span className="text-sm font-black uppercase tracking-tight">{getFamilyName(familyId)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 mt-1">
+                                                <div className="text-[10px] font-bold opacity-60">{metCount} of {totalCount} MET</div>
+                                                <div className={`h-1 w-20 rounded-full overflow-hidden ${isFamilyExpanded ? 'bg-white/20' : 'bg-slate-100'}`}>
+                                                    <div className="h-full bg-blue-500" style={{ width: `${familyReadiness}%` }} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="hidden sm:flex items-center gap-6">
+                                        <div className="text-right">
+                                            <div className={`text-[10px] font-black uppercase tracking-widest ${isFamilyExpanded ? 'text-white/40' : 'text-slate-400'}`}>Readiness</div>
+                                            <div className="text-lg font-black">{familyReadiness}%</div>
+                                        </div>
+                                    </div>
+                                </button>
 
-                                              {isExpanded && (
-                                                  <div className="px-14 pb-8 animate-in fade-in slide-in-from-top-2">
-                                                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                                          <div className="space-y-6">
-                                                              <div>
-                                                                  <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><BookOpen size={14}/> Control Statement</h5>
-                                                                  <p className="text-sm text-slate-600 leading-relaxed italic">{req.description}</p>
-                                                              </div>
-                                                              <div>
-                                                                  <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><FileText size={14}/> Implementation Narrative</h5>
-                                                                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-sm text-slate-800 leading-relaxed font-medium">
-                                                                      {req.response || <span className="text-red-500 italic">Narrative missing. Auditor clarification required.</span>}
-                                                                  </div>
-                                                              </div>
-                                                          </div>
+                                {/* Requirements List (Collapsed Content) */}
+                                {isFamilyExpanded && (
+                                    <div className="p-4 space-y-2 animate-in slide-in-from-top-4 duration-300">
+                                        {familyRequirements.map(req => {
+                                            const isExpanded = expandedReqId === req.id;
+                                            const isMet = req.objectives.every(o => o.status === 'met');
+                                            const reqArtifacts = artifacts.filter(a => a.requirementId === req.id);
 
-                                                          <div>
-                                                              <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><ShieldCheck size={14}/> Assessment Objectives</h5>
-                                                              <div className="space-y-2 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                                                                  {req.objectives.map(obj => (
-                                                                      <div key={obj.id} className="flex items-start gap-3 p-2 bg-white rounded-lg border border-slate-100">
-                                                                          <div className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] ${obj.status === 'met' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'}`}>
-                                                                              {obj.id.toUpperCase()}
-                                                                          </div>
-                                                                          <div className="text-xs text-slate-700 font-medium">{obj.description}</div>
-                                                                          {obj.status === 'met' && <CheckCircle2 size={14} className="text-green-500 shrink-0 ml-auto" />}
-                                                                      </div>
-                                                                  ))}
-                                                              </div>
-                                                              
-                                                              <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-6 mb-3 flex items-center gap-2"><Activity size={14}/> Evidence Gallery</h5>
-                                                              <div className="grid grid-cols-1 gap-2">
-                                                                  {reqArtifacts.map(art => (
-                                                                      <button key={art.id} className="w-full flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-blue-400 hover:shadow-md transition-all text-xs font-bold text-slate-700 group">
-                                                                          <div className="flex items-center gap-3">
-                                                                              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors"><Eye size={16}/></div>
-                                                                              <span>{art.name}</span>
-                                                                          </div>
-                                                                          <Download size={16} className="text-slate-300 group-hover:text-blue-600" />
-                                                                      </button>
-                                                                  ))}
-                                                                  {reqArtifacts.length === 0 && (
-                                                                      <div className="p-8 text-center text-slate-400 italic text-xs bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-                                                                          No technical evidence attached.
-                                                                      </div>
-                                                                  )}
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                  </div>
-                                              )}
-                                          </div>
-                                      );
-                                  })}
-                              </div>
-                          </div>
-                      ))}
+                                            return (
+                                                <div key={req.id} className={`rounded-xl border transition-all ${isExpanded ? 'border-blue-400 bg-blue-50/20 ring-1 ring-blue-100 shadow-md' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
+                                                    <div 
+                                                        onClick={() => setExpandedReqId(isExpanded ? null : req.id)}
+                                                        className="p-4 flex items-center gap-4 cursor-pointer"
+                                                    >
+                                                        <div className={`transition-transform duration-300 ${isExpanded ? 'rotate-90 text-blue-600' : 'text-slate-400'}`}>
+                                                            <ChevronRight size={18} />
+                                                        </div>
+                                                        <div className="w-20 shrink-0 font-mono text-[10px] font-black text-slate-400">{req.id}</div>
+                                                        <div className="flex-1">
+                                                            <div className="font-bold text-slate-900 text-sm">{req.title}</div>
+                                                        </div>
+                                                        
+                                                        <div className="flex items-center gap-3">
+                                                            {reqArtifacts.length > 0 && (
+                                                                <div className="flex -space-x-2">
+                                                                    {reqArtifacts.slice(0,2).map((_,i) => (
+                                                                        <div key={i} className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-blue-500">
+                                                                            <FileText size={10} />
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black tracking-widest uppercase border ${
+                                                                isMet ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+                                                            }`}>
+                                                                {isMet ? 'MET' : 'GAP'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {isExpanded && (
+                                                        <div className="px-12 pb-6 pt-2 animate-in fade-in zoom-in-95 duration-200">
+                                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                                                <div className="space-y-6">
+                                                                    <div>
+                                                                        <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><BookOpen size={14}/> Control Statement</h5>
+                                                                        <p className="text-sm text-slate-600 leading-relaxed italic">{req.description}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><FileText size={14}/> Implementation Narrative</h5>
+                                                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-sm text-slate-800 leading-relaxed font-medium">
+                                                                            {req.response || <span className="text-red-500 italic">Narrative missing. Auditor clarification required.</span>}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div>
+                                                                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><ShieldCheck size={14}/> Assessment Objectives</h5>
+                                                                    <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                                                        {req.objectives.map(obj => (
+                                                                            <div key={obj.id} className="flex items-start gap-3 p-2 bg-white rounded-lg border border-slate-100">
+                                                                                <div className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center font-bold text-[9px] ${obj.status === 'met' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-400'}`}>
+                                                                                    {obj.id.toUpperCase()}
+                                                                                </div>
+                                                                                <div className="text-xs text-slate-700 font-medium">{obj.description}</div>
+                                                                                {obj.status === 'met' && <CheckCircle2 size={14} className="text-green-500 shrink-0 ml-auto" />}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                    
+                                                                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-6 mb-2 flex items-center gap-2"><Activity size={14}/> Evidence Gallery</h5>
+                                                                    <div className="grid grid-cols-1 gap-2">
+                                                                        {reqArtifacts.map(art => (
+                                                                            <button key={art.id} className="w-full flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all text-xs font-bold text-slate-700 group">
+                                                                                <div className="flex items-center gap-3">
+                                                                                    <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors"><Eye size={14}/></div>
+                                                                                    <span>{art.name}</span>
+                                                                                </div>
+                                                                                <Download size={14} className="text-slate-300 group-hover:text-blue-600" />
+                                                                            </button>
+                                                                        ))}
+                                                                        {reqArtifacts.length === 0 && (
+                                                                            <div className="p-6 text-center text-slate-400 italic text-xs bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                                                                                No technical evidence attached.
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                          );
+                      })}
 
                       {families.length === 0 && (
                           <div className="h-full flex flex-col items-center justify-center text-slate-400 p-20 text-center">
