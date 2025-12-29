@@ -8,7 +8,7 @@ const SYSTEM_INSTRUCTION_CHAT = `
 You are an expert cybersecurity compliance consultant specialized in CMMC 2.0 and NIST SP 800-171A.
 Your goal is to assist compliance teams by outlining what is required to reach compliance.
 - Explain complex requirements in simple terms.
-- Suggest specific artifacts needed for evidence.
+- Suggest specific artifacts needed for evidence based on NIST 800-171A methodology.
 - Help outline documentation requirements (SSP, POA&M).
 - Maintain a professional but helpful tone.
 `;
@@ -36,15 +36,22 @@ export const sendChatMessage = async (
 };
 
 export const explainRequirement = async (req: Requirement): Promise<string> => {
+  // Enhanced prompt to ensure model has enough context even with limited fields
   const prompt = `
-    Requirement ID: ${req.id}
+    Please act as a Senior Cybersecurity Compliance Assessor.
+    Provide a detailed breakdown for NIST SP 800-171 / CMMC 2.0 Requirement.
+
+    CONTROL DETAILS:
+    ID: ${req.id}
     Title: ${req.title}
     Description: ${req.description}
+    Discussion/Domain: ${req.discussion || req.family}
     
-    Please provide a detailed compliance outline including:
-    1. A plain-English explanation of what this control means.
-    2. The official assessment objectives (NIST 800-171A) required for validation.
-    3. Examples of evidence (Policy, Logs, Screenshots) that would satisfy an auditor.
+    EXPECTED OUTPUT FORMAT (Markdown):
+    1. **Audit Summary**: A 2-3 sentence explanation for a business owner.
+    2. **Evidence Requirements**: A list of 3-5 specific artifacts (e.g., 'Active Directory GPO Settings for Password Complexity') that would prove compliance to a 3PAO auditor.
+    3. **Common Gaps**: Typical reasons small businesses fail this specific control.
+    4. **Assessor Tip**: A technical shortcut or best practice.
   `;
   
   try {
@@ -57,13 +64,14 @@ export const explainRequirement = async (req: Requirement): Promise<string> => {
     });
     
     if (!response.text) {
-        throw new Error("Empty response from AI");
+        throw new Error("Empty response from AI engine");
     }
     
     return response.text;
-  } catch (e) {
+  } catch (e: any) {
     console.error("AI Explanation Error:", e);
-    return "I was unable to synthesize an explanation for this control. Please verify the Control ID and try again.";
+    // Return a more descriptive failure to the UI
+    return `AI Synthesis Failed. (Error: ${e.message || 'Check Connectivity'}). Ensure the Control ID ${req.id} is a valid NIST 800-171 reference.`;
   }
 };
 
@@ -73,10 +81,11 @@ export const outlineRequirementsRoadmap = async (
   const gaps = requirements.filter(r => r.objectives.some(o => o.status === 'not_met' || o.status === 'pending'));
   
   const prompt = `
-    Based on the following unimplemented security controls, provide a prioritized roadmap for compliance.
+    Analyze these ${gaps.length} unimplemented security controls and provide a prioritized remediation roadmap.
+    Group them by logical implementation order (e.g., 'Foundational Policies' first, then 'Technical Infrastructure').
     
-    Controls:
-    ${gaps.slice(0, 20).map(g => `- ${g.id}: ${g.title}`).join('\n')}
+    Gaps list:
+    ${gaps.slice(0, 30).map(g => `- ${g.id}: ${g.title}`).join('\n')}
   `;
 
   try {
@@ -87,7 +96,7 @@ export const outlineRequirementsRoadmap = async (
     });
     return response.text || "Failed to generate roadmap.";
   } catch (e) {
-    return "Could not generate roadmap at this time.";
+    return "Could not generate roadmap at this time. Please ensure you have identified specific gaps in the mission control.";
   }
 };
 
@@ -96,8 +105,9 @@ export const analyzePolicyGap = async (
   policyText: string
 ): Promise<string> => {
   const prompt = `
-    Analyze the gaps between this policy text and NIST 800-171 Requirement ${req.id}.
-    Requirement Description: ${req.description}
+    Audit this policy text against Requirement ${req.id} (${req.title}).
+    Identify specific missing elements required by NIST 800-171.
+    
     Policy Text: "${policyText}"
   `;
 
@@ -105,11 +115,11 @@ export const analyzePolicyGap = async (
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
-        config: { systemInstruction: "You are a strict compliance auditor." }
+        config: { systemInstruction: "You are a strict, detail-oriented compliance auditor." }
     });
     return response.text || "Analysis failed.";
   } catch (e) {
-    return "Error analyzing policy.";
+    return "Error analyzing policy text.";
   }
 };
 
@@ -127,7 +137,7 @@ export const analyzeNetworkDiagram = async (
       contents: {
         parts: [
           { inlineData: { mimeType, data } },
-          { text: "Analyze this network diagram and outline the security boundaries and CUI flows." }
+          { text: "Identify the assessment boundaries, firewalls, and CUI repositories in this diagram. List compliance risks for NIST 800-171." }
         ]
       },
     });
@@ -143,9 +153,11 @@ export const generateComplianceDocument = async (
   answers: Record<string, string>
 ): Promise<string> => {
   const prompt = `
-    Generate a professional ${type} titled "${title}" aligned with NIST 800-18.
+    Generate a formal NIST 800-18 compliant document.
+    Type: ${type}
+    Title: ${title}
     
-    Answers:
+    Details provided:
     ${Object.entries(answers).map(([q, a]) => `${q}: ${a}`).join('\n')}
   `;
 
@@ -154,7 +166,7 @@ export const generateComplianceDocument = async (
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: { 
-        systemInstruction: "You are a senior federal cybersecurity architect.",
+        systemInstruction: "You are a lead federal cybersecurity architect writing mission-critical documentation.",
       }
     });
     return response.text || "Failed to generate document.";
@@ -167,17 +179,18 @@ export const analyzeAuvikTopology = async (
   devices: AuvikDevice[]
 ): Promise<string> => {
   const prompt = `
-    Analyze the following network device topology for NIST 800-171 compliance.
+    Analyze this network inventory for CMMC 2.0 / NIST 800-171 scope compliance.
+    Flag any flat network risks (missing VLAN segmentation for CUI).
     
-    Devices:
-    ${devices.map(d => `- ${d.name} (${d.type}): IP ${d.ipAddress}, VLAN ${d.vlan || 'Unknown'}`).join('\n')}
+    Device List:
+    ${devices.map(d => `- ${d.name} (${d.type}): VLAN ${d.vlan || 'None'}`).join('\n')}
   `;
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
-      config: { systemInstruction: "You are a network security architect." }
+      config: { systemInstruction: "You are a senior network security architect." }
     });
     return response.text || "Analysis failed.";
   } catch (e) {
