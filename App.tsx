@@ -452,17 +452,19 @@ const App: React.FC = () => {
             {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} />}
             {currentView === AppView.AUDITOR_PORTAL && <AuditorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} risks={activeData.risks} />}
             {currentView === AppView.BULK_IMPORT && (
-                <BulkImport 
-                    requirements={activeData.requirements} 
-                    activeFrameworkId={activeFramework.id} 
-                    activeClientId={activeClientId}
-                    onBatchUpdate={(updated) => updateActiveClientData(prev => ({
-                        requirements: prev.requirements.map(r => {
-                            const match = updated.find(u => u.id === r.id);
-                            return match ? match : r;
-                        })
-                    }))}
-                />
+                <div className="flex-1 w-full h-full">
+                    <BulkImport 
+                        requirements={activeData.requirements} 
+                        activeFrameworkId={activeFramework.id} 
+                        activeClientId={activeClientId}
+                        onBatchUpdate={(updated) => updateActiveClientData(prev => ({
+                            requirements: prev.requirements.map(r => {
+                                const match = updated.find(u => u.id === r.id);
+                                return match ? match : r;
+                            })
+                        }))}
+                    />
+                </div>
             )}
             {currentView === AppView.DOC_GENERATOR && (
                 <DocGenerator 
