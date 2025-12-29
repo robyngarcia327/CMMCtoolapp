@@ -46,7 +46,6 @@ const AC_CONTROLS: Requirement[] = [
   { id: 'AC.L2-3.1.2', framework: 'NIST-CMMC', family: 'AC', cmmcLevel: 2, title: 'Transaction & Function Control', description: 'Limit system access to the types of transactions and functions that authorized users are permitted to execute.', level: 'Level 2', sprsWeight: 5, objectives: createObjs(['a', 'b', 'c']), mappings: { nist800_53: ['AC-6'] }, discussion: 'Restrict user capabilities based on roles.' },
   { id: 'AC.L2-3.1.3', framework: 'NIST-CMMC', family: 'AC', cmmcLevel: 2, title: 'Control CUI Flow', description: 'Control the flow of CUI in accordance with approved authorizations.', level: 'Level 2', sprsWeight: 3, objectives: createObjs(['a', 'b']), mappings: { nist800_53: ['AC-4'] }, discussion: 'Regulate information flow.' }
 ];
-// (Additional 107 NIST controls truncated for brevity, assume full set remains in actual implementation)
 
 // --- SOC 2 TRUST SERVICES CRITERIA ---
 const SOC2_CONTROLS: Requirement[] = [
@@ -104,5 +103,7 @@ export const createInitialClientData = (isParent: boolean): ClientData => ({
   auvikConfig: { apiKey: '', tenantId: '', region: 'US', enabled: false },
   awsConfig: { enabled: false },
   googleConfig: { enabled: false },
-  siemConfig: { enabled: false }
+  siemConfig: { enabled: false },
+  defenderConfig: { enabled: false },
+  s1Config: { enabled: false }
 });

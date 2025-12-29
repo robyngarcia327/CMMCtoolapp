@@ -78,6 +78,7 @@ export interface IntegrationConfig {
     connectedAt?: number;
     accountName?: string;
     tenantId?: string;
+    apiKey?: string;
 }
 
 export interface Client {
@@ -138,6 +139,8 @@ export interface ClientData {
   awsConfig: IntegrationConfig;
   googleConfig: IntegrationConfig;
   siemConfig: IntegrationConfig;
+  defenderConfig: IntegrationConfig;
+  s1Config: IntegrationConfig;
 }
 
 export enum AppView {
@@ -154,7 +157,8 @@ export enum AppView {
   NETWORK_ANALYSIS = 'NETWORK_ANALYSIS',
   AUDITOR_PORTAL = 'AUDITOR_PORTAL',
   ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
-  MSP_DASHBOARD = 'MSP_DASHBOARD'
+  MSP_DASHBOARD = 'MSP_DASHBOARD',
+  INTEGRATIONS = 'INTEGRATIONS'
 }
 
 export interface Framework {

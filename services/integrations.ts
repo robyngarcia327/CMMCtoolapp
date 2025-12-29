@@ -1,5 +1,5 @@
 
-import { Asset, User, IntegrationConfig } from '../types';
+import { Asset, User, IntegrationConfig, UserRole } from '../types';
 
 /**
  * Mock automated evidence collection
@@ -36,7 +36,6 @@ export const integrationService = {
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
     
     return lines.slice(1).filter(line => line.trim()).map(line => {
-      // Basic CSV splitting (does not handle nested commas in quotes for this simple version)
       const values = line.split(',').map(v => v.trim());
       const asset: any = { source: 'CSV_Import', lastSynced: Date.now() };
       
@@ -53,6 +52,44 @@ export const integrationService = {
       });
       
       return asset;
+    });
+  },
+
+  /**
+   * Parses CSV string into User objects
+   * Expected format: Name,Email,Role,Department,MFA_Enabled
+   */
+  parseUserCsv: (csvText: string): Partial<User>[] => {
+    const lines = csvText.split(/\r?\n/);
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    
+    return lines.slice(1).filter(line => line.trim()).map(line => {
+      const values = line.split(',').map(v => v.trim());
+      const user: any = { iamSource: 'CSV_Import', lastSynced: Date.now() };
+      
+      headers.forEach((header, i) => {
+        const val = values[i];
+        if (!val) return;
+
+        if (header === 'name') user.name = val;
+        if (header === 'email') user.email = val;
+        if (header === 'department') user.department = val;
+        if (header === 'role') {
+            // Mapping friendly names to UserRole enum
+            const roleMap: Record<string, UserRole> = {
+                'admin': 'CLIENT_ADMIN',
+                'user': 'CLIENT_USER',
+                'tech': 'MSP_TECH',
+                'msp': 'MSP_ADMIN'
+            };
+            user.role = roleMap[val.toLowerCase()] || 'CLIENT_USER';
+        }
+        if (header === 'mfa_enabled') user.mfaEnabled = val.toLowerCase() === 'true' || val === '1';
+      });
+      
+      return user;
     });
   },
 

@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { User, UserRole, IntegrationConfig } from '../types';
 import { 
   User as UserIcon, Shield, Mail, Lock, RefreshCw, 
   Cloud, Database, Search, Plus, Trash2, 
-  CheckCircle2, AlertTriangle, Fingerprint, Info
+  CheckCircle2, AlertTriangle, Fingerprint, Info,
+  FileSpreadsheet, Upload
 } from 'lucide-react';
 import { integrationService } from '../services/integrations';
 
@@ -26,11 +27,51 @@ export const UserManagement: React.FC<UserManagementProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [newUser, setNewUser] = useState<Partial<User>>({
       role: 'CLIENT_USER',
       isCuiAuthorized: false
   });
+
+  const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const parsedUsers = integrationService.parseUserCsv(text);
+      
+      let addedCount = 0;
+      parsedUsers.forEach(pu => {
+        if (!pu.email || !pu.name) return;
+
+        // Prevent duplicate emails
+        const exists = users.find(u => u.email.toLowerCase() === pu.email?.toLowerCase());
+        if (!exists) {
+            onAddUser({
+              id: `U-CSV-${Math.floor(Math.random() * 100000)}`,
+              organizationId: 'current',
+              name: pu.name,
+              email: pu.email,
+              role: pu.role || 'CLIENT_USER',
+              department: pu.department || 'General',
+              lastLogin: 0,
+              mfaEnabled: !!pu.mfaEnabled,
+              hasPasskey: false,
+              isCuiAuthorized: false,
+              iamSource: 'CSV_Import',
+              lastSynced: Date.now()
+            });
+            addedCount++;
+        }
+      });
+      alert(`Import complete: Added ${addedCount} new identities from CSV.`);
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleEntraSync = async () => {
       setIsSyncing(true);
@@ -106,14 +147,21 @@ export const UserManagement: React.FC<UserManagementProps> = ({
             </h2>
             <p className="text-slate-600 text-sm">Control user access and CUI authorization levels.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+            <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleCsvUpload} />
+            <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 shadow-sm text-sm font-medium transition-all"
+            >
+                <FileSpreadsheet size={18} className="text-green-600" /> Bulk Import (CSV)
+            </button>
             <button 
                 onClick={handleEntraSync}
                 disabled={isSyncing}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 shadow-sm text-sm font-bold transition-all disabled:opacity-50"
             >
                 {isSyncing ? <RefreshCw className="animate-spin" size={16} /> : <Cloud size={16} />}
-                {isSyncing ? 'Syncing Identities...' : 'Sync with Entra ID'}
+                {isSyncing ? 'Syncing...' : 'Sync with Entra ID'}
             </button>
             <button 
                 onClick={() => setIsAdding(true)}
@@ -207,7 +255,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                           <td className="p-4">
                               <div className="flex flex-col">
                                 <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                                    {user.iamSource === 'EntraID' && <Cloud size={12} className="text-blue-500" />}
+                                    {(user.iamSource === 'EntraID' || user.iamSource === 'CSV_Import') && <Database size={12} className="text-blue-500" />}
                                     {user.iamSource || 'Manual'}
                                 </span>
                                 {user.lastSynced && <span className="text-[9px] text-slate-400">Synced {new Date(user.lastSynced).toLocaleDateString()}</span>}
