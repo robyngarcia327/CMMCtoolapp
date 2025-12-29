@@ -12,8 +12,10 @@ export interface Requirement {
   family: string;
   title: string;
   description: string;
-  discussion: string;
-  level: string;
+  // Made optional to match data/standards.ts entries
+  discussion?: string;
+  // Made optional to match data/standards.ts entries
+  level?: string;
   cmmcLevel?: 1 | 2 | 3; 
   objectives: AssessmentObjective[];
   sprsWeight?: number;
