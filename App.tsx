@@ -46,7 +46,6 @@ import { BulkImport } from './components/BulkImport';
 import { MSPDashboard } from './components/MSPDashboard';
 import { OrganizationManager } from './components/OrganizationManager';
 import { DocGenerator } from './components/DocGenerator';
-import { IntegrationsHub } from './components/IntegrationsHub';
 import { api } from './services/api';
 
 // --- Render Helpers ---
@@ -361,7 +360,6 @@ const App: React.FC = () => {
                           <NavItem label="Onboarding Wizard" icon={Wand2} isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} />
                       </NavDropdown>
                       <NavDropdown label="Governance" icon={FileText}>
-                          <NavItem label="Integrations Hub" icon={Zap} isActive={currentView === AppView.INTEGRATIONS} onClick={() => setCurrentView(AppView.INTEGRATIONS)} />
                           <NavItem label="Policy Center" icon={FileText} isActive={currentView === AppView.DOC_GENERATOR} onClick={() => setCurrentView(AppView.DOC_GENERATOR)} />
                           <NavItem label="Asset Inventory" icon={Package} isActive={currentView === AppView.INVENTORY} onClick={() => setCurrentView(AppView.INVENTORY)} />
                           <NavItem label="Identity Management" icon={Users} isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
@@ -454,12 +452,6 @@ const App: React.FC = () => {
                 onToggleChat={() => setIsChatOpen(!isChatOpen)}
               />
             )}
-            {currentView === AppView.INTEGRATIONS && (
-                <IntegrationsHub 
-                    data={activeData}
-                    onUpdateConfig={(key, config) => updateActiveClientData(prev => ({ [key]: config }))}
-                />
-            )}
             {currentView === AppView.REQUIREMENTS && (
                 <>
                     <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => setSelectedRequirementId(r.id)} activeFrameworkId={activeFramework.id} />
@@ -550,6 +542,7 @@ const App: React.FC = () => {
                 <OrganizationManager 
                     clients={clients} 
                     clientDataStore={clientDataStore}
+                    activeClientId={activeClientId}
                     onAddClient={(c) => setClients([...clients, c])}
                     onUpdateClient={(c) => setClients(clients.map(old => old.id === c.id ? c : old))}
                     onDeleteClient={(id) => setClients(clients.filter(c => c.id !== id))}
