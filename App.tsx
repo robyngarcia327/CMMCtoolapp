@@ -20,7 +20,8 @@ import {
   Eye,
   FileSpreadsheet,
   Building2,
-  FileText
+  FileText,
+  Database
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData } from './data/standards';
@@ -171,6 +172,26 @@ const App: React.FC = () => {
       }
   }, [auth.isAuthenticated, auth.user?.id_token, loadOrganizations]);
 
+  const enterLocalMode = () => {
+      setHasCheckedOrgs(true);
+      setOrgFetchError(null);
+      const localId = 'local-dev-org';
+      const localClient: Client = {
+          id: localId,
+          name: 'Local Assessment (Demo)',
+          industry: 'Defense Industrial Base',
+          contactName: auth.user?.profile.email || 'Admin',
+          logoInitial: 'L',
+          primaryFramework: 'NIST-CMMC',
+          nextAuditDate: Date.now() + 31536000000,
+          accountManager: 'Self-Managed',
+          isParent: false
+      };
+      setClients([localClient]);
+      setActiveClientId(localId);
+      setClientDataStore({ [localId]: createInitialClientData(false) });
+  };
+
   const handleLogout = () => {
       localStorage.removeItem('activeOrgId');
       auth.signoutRedirect();
@@ -211,6 +232,9 @@ const App: React.FC = () => {
                   <div className="space-y-3">
                     <button onClick={() => { fetchAttempted.current = false; loadOrganizations(); }} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
                         <RefreshCw size={18} /> Retry Connection
+                    </button>
+                    <button onClick={enterLocalMode} className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2">
+                        <Database size={18} /> Proceed in Local Mode
                     </button>
                     <button onClick={handleLogout} className="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-medium hover:bg-slate-200 transition-colors">
                         Sign Out
