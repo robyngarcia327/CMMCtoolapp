@@ -153,10 +153,21 @@ export const generateComplianceDocument = async (
   title: string,
   answers: Record<string, string>
 ): Promise<string> => {
+  // Map document types to their correct NIST standards
+  let standard = "NIST SP 800-18 Rev. 1 (Guide for Developing Security Plans)";
+  if (title.includes("Incident Response")) {
+    standard = "NIST SP 800-61 Rev. 2 (Computer Security Incident Handling Guide)";
+  } else if (title.includes("Disaster Recovery")) {
+    standard = "NIST SP 800-34 Rev. 1 (Contingency Planning Guide)";
+  }
+
   const prompt = `
-    Generate a formal NIST 800-18 compliant document.
-    Type: ${type}
-    Title: ${title}
+    Generate a formal compliance document following ${standard} standards.
+    Document Title: ${title}
+    
+    STRICT REQUIREMENT: 
+    If this is an Incident Response Plan (IRP), DO NOT refer to it as an SSP or an SSP Annex. 
+    It must be a standalone organizational policy document.
     
     Details provided:
     ${Object.entries(answers).map(([q, a]) => `${q}: ${a}`).join('\n')}
@@ -168,7 +179,7 @@ export const generateComplianceDocument = async (
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: { 
-        systemInstruction: "You are a lead federal cybersecurity architect writing mission-critical documentation.",
+        systemInstruction: "You are a lead federal cybersecurity architect writing mission-critical documentation. You strictly follow NIST standards without conflating different document types.",
       }
     });
     return response.text || "Failed to generate document.";

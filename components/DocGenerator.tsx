@@ -12,6 +12,7 @@ interface DocTemplate {
   type: 'Plan' | 'Report';
   icon: React.ReactNode;
   description: string;
+  standardCitation: string;
   questions: string[];
 }
 
@@ -22,6 +23,7 @@ const TEMPLATES: DocTemplate[] = [
     type: 'Plan',
     icon: <ShieldCheck className="text-blue-500" />,
     description: 'Formal document defined by NIST 800-18 describing system boundary, operational environment, and control implementation.',
+    standardCitation: 'NIST SP 800-18 REV 1 ALIGNED',
     questions: [
       "1. Information System Name and Identifier",
       "2. Information System Categorization (FIPS 199 Impact)",
@@ -45,7 +47,8 @@ const TEMPLATES: DocTemplate[] = [
     title: 'Incident Response Plan (IRP)',
     type: 'Plan',
     icon: <AlertTriangle className="text-orange-500" />,
-    description: 'Procedures for detecting, responding to, and limiting the effect of security incidents.',
+    description: 'Procedures for detecting, responding to, and limiting the effect of security incidents per NIST 800-61.',
+    standardCitation: 'NIST SP 800-61 REV 2 ALIGNED',
     questions: [
       "Company Name",
       "Incident Response Team (Roles/Titles)",
@@ -61,7 +64,8 @@ const TEMPLATES: DocTemplate[] = [
     title: 'Disaster Recovery Plan (DRP)',
     type: 'Plan',
     icon: <Activity className="text-red-500" />,
-    description: 'Processes to restore critical IT assets and business operations after a disaster.',
+    description: 'Processes to restore critical IT assets and business operations after a disaster per NIST 800-34.',
+    standardCitation: 'NIST SP 800-34 REV 1 ALIGNED',
     questions: [
       "Company Name",
       "Critical Business Functions",
@@ -164,12 +168,12 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 overflow-y-auto h-full">
+    <div className="max-w-7xl mx-auto p-6 overflow-y-auto h-full text-slate-900">
       <div className="flex justify-between items-end mb-8">
         <div>
             <h2 className="text-3xl font-black text-slate-900 mb-2">Policy Center</h2>
             <p className="text-slate-600 font-medium">
-            Generate professional documentation based on NIST 800-18 standards.
+            Generate professional documentation based on federal NIST standards.
             </p>
         </div>
         <div className="flex bg-slate-200 p-1 rounded-xl">
@@ -226,7 +230,7 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                             {selectedTemplate.title}
                         </h3>
                         <div className="mt-3 text-[10px] bg-blue-50 text-blue-700 px-3 py-2 rounded-lg font-bold flex items-center gap-2 border border-blue-100">
-                            <Info size={14} /> NIST 800-18 Alignment: Providing context for the full security boundary.
+                            <Info size={14} /> Alignment: {selectedTemplate.standardCitation}
                         </div>
                     </div>
 
@@ -327,7 +331,9 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                                     )}
                                 </div>
                                 <div className="mt-24">
-                                    <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mb-4">NIST 800-18 Rev 1 ALIGNED</div>
+                                    <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mb-4">
+                                        {selectedTemplate.standardCitation}
+                                    </div>
                                     <h1 className="text-5xl font-black text-slate-900 mb-6 tracking-tighter uppercase leading-none">{selectedTemplate.title}</h1>
                                     <div className="w-32 h-2 bg-blue-600 mx-auto mb-8"></div>
                                     <h2 className="text-3xl text-slate-500 font-medium tracking-tight italic">{clientName || 'Client Name'}</h2>

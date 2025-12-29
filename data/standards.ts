@@ -38,7 +38,6 @@ export const HIPAA_FAMILIES = [
   { id: 'TECH', name: 'Technical Safeguards' }
 ];
 
-// Helper to generate objectives
 const createObjs = (ids: string[]) => ids.map(id => ({ id, description: `Verify objective [${id}] for this control requirement per NIST 800-171A.`, status: 'pending' as const }));
 
 // --- NIST 800-171 COMPLETE 110 CONTROL DATASET ---
