@@ -5,12 +5,14 @@ const CLIENT_ID = "5pe5430hrtohupn12gj8r66qtb";
 const COGNITO_DOMAIN = "https://us-east-1ky47rcgyh.auth.us-east-1.amazoncognito.com"; 
 
 const getRedirectUri = () => {
-  // Use the current origin dynamically. 
-  // IMPORTANT: Ensure this URL (including the trailing slash if present) 
-  // matches exactly what is in Cognito's "Allowed Callback URLs".
-  const origin = window.location.origin;
-  // If origin is cualleecyber.com, we must ensure it matches the configured value.
-  return origin.endsWith('/') ? origin : `${origin}/`;
+  // Use current origin. We must be consistent with the trailing slash.
+  // Standardizing on NO trailing slash unless it's strictly the root domain.
+  let origin = window.location.origin;
+  
+  // If the origin is just a protocol + domain (e.g., http://localhost:5173 or https://cuallee.com)
+  // we check if Cognito expects the slash. Most Cognito setups are sensitive to this.
+  // Standardizing here to return exactly what is usually configured in the AWS Console.
+  return origin.endsWith('/') ? origin.slice(0, -1) : origin;
 };
 
 const redirectUri = getRedirectUri();

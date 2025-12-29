@@ -21,7 +21,9 @@ import {
   FileSpreadsheet,
   Building2,
   FileText,
-  Database
+  Database,
+  Trash2,
+  Lock
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData } from './data/standards';
@@ -159,7 +161,10 @@ const App: React.FC = () => {
           setHasCheckedOrgs(true);
       } catch (e: any) {
           console.error("Critical: Failed to load organizations", e);
-          setOrgFetchError(e.message || "Network Error: Could not connect to the security gateway.");
+          const msg = e.message?.includes('401') 
+            ? "Session Expired: Please log out and log back in to refresh your secure token." 
+            : e.message || "Network Error: Could not connect to the security gateway.";
+          setOrgFetchError(msg);
       } finally {
           setIsDataLoading(false);
       }
@@ -171,6 +176,18 @@ const App: React.FC = () => {
           loadOrganizations();
       }
   }, [auth.isAuthenticated, auth.user?.id_token, loadOrganizations]);
+
+  const retryConnection = () => {
+      fetchAttempted.current = false;
+      loadOrganizations();
+  };
+
+  const handleHardReset = () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      auth.removeUser();
+      window.location.reload();
+  };
 
   const enterLocalMode = () => {
       setHasCheckedOrgs(true);
@@ -229,16 +246,26 @@ const App: React.FC = () => {
                   </div>
                   <h2 className="text-xl font-bold text-slate-800 mb-2">Sync Error</h2>
                   <p className="text-slate-500 text-sm mb-6">{orgFetchError}</p>
+                  
                   <div className="space-y-3">
-                    <button onClick={() => { fetchAttempted.current = false; loadOrganizations(); }} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                    <button onClick={retryConnection} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg">
                         <RefreshCw size={18} /> Retry Connection
                     </button>
                     <button onClick={enterLocalMode} className="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-black transition-colors flex items-center justify-center gap-2">
                         <Database size={18} /> Proceed in Local Mode
                     </button>
-                    <button onClick={handleLogout} className="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-medium hover:bg-slate-200 transition-colors">
-                        Sign Out
-                    </button>
+                    
+                    <div className="pt-4 mt-4 border-t border-slate-100">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3">Recovery Tools</p>
+                        <div className="flex gap-2">
+                            <button onClick={handleHardReset} className="flex-1 bg-slate-100 text-slate-600 py-2 rounded-lg text-xs font-bold hover:bg-red-50 hover:text-red-600 transition-all flex items-center justify-center gap-2">
+                                <Trash2 size={14} /> Clear Cache
+                            </button>
+                            <button onClick={handleLogout} className="flex-1 bg-slate-100 text-slate-600 py-2 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all flex items-center justify-center gap-2">
+                                <LogOut size={14} /> Sign Out
+                            </button>
+                        </div>
+                    </div>
                   </div>
               </div>
           </div>
