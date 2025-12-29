@@ -2,8 +2,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { Requirement, AuvikDevice } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 const SYSTEM_INSTRUCTION_CHAT = `
 You are an expert cybersecurity compliance consultant specialized in CMMC 2.0 and NIST SP 800-171A.
 Your goal is to assist compliance teams by outlining what is required to reach compliance.
@@ -18,6 +16,7 @@ export const sendChatMessage = async (
   history: { role: 'user' | 'model'; text: string }[]
 ): Promise<string> => {
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: [
@@ -31,12 +30,11 @@ export const sendChatMessage = async (
     return response.text || "I'm sorry, I couldn't generate a response.";
   } catch (error) {
     console.error("Gemini Chat Error:", error);
-    return "Error connecting to the AI assistant.";
+    return "Error connecting to the AI assistant. Please verify your API configuration.";
   }
 };
 
 export const explainRequirement = async (req: Requirement): Promise<string> => {
-  // Enhanced prompt to ensure model has enough context even with limited fields
   const prompt = `
     Please act as a Senior Cybersecurity Compliance Assessor.
     Provide a detailed breakdown for NIST SP 800-171 / CMMC 2.0 Requirement.
@@ -55,6 +53,7 @@ export const explainRequirement = async (req: Requirement): Promise<string> => {
   `;
   
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
@@ -70,8 +69,7 @@ export const explainRequirement = async (req: Requirement): Promise<string> => {
     return response.text;
   } catch (e: any) {
     console.error("AI Explanation Error:", e);
-    // Return a more descriptive failure to the UI
-    return `AI Synthesis Failed. (Error: ${e.message || 'Check Connectivity'}). Ensure the Control ID ${req.id} is a valid NIST 800-171 reference.`;
+    return `AI Synthesis Failed. (Error: ${e.message || 'Check Connectivity'}). Ensure the Control ID ${req.id} is a valid NIST 800-171 reference and your API key is active.`;
   }
 };
 
@@ -89,6 +87,7 @@ export const outlineRequirementsRoadmap = async (
   `;
 
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
@@ -112,6 +111,7 @@ export const analyzePolicyGap = async (
   `;
 
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
@@ -132,6 +132,7 @@ export const analyzeNetworkDiagram = async (
   const data = matches[2];
 
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview', 
       contents: {
@@ -162,6 +163,7 @@ export const generateComplianceDocument = async (
   `;
 
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
@@ -187,6 +189,7 @@ export const analyzeAuvikTopology = async (
   `;
 
   try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
