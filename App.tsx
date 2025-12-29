@@ -455,6 +455,7 @@ const App: React.FC = () => {
                 <BulkImport 
                     requirements={activeData.requirements} 
                     activeFrameworkId={activeFramework.id} 
+                    activeClientId={activeClientId}
                     onBatchUpdate={(updated) => updateActiveClientData(prev => ({
                         requirements: prev.requirements.map(r => {
                             const match = updated.find(u => u.id === r.id);
