@@ -55,8 +55,13 @@ export const storageService = {
           });
           
           // Re-sort requirements by ID numerically to maintain order
+          // Handles IDs like AC.L2-3.1.1
           clientData.requirements.sort((a, b) => {
-              const parseId = (id: string) => id.split('.').map(Number);
+              const parseId = (id: string) => {
+                  const match = id.match(/(\d+\.\d+\.\d+)$/);
+                  if (match) return match[1].split('.').map(Number);
+                  return [0,0,0];
+              };
               const aParts = parseId(a.id);
               const bParts = parseId(b.id);
               for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
