@@ -1,11 +1,12 @@
 
-// --- AWS COGNITO & IDENTITY POOL CONFIGURATION ---
+import { WebStorageStateStore } from "oidc-client-ts";
+
+// --- AWS COGNITO CONFIGURATION ---
 const USER_POOL_ID = "us-east-1_ky47RcgYh"; 
 const CLIENT_ID = "5pe5430hrtohupn12gj8r66qtb";
 const REGION = "us-east-1";
-const COGNITO_DOMAIN = "cuallee-cyber.auth.us-east-1.amazoncognito.com";
 
-// Exactly as configured in your AWS Console
+// Cognito requires an exact match. 
 const REDIRECT_URI = "https://www.cualleecyber.com";
 
 export const authConfig = {
@@ -17,13 +18,12 @@ export const authConfig = {
   scope: "openid email profile",
   automaticSilentRenew: true,
   loadUserInfo: true,
-  // Explicit metadata fixes common discovery errors in AWS Cognito
-  metadata: {
-    issuer: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
-    authorization_endpoint: `https://${COGNITO_DOMAIN}/oauth2/authorize`,
-    token_endpoint: `https://${COGNITO_DOMAIN}/oauth2/token`,
-    userinfo_endpoint: `https://${COGNITO_DOMAIN}/oauth2/userInfo`,
-    end_session_endpoint: `https://${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(REDIRECT_URI)}`,
-    jwks_uri: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`,
+  // Use session storage for state to prevent cross-tab or stale-data conflicts
+  userStore: new WebStorageStateStore({ store: window.sessionStorage }),
+  // Custom metadata is usually unnecessary if authority is correct
+  // but we keep the logout logic custom as Cognito doesn't support standard end_session
+  onEndSession: () => {
+    const domain = "cuallee-cyber.auth.us-east-1.amazoncognito.com";
+    window.location.href = `https://${domain}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(REDIRECT_URI)}`;
   }
 };
