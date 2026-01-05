@@ -1,6 +1,5 @@
 
 
-
 import React, { useState } from 'react';
 import { Client } from '../types';
 import { ChevronDown, Plus, Building2, Check, X, Shield } from 'lucide-react';
@@ -30,6 +29,7 @@ export const ClientSwitcher: React.FC<ClientSwitcherProps> = ({
     const newClient: Client = {
         id: `client-${Date.now()}`,
         name: newClientName,
+        domain: newClientName.toLowerCase().replace(/\s+/g, '-') + '.com', // Fixed missing domain property
         industry: newClientIndustry || 'General',
         contactName: 'Admin',
         logoInitial: newClientName.charAt(0).toUpperCase(),

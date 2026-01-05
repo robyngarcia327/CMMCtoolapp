@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Client, User, UserRole, ClientData, BrandingConfig, IntegrationConfig } from '../types';
 import { Plus, Shield, Trash2, Mail, Search, Upload, Palette, Zap } from 'lucide-react';
@@ -57,6 +58,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
         const newClient: Client = {
             id: `client-${Date.now()}`,
             name: clientForm.name,
+            domain: clientForm.name.toLowerCase().replace(/\s+/g, '-') + '.com', // Fixed missing domain property
             industry: clientForm.industry || 'General',
             contactName: 'Admin',
             logoInitial: clientForm.name.charAt(0).toUpperCase(),
@@ -123,6 +125,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
           id: `u-${Date.now()}`,
           name: newUser.name,
           email: newUser.email,
+          domain: newUser.email.split('@')[1] || 'unknown.com', // Fixed missing domain property
           organizationId: newUser.organizationId,
           role: (newUser.role as UserRole) || 'CLIENT_USER',
           department: newUser.department || 'General',

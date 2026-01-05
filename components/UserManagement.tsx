@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef } from 'react';
 import { User, UserRole, IntegrationConfig } from '../types';
 import { 
@@ -55,6 +56,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
               organizationId: 'current',
               name: pu.name,
               email: pu.email,
+              domain: pu.email.split('@')[1] || 'unknown.com',
               role: pu.role || 'CLIENT_USER',
               department: pu.department || 'General',
               lastLogin: 0,
@@ -88,7 +90,8 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                       id: `ENTRA-${Date.now()}-${Math.random()}`,
                       organizationId: 'current',
                       lastLogin: 0,
-                      hasPasskey: false
+                      hasPasskey: false,
+                      domain: su.email?.split('@')[1] || 'unknown.com'
                   });
                   addedCount++;
               } else {
@@ -118,6 +121,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
           organizationId: 'current',
           name: newUser.name,
           email: newUser.email,
+          domain: newUser.email.split('@')[1] || 'unknown.com', // Fixed missing domain property
           role: (newUser.role as UserRole) || 'CLIENT_USER',
           department: newUser.department || 'General',
           lastLogin: Date.now(),

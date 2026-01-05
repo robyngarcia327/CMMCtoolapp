@@ -1,7 +1,8 @@
 
-import { Artifact, Client } from '../types';
+import { Artifact, Client, CognitoGroup } from '../types';
+import { authConfig } from '../authConfig';
 
-// Configuration - API Gateway Endpoint
+// Configuration - Your deployed API Gateway endpoint
 const API_BASE_URL = 'https://irwrdtn81b.execute-api.us-east-1.amazonaws.com/CualleeCyberEvidence'; 
 
 /**
@@ -15,12 +16,9 @@ const parseResponseData = async (response: Response) => {
     try {
         data = JSON.parse(text);
     } catch (e) {
-        // Not JSON, return as is (could be an error string)
         return text;
     }
     
-    // AWS Lambda Proxy Integration Robustness:
-    // If Lambda returns { "statusCode": 200, "body": "{...}" }
     if (data && data.body !== undefined) {
         if (typeof data.body === 'string') {
             try {
@@ -36,36 +34,22 @@ const parseResponseData = async (response: Response) => {
     return data;
 };
 
-/**
- * Ensures a data object is transformed into an array, checking common wrappers.
- */
 const ensureArray = (data: any): any[] => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
-    
-    // Check known wrappers returned by various backend versions
     if (data && typeof data === 'object') {
         if (Array.isArray(data.items)) return data.items;
         if (Array.isArray(data.organizations)) return data.organizations;
         if (Array.isArray(data.orgs)) return data.orgs;
         if (Array.isArray(data.data)) return data.data;
         if (Array.isArray(data.evidence)) return data.evidence;
-        
-        // If it's a single object with an identifying field, wrap it
-        if (data.orgId || data.OrgId || data.evidenceId || data.name || data.Name) return [data];
     }
-    
     return [];
 };
 
 export const api = {
   
-  /**
-   * 1. GET /orgs
-   * Fetches the list of organizations the authenticated user belongs to.
-   */
   getOrgs: async (token: string): Promise<{ orgId: string, name: string, role: string, industry?: string, domain?: string }[]> => {
-    console.debug("API Request: GET /orgs");
     try {
       const response = await fetch(`${API_BASE_URL}/orgs`, {
         method: 'GET',
@@ -75,30 +59,15 @@ export const api = {
           'Accept': 'application/json'
         }
       });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("API Error (getOrgs):", {
-            status: response.status,
-            body: errorBody
-        });
-        throw new Error(`Server returned ${response.status}: ${errorBody || response.statusText}`);
-      }
-
+      if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const rawData = await parseResponseData(response);
-      const items = ensureArray(rawData);
-      
-      return items;
+      return ensureArray(rawData);
     } catch (error) {
-      console.error("API Network/CORS failure:", error);
+      console.error("API failure:", error);
       throw error;
     }
   },
 
-  /**
-   * Create Organization
-   * POST /orgs
-   */
   createOrg: async (token: string, name: string, domain?: string): Promise<{ orgId: string, name: string }> => {
     const response = await fetch(`${API_BASE_URL}/orgs`, {
       method: 'POST',
@@ -106,41 +75,25 @@ export const api = {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ name, domain })
+      body: JSON.stringify({ name, domain, initialRole: 'Tenant_Admin' })
     });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error("API Error (createOrg):", { status: response.status, body: errorText });
-        throw new Error(errorText || 'Failed to create organization');
-    }
-
+    if (!response.ok) throw new Error('Failed to create organization');
     return await parseResponseData(response);
   },
 
-  /**
-   * Domain Discovery (Simulated)
-   * GET /orgs/suggested?domain=xyz.com
-   */
   getSuggestedOrgs: async (token: string, domain: string): Promise<any[]> => {
-      // In a real implementation, this would call a specialized endpoint 
-      // that returns organizations matching a domain even if the user isn't a member yet.
-      console.debug(`Discovering organizations for domain: ${domain}`);
-      
-      // For this prototype, we simulate finding a matching org if the domain matches
-      // the existing established organizations in the pool.
       try {
-        const allOrgs = await api.getOrgs(token);
-        return allOrgs.filter(o => o.domain === domain);
+        const response = await fetch(`${API_BASE_URL}/orgs/discover?domain=${domain}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) return [];
+        const rawData = await parseResponseData(response);
+        return ensureArray(rawData);
       } catch (e) {
         return [];
       }
   },
 
-  /**
-   * Join Organization
-   * POST /orgs/{id}/join
-   */
   joinOrg: async (token: string, orgId: string): Promise<void> => {
       const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/join`, {
           method: 'POST',
@@ -153,9 +106,38 @@ export const api = {
   },
 
   /**
-   * 2. Evidence Upload Flow (3 Steps)
+   * Admin Global Methods - Targets your administrative Lambda backend
    */
+  promoteUser: async (token: string, userId: string, group: CognitoGroup): Promise<void> => {
+      const response = await fetch(`${API_BASE_URL}/admin/users/promote`, {
+          method: 'POST',
+          headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ userId, targetGroup: group })
+      });
+      if (!response.ok) throw new Error("Backend Admin Service failed to promote user");
+  },
+
+  deleteUser: async (token: string, userId: string): Promise<void> => {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Backend Admin Service failed to delete identity");
+  },
+
+  deleteTenant: async (token: string, orgId: string): Promise<void> => {
+      const response = await fetch(`${API_BASE_URL}/admin/orgs/${orgId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Backend Admin Service failed to purge tenant");
+  },
+
   uploadEvidence: async (token: string, orgId: string, file: File, requirementId: string): Promise<Artifact> => {
+    // 1. Request presigned URL from Lambda
     const initResponse = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/upload-request`, {
       method: 'POST',
       headers: {
@@ -169,31 +151,27 @@ export const api = {
       })
     });
 
-    if (!initResponse.ok) {
-        const err = await initResponse.text();
-        throw new Error(`Failed to initiate upload: ${err}`);
-    }
+    if (!initResponse.ok) throw new Error(`Failed to initiate secure upload`);
     
-    const initData = await parseResponseData(initResponse);
-    const { uploadUrl, evidenceId, requiredHeaders } = initData;
+    const { uploadUrl, evidenceId, requiredHeaders } = await parseResponseData(initResponse);
 
+    // 2. Direct upload to S3 using the presigned URL
     const s3Response = await fetch(uploadUrl, {
       method: 'PUT',
       headers: requiredHeaders, 
       body: file
     });
 
-    if (!s3Response.ok) throw new Error('Failed to upload file to storage');
+    if (!s3Response.ok) throw new Error('Binary transfer to S3 failed');
 
-    const completeResponse = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/upload-complete`, {
+    // 3. Confirm completion to finalize DynamoDB record
+    await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/upload-complete`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
-
-    if (!completeResponse.ok) throw new Error('Failed to complete upload registration');
 
     return {
       id: evidenceId,
@@ -206,9 +184,6 @@ export const api = {
     };
   },
 
-  /**
-   * 3. Evidence Download Flow
-   */
   getDownloadUrl: async (token: string, orgId: string, evidenceId: string): Promise<string> => {
     const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/download-request`, {
       method: 'POST',
@@ -217,16 +192,11 @@ export const api = {
         'Content-Type': 'application/json'
       }
     });
-
-    if (!response.ok) throw new Error('Failed to get download link');
-
+    if (!response.ok) throw new Error('Access denied to artifact');
     const data = await parseResponseData(response);
     return data.downloadUrl; 
   },
 
-  /**
-   * Fetch List of Evidence for an Org
-   */
   getEvidenceList: async (token: string, orgId: string): Promise<Artifact[]> => {
     try {
         const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence`, {
@@ -235,23 +205,19 @@ export const api = {
             'Content-Type': 'application/json'
           }
         });
-
         if (!response.ok) return [];
-
         const rawData = await parseResponseData(response);
         const items = ensureArray(rawData);
-
         return items.map((item: any) => ({
-          id: item.evidenceId || item.EvidenceId,
-          requirementId: item.requirementId || item.RequirementId,
-          name: item.filename || item.Filename || item.name,
-          type: (item.contentType || item.ContentType || '').startsWith('image/') ? 'image' : 'document',
+          id: item.evidenceId || item.id,
+          requirementId: item.requirementId,
+          name: item.filename || item.name,
+          type: (item.contentType || '').startsWith('image/') ? 'image' : 'document',
           url: '', 
           timestamp: item.createdAt ? new Date(item.createdAt).getTime() : Date.now(),
           source: 'USER_UPLOAD'
         }));
     } catch (e) {
-        console.warn("getEvidenceList failed silently", e);
         return [];
     }
   }

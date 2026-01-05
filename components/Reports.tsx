@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { Requirement, PoamEntry, Artifact, SspMetadata } from '../types';
+import { Requirement, PoamEntry, Artifact, SspMetadata, Risk } from '../types';
 import { Printer, BarChart3, AlertOctagon, CheckSquare, Presentation, ShieldCheck, XCircle, Edit2, Save, X, FileText, Lock, Shield, Info, Building, Globe, Map, User, Key, ClipboardList, Calendar, Activity, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface ReportsProps {
   requirements: Requirement[];
+  risks?: Risk[];
   artifacts?: Artifact[];
   activeFrameworkId: string;
   onUpdateRequirement?: (req: Requirement) => void;
@@ -13,7 +14,7 @@ interface ReportsProps {
 
 type ReportType = 'EXECUTIVE' | 'POAM' | 'MATRIX' | 'QBR' | 'SSP';
 
-export const Reports: React.FC<ReportsProps> = ({ requirements, artifacts = [], activeFrameworkId, onUpdateRequirement, sspMetadata }) => {
+export const Reports: React.FC<ReportsProps> = ({ requirements, risks = [], artifacts = [], activeFrameworkId, onUpdateRequirement, sspMetadata }) => {
   const [activeReport, setActiveReport] = useState<ReportType>('EXECUTIVE');
   const [isEditing, setIsEditing] = useState(false);
 
@@ -30,6 +31,8 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, artifacts = [], 
       const s = getReqStatus(r);
       return s === 'not_met' || s === 'pending';
   });
+
+  const openRisks = risks.filter(r => r.status === 'Open');
 
   const getFamilyScore = (familyId: string) => {
      const reqs = filteredRequirements.filter(r => r.family === familyId);
@@ -286,7 +289,7 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, artifacts = [], 
                      </div>
                      <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center shadow-sm">
                         <div className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2">Open Action Items</div>
-                        <div className="text-5xl font-black text-amber-600">{unmetRequirements.length}</div>
+                        <div className="text-5xl font-black text-amber-600">{unmetRequirements.length + openRisks.length}</div>
                      </div>
                 </div>
                 <div>
@@ -317,13 +320,15 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, artifacts = [], 
           {activeReport === 'POAM' && (
             <div>
                  <div className="flex justify-between items-start mb-6 no-print">
-                     <p className="text-slate-600 text-sm">Identifies information system security weaknesses and remediation tasks.</p>
+                     <p className="text-slate-600 text-sm">Unified remediation roadmap tracking technical control gaps and operational risks.</p>
                      {onUpdateRequirement && (<button onClick={() => setIsEditing(!isEditing)} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all ${isEditing ? 'bg-green-600 text-white shadow-lg scale-105' : 'bg-slate-100 text-slate-700 hover:bg-slate-50'}`}>{isEditing ? <><Save size={14} /> Save Entries</> : <><Edit2 size={14} /> Edit Table</>}</button>)}
                  </div>
                  <table className="w-full text-[11px] text-left border-collapse border border-slate-300">
-                    <thead className="bg-slate-900 text-white"><tr><th className="border border-slate-400 p-2 w-20 uppercase font-black">ID</th><th className="border border-slate-400 p-2 w-1/3 uppercase font-black">Weakness</th><th className="border border-slate-400 p-2 uppercase font-black">Scheduled Date</th><th className="border border-slate-400 p-2 uppercase font-black">Milestones</th><th className="border border-slate-400 p-2 uppercase font-black">Status</th></tr></thead>
+                    <thead className="bg-slate-900 text-white"><tr><th className="border border-slate-400 p-2 w-20 uppercase font-black">Source ID</th><th className="border border-slate-400 p-2 w-1/3 uppercase font-black">Weakness / Risk Description</th><th className="border border-slate-400 p-2 uppercase font-black">Scheduled Date</th><th className="border border-slate-400 p-2 uppercase font-black">Milestones / Remediation</th><th className="border border-slate-400 p-2 uppercase font-black">Status</th></tr></thead>
                     <tbody>
-                        {unmetRequirements.length === 0 && (<tr><td colSpan={5} className="p-8 text-center text-slate-500 italic font-medium">No open POA&M items.</td></tr>)}
+                        {unmetRequirements.length === 0 && openRisks.length === 0 && (<tr><td colSpan={5} className="p-8 text-center text-slate-500 italic font-medium">No open POA&M items.</td></tr>)}
+                        
+                        {/* Technical Control Gaps */}
                         {unmetRequirements.map(req => (
                             <tr key={req.id} className="even:bg-slate-50">
                                 <td className="border border-slate-300 p-2 font-mono font-bold align-top text-slate-900">{req.id}</td>
@@ -331,6 +336,25 @@ export const Reports: React.FC<ReportsProps> = ({ requirements, artifacts = [], 
                                 <td className="border border-slate-300 p-2 align-top text-slate-600 font-bold">{isEditing ? (<input type="date" className="w-full border rounded p-1 text-[10px]" value={req.poam?.scheduledCompletionDate || ''} onChange={(e) => handlePoamChange(req, 'scheduledCompletionDate', e.target.value)}/>) : (req.poam?.scheduledCompletionDate || 'TBD')}</td>
                                 <td className="border border-slate-300 p-2 align-top text-slate-600">{isEditing ? (<textarea className="w-full border rounded p-1 text-[10px]" placeholder="Milestones..." value={req.poam?.milestones || ''} onChange={(e) => handlePoamChange(req, 'milestones', e.target.value)}/>) : (req.poam?.milestones || '-')}</td>
                                 <td className="border border-slate-300 p-2 align-top font-black text-[10px]">{isEditing ? (<select className="w-full border rounded p-1 text-[10px]" value={req.poam?.status || 'Planned'} onChange={(e) => handlePoamChange(req, 'status', e.target.value)}><option>Planned</option><option>Ongoing</option><option>Delayed</option><option>Risk Accepted</option></select>) : (<span className={req.poam?.status === 'Ongoing' ? 'text-blue-600' : req.poam?.status === 'Delayed' ? 'text-red-600' : 'text-slate-600'}>{req.poam?.status?.toUpperCase() || 'PLANNED'}</span>)}</td>
+                            </tr>
+                        ))}
+
+                        {/* Operational Risks from FAIR Register */}
+                        {openRisks.map(risk => (
+                            <tr key={risk.id} className="bg-amber-50/30">
+                                <td className="border border-slate-300 p-2 font-mono font-bold align-top text-amber-700">{risk.id}</td>
+                                <td className="border border-slate-300 p-2 align-top">
+                                    <div className="font-bold mb-1 text-slate-800 flex items-center gap-1">
+                                        <AlertTriangle size={10} className="text-amber-500" /> {risk.description}
+                                    </div>
+                                    <div className="text-[9px] text-slate-400 uppercase font-black tracking-widest">FAIR OPERATIONAL RISK</div>
+                                </td>
+                                <td className="border border-slate-300 p-2 align-top text-slate-600 font-bold italic">TBD (High Exposure)</td>
+                                <td className="border border-slate-300 p-2 align-top text-slate-600 leading-tight">
+                                    <div className="font-bold text-[9px] text-slate-500 uppercase mb-1">Remediation Strategy:</div>
+                                    {risk.remediation || 'No strategy defined.'}
+                                </td>
+                                <td className="border border-slate-300 p-2 align-top font-black text-[10px] text-amber-600 uppercase">RISK OPEN</td>
                             </tr>
                         ))}
                     </tbody>

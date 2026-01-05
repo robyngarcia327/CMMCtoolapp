@@ -1,4 +1,28 @@
 
+export type CognitoGroup = 'Admin_Created_Users' | 'Application_Administrator' | 'Tenant_Admin' | 'Auditor';
+
+// Added TrainingModule interface
+export interface TrainingModule {
+  id: string;
+  familyId: string;
+  title: string;
+  description: string;
+  content: string;
+  durationMinutes: number;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+}
+
+// Added AuvikDevice interface
+export interface AuvikDevice {
+  id: string;
+  name: string;
+  type: string;
+  ipAddress: string;
+  vlan?: string;
+  firmware?: string;
+  isOnline: boolean;
+}
+
 export interface AssessmentObjective {
   id: string;
   description: string;
@@ -56,14 +80,16 @@ export interface Asset {
   externalId?: string;
 }
 
-export type UserRole = 'MSP_ADMIN' | 'MSP_TECH' | 'CLIENT_ADMIN' | 'CLIENT_USER';
+// Added UserRole type
+export type UserRole = 'CLIENT_USER' | 'CLIENT_ADMIN' | 'MSP_TECH' | 'MSP_ADMIN';
 
 export interface User {
   id: string;
   organizationId: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: CognitoGroup | UserRole; // Updated to support both CognitoGroup and UserRole
+  domain: string;
   department: string;
   lastLogin: number;
   mfaEnabled: boolean;
@@ -84,7 +110,7 @@ export interface IntegrationConfig {
 export interface Client {
   id: string;
   name: string;
-  domain?: string; // New: Added domain for automatic user grouping
+  domain: string; // Required for auto-grouping
   industry: string;
   contactName: string;
   logoInitial: string;
@@ -93,29 +119,6 @@ export interface Client {
   accountManager: string;
   isParent: boolean;
   branding?: BrandingConfig;
-}
-
-export interface WizardProgress {
-  currentStep: 'INTRO' | 'INVENTORY' | 'NETWORK' | 'ASSESSMENT' | 'VALIDATION';
-  currentQuestionIndex: number;
-}
-
-export interface SspMetadata {
-  systemName: string;
-  systemIdentifier: string;
-  categorization: 'LOW' | 'MODERATE' | 'HIGH';
-  systemOwner: string;
-  authorizingOfficial: string;
-  otherDesignatedContacts?: string;
-  assignmentOfSecurityResponsibility?: string;
-  operationalStatus?: 'Operational' | 'Under Development' | 'Major Modification';
-  systemType?: string;
-  generalDescription?: string;
-  systemEnvironment?: string;
-  interconnections?: string;
-  lawsAndPolicies?: string;
-  completionDate?: string;
-  approvalDate?: string;
 }
 
 export interface ClientData {
@@ -158,8 +161,32 @@ export enum AppView {
   NETWORK_ANALYSIS = 'NETWORK_ANALYSIS',
   AUDITOR_PORTAL = 'AUDITOR_PORTAL',
   ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
-  MSP_DASHBOARD = 'MSP_DASHBOARD',
-  INTEGRATIONS = 'INTEGRATIONS'
+  GLOBAL_ADMIN = 'GLOBAL_ADMIN',
+  INTEGRATIONS = 'INTEGRATIONS',
+  RISK_REGISTER = 'RISK_REGISTER'
+}
+
+export interface WizardProgress {
+  currentStep: 'INTRO' | 'INVENTORY' | 'NETWORK' | 'ASSESSMENT' | 'VALIDATION';
+  currentQuestionIndex: number;
+}
+
+export interface SspMetadata {
+  systemName: string;
+  systemIdentifier: string;
+  categorization: 'LOW' | 'MODERATE' | 'HIGH';
+  systemOwner: string;
+  authorizingOfficial: string;
+  otherDesignatedContacts?: string;
+  assignmentOfSecurityResponsibility?: string;
+  operationalStatus?: 'Operational' | 'Under Development' | 'Major Modification';
+  systemType?: string;
+  generalDescription?: string;
+  systemEnvironment?: string;
+  interconnections?: string;
+  lawsAndPolicies?: string;
+  completionDate?: string;
+  approvalDate?: string;
 }
 
 export interface Framework {
@@ -168,44 +195,9 @@ export interface Framework {
   description: string;
 }
 
-export interface TrainingModule {
-  id: string;
-  familyId: string;
-  title: string;
-  description: string;
-  content: string;
-  durationMinutes: number;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-}
-
-export interface AuvikDevice {
-  id: string;
-  name: string;
-  type: string;
-  ipAddress: string;
-  vlan?: string;
-  firmware?: string;
-  isOnline: boolean;
-}
-
-export interface AuvikConfig extends IntegrationConfig {
-  apiKey: string;
-  region: 'US' | 'EU';
-}
-
-export interface ConfluenceConfig extends IntegrationConfig {
-  baseUrl: string;
-  email?: string;
-  apiToken?: string;
-  spaceKey: string;
-}
-
-export interface JiraConfig extends IntegrationConfig {
-  baseUrl: string;
-  email: string;
-  apiToken: string;
-  projectKey: string;
-  issueType: string;
+export interface BrandingConfig {
+  primaryColor: string;
+  logoUrl: string;
 }
 
 export interface ConnectWiseConfig extends IntegrationConfig {
@@ -216,9 +208,22 @@ export interface ConnectWiseConfig extends IntegrationConfig {
   serviceBoard: string;
 }
 
-export interface BrandingConfig {
-  primaryColor: string;
-  logoUrl: string;
+export interface JiraConfig extends IntegrationConfig {
+  baseUrl: string;
+  email: string;
+  apiToken: string;
+  projectKey: string;
+  issueType: string;
+}
+
+export interface ConfluenceConfig extends IntegrationConfig {
+  baseUrl: string;
+  spaceKey: string;
+}
+
+export interface AuvikConfig extends IntegrationConfig {
+  apiKey: string;
+  region: 'US' | 'EU';
 }
 
 export interface Ticket {
@@ -235,48 +240,31 @@ export interface Ticket {
   url?: string;
 }
 
-export interface Comment {
-  id: string;
-  userId: string;
-  userName: string;
-  text: string;
-  timestamp: number;
-}
-
-export interface PoamEntry {
-  weaknessName: string;
-  scheduledCompletionDate: string;
-  milestones: string;
-  status: string;
-}
-
-export type RiskCategory = 'Technical' | 'Administrative' | 'Physical' | 'External';
-export type RiskStatus = 'Open' | 'Mitigated' | 'Risk Accepted' | 'Closed';
-export type RiskAssessmentType = 'Qualitative' | 'Quantitative';
-
-export interface Risk {
-  id: string;
-  description: string;
-  category: RiskCategory;
-  remediation: string;
-  owner: string;
-  status: RiskStatus;
-  dateIdentified: number;
-  assessmentType: RiskAssessmentType;
-  threatEventFrequency?: number;
-  vulnerability?: number;
-  lossMagnitude?: number;
-  likelihood?: 1 | 2 | 3 | 4 | 5;
-  impact?: 1 | 2 | 3 | 4 | 5;
-  riskScore: number;
-}
-
+// Added RiskProfileVersion interface
 export interface RiskProfileVersion {
   id: string;
   versionNumber: string;
   timestamp: number;
   createdBy: string;
   risks: Risk[];
+}
+
+export interface Risk {
+  id: string;
+  description: string;
+  category: string;
+  remediation: string;
+  owner: string;
+  status: 'Open' | 'Mitigated' | 'Transferred' | 'Accepted';
+  dateIdentified: number;
+  assessmentType: 'Quantitative' | 'Qualitative';
+  riskScore: number;
+  impact?: 1 | 2 | 3 | 4 | 5;
+  // Added FAIR methodology fields
+  likelihood?: 1 | 2 | 3 | 4 | 5;
+  threatEventFrequency?: number;
+  vulnerability?: number;
+  lossMagnitude?: number;
 }
 
 export interface ProjectTask {
@@ -313,4 +301,19 @@ export interface Vendor {
   hasDPA: boolean;
   lastAssessmentDate: number;
   nextAssessmentDate: number;
+}
+
+export interface Comment {
+  id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  timestamp: number;
+}
+
+export interface PoamEntry {
+  weaknessName: string;
+  scheduledCompletionDate: string;
+  milestones: string;
+  status: string;
 }
