@@ -18,7 +18,8 @@ import {
   FileText,
   Lock,
   Globe,
-  AlertTriangle
+  AlertTriangle,
+  ClipboardCheck
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData } from './data/standards';
@@ -35,7 +36,7 @@ import { ComplianceWizard } from './components/ComplianceWizard';
 import { Login } from './components/Login';
 import { Onboarding } from './components/Onboarding'; 
 import { Dashboard } from './components/Dashboard'; 
-import { AuditorPortal } from './components/AuditorPortal';
+import { AssessorPortal } from './components/AssessorPortal';
 import { BulkImport } from './components/BulkImport';
 import { OrganizationManager } from './components/OrganizationManager';
 import { GlobalAdminPortal } from './components/GlobalAdminPortal';
@@ -229,7 +230,7 @@ const App: React.FC = () => {
                       <span className="tracking-tighter uppercase font-black">Cuallee Cyber</span>
                   </div>
                   <nav className="hidden md:flex items-center gap-1 h-16">
-                      <button onClick={() => setCurrentView(AppView.DASHBOARD)} className="px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-colors hover:text-white">Dashboard</button>
+                      <button onClick={() => setCurrentView(AppView.DASHBOARD)} className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-colors ${currentView === AppView.DASHBOARD ? 'text-blue-400' : 'text-slate-300 hover:text-white'}`}>Dashboard</button>
                       {!isAuditor && (
                           <NavDropdown label="Compliance" icon={ListChecks}>
                             <NavItem label="Control Detail" icon={ListChecks} isActive={currentView === AppView.REQUIREMENTS} onClick={() => setCurrentView(AppView.REQUIREMENTS)} />
@@ -240,10 +241,18 @@ const App: React.FC = () => {
                       )}
                       <NavDropdown label="Governance" icon={Eye}>
                           <NavItem label="FAIR Risk Register" icon={AlertTriangle} isActive={currentView === AppView.RISK_REGISTER} onClick={() => setCurrentView(AppView.RISK_REGISTER)} />
-                          <NavItem label="Auditor Portal" icon={Shield} isActive={currentView === AppView.AUDITOR_PORTAL} onClick={() => setCurrentView(AppView.AUDITOR_PORTAL)} />
                           <NavItem label="Asset Registry" icon={Package} isActive={currentView === AppView.INVENTORY} onClick={() => setCurrentView(AppView.INVENTORY)} />
                           <NavItem label="Compliance Reports" icon={FileText} isActive={currentView === AppView.REPORTS} onClick={() => setCurrentView(AppView.REPORTS)} />
                       </NavDropdown>
+                      
+                      <button 
+                        onClick={() => setCurrentView(AppView.ASSESSOR_PORTAL)} 
+                        className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 ${currentView === AppView.ASSESSOR_PORTAL ? 'text-white bg-slate-800 shadow-inner' : 'text-slate-300 hover:text-white'}`}
+                      >
+                        <ClipboardCheck size={14} className={currentView === AppView.ASSESSOR_PORTAL ? 'text-blue-500' : 'text-slate-400'} />
+                        Assessor Portal
+                      </button>
+
                       {(isTenantAdmin || isGlobalAdmin) && (
                         <NavDropdown label="Tenant" icon={Lock}>
                             <NavItem label="Settings" icon={Building2} isActive={currentView === AppView.ORGANIZATION_MANAGER} onClick={() => setCurrentView(AppView.ORGANIZATION_MANAGER)} />
@@ -293,7 +302,7 @@ const App: React.FC = () => {
             {currentView === AppView.RISK_REGISTER && <RiskRegister risks={activeData.risks} onAddRisk={handleAddRisk} onUpdateRisk={() => {}} onDeleteRisk={handleDeleteRisk} />}
             {currentView === AppView.REPORTS && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} sspMetadata={activeData.sspMetadata} />}
             {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} />}
-            {currentView === AppView.AUDITOR_PORTAL && <AuditorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} risks={activeData.risks} assets={activeData.assets} activeFramework={activeFramework} />}
+            {currentView === AppView.ASSESSOR_PORTAL && <AssessorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} risks={activeData.risks} assets={activeData.assets} activeFramework={activeFramework} />}
             {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} wizardProgress={activeData.wizardProgress} onUpdateRequirement={() => {}} onAddArtifact={() => {}} onRemoveArtifact={() => {}} onUpdateProgress={() => {}} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} />}
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={() => {}} onUpdateUser={() => {}} onDeleteUser={() => {}} />}
             {currentView === AppView.ORGANIZATION_MANAGER && <OrganizationManager clients={clients} clientDataStore={clientDataStore} activeClientId={activeClientId} onAddClient={() => {}} onUpdateClient={() => {}} onDeleteClient={() => {}} onUpdateClientData={() => {}} />}
