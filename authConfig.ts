@@ -8,8 +8,15 @@ const REGION = "us-east-1";
 // Constructed domain based on standard AWS patterns
 const COGNITO_DOMAIN = `https://cuallee-cyber.auth.${REGION}.amazoncognito.com`; 
 
+/**
+ * CRITICAL: AWS Cognito requires an EXACT string match for Redirect URIs.
+ * If this function returns 'https://www.cualleecyber.com', then your 
+ * AWS Console MUST NOT have a trailing slash (/) at the end of the URL.
+ */
 const getRedirectUri = () => {
+  // Use window.location.origin to support local dev, staging, and prod dynamically
   let origin = window.location.origin;
+  // Standardize: Remove trailing slash if present
   return origin.endsWith('/') ? origin.slice(0, -1) : origin;
 };
 
@@ -30,6 +37,7 @@ export const authConfig = {
     authorization_endpoint: `${COGNITO_DOMAIN}/oauth2/authorize`,
     token_endpoint: `${COGNITO_DOMAIN}/oauth2/token`,
     userinfo_endpoint: `${COGNITO_DOMAIN}/oauth2/userInfo`,
+    // Standard Cognito logout endpoint construction
     end_session_endpoint: `${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(redirectUri)}`,
     jwks_uri: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`,
   }
