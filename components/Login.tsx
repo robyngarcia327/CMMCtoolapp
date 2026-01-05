@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Shield, Loader2, AlertTriangle, RefreshCw, PlayCircle } from 'lucide-react';
+import { Shield, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface LoginProps {
   onLogin: () => void;
@@ -11,13 +11,19 @@ interface LoginProps {
 export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
   const [countdown, setCountdown] = useState(2); 
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [isProcessingCallback, setIsProcessingCallback] = useState(false);
 
   useEffect(() => {
-    // Detect OIDC errors from Cognito in the URL query string
     const params = new URLSearchParams(window.location.search);
-    if (params.get('error')) {
-        setUrlError(params.get('error_description') || params.get('error'));
-        return;
+    const code = params.get('code');
+    const err = params.get('error');
+
+    // If there is a code or error in the URL, the OIDC library is busy processing it.
+    // We should show a loader and NOT trigger another signinRedirect.
+    if (code || err) {
+      setIsProcessingCallback(true);
+      if (err) setUrlError(params.get('error_description') || err);
+      return;
     }
 
     if (error || isLoading || urlError) return;
@@ -31,9 +37,24 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
   }, [countdown, error, isLoading, onLogin, urlError]);
 
   const handleRetry = () => {
-      window.history.replaceState({}, document.title, window.location.pathname);
-      window.location.reload();
+    // Clear URL parameters and local storage to start fresh
+    sessionStorage.clear();
+    const cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+    window.location.reload();
   };
+
+  // Show a standard loading state if we are likely in the middle of a redirect or processing
+  if (isLoading || isProcessingCallback && !urlError) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
+        <div className="text-center space-y-6">
+           <Loader2 size={48} className="animate-spin text-blue-500 mx-auto" />
+           <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Finalizing Secure Session...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error || urlError) {
     return (
@@ -42,15 +63,17 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error }) => {
              <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 mx-auto mb-6">
                  <AlertTriangle size={32} />
              </div>
-             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Authentication Error</h2>
-             <p className="text-slate-500 text-sm mb-8 leading-relaxed">
-                We couldn't verify your identity with AWS. Please check your network connection or AWS Console configuration.
-             </p>
+             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Access Denied</h2>
+             <div className="bg-slate-50 border border-slate-100 p-3 rounded-lg mb-6">
+                <p className="text-slate-500 text-xs leading-relaxed font-mono break-all">
+                  {urlError || error?.message || "Internal Auth Error"}
+                </p>
+             </div>
              <button 
                 onClick={handleRetry}
                 className="w-full bg-slate-900 hover:bg-black text-white font-black py-4 rounded-xl flex items-center justify-center gap-3 transition-all uppercase tracking-widest text-xs"
              >
-                 <RefreshCw size={18} /> Retry Connection
+                 <RefreshCw size={18} /> Reset & Retry
              </button>
          </div>
       </div>
