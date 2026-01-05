@@ -3,29 +3,27 @@
 const USER_POOL_ID = "us-east-1_ky47RcgYh"; 
 const CLIENT_ID = "5pe5430hrtohupn12gj8r66qtb";
 const REGION = "us-east-1";
+const COGNITO_DOMAIN = "cuallee-cyber.auth.us-east-1.amazoncognito.com";
 
-// Hardcoded for production to match exactly what you added in AWS Console
-const PRODUCTION_URL = "https://www.cualleecyber.com";
-
-/**
- * AWS Cognito is extremely strict. 
- * Since the prompt shows the browser is sending 'https://www.cualleecyber.com' (no slash),
- * we force the library to use this exact string.
- */
-const redirectUri = PRODUCTION_URL;
+// Exactly as configured in your AWS Console
+const REDIRECT_URI = "https://www.cualleecyber.com";
 
 export const authConfig = {
   authority: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
   client_id: CLIENT_ID,
-  redirect_uri: redirectUri,
-  post_logout_redirect_uri: redirectUri,
+  redirect_uri: REDIRECT_URI,
+  post_logout_redirect_uri: REDIRECT_URI,
   response_type: "code",
   scope: "openid email profile",
   automaticSilentRenew: true,
   loadUserInfo: true,
-  // Cognito-specific logout requires the client_id and logout_uri params
-  onEndSession: () => {
-    const logoutUrl = `https://cuallee-cyber.auth.${REGION}.amazoncognito.com/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(redirectUri)}`;
-    window.location.href = logoutUrl;
+  // Explicit metadata fixes common discovery errors in AWS Cognito
+  metadata: {
+    issuer: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
+    authorization_endpoint: `https://${COGNITO_DOMAIN}/oauth2/authorize`,
+    token_endpoint: `https://${COGNITO_DOMAIN}/oauth2/token`,
+    userinfo_endpoint: `https://${COGNITO_DOMAIN}/oauth2/userInfo`,
+    end_session_endpoint: `https://${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(REDIRECT_URI)}`,
+    jwks_uri: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`,
   }
 };

@@ -15,18 +15,17 @@ const oidcConfig = {
   ...authConfig,
   // This cleans up the URL after redirecting back from Cognito
   onSigninCallback: (_user: any): void => {
-    // Standardize URL cleanup
-    const cleanUrl = window.location.origin + window.location.pathname;
-    window.history.replaceState({}, document.title, cleanUrl);
+    // Wait a tiny bit to ensure the library has processed everything
+    setTimeout(() => {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+    }, 100);
   },
-  // Handle login errors globally
   onSigninError: (error: Error) => {
     console.error("OIDC Signin Error:", error);
-    // State mismatches are usually fixed by clearing storage and URL
+    // State mismatches are often solved by clearing local state
     if (error.message.includes('state') || error.message.includes('code')) {
        sessionStorage.clear();
-       const cleanUrl = window.location.origin + window.location.pathname;
-       window.history.replaceState({}, document.title, cleanUrl);
     }
   }
 };
