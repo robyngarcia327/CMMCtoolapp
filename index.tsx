@@ -1,3 +1,4 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -12,9 +13,18 @@ if (!rootElement) {
 
 const oidcConfig = {
   ...authConfig,
-  // IMPORTANT: This removes the ?code=... from the URL after a successful signin
-  onSigninCallback: () => {
+  // This cleans up the URL after redirecting back from Cognito
+  onSigninCallback: (_user: any): void => {
     window.history.replaceState({}, document.title, window.location.pathname);
+  },
+  // Handle login errors globally
+  onSigninError: (error: Error) => {
+    console.error("OIDC Signin Error:", error);
+    // If we have a state mismatch, it's often best to clear everything and restart
+    if (error.message.includes('state')) {
+       sessionStorage.clear();
+       localStorage.removeItem(`oidc.user:${authConfig.authority}:${authConfig.client_id}`);
+    }
   }
 };
 

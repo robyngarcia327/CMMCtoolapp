@@ -10,14 +10,23 @@ const COGNITO_DOMAIN = `https://cuallee-cyber.auth.${REGION}.amazoncognito.com`;
 
 /**
  * CRITICAL: AWS Cognito requires an EXACT string match for Redirect URIs.
- * If this function returns 'https://www.cualleecyber.com', then your 
- * AWS Console MUST NOT have a trailing slash (/) at the end of the URL.
+ * 
+ * Your current Request URL in dev tools is sending: https://www.cualleecyber.com
+ * 
+ * If you still get errors:
+ * 1. Log into AWS Console.
+ * 2. Go to Cognito User Pool > App Clients > Hosted UI.
+ * 3. Add BOTH 'https://www.cualleecyber.com' AND 'https://www.cualleecyber.com/' (with slash).
  */
 const getRedirectUri = () => {
-  // Use window.location.origin to support local dev, staging, and prod dynamically
+  // We use window.location.origin which dynamically captures the protocol + host (e.g. https://www.cualleecyber.com)
   let origin = window.location.origin;
-  // Standardize: Remove trailing slash if present
-  return origin.endsWith('/') ? origin.slice(0, -1) : origin;
+  
+  // Standardize: Remove trailing slash for the internal OIDC client to match the sent string
+  if (origin.endsWith('/')) {
+    origin = origin.slice(0, -1);
+  }
+  return origin;
 };
 
 const redirectUri = getRedirectUri();
@@ -28,16 +37,19 @@ export const authConfig = {
   redirect_uri: redirectUri,
   post_logout_redirect_uri: redirectUri,
   response_type: "code",
-  scope: "phone openid email profile aws.cognito.signin.user.admin",
+  scope: "openid email profile", 
   cognito_domain: COGNITO_DOMAIN,
   identity_pool_id: IDENTITY_POOL_ID,
   region: REGION,
+  automaticSilentRenew: true,
+  loadUserInfo: true,
+  monitorSession: true,
+  // Metadata for Cognito specific endpoints
   metadata: {
     issuer: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
     authorization_endpoint: `${COGNITO_DOMAIN}/oauth2/authorize`,
     token_endpoint: `${COGNITO_DOMAIN}/oauth2/token`,
     userinfo_endpoint: `${COGNITO_DOMAIN}/oauth2/userInfo`,
-    // Standard Cognito logout endpoint construction
     end_session_endpoint: `${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(redirectUri)}`,
     jwks_uri: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`,
   }
