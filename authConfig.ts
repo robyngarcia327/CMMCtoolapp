@@ -9,48 +9,43 @@ const REGION = "us-east-1";
 const COGNITO_DOMAIN = `https://cuallee-cyber.auth.${REGION}.amazoncognito.com`; 
 
 /**
- * CRITICAL: AWS Cognito requires an EXACT string match for Redirect URIs.
+ * CRITICAL REDIRECT URI MATCHING
  * 
- * Your current Request URL in dev tools is sending: https://www.cualleecyber.com
+ * Your current Request URL shows the app is sending: 
+ * https://www.cualleecyber.com (NO SLASH)
  * 
- * If you still get errors:
- * 1. Log into AWS Console.
- * 2. Go to Cognito User Pool > App Clients > Hosted UI.
- * 3. Add BOTH 'https://www.cualleecyber.com' AND 'https://www.cualleecyber.com/' (with slash).
+ * If your AWS Console "Allowed Callback URLs" has:
+ * https://www.cualleecyber.com/ (WITH SLASH)
+ * 
+ * YOU MUST ADD the one WITHOUT the slash to your AWS Console.
  */
+const PRODUCTION_URL = "https://www.cualleecyber.com";
+
 const getRedirectUri = () => {
-  // We use window.location.origin which dynamically captures the protocol + host (e.g. https://www.cualleecyber.com)
-  let origin = window.location.origin;
-  
-  // Standardize: Remove trailing slash for the internal OIDC client to match the sent string
-  if (origin.endsWith('/')) {
-    origin = origin.slice(0, -1);
+  // Always use the production URL when not on localhost to ensure 
+  // we never send a dynamic origin that might have a trailing slash 
+  // unexpectedly added by the browser.
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return window.location.origin;
   }
-  return origin;
+  return PRODUCTION_URL;
 };
 
 const redirectUri = getRedirectUri();
 
 export const authConfig = {
+  // authority is the base URL for OIDC discovery
   authority: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
   client_id: CLIENT_ID,
   redirect_uri: redirectUri,
   post_logout_redirect_uri: redirectUri,
   response_type: "code",
   scope: "openid email profile", 
-  cognito_domain: COGNITO_DOMAIN,
-  identity_pool_id: IDENTITY_POOL_ID,
-  region: REGION,
-  automaticSilentRenew: true,
-  loadUserInfo: true,
-  monitorSession: true,
-  // Metadata for Cognito specific endpoints
-  metadata: {
-    issuer: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
-    authorization_endpoint: `${COGNITO_DOMAIN}/oauth2/authorize`,
-    token_endpoint: `${COGNITO_DOMAIN}/oauth2/token`,
-    userinfo_endpoint: `${COGNITO_DOMAIN}/oauth2/userInfo`,
-    end_session_endpoint: `${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(redirectUri)}`,
-    jwks_uri: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`,
+  // We remove the manual 'metadata' block to allow the OIDC library 
+  // to fetch the latest endpoints directly from the .well-known endpoint.
+  // This is more reliable for Cognito's token exchange.
+  extraQueryParams: {
+      // Sometimes needed for Cognito's Hosted UI
+      client_id: CLIENT_ID
   }
 };

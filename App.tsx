@@ -88,6 +88,16 @@ const App: React.FC = () => {
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
   const fetchAttempted = useRef(false);
 
+  // DEBUG: Monitor Auth State
+  useEffect(() => {
+      if (auth.isAuthenticated) {
+          console.log("Auth Success:", auth.user?.profile);
+      }
+      if (auth.error) {
+          console.error("Auth Error:", auth.error.message);
+      }
+  }, [auth.isAuthenticated, auth.error, auth.user]);
+
   const userGroups = useMemo(() => {
     const groups = auth.user?.profile?.['cognito:groups'];
     return (Array.isArray(groups) ? groups : []) as CognitoGroup[];
