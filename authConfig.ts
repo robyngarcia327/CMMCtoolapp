@@ -7,8 +7,26 @@ const CLIENT_ID = "5pe5430hrtohupn12gj8r66qtb";
 const REGION = "us-east-1";
 const COGNITO_DOMAIN = "cuallee-cyber.auth.us-east-1.amazoncognito.com";
 
-// window.location.origin returns 'https://www.cualleecyber.com' (no trailing slash)
-const REDIRECT_URI = window.location.origin;
+/**
+ * Cognito is extremely sensitive to the Redirect URI.
+ * It must match EXACTLY what is in the browser address bar AND the Cognito whitelist.
+ */
+const getValidRedirectUri = () => {
+  const origin = window.location.origin;
+  
+  // List of your whitelisted URLs from Cognito Console
+  const allowed = [
+    "https://cualleecyber.com",
+    "https://www.cualleecyber.com",
+    "https://main.dn9kq53kwmt4m.amplifyapp.com"
+  ];
+
+  // If our current origin is in the allowed list, use it.
+  // Otherwise, default to the custom domain.
+  return allowed.includes(origin) ? origin : "https://www.cualleecyber.com";
+};
+
+const REDIRECT_URI = getValidRedirectUri();
 
 export const authConfig = {
   authority: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
@@ -19,7 +37,8 @@ export const authConfig = {
   scope: "openid email profile",
   automaticSilentRenew: true,
   loadUserInfo: true,
-  // Using explicit metadata avoids the "Discovery" step which often fails in browsers
+  
+  // Custom metadata to ensure endpoints are correct even if discovery fails
   metadata: {
     issuer: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
     authorization_endpoint: `https://${COGNITO_DOMAIN}/oauth2/authorize`,
@@ -28,6 +47,7 @@ export const authConfig = {
     end_session_endpoint: `https://${COGNITO_DOMAIN}/logout?client_id=${CLIENT_ID}&logout_uri=${encodeURIComponent(REDIRECT_URI)}`,
     jwks_uri: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`,
   },
-  // Ensure state is isolated to the session
+  
+  // Use session storage for auth state to avoid persistence issues between sessions
   userStore: new WebStorageStateStore({ store: window.sessionStorage }),
 };
