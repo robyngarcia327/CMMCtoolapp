@@ -201,7 +201,7 @@ const App: React.FC = () => {
   const handleLogout = () => auth.signoutRedirect();
   
   if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-900"><Loader2 className="animate-spin text-blue-500" size={48} /></div>;
-  if (!auth.isAuthenticated) return <Login onLogin={() => auth.signinRedirect()} error={auth.error} />;
+  if (!auth.isAuthenticated) return <Login />;
   if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
 
   if (hasCheckedOrgs && !activeClientId) {

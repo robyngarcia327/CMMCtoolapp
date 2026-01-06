@@ -1,59 +1,30 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useAuth } from "react-oidc-context";
-import { Shield, Loader2, Lock, ArrowRight, RefreshCcw, AlertCircle } from 'lucide-react';
+import { Shield, Loader2, Lock, ArrowRight, RefreshCcw } from 'lucide-react';
 
-interface LoginProps {
-  onLogin: () => void;
-  isLoading?: boolean;
-  error?: Error | null;
-}
-
-export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error: propError }) => {
+export const Login: React.FC = () => {
   const auth = useAuth();
-  const [localError, setLocalError] = useState<string | null>(null);
-  const [showForceButton, setShowForceButton] = useState(false);
 
-  // If loading takes too long (3.5s), show the force button to handle hang cases
-  useEffect(() => {
-    let timer: any;
-    if (auth.isLoading) {
-      timer = setTimeout(() => setShowForceButton(true), 3500);
-    } else {
-      setShowForceButton(false);
-    }
-    return () => clearTimeout(timer);
-  }, [auth.isLoading]);
-
-  const handleSignIn = async () => {
-    setLocalError(null);
-    try {
-      // Clear any stale state before attempting fresh redirect
-      sessionStorage.clear();
-      await onLogin();
-    } catch (e: any) {
-      console.error("Login redirect failed:", e);
-      setLocalError(e.message || "Could not reach the identity provider.");
-    }
+  const handleSignIn = () => {
+    // Clear storage to ensure a fresh state generation
+    sessionStorage.clear();
+    auth.signinRedirect();
   };
 
-  const handleClearEverything = () => {
+  const handleTroubleshoot = () => {
     sessionStorage.clear();
     localStorage.clear();
-    const cleanUrl = window.location.origin + window.location.pathname;
-    window.history.replaceState({}, document.title, cleanUrl);
-    window.location.reload();
+    window.location.href = window.location.origin;
   };
 
-  const activeError = propError?.message || localError;
-
-  // If the AuthProvider is busy and NOT showing the force button yet
-  if (auth.isLoading && !showForceButton) {
+  // If the library is processing a code from the URL or loading discovery
+  if (auth.isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
-        <Loader2 size={48} className="animate-spin text-blue-500 mb-4" />
-        <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[10px]">
-          Verifying Identity...
+        <Loader2 size={48} className="animate-spin text-blue-500 mb-6" />
+        <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">
+          Establishing Secure Identity Link...
         </p>
       </div>
     );
@@ -82,37 +53,29 @@ export const Login: React.FC<LoginProps> = ({ onLogin, isLoading, error: propErr
             className="w-full bg-white hover:bg-blue-50 text-slate-950 font-black py-5 rounded-[2rem] flex items-center justify-center gap-3 transition-all shadow-2xl shadow-blue-900/20 group uppercase tracking-widest text-sm"
           >
             <Lock size={18} className="text-blue-600" />
-            {auth.isLoading ? 'Force Sign In' : 'Secure Sign In'}
+            Secure Sign In
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </button>
           
-          {activeError && (
+          {auth.error && (
             <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-center gap-2 justify-center mb-1">
-                <AlertCircle size={14} className="text-red-400" />
-                <p className="text-red-400 text-[10px] font-black uppercase tracking-widest">
-                  Authentication Failed
-                </p>
-              </div>
-              <p className="text-slate-400 text-[10px] italic break-words">
-                {activeError}
+              <p className="text-red-400 text-[10px] font-black uppercase tracking-widest">
+                Identity Error
+              </p>
+              <p className="text-slate-400 text-[10px] mt-1 italic break-words">
+                {auth.error.message}
               </p>
             </div>
           )}
         </div>
 
-        <div className="pt-4 space-y-3">
+        <div className="pt-4">
           <button 
-            onClick={handleClearEverything}
+            onClick={handleTroubleshoot}
             className="text-slate-600 hover:text-blue-400 text-[9px] font-black uppercase tracking-[0.2em] transition-colors flex items-center gap-2 mx-auto"
           >
-            <RefreshCcw size={12} /> Troubleshoot / Reset Session
+            <RefreshCcw size={12} /> Reset Connection State
           </button>
-          {auth.isLoading && (
-            <p className="text-slate-600 text-[8px] italic max-w-[200px] mx-auto">
-              Initialization is taking longer than expected. Use the button above to manually trigger the identity gateway.
-            </p>
-          )}
         </div>
       </div>
 
