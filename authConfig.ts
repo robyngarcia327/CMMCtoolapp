@@ -7,26 +7,9 @@ const CLIENT_ID = "5pe5430hrtohupn12gj8r66qtb";
 const REGION = "us-east-1";
 const COGNITO_DOMAIN = "cuallee-cyber.auth.us-east-1.amazoncognito.com";
 
-/**
- * Cognito is extremely sensitive to the Redirect URI.
- * It must match EXACTLY what is in the browser address bar AND the Cognito whitelist.
- */
-const getValidRedirectUri = () => {
-  const origin = window.location.origin;
-  
-  // List of your whitelisted URLs from Cognito Console
-  const allowed = [
-    "https://cualleecyber.com",
-    "https://www.cualleecyber.com",
-    "https://main.dn9kq53kwmt4m.amplifyapp.com"
-  ];
-
-  // If our current origin is in the allowed list, use it.
-  // Otherwise, default to the custom domain.
-  return allowed.includes(origin) ? origin : "https://www.cualleecyber.com";
-};
-
-const REDIRECT_URI = getValidRedirectUri();
+// window.location.origin provides the exact protocol and domain (e.g., https://www.cualleecyber.com)
+// This matches your Cognito 'Allowed callback URLs' list entries.
+const REDIRECT_URI = window.location.origin;
 
 export const authConfig = {
   authority: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
@@ -38,7 +21,7 @@ export const authConfig = {
   automaticSilentRenew: true,
   loadUserInfo: true,
   
-  // Custom metadata to ensure endpoints are correct even if discovery fails
+  // Explicitly defining endpoints to ensure reliable redirection
   metadata: {
     issuer: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
     authorization_endpoint: `https://${COGNITO_DOMAIN}/oauth2/authorize`,
@@ -48,6 +31,6 @@ export const authConfig = {
     jwks_uri: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`,
   },
   
-  // Use session storage for auth state to avoid persistence issues between sessions
+  // Use session storage to isolate login state
   userStore: new WebStorageStateStore({ store: window.sessionStorage }),
 };
