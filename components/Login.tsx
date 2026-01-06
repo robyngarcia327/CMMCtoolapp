@@ -1,30 +1,29 @@
 
 import React from 'react';
 import { useAuth } from "react-oidc-context";
-import { Shield, Loader2, Lock, ArrowRight, RefreshCcw } from 'lucide-react';
+import { Shield, Loader2, Lock, ArrowRight, RefreshCcw, AlertCircle } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const auth = useAuth();
 
   const handleSignIn = () => {
-    // Clear storage to ensure a fresh state generation
+    // Ensuring a clean state for the new request
     sessionStorage.clear();
     auth.signinRedirect();
   };
 
-  const handleTroubleshoot = () => {
+  const handleReset = () => {
     sessionStorage.clear();
     localStorage.clear();
-    window.location.href = window.location.origin;
+    window.location.href = "https://www.cualleecyber.com";
   };
 
-  // If the library is processing a code from the URL or loading discovery
   if (auth.isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
         <Loader2 size={48} className="animate-spin text-blue-500 mb-6" />
-        <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">
-          Establishing Secure Identity Link...
+        <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[10px]">
+          Connecting to Secure Gateway...
         </p>
       </div>
     );
@@ -58,12 +57,17 @@ export const Login: React.FC = () => {
           </button>
           
           {auth.error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl animate-in fade-in slide-in-from-top-2">
-              <p className="text-red-400 text-[10px] font-black uppercase tracking-widest">
-                Identity Error
-              </p>
-              <p className="text-slate-400 text-[10px] mt-1 italic break-words">
-                {auth.error.message}
+            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl animate-in fade-in slide-in-from-top-2 text-left">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle size={14} className="text-red-400" />
+                <p className="text-red-400 text-[10px] font-black uppercase tracking-widest">
+                  Authentication Mismatch
+                </p>
+              </div>
+              <p className="text-slate-400 text-[10px] italic leading-relaxed">
+                {auth.error.message.includes("invalid_scope") 
+                  ? "Cognito Error: The 'profile' scope might be disabled in your App Client settings. We've updated the app to only request email access."
+                  : auth.error.message}
               </p>
             </div>
           )}
@@ -71,10 +75,10 @@ export const Login: React.FC = () => {
 
         <div className="pt-4">
           <button 
-            onClick={handleTroubleshoot}
+            onClick={handleReset}
             className="text-slate-600 hover:text-blue-400 text-[9px] font-black uppercase tracking-[0.2em] transition-colors flex items-center gap-2 mx-auto"
           >
-            <RefreshCcw size={12} /> Reset Connection State
+            <RefreshCcw size={12} /> Clear Browser Cache & Retry
           </button>
         </div>
       </div>
