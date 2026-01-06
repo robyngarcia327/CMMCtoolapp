@@ -25,6 +25,8 @@ const oidcConfig = {
     // Clearing session storage is the standard fix.
     if (error.message.includes('state') || error.message.includes('code')) {
        sessionStorage.clear();
+       // Auto-reload to give the user a clean slate
+       window.location.href = window.location.origin;
     }
   }
 };
