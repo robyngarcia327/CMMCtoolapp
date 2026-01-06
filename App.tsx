@@ -134,9 +134,16 @@ const App: React.FC = () => {
                   mappedClients.forEach(c => {
                       if (!nextStore[c.id]) {
                           nextStore[c.id] = createInitialClientData(false);
+                          
+                          // Prioritize given_name, then full name, then nickname, then email prefix
+                          const displayName = auth.user?.profile?.given_name || 
+                                            auth.user?.profile?.name || 
+                                            auth.user?.profile?.nickname || 
+                                            (auth.user?.profile.email || 'User').split('@')[0];
+
                           nextStore[c.id].users = [{
                               id: auth.user?.profile.sub || 'unknown',
-                              name: (auth.user?.profile.email || 'User').split('@')[0],
+                              name: displayName,
                               email: auth.user?.profile.email || '',
                               organizationId: c.id,
                               domain: c.domain,
@@ -281,7 +288,6 @@ const App: React.FC = () => {
                   <div className="flex items-center gap-3 relative">
                       <div className="text-right hidden lg:block">
                           <div className="text-xs font-black text-white uppercase">{currentUser.name}</div>
-                          <div className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{currentUser.role.replace(/_/g, ' ')}</div>
                       </div>
                       <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-black border-2 border-slate-700">{currentUser.name.charAt(0)}</button>
                       {isProfileMenuOpen && (
