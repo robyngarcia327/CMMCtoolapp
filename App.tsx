@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData } from './data/standards';
-import { Requirement, Artifact, AppView, Ticket, User, Framework, Client, ClientData, CognitoGroup, Risk } from './types';
+import { Requirement, Artifact, AppView, Ticket, User, Framework, Client, ClientData, CognitoGroup, Risk, WizardProgress, Asset } from './types';
 import { RequirementsList } from './components/RequirementsList';
 import { RequirementDetail } from './components/RequirementDetail';
 import { AIChat } from './components/AIChat';
@@ -37,10 +37,8 @@ import { Login } from './components/Login';
 import { Onboarding } from './components/Onboarding'; 
 import { Dashboard } from './components/Dashboard'; 
 import { AssessorPortal } from './components/AssessorPortal';
-import { BulkImport } from './components/BulkImport';
 import { OrganizationManager } from './components/OrganizationManager';
 import { GlobalAdminPortal } from './components/GlobalAdminPortal';
-import { DocGenerator } from './components/DocGenerator';
 import { RiskRegister } from './components/RiskRegister';
 import { api } from './services/api';
 
@@ -87,6 +85,73 @@ const App: React.FC = () => {
   const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>({});
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
   const fetchAttempted = useRef(false);
+
+  // --- STATE HANDLERS ---
+  const handleUpdateRequirement = (updatedReq: Requirement) => {
+    if (!activeClientId) return;
+    setClientDataStore(prev => ({
+      ...prev,
+      [activeClientId]: {
+        ...prev[activeClientId],
+        requirements: prev[activeClientId].requirements.map(r => r.id === updatedReq.id ? updatedReq : r)
+      }
+    }));
+  };
+
+  const handleUpdateWizardProgress = (progress: WizardProgress) => {
+    if (!activeClientId) return;
+    setClientDataStore(prev => ({
+      ...prev,
+      [activeClientId]: {
+        ...prev[activeClientId],
+        wizardProgress: progress
+      }
+    }));
+  };
+
+  const handleAddAsset = (asset: Asset) => {
+    if (!activeClientId) return;
+    setClientDataStore(prev => ({
+      ...prev,
+      [activeClientId]: {
+        ...prev[activeClientId],
+        assets: [...prev[activeClientId].assets, asset]
+      }
+    }));
+  };
+
+  const handleDeleteAsset = (id: string) => {
+    if (!activeClientId) return;
+    setClientDataStore(prev => ({
+      ...prev,
+      [activeClientId]: {
+        ...prev[activeClientId],
+        assets: prev[activeClientId].assets.filter(a => a.id !== id)
+      }
+    }));
+  };
+
+  const handleAddArtifact = (artifact: Artifact) => {
+    if (!activeClientId) return;
+    setClientDataStore(prev => ({
+      ...prev,
+      [activeClientId]: {
+        ...prev[activeClientId],
+        artifacts: [...prev[activeClientId].artifacts, artifact]
+      }
+    }));
+  };
+
+  const handleRemoveArtifact = (id: string) => {
+    if (!activeClientId) return;
+    setClientDataStore(prev => ({
+      ...prev,
+      [activeClientId]: {
+        ...prev[activeClientId],
+        artifacts: prev[activeClientId].artifacts.filter(a => a.id !== id)
+      }
+    }));
+  };
 
   // DEBUG: Monitor Auth State
   useEffect(() => {
@@ -135,7 +200,6 @@ const App: React.FC = () => {
                       if (!nextStore[c.id]) {
                           nextStore[c.id] = createInitialClientData(false);
                           
-                          // Prioritize given_name, then full name, then nickname, then email prefix
                           const displayName = auth.user?.profile?.given_name || 
                                             auth.user?.profile?.name || 
                                             auth.user?.profile?.nickname || 
@@ -252,7 +316,6 @@ const App: React.FC = () => {
                           <NavDropdown label="Compliance" icon={ListChecks}>
                             <NavItem label="Control Detail" icon={ListChecks} isActive={currentView === AppView.REQUIREMENTS} onClick={() => setCurrentView(AppView.REQUIREMENTS)} />
                             <NavItem label="SPRS Score" icon={TrendingUp} isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
-                            <NavItem label="Bulk Entry" icon={FileSpreadsheet} isActive={currentView === AppView.BULK_IMPORT} onClick={() => setCurrentView(AppView.BULK_IMPORT)} />
                             <NavItem label="Wizard" icon={Wand2} isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} />
                           </NavDropdown>
                       )}
@@ -312,16 +375,17 @@ const App: React.FC = () => {
             {currentView === AppView.REQUIREMENTS && (
                 <>
                     <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => setSelectedRequirementId(r.id)} activeFrameworkId={activeFramework.id} />
-                    {selectedRequirementId ? <RequirementDetail requirement={activeData.requirements.find(r => r.id === selectedRequirementId)!} onUpdateRequirement={() => {}} allArtifacts={activeData.artifacts} onAddArtifact={() => {}} onRemoveArtifact={() => {}} tickets={[]} onAddTicket={() => {}} cwConfig={activeData.cwConfig} jiraConfig={activeData.jiraConfig} currentUser={currentUser} activeClientId={activeClientId} /> : <div className="flex-1 flex flex-col items-center justify-center text-slate-400"><ListChecks size={64} className="opacity-10" /><p className="text-lg">Select a control.</p></div>}
+                    {selectedRequirementId ? <RequirementDetail requirement={activeData.requirements.find(r => r.id === selectedRequirementId)!} onUpdateRequirement={handleUpdateRequirement} allArtifacts={activeData.artifacts} onAddArtifact={handleAddArtifact} onRemoveArtifact={handleRemoveArtifact} tickets={[]} onAddTicket={() => {}} cwConfig={activeData.cwConfig} jiraConfig={activeData.jiraConfig} currentUser={currentUser} activeClientId={activeClientId} /> : <div className="flex-1 flex flex-col items-center justify-center text-slate-400"><ListChecks size={64} className="opacity-10" /><p className="text-lg">Select a control.</p></div>}
                 </>
             )}
             {currentView === AppView.RISK_REGISTER && <RiskRegister risks={activeData.risks} onAddRisk={handleAddRisk} onUpdateRisk={() => {}} onDeleteRisk={handleDeleteRisk} />}
             {currentView === AppView.REPORTS && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} sspMetadata={activeData.sspMetadata} />}
             {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} />}
             {currentView === AppView.ASSESSOR_PORTAL && <AssessorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} risks={activeData.risks} assets={activeData.assets} activeFramework={activeFramework} />}
-            {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} wizardProgress={activeData.wizardProgress} onUpdateRequirement={() => {}} onAddArtifact={() => {}} onRemoveArtifact={() => {}} onUpdateProgress={() => {}} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} />}
+            {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} assets={activeData.assets} wizardProgress={activeData.wizardProgress} onUpdateRequirement={handleUpdateRequirement} onAddArtifact={handleAddArtifact} onRemoveArtifact={handleRemoveArtifact} onAddAsset={handleAddAsset} onDeleteAsset={handleDeleteAsset} onUpdateProgress={handleUpdateWizardProgress} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} />}
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={() => {}} onUpdateUser={() => {}} onDeleteUser={() => {}} />}
             {currentView === AppView.ORGANIZATION_MANAGER && <OrganizationManager clients={clients} clientDataStore={clientDataStore} activeClientId={activeClientId} onAddClient={() => {}} onUpdateClient={() => {}} onDeleteClient={() => {}} onUpdateClientData={() => {}} />}
+            {currentView === AppView.INVENTORY && <Inventory assets={activeData.assets} onAddAsset={handleAddAsset} onDeleteAsset={handleDeleteAsset} />}
       </main>
       <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>

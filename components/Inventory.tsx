@@ -4,7 +4,8 @@ import { Asset, CmmcAssetCategory, IntegrationConfig } from '../types';
 import { 
   Laptop2, Server, Smartphone, Monitor, ShieldCheck, 
   Search, Plus, Trash2, Box, Lock, FileKey, 
-  Upload, FileSpreadsheet, RefreshCw, Cloud, Info, CheckCircle2 
+  Upload, FileSpreadsheet, RefreshCw, Cloud, Info, CheckCircle2, 
+  ListPlus, X, Save
 } from 'lucide-react';
 import { integrationService } from '../services/integrations';
 
@@ -16,18 +17,31 @@ interface InventoryProps {
   variant?: 'default' | 'wizard';
 }
 
+interface BulkRow {
+  name: string;
+  type: string;
+  owner: string;
+  category: CmmcAssetCategory;
+}
+
 export const Inventory: React.FC<InventoryProps> = ({ 
   assets, 
   onAddAsset, 
   onDeleteAsset, 
-  intuneConfig = { enabled: true }, // Default enabled for demo purposes
+  intuneConfig = { enabled: true }, 
   variant = 'default' 
 }) => {
   const [isAdding, setIsAdding] = useState(false);
+  const [isBulkMode, setIsBulkMode] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Bulk Entry State
+  const [bulkRows, setBulkRows] = useState<BulkRow[]>([
+    { name: '', type: 'Workstation', owner: '', category: 'Out-of-Scope' }
+  ]);
+
   const [newAsset, setNewAsset] = useState<Partial<Asset>>({
       type: 'Workstation',
       criticality: 'Medium',
@@ -63,7 +77,6 @@ export const Inventory: React.FC<InventoryProps> = ({
       alert(`Imported ${importCount} assets successfully.`);
     };
     reader.readAsText(file);
-    // Reset file input
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -73,7 +86,6 @@ export const Inventory: React.FC<InventoryProps> = ({
       const syncedAssets = await integrationService.syncIntuneAssets(intuneConfig);
       let newCount = 0;
       syncedAssets.forEach(sa => {
-        // Check for duplicates by externalId or Name
         const exists = assets.find(a => a.externalId === sa.externalId || a.name === sa.name);
         if (!exists) {
           onAddAsset({
@@ -89,6 +101,35 @@ export const Inventory: React.FC<InventoryProps> = ({
     } finally {
       setIsSyncing(false);
     }
+  };
+
+  const handleAddBulkRow = () => {
+    setBulkRows([...bulkRows, { name: '', type: 'Workstation', owner: '', category: 'Out-of-Scope' }]);
+  };
+
+  const updateBulkRow = (index: number, field: keyof BulkRow, value: string) => {
+    const updated = [...bulkRows];
+    updated[index] = { ...updated[index], [field]: value };
+    setBulkRows(updated);
+  };
+
+  const handleSaveBulk = () => {
+    const validRows = bulkRows.filter(r => r.name.trim() !== '');
+    validRows.forEach(r => {
+      onAddAsset({
+        id: `BULK-${Math.floor(Math.random() * 10000)}`,
+        name: r.name,
+        owner: r.owner || 'Unassigned',
+        location: 'HQ',
+        type: r.type as any,
+        criticality: 'Medium',
+        cmmcCategory: r.category,
+        source: 'Manual'
+      });
+    });
+    setIsBulkMode(false);
+    setBulkRows([{ name: '', type: 'Workstation', owner: '', category: 'Out-of-Scope' }]);
+    alert(`Bulk entry complete. Added ${validRows.length} items.`);
   };
 
   const getIcon = (type: string) => {
@@ -134,7 +175,7 @@ export const Inventory: React.FC<InventoryProps> = ({
   );
 
   return (
-    <div className={variant === 'wizard' ? '' : 'max-w-7xl mx-auto p-6 overflow-y-auto h-full'}>
+    <div className={variant === 'wizard' ? 'p-4' : 'max-w-7xl mx-auto p-6 overflow-y-auto h-full'}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
         <div>
             <h2 className="text-2xl font-bold text-slate-900">Asset Inventory</h2>
@@ -150,15 +191,13 @@ export const Inventory: React.FC<InventoryProps> = ({
                 <FileSpreadsheet size={18} className="text-green-600" /> Bulk Import (CSV)
             </button>
             <button 
-                onClick={handleIntuneSync}
-                disabled={isSyncing}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 shadow-sm text-sm font-bold transition-all disabled:opacity-50"
+                onClick={() => { setIsBulkMode(!isBulkMode); setIsAdding(false); }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition-all ${isBulkMode ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}
             >
-                {isSyncing ? <RefreshCw className="animate-spin" size={18} /> : <Cloud size={18} />}
-                {isSyncing ? 'Syncing...' : 'Sync with Intune'}
+                <ListPlus size={18} /> Interactive Bulk Entry
             </button>
             <button 
-                onClick={() => setIsAdding(true)}
+                onClick={() => { setIsAdding(true); setIsBulkMode(false); }}
                 className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-black shadow-lg text-sm font-bold transition-all"
             >
                 <Plus size={18} /> Add Manual
@@ -220,6 +259,66 @@ export const Inventory: React.FC<InventoryProps> = ({
               <div className="flex justify-end gap-2 mt-6 border-t border-slate-100 pt-4">
                   <button onClick={() => setIsAdding(false)} className="px-4 py-2 text-slate-600">Cancel</button>
                   <button onClick={handleAdd} className="px-6 py-2 bg-blue-600 text-white rounded font-bold shadow-sm">Save Asset</button>
+              </div>
+          </div>
+      )}
+
+      {isBulkMode && (
+          <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-indigo-100 mb-6 animate-in fade-in slide-in-from-top-2 overflow-hidden flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-black text-indigo-900 uppercase tracking-tight">Interactive Bulk Asset Entry</h3>
+                  <button onClick={() => setIsBulkMode(false)} className="text-slate-400 hover:text-red-500 transition-colors"><X size={24}/></button>
+              </div>
+              <div className="overflow-x-auto border rounded-xl mb-4">
+                  <table className="w-full text-sm text-left">
+                      <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-b">
+                          <tr>
+                              <th className="p-3">Asset Name</th>
+                              <th className="p-3">Type</th>
+                              <th className="p-3">Owner / User</th>
+                              <th className="p-3">Compliance Category</th>
+                              <th className="p-3 w-10"></th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                          {bulkRows.map((row, idx) => (
+                              <tr key={idx}>
+                                  <td className="p-2"><input className="w-full border rounded p-1.5 text-sm" placeholder="e.g. SRV-01" value={row.name} onChange={e => updateBulkRow(idx, 'name', e.target.value)} /></td>
+                                  <td className="p-2">
+                                      <select className="w-full border rounded p-1.5 text-sm" value={row.type} onChange={e => updateBulkRow(idx, 'type', e.target.value)}>
+                                          <option>Server</option>
+                                          <option>Workstation</option>
+                                          <option>Network Device</option>
+                                          <option>Software</option>
+                                      </select>
+                                  </td>
+                                  <td className="p-2"><input className="w-full border rounded p-1.5 text-sm" placeholder="e.g. IT Admin" value={row.owner} onChange={e => updateBulkRow(idx, 'owner', e.target.value)} /></td>
+                                  <td className="p-2">
+                                      <select className="w-full border rounded p-1.5 text-sm" value={row.category} onChange={e => updateBulkRow(idx, 'category', e.target.value as any)}>
+                                          <option value="Out-of-Scope">Out-of-Scope</option>
+                                          <option value="CUI">CUI Asset</option>
+                                          <option value="SPA">SPA</option>
+                                          <option value="FCI">FCI Only</option>
+                                      </select>
+                                  </td>
+                                  <td className="p-2">
+                                      <button onClick={() => setBulkRows(bulkRows.filter((_, i) => i !== idx))} className="text-slate-300 hover:text-red-500"><X size={16}/></button>
+                                  </td>
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+              </div>
+              <div className="flex justify-between items-center">
+                  <button onClick={handleAddBulkRow} className="text-indigo-600 font-bold text-xs uppercase flex items-center gap-1 hover:underline">
+                      <Plus size={14} /> Add Row
+                  </button>
+                  <div className="flex gap-2">
+                      <button onClick={() => setIsBulkMode(false)} className="px-6 py-2 text-slate-500 font-bold text-xs uppercase">Discard</button>
+                      <button onClick={handleSaveBulk} className="px-8 py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase flex items-center gap-2 shadow-lg shadow-indigo-100">
+                          <Save size={14} /> Save Assets
+                      </button>
+                  </div>
               </div>
           </div>
       )}
