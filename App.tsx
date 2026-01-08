@@ -156,12 +156,9 @@ const App: React.FC = () => {
   // DEBUG: Monitor Auth State
   useEffect(() => {
       if (auth.isAuthenticated) {
-          console.log("Auth Success:", auth.user?.profile);
+          console.log("Auth Success Profile:", auth.user?.profile);
       }
-      if (auth.error) {
-          console.error("Auth Error:", auth.error.message);
-      }
-  }, [auth.isAuthenticated, auth.error, auth.user]);
+  }, [auth.isAuthenticated, auth.user]);
 
   const userGroups = useMemo(() => {
     const groups = auth.user?.profile?.['cognito:groups'];
@@ -200,14 +197,15 @@ const App: React.FC = () => {
                       if (!nextStore[c.id]) {
                           nextStore[c.id] = createInitialClientData(false);
                           
-                          const displayName = auth.user?.profile?.given_name || 
-                                            auth.user?.profile?.name || 
-                                            auth.user?.profile?.nickname || 
-                                            (auth.user?.profile.email || 'User').split('@')[0];
+                          // Use given_name specifically if available for "Robyn", fallback to prefix
+                          const firstName = auth.user?.profile?.given_name || 
+                                           auth.user?.profile?.nickname || 
+                                           auth.user?.profile?.name?.split(' ')[0] ||
+                                           (auth.user?.profile.email || 'User').split('@')[0];
 
                           nextStore[c.id].users = [{
                               id: auth.user?.profile.sub || 'unknown',
-                              name: displayName,
+                              name: firstName,
                               email: auth.user?.profile.email || '',
                               organizationId: c.id,
                               domain: c.domain,
@@ -350,16 +348,21 @@ const App: React.FC = () => {
                   <button onClick={() => setIsChatOpen(!isChatOpen)} className={`p-2 rounded-full transition-all ${isChatOpen ? 'bg-blue-600' : 'bg-slate-800 text-blue-400'}`}><MessageSquare size={20} /></button>
                   <div className="flex items-center gap-3 relative">
                       <div className="text-right hidden lg:block">
-                          <div className="text-xs font-black text-white uppercase">{currentUser.name}</div>
+                          <div className="text-sm font-bold text-white leading-none">{currentUser.name}</div>
                       </div>
-                      <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-black border-2 border-slate-700">{currentUser.name.charAt(0)}</button>
+                      <button 
+                        onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} 
+                        className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-black border-2 border-slate-700 shadow-md hover:scale-105 transition-transform"
+                      >
+                        {currentUser.name.charAt(0).toUpperCase()}
+                      </button>
                       {isProfileMenuOpen && (
-                          <div className="absolute top-full right-0 mt-3 w-64 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 py-3 z-[100]">
+                          <div className="absolute top-full right-0 mt-3 w-64 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 py-3 z-[100] animate-in fade-in slide-in-from-top-2">
                               <div className="px-5 py-3 border-b border-slate-100 mb-2">
-                                  <div className="text-[10px] font-black text-slate-400 uppercase mb-1">Organization</div>
-                                  <div className="text-sm font-black truncate uppercase">{activeClient.name}</div>
+                                  <div className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Active Organization</div>
+                                  <div className="text-sm font-black text-slate-900 truncate uppercase">{activeClient.name}</div>
                               </div>
-                              <button onClick={handleLogout} className="w-full text-left px-5 py-3 text-xs text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors font-black uppercase">
+                              <button onClick={handleLogout} className="w-full text-left px-5 py-3 text-xs text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors font-black uppercase tracking-widest">
                                   <LogOut size={14} /> Sign Out
                               </button>
                           </div>
