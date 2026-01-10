@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Requirement, Artifact, Client, Risk, Asset, Framework } from '../types';
 import { NIST_CMMC_FAMILIES } from '../data/standards';
@@ -111,7 +110,6 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
   const expandAll = () => setExpandedFamilies(new Set(families));
   const collapseAll = () => setExpandedFamilies(new Set());
 
-  // Added handleInviteAuditor
   const handleInviteAuditor = (e: React.FormEvent) => {
     e.preventDefault();
     if (!auditorEmail) return;
@@ -172,7 +170,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
               <div className="text-4xl font-black text-indigo-600">{stats.evidenceCoverage}%</div>
               <div className="text-xs text-slate-500 mt-1 font-bold">{stats.evidenceCount} Total Artifacts</div>
               <div className="h-1.5 bg-slate-100 rounded-full mt-4 overflow-hidden">
-                  <div className="bg-indigo-500 h-full transition-all" style={{ width: `${stats.evidenceCoverage}%` }} />
+                  <div className="bg-indigo-50 h-full transition-all" style={{ width: `${stats.evidenceCoverage}%` }} />
               </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -448,27 +446,34 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
 
           {activeTab === 'RISKS' && (
               <div className="p-8 space-y-6 animate-in fade-in slide-in-from-right-4">
-                  <h3 className="font-black text-slate-900 mb-2 uppercase tracking-widest text-xs">Factor Analysis of Information Risk (FAIR) Portfolio</h3>
+                  <h3 className="font-black text-slate-900 mb-2 uppercase tracking-widest text-xs">Risk Portfolio</h3>
                   <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                       <table className="w-full text-sm text-left">
                           <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                              <tr><th className="p-4">Risk ID</th><th className="p-4">Description</th><th className="p-4">Status</th><th className="p-4 text-right">Exposure (ALE)</th></tr>
+                              <tr>
+                                  <th className="p-4">Risk #</th>
+                                  <th className="p-4">Risk Title</th>
+                                  <th className="p-4">Rating</th>
+                                  <th className="p-4">Status</th>
+                              </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
                               {risks.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-slate-400 italic">No identified risks in the register.</td></tr> : risks.map(risk => (
                                   <tr key={risk.id}>
-                                      <td className="p-4 font-mono text-xs text-slate-400">{risk.id}</td>
+                                      <td className="p-4 font-mono text-xs text-blue-600 font-bold">{risk.riskNumber}</td>
                                       <td className="p-4">
-                                          <div className="font-bold text-slate-900">{risk.description}</div>
-                                          <div className="text-[10px] text-slate-500 mt-1 uppercase font-bold">{risk.category}</div>
+                                          <div className="font-bold text-slate-900">{risk.riskTitle}</div>
+                                          <div className="text-[10px] text-slate-500 mt-1 uppercase font-bold">{risk.riskCategory}</div>
+                                      </td>
+                                      <td className="p-4">
+                                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-700`}>
+                                              {risk.inherentRiskRating}
+                                          </span>
                                       </td>
                                       <td className="p-4">
                                           <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${risk.status === 'Open' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                                               {risk.status}
                                           </span>
-                                      </td>
-                                      <td className="p-4 text-right font-mono font-black text-slate-900">
-                                          ${risk.riskScore.toLocaleString()}
                                       </td>
                                   </tr>
                               ))}

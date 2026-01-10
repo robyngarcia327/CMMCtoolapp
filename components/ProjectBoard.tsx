@@ -78,10 +78,10 @@ export const ProjectBoard: React.FC<ProjectBoardProps> = ({
 
           const task: ProjectTask = {
               id: `T-${risk.id}`,
-              title: `Mitigate: ${risk.description.substring(0, 40)}...`,
-              description: `Execute remediation plan: ${risk.remediation}`,
+              title: `Mitigate: ${risk.riskTitle}`,
+              description: `Execute remediation plan: ${risk.comments || risk.deficiencyDescription}`,
               status: 'backlog',
-              priority: (risk.impact || 0) >= 4 ? 'High' : 'Medium',
+              priority: (risk.impact.includes('4') || risk.impact.includes('5')) ? 'High' : 'Medium',
               linkedRiskId: risk.id
           };
           onAddTask(task);
