@@ -1,7 +1,6 @@
 
 export type CognitoGroup = 'Admin_Created_Users' | 'Application_Administrator' | 'Tenant_Admin' | 'Auditor';
 
-// Added TrainingModule interface
 export interface TrainingModule {
   id: string;
   familyId: string;
@@ -12,7 +11,6 @@ export interface TrainingModule {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
 }
 
-// Added AuvikDevice interface
 export interface AuvikDevice {
   id: string;
   name: string;
@@ -80,7 +78,6 @@ export interface Asset {
   externalId?: string;
 }
 
-// Added UserRole type
 export type UserRole = 'CLIENT_USER' | 'CLIENT_ADMIN' | 'MSP_TECH' | 'MSP_ADMIN';
 
 export interface User {
@@ -88,7 +85,7 @@ export interface User {
   organizationId: string;
   name: string;
   email: string;
-  role: CognitoGroup | UserRole; // Updated to support both CognitoGroup and UserRole
+  role: CognitoGroup | UserRole;
   domain: string;
   department: string;
   lastLogin: number;
@@ -110,7 +107,7 @@ export interface IntegrationConfig {
 export interface Client {
   id: string;
   name: string;
-  domain: string; // Required for auto-grouping
+  domain: string; 
   industry: string;
   contactName: string;
   logoInitial: string;
@@ -149,21 +146,19 @@ export interface ClientData {
 
 export enum AppView {
   DASHBOARD = 'DASHBOARD',
+  WIZARD = 'WIZARD',
   REQUIREMENTS = 'REQUIREMENTS',
+  SPRS_SCORECARD = 'SPRS_SCORECARD',
+  TRAINING = 'TRAINING',
   INVENTORY = 'INVENTORY',
   USERS = 'USERS',
-  BULK_IMPORT = 'BULK_IMPORT',
-  SETTINGS = 'SETTINGS',
-  REPORTS = 'REPORTS',
-  SPRS_SCORECARD = 'SPRS_SCORECARD',
-  WIZARD = 'WIZARD',
-  DOC_GENERATOR = 'DOC_GENERATOR',
   NETWORK_ANALYSIS = 'NETWORK_ANALYSIS',
+  RISK_REGISTER = 'RISK_REGISTER',
+  POAM_MANAGER = 'POAM_MANAGER',
   ASSESSOR_PORTAL = 'ASSESSOR_PORTAL',
+  REPORTS = 'REPORTS',
   ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
-  GLOBAL_ADMIN = 'GLOBAL_ADMIN',
-  INTEGRATIONS = 'INTEGRATIONS',
-  RISK_REGISTER = 'RISK_REGISTER'
+  GLOBAL_ADMIN = 'GLOBAL_ADMIN'
 }
 
 export interface WizardProgress {
@@ -240,7 +235,6 @@ export interface Ticket {
   url?: string;
 }
 
-// Added RiskProfileVersion interface
 export interface RiskProfileVersion {
   id: string;
   versionNumber: string;
@@ -260,11 +254,15 @@ export interface Risk {
   assessmentType: 'Quantitative' | 'Qualitative';
   riskScore: number;
   impact?: 1 | 2 | 3 | 4 | 5;
-  // Added FAIR methodology fields
   likelihood?: 1 | 2 | 3 | 4 | 5;
   threatEventFrequency?: number;
   vulnerability?: number;
   lossMagnitude?: number;
+  // Cost fields requested by user
+  laborHours?: number;
+  hourlyRate?: number;
+  equipmentCost?: number;
+  assessorFee?: number;
 }
 
 export interface ProjectTask {
