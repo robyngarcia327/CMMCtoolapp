@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Risk } from '../types';
-import { AlertTriangle, Plus, Trash2, DollarSign, Calculator, Hammer, HardDrive, UserCheck, Clock, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Plus, Trash2, Save, Download, Filter, Search, ChevronDown, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 interface RiskRegisterProps {
   risks: Risk[];
@@ -10,237 +10,292 @@ interface RiskRegisterProps {
   onDeleteRisk: (id: string) => void;
 }
 
-export const RiskRegister: React.FC<RiskRegisterProps> = ({ risks, onAddRisk, onDeleteRisk }) => {
+const LIKELIHOOD_OPTIONS = [
+  "Select ...",
+  "1 - Remote",
+  "2 - Unlikely",
+  "3 - Possible",
+  "4 - Probable",
+  "5 - Almost Certain"
+];
+
+const IMPACT_OPTIONS = [
+  "Select ...",
+  "1 - Low",
+  "2 - Medium",
+  "3 - High",
+  "4 - Very High",
+  "5 - Extreme"
+];
+
+const RISK_RATING_OPTIONS = [
+  "Select ...",
+  "1 - Low",
+  "2 - Medium",
+  "3 - High",
+  "4 - Critical"
+];
+
+const BUSINESS_DECISION_OPTIONS = [
+  "Select ...",
+  "1 - Address",
+  "2 - Transfer",
+  "3 - Avoid",
+  "4 - Accept"
+];
+
+export const RiskRegister: React.FC<RiskRegisterProps> = ({ risks, onAddRisk, onUpdateRisk, onDeleteRisk }) => {
   const [isAdding, setIsAdding] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const [newRisk, setNewRisk] = useState<Partial<Risk>>({
-      likelihood: 3,
-      impact: 3,
-      status: 'Open',
-      category: 'Technical',
-      assessmentType: 'Quantitative',
-      threatEventFrequency: 1,
-      vulnerability: 0.5,
-      lossMagnitude: 10000,
-      manHours: 0,
-      laborRate: 150,
-      equipmentCost: 0,
-      assessorPrice: 0
+    riskTier: 'Operational',
+    riskCategory: 'Process',
+    domainGrouping: '',
+    riskNumber: '',
+    riskTitle: '',
+    riskOwner: 'CIO',
+    deficiencyDescription: '',
+    probableScenarios: 'N/A',
+    likelihood: 'Select ...',
+    impact: 'Select ...',
+    inherentRiskRating: 'Select ...',
+    businessDecision: 'Select ...',
+    targetResidualRiskRating: 'Select ...',
+    comments: '',
+    status: 'Open'
   });
 
-  const totalAle = risks.reduce((sum, r) => (r.status === 'Open' ? sum + (r.riskScore || 0) : sum), 0);
-  
-  const totalRemediationCost = risks.reduce((sum, r) => {
-      const labor = (r.manHours || 0) * (r.laborRate || 0);
-      const equip = r.equipmentCost || 0;
-      const assessor = r.assessorPrice || 0;
-      return sum + labor + equip + assessor;
-  }, 0);
-
   const handleCreateRisk = () => {
-      if (!newRisk.description || !newRisk.owner) return;
-      
-      const calculatedScore = (newRisk.threatEventFrequency || 0) * (newRisk.vulnerability || 0) * (newRisk.lossMagnitude || 0);
+    if (!newRisk.riskTitle) {
+      alert("Risk title is required.");
+      return;
+    }
 
-      const risk: Risk = {
-          id: `R-${Math.floor(1000 + Math.random() * 9000)}`,
-          description: newRisk.description,
-          category: newRisk.category as any,
-          remediation: newRisk.remediation || '',
-          owner: newRisk.owner,
-          status: newRisk.status as any,
-          dateIdentified: Date.now(),
-          assessmentType: newRisk.assessmentType as any,
-          threatEventFrequency: newRisk.threatEventFrequency,
-          vulnerability: newRisk.vulnerability,
-          lossMagnitude: newRisk.lossMagnitude,
-          likelihood: newRisk.likelihood as any,
-          impact: newRisk.impact as any,
-          riskScore: calculatedScore,
-          manHours: newRisk.manHours,
-          laborRate: newRisk.laborRate,
-          equipmentCost: newRisk.equipmentCost,
-          assessorPrice: newRisk.assessorPrice
-      };
-      onAddRisk(risk);
-      setIsAdding(false);
-      setNewRisk({ 
-        likelihood: 3, impact: 3, status: 'Open', category: 'Technical', description: '', owner: '', remediation: '',
-        assessmentType: 'Quantitative', threatEventFrequency: 1, vulnerability: 0.5, lossMagnitude: 10000,
-        manHours: 0, laborRate: 150, equipmentCost: 0, assessorPrice: 0
-      });
+    const risk: Risk = {
+      id: (risks.length + 4).toString(), // Mimicking index from user image (starts at 4)
+      riskTier: newRisk.riskTier || 'Operational',
+      riskCategory: newRisk.riskCategory || 'Process',
+      domainGrouping: newRisk.domainGrouping || '',
+      riskNumber: newRisk.riskNumber || '',
+      riskTitle: newRisk.riskTitle,
+      riskOwner: newRisk.riskOwner || 'CIO',
+      deficiencyDescription: newRisk.deficiencyDescription || '',
+      probableScenarios: newRisk.probableScenarios || 'N/A',
+      likelihood: newRisk.likelihood || 'Select ...',
+      impact: newRisk.impact || 'Select ...',
+      inherentRiskRating: newRisk.inherentRiskRating || 'Select ...',
+      businessDecision: newRisk.businessDecision || 'Select ...',
+      targetResidualRiskRating: newRisk.targetResidualRiskRating || 'Select ...',
+      comments: newRisk.comments || '',
+      status: 'Open',
+      dateIdentified: Date.now()
+    };
+
+    onAddRisk(risk);
+    setIsAdding(false);
+    setNewRisk({
+      riskTier: 'Operational',
+      riskCategory: 'Process',
+      likelihood: 'Select ...',
+      impact: 'Select ...',
+      inherentRiskRating: 'Select ...',
+      businessDecision: 'Select ...',
+      targetResidualRiskRating: 'Select ...',
+      probableScenarios: 'N/A'
+    });
   };
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+  const filteredRisks = risks.filter(r => 
+    r.riskTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.riskNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.domainGrouping.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="max-w-7xl mx-auto p-8 space-y-8 overflow-y-auto h-full bg-slate-50/50">
-      <div className="flex justify-between items-center">
+    <div className="flex flex-col h-full bg-white overflow-hidden">
+      {/* Header Bar */}
+      <div className="p-6 border-b border-slate-200 shrink-0 bg-slate-50 flex justify-between items-center shadow-sm z-20">
         <div>
-            <h2 className="text-3xl font-black text-slate-900 flex items-center gap-2 uppercase tracking-tighter">
-                Risk Management
-            </h2>
-            <p className="text-slate-500 font-medium">Financial Impact Modeling & Cost-to-Compliant Analysis.</p>
+          <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2 uppercase">
+            <AlertTriangle className="text-amber-500" size={24} /> 
+            Organizational Risk Register
+          </h1>
+          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Compliance & Operational Safeguard Portfolio</p>
         </div>
-        <button onClick={() => setIsAdding(true)} className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 text-sm font-black uppercase tracking-widest shadow-xl shadow-blue-200 transition-all active:scale-95">
-            <Plus size={18} /> New Risk Profile
-        </button>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Annual Risk Exposure (ALE)</div>
-                <div className="text-4xl font-black text-red-600">{formatCurrency(totalAle)}</div>
-            </div>
-            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm bg-gradient-to-br from-white to-blue-50">
-                <div className="text-[10px] text-blue-400 font-black uppercase tracking-widest mb-2">Cost to Compliant</div>
-                <div className="text-4xl font-black text-blue-600">{formatCurrency(totalRemediationCost)}</div>
-            </div>
-            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Remediation Velocity</div>
-                <div className="text-4xl font-black text-slate-900">{risks.reduce((sum,r)=>sum+(r.manHours||0),0)} <span className="text-lg text-slate-400">HRS</span></div>
-            </div>
-      </div>
-
-      {isAdding && (
-          <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl border border-slate-200 mb-8 animate-in fade-in slide-in-from-top-4">
-              <h3 className="font-black text-slate-900 mb-8 uppercase tracking-widest text-sm flex items-center gap-3">
-                  <Calculator size={24} className="text-blue-600"/> Assessment & Budgeting
-              </h3>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                  <div className="space-y-8">
-                      <div className="space-y-4">
-                          <div>
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Description / Requirement Gap</label>
-                            <input className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all font-bold" placeholder="e.g. FIPS 140-3 Cryptography implementation gap" value={newRisk.description} onChange={e => setNewRisk({...newRisk, description: e.target.value})} />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Risk Owner</label>
-                                <input className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all" value={newRisk.owner} onChange={e => setNewRisk({...newRisk, owner: e.target.value})} />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Category</label>
-                                <select className="w-full border-2 border-slate-100 p-4 rounded-2xl outline-none" value={newRisk.category} onChange={e => setNewRisk({...newRisk, category: e.target.value as any})}>
-                                    <option>Technical</option>
-                                    <option>Administrative</option>
-                                    <option>Physical</option>
-                                </select>
-                              </div>
-                          </div>
-                      </div>
-
-                      <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 space-y-6">
-                          <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                             <DollarSign size={14} className="text-green-600"/> Remediation Cost Model
-                          </h4>
-                          <div className="grid grid-cols-2 gap-6">
-                               <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-2">Labor Required (Hours)</label>
-                                    <div className="relative">
-                                        <Clock size={16} className="absolute left-4 top-4 text-slate-400"/>
-                                        <input type="number" className="w-full bg-white border border-slate-200 p-4 pl-12 rounded-2xl font-bold" value={newRisk.manHours} onChange={e=>setNewRisk({...newRisk, manHours: parseFloat(e.target.value)})} />
-                                    </div>
-                               </div>
-                               <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-2">Labor Rate ($/hr)</label>
-                                    <input type="number" className="w-full bg-white border border-slate-200 p-4 rounded-2xl font-bold" value={newRisk.laborRate} onChange={e=>setNewRisk({...newRisk, laborRate: parseFloat(e.target.value)})} />
-                               </div>
-                               <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-2">Equipment Cost ($)</label>
-                                    <div className="relative">
-                                        <HardDrive size={16} className="absolute left-4 top-4 text-slate-400"/>
-                                        <input type="number" className="w-full bg-white border border-slate-200 p-4 pl-12 rounded-2xl font-bold" value={newRisk.equipmentCost} onChange={e=>setNewRisk({...newRisk, equipmentCost: parseFloat(e.target.value)})} />
-                                    </div>
-                               </div>
-                               <div>
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-2">Assessor Price ($)</label>
-                                    <div className="relative">
-                                        <UserCheck size={16} className="absolute left-4 top-4 text-slate-400"/>
-                                        <input type="number" className="w-full bg-white border border-slate-200 p-4 pl-12 rounded-2xl font-bold" value={newRisk.assessorPrice} onChange={e=>setNewRisk({...newRisk, assessorPrice: parseFloat(e.target.value)})} />
-                                    </div>
-                               </div>
-                          </div>
-                      </div>
-                  </div>
-
-                  <div className="space-y-8">
-                      <div className="bg-indigo-900 p-8 rounded-[2rem] text-white shadow-2xl relative overflow-hidden">
-                          <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                          <h4 className="text-[10px] font-black text-blue-300 uppercase tracking-[0.3em] mb-6 flex items-center gap-2"><TrendingUp size={16}/> Exposure Analysis</h4>
-                          <div className="space-y-6">
-                               <div>
-                                   <div className="flex justify-between text-[10px] font-bold mb-2"><span>THREAT EVENT FREQUENCY</span><span>{newRisk.threatEventFrequency} /yr</span></div>
-                                   <input type="range" min="0" max="100" step="1" className="w-full accent-blue-400 h-1 bg-white/20 rounded-full appearance-none" value={newRisk.threatEventFrequency} onChange={e=>setNewRisk({...newRisk, threatEventFrequency: parseFloat(e.target.value)})} />
-                               </div>
-                               <div>
-                                   <div className="flex justify-between text-[10px] font-bold mb-2"><span>VULNERABILITY LEVEL</span><span>{Math.round((newRisk.vulnerability||0)*100)}%</span></div>
-                                   <input type="range" min="0" max="1" step="0.01" className="w-full accent-blue-400 h-1 bg-white/20 rounded-full appearance-none" value={newRisk.vulnerability} onChange={e=>setNewRisk({...newRisk, vulnerability: parseFloat(e.target.value)})} />
-                               </div>
-                               <div>
-                                   <label className="block text-[10px] font-bold mb-2">SINGLE LOSS EXPECTANCY ($)</label>
-                                   <input type="number" className="w-full bg-white/10 border border-white/20 p-4 rounded-2xl text-white font-black" value={newRisk.lossMagnitude} onChange={e=>setNewRisk({...newRisk, lossMagnitude: parseFloat(e.target.value)})} />
-                               </div>
-                          </div>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-400 uppercase mb-2">Project Remediation Plan</label>
-                        <textarea className="w-full border-2 border-slate-100 p-4 rounded-2xl h-40 focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none text-sm font-medium" value={newRisk.remediation} onChange={e => setNewRisk({...newRisk, remediation: e.target.value})} />
-                      </div>
-                  </div>
-              </div>
-              
-              <div className="flex justify-end gap-3 mt-12 pt-8 border-t border-slate-100">
-                  <button onClick={() => setIsAdding(false)} className="px-8 py-3 text-slate-500 font-bold uppercase text-[10px] tracking-widest">Cancel</button>
-                  <button onClick={handleCreateRisk} className="px-12 py-3 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] shadow-xl hover:bg-black transition-all">Commit Risk Profile</button>
-              </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+            <input 
+              className="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm w-64 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              placeholder="Filter register..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
           </div>
-      )}
+          <button 
+            onClick={() => setIsAdding(!isAdding)}
+            className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg hover:bg-black transition-all"
+          >
+            {isAdding ? 'Cancel' : <><Plus size={16} /> New Entry</>}
+          </button>
+        </div>
+      </div>
 
-      <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-sm text-left">
-              <thead className="bg-slate-900 text-white border-b border-slate-800">
-                  <tr>
-                      <th className="p-6 font-black uppercase text-[10px] tracking-widest">Description</th>
-                      <th className="p-6 font-black uppercase text-[10px] tracking-widest text-center">Implementation Cost</th>
-                      <th className="p-6 font-black uppercase text-[10px] tracking-widest text-center">Risk Exposure</th>
-                      <th className="p-6 font-black uppercase text-[10px] tracking-widest">Status</th>
-                      <th className="p-6 text-right"></th>
-                  </tr>
+      {/* Spreadsheet View Container */}
+      <div className="flex-1 overflow-auto bg-slate-100 p-4">
+        <div className="inline-block min-w-full align-middle">
+          <div className="bg-white border-2 border-slate-300 shadow-2xl rounded-sm overflow-hidden">
+            <table className="min-w-full text-xs text-left border-collapse table-fixed">
+              {/* Spreadsheet Header Structure */}
+              <thead className="text-[10px] font-black uppercase text-white sticky top-0 z-30">
+                <tr className="h-10">
+                  <th className="p-2 border-r border-slate-700 bg-slate-900 w-12 text-center" rowSpan={2}>#</th>
+                  <th className="p-2 border-r border-slate-700 bg-slate-900 w-32" rowSpan={2}>Risk Tier</th>
+                  <th className="p-2 border-r border-slate-700 bg-slate-900 w-40" rowSpan={2}>Risk Context / Category</th>
+                  <th className="p-2 border-r border-slate-700 bg-slate-900 w-48" rowSpan={2}>Domain Grouping</th>
+                  <th className="p-2 border-r border-slate-700 bg-slate-900 w-32" rowSpan={2}>Risk #</th>
+                  <th className="p-2 border-r border-slate-700 bg-slate-900 w-48" rowSpan={2}>Risk</th>
+                  <th className="p-2 border-r border-slate-700 bg-slate-900 w-24 text-center" rowSpan={2}>Risk Owner</th>
+                  <th className="p-2 border-r border-slate-700 bg-slate-900 w-72" rowSpan={2}>Description of Possible Risk Due To Control Deficiency</th>
+                  <th className="p-2 border-r border-slate-700 bg-slate-900 w-64" rowSpan={2}>Probable Scenarios</th>
+                  
+                  {/* Assessment Group (Red) */}
+                  <th className="p-2 border-r border-red-900 bg-red-700 text-center" colSpan={3}>Assessment</th>
+                  
+                  {/* Decision Group (Deep Blue) */}
+                  <th className="p-2 border-r border-indigo-950 bg-indigo-900 text-center w-40">Governance</th>
+                  
+                  {/* Residual Group (Gold) */}
+                  <th className="p-2 bg-amber-600 text-center w-40">Target</th>
+                  
+                  <th className="p-2 bg-slate-900 w-48" rowSpan={2}>Comments</th>
+                  <th className="p-2 bg-slate-900 w-12" rowSpan={2}></th>
+                </tr>
+                <tr className="h-10">
+                  <th className="p-2 border-r border-red-900 bg-red-700 w-32">Likelihood</th>
+                  <th className="p-2 border-r border-red-900 bg-red-700 w-32">Impact</th>
+                  <th className="p-2 border-r border-red-900 bg-red-700 w-32">Inherent Risk Rating</th>
+                  <th className="p-2 border-r border-indigo-950 bg-indigo-900 w-40">Business Decision on IR</th>
+                  <th className="p-2 bg-amber-600 w-40">Residual Risk Rating</th>
+                </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                  {risks.length === 0 && (
-                    <tr><td colSpan={5} className="p-20 text-center text-slate-400 italic">No risk profiles established.</td></tr>
-                  )}
-                  {risks.map(risk => {
-                      const cost = ((risk.manHours || 0) * (risk.laborRate || 0)) + (risk.equipmentCost || 0) + (risk.assessorPrice || 0);
-                      return (
-                          <tr key={risk.id} className="hover:bg-slate-50 group">
-                              <td className="p-6">
-                                  <div className="font-bold text-slate-900 text-base">{risk.description}</div>
-                                  <div className="text-[10px] text-slate-400 mt-1 uppercase font-black tracking-widest">ID: {risk.id} // Owner: {risk.owner}</div>
-                              </td>
-                              <td className="p-6 text-center">
-                                  <div className="font-black text-blue-600 text-lg">{formatCurrency(cost)}</div>
-                                  <div className="text-[9px] text-slate-400 uppercase font-black">{risk.manHours} hours remediation</div>
-                              </td>
-                              <td className="p-6 text-center">
-                                  <div className="font-black text-red-600 text-lg">{formatCurrency(risk.riskScore)}</div>
-                                  <div className="text-[9px] text-slate-400 uppercase font-black">Annualized Loss</div>
-                              </td>
-                              <td className="p-6">
-                                  <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest ${risk.status === 'Open' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{risk.status}</span>
-                              </td>
-                              <td className="p-6 text-right">
-                                  <button onClick={() => onDeleteRisk(risk.id)} className="text-slate-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={20} /></button>
-                              </td>
-                          </tr>
-                      );
-                  })}
+
+              <tbody className="divide-y divide-slate-200">
+                {/* Entry Row */}
+                {isAdding && (
+                  <tr className="bg-blue-50 animate-in fade-in slide-in-from-top-1">
+                    <td className="p-1.5 border-r text-center font-bold text-blue-600">New</td>
+                    <td className="p-1.5 border-r">
+                      <select className="w-full bg-white border border-slate-300 rounded p-1" value={newRisk.riskTier} onChange={e => setNewRisk({...newRisk, riskTier: e.target.value})}>
+                        <option>Operational</option>
+                        <option>Strategic</option>
+                        <option>Compliance</option>
+                      </select>
+                    </td>
+                    <td className="p-1.5 border-r">
+                      <input className="w-full bg-white border border-slate-300 rounded p-1" placeholder="Category" value={newRisk.riskCategory} onChange={e => setNewRisk({...newRisk, riskCategory: e.target.value})} />
+                    </td>
+                    <td className="p-1.5 border-r">
+                      <input className="w-full bg-white border border-slate-300 rounded p-1" placeholder="e.g. Identity" value={newRisk.domainGrouping} onChange={e => setNewRisk({...newRisk, domainGrouping: e.target.value})} />
+                    </td>
+                    <td className="p-1.5 border-r">
+                      <input className="w-full bg-white border border-slate-300 rounded p-1" placeholder="e.g. R-IRO-04" value={newRisk.riskNumber} onChange={e => setNewRisk({...newRisk, riskNumber: e.target.value})} />
+                    </td>
+                    <td className="p-1.5 border-r">
+                      <input className="w-full bg-white border border-slate-300 rounded p-1 font-bold" placeholder="Risk Title" value={newRisk.riskTitle} onChange={e => setNewRisk({...newRisk, riskTitle: e.target.value})} />
+                    </td>
+                    <td className="p-1.5 border-r">
+                      <input className="w-full bg-white border border-slate-300 rounded p-1 text-center" value={newRisk.riskOwner} onChange={e => setNewRisk({...newRisk, riskOwner: e.target.value})} />
+                    </td>
+                    <td className="p-1.5 border-r">
+                      <textarea className="w-full bg-white border border-slate-300 rounded p-1 h-12 text-[10px]" placeholder="Detailed description..." value={newRisk.deficiencyDescription} onChange={e => setNewRisk({...newRisk, deficiencyDescription: e.target.value})} />
+                    </td>
+                    <td className="p-1.5 border-r">
+                      <textarea className="w-full bg-white border border-slate-300 rounded p-1 h-12 text-[10px]" value={newRisk.probableScenarios} onChange={e => setNewRisk({...newRisk, probableScenarios: e.target.value})} />
+                    </td>
+                    <td className="p-1.5 border-r">
+                      <select className="w-full bg-white border border-slate-300 rounded p-1" value={newRisk.likelihood} onChange={e => setNewRisk({...newRisk, likelihood: e.target.value})}>
+                        {LIKELIHOOD_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}
+                      </select>
+                    </td>
+                    <td className="p-1.5 border-r">
+                      <select className="w-full bg-white border border-slate-300 rounded p-1" value={newRisk.impact} onChange={e => setNewRisk({...newRisk, impact: e.target.value})}>
+                        {IMPACT_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}
+                      </select>
+                    </td>
+                    <td className="p-1.5 border-r">
+                      <select className="w-full bg-white border border-slate-300 rounded p-1" value={newRisk.inherentRiskRating} onChange={e => setNewRisk({...newRisk, inherentRiskRating: e.target.value})}>
+                        {RISK_RATING_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}
+                      </select>
+                    </td>
+                    <td className="p-1.5 border-r">
+                      <select className="w-full bg-white border border-slate-300 rounded p-1" value={newRisk.businessDecision} onChange={e => setNewRisk({...newRisk, businessDecision: e.target.value})}>
+                        {BUSINESS_DECISION_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}
+                      </select>
+                    </td>
+                    <td className="p-1.5 border-r">
+                      <select className="w-full bg-white border border-slate-300 rounded p-1" value={newRisk.targetResidualRiskRating} onChange={e => setNewRisk({...newRisk, targetResidualRiskRating: e.target.value})}>
+                        {RISK_RATING_OPTIONS.map(opt => <option key={opt}>{opt}</option>)}
+                      </select>
+                    </td>
+                    <td className="p-1.5 border-r">
+                      <input className="w-full bg-white border border-slate-300 rounded p-1" value={newRisk.comments} onChange={e => setNewRisk({...newRisk, comments: e.target.value})} />
+                    </td>
+                    <td className="p-1.5 text-center">
+                      <button onClick={handleCreateRisk} className="text-green-600 hover:text-green-800"><Save size={20}/></button>
+                    </td>
+                  </tr>
+                )}
+
+                {/* Data Rows */}
+                {filteredRisks.length === 0 && !isAdding ? (
+                  <tr><td colSpan={16} className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest bg-slate-50 italic">Registry Empty - Add first risk to begin assessment</td></tr>
+                ) : filteredRisks.map((risk, idx) => (
+                  <tr key={risk.id} className="hover:bg-slate-50 border-b group transition-colors">
+                    <td className="p-3 border-r text-center font-bold text-slate-500 bg-slate-50/50">{risk.id}</td>
+                    <td className="p-3 border-r font-medium text-slate-700">{risk.riskTier}</td>
+                    <td className="p-3 border-r text-slate-600">{risk.riskCategory}</td>
+                    <td className="p-3 border-r bg-slate-100/30 text-slate-900 font-bold">{risk.domainGrouping}</td>
+                    <td className="p-3 border-r font-mono font-bold text-blue-700">{risk.riskNumber}</td>
+                    <td className="p-3 border-r font-bold text-slate-800 leading-tight">{risk.riskTitle}</td>
+                    <td className="p-3 border-r text-center font-black text-slate-600">{risk.riskOwner}</td>
+                    <td className="p-3 border-r text-slate-500 text-[10px] leading-relaxed italic">{risk.deficiencyDescription}</td>
+                    <td className="p-3 border-r text-slate-500 text-[10px] leading-relaxed">{risk.probableScenarios}</td>
+                    
+                    {/* Assessments (Red Tint) */}
+                    <td className={`p-3 border-r text-center font-bold ${risk.likelihood.includes('4') || risk.likelihood.includes('5') ? 'text-red-700 bg-red-50/50' : 'text-slate-700'}`}>{risk.likelihood}</td>
+                    <td className={`p-3 border-r text-center font-bold ${risk.impact.includes('4') || risk.impact.includes('5') ? 'text-red-700 bg-red-50/50' : 'text-slate-700'}`}>{risk.impact}</td>
+                    <td className={`p-3 border-r text-center font-black ${risk.inherentRiskRating.includes('High') || risk.inherentRiskRating.includes('Critical') ? 'bg-red-600 text-white' : 'bg-red-50 text-red-900'}`}>{risk.inherentRiskRating}</td>
+                    
+                    <td className="p-3 border-r text-center font-bold bg-indigo-50 text-indigo-900">{risk.businessDecision}</td>
+                    <td className={`p-3 border-r text-center font-black ${risk.targetResidualRiskRating.includes('Low') ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>{risk.targetResidualRiskRating}</td>
+                    
+                    <td className="p-3 border-r text-slate-500 text-[10px]">{risk.comments}</td>
+                    <td className="p-3 text-center">
+                      <button onClick={() => onDeleteRisk(risk.id)} className="text-slate-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
-          </table>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Spreadsheet Status Footer */}
+      <div className="bg-slate-900 p-3 text-white flex justify-between items-center shrink-0">
+          <div className="flex gap-8 text-[10px] font-black uppercase tracking-widest opacity-80">
+              <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500"></div> Critical: {risks.filter(r => r.inherentRiskRating.includes('Critical')).length}</div>
+              <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div> High Impact: {risks.filter(r => r.impact.includes('High')).length}</div>
+              <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Total Mapped: {risks.length}</div>
+          </div>
+          <div className="flex gap-4">
+              <button className="text-[10px] font-black uppercase text-slate-400 hover:text-white transition-colors flex items-center gap-1">
+                  <Download size={12}/> Export XLS
+              </button>
+          </div>
       </div>
     </div>
   );

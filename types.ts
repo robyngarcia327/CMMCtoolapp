@@ -224,9 +224,6 @@ export interface AuvikConfig extends IntegrationConfig {
   region: 'US' | 'EU';
 }
 
-/**
- * Added AuvikDevice interface for network topology tracking
- */
 export interface AuvikDevice {
   id: string;
   name: string;
@@ -252,25 +249,23 @@ export interface Ticket {
 }
 
 export interface Risk {
-  id: string;
-  description: string;
-  category: string;
-  remediation: string;
-  owner: string;
+  id: string; // The '#' numerical index in spreadsheet
+  riskTier: string; // e.g., Operational, Strategic
+  riskCategory: string; // e.g., Process, Financial, M&A
+  domainGrouping: string; // e.g., Identification & Authentication
+  riskNumber: string; // e.g., R-IAM-04
+  riskTitle: string; // Short title of the risk
+  riskOwner: string; // e.g., CIO, CAO
+  deficiencyDescription: string; // Description of risk due to control deficiency
+  probableScenarios: string; // Text field for probable scenarios
+  likelihood: string; // e.g., 4 - Probable
+  impact: string; // e.g., 2 - Medium
+  inherentRiskRating: string; // Calculated or manual
+  businessDecision: string; // Decision on IR
+  targetResidualRiskRating: string; // Target rating after mitigation
+  comments: string; // Narrative comments
   status: 'Open' | 'Mitigated' | 'Transferred' | 'Accepted';
   dateIdentified: number;
-  assessmentType: 'Quantitative' | 'Qualitative';
-  riskScore: number;
-  impact?: 1 | 2 | 3 | 4 | 5;
-  likelihood?: 1 | 2 | 3 | 4 | 5;
-  threatEventFrequency?: number;
-  vulnerability?: number;
-  lossMagnitude?: number;
-  // Financial fields
-  manHours?: number;
-  laborRate?: number;
-  equipmentCost?: number;
-  assessorPrice?: number;
 }
 
 export interface ProjectTask {
