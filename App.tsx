@@ -13,13 +13,15 @@ import {
   ChevronDown,
   Loader2,
   Eye,
-  FileSpreadsheet,
   Building2,
   FileText,
   Lock,
   Globe,
   AlertTriangle,
-  ClipboardCheck
+  ClipboardCheck,
+  LayoutDashboard,
+  Settings,
+  ChevronRight
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData } from './data/standards';
@@ -27,7 +29,6 @@ import { Requirement, Artifact, AppView, Ticket, User, Framework, Client, Client
 import { RequirementsList } from './components/RequirementsList';
 import { RequirementDetail } from './components/RequirementDetail';
 import { AIChat } from './components/AIChat';
-import { NetworkAnalyzer } from './components/NetworkAnalyzer';
 import { Inventory } from './components/Inventory';
 import { UserManagement } from './components/UserManagement';
 import { Reports } from './components/Reports';
@@ -42,34 +43,43 @@ import { GlobalAdminPortal } from './components/GlobalAdminPortal';
 import { RiskRegister } from './components/RiskRegister';
 import { api } from './services/api';
 
-const NavDropdown = ({ label, icon: Icon, children }: React.PropsWithChildren<{ label: string, icon: any }>) => {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <div 
-      className="relative h-full flex items-center"
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
-    >
-        <button className="flex items-center gap-1 px-3 py-2 text-slate-300 hover:text-white font-medium transition-colors text-sm">
-            <Icon size={16} /> {label} <ChevronDown size={14} className={`opacity-50 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
-        {isOpen && (
-          <div className="absolute top-[80%] left-0 mt-0 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-2 animate-in fade-in zoom-in-95 duration-100 z-[100]">
-              {children}
-          </div>
-        )}
-    </div>
-  );
-};
-
-const NavItem = ({ label, icon: Icon, isActive, onClick }: { label: string, icon: any, isActive: boolean, onClick: () => void }) => (
+const SidebarItem = ({ 
+  label, 
+  icon: Icon, 
+  isActive, 
+  onClick, 
+  badge 
+}: { 
+  label: string, 
+  icon: any, 
+  isActive: boolean, 
+  onClick: () => void,
+  badge?: string 
+}) => (
   <button 
     onClick={onClick}
-    className={`w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors ${isActive ? 'text-blue-600 font-bold bg-blue-50' : 'text-slate-700 text-sm'}`}
+    className={`w-full group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 mb-1 ${
+      isActive 
+        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20 font-bold' 
+        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+    }`}
   >
-      <Icon size={16} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
-      {label}
+    <Icon size={20} className={`${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'} transition-colors`} />
+    <span className="flex-1 text-left text-sm whitespace-nowrap">{label}</span>
+    {badge && (
+      <span className="bg-blue-500/20 text-blue-400 text-[10px] px-1.5 py-0.5 rounded font-black uppercase">
+        {badge}
+      </span>
+    )}
   </button>
+);
+
+// Added optional children to fix TypeScript errors (e.g., on lines 345, 351, 358, 365, 372) where children were reported missing in JSX usage
+const SidebarSection = ({ title, children }: { title: string, children?: React.ReactNode }) => (
+  <div className="mb-6">
+    <div className="px-4 mb-2 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">{title}</div>
+    <div className="space-y-0.5">{children}</div>
+  </div>
 );
 
 const App: React.FC = () => {
@@ -155,9 +165,9 @@ const App: React.FC = () => {
 
   // DEBUG: Monitor Auth State
   useEffect(() => {
-      if (auth.isAuthenticated) {
-          console.log("Auth Success Profile:", auth.user?.profile);
-      }
+    if (auth.isAuthenticated) {
+      console.log("Auth Identity Check:", auth.user?.profile);
+    }
   }, [auth.isAuthenticated, auth.user]);
 
   const userGroups = useMemo(() => {
@@ -170,216 +180,287 @@ const App: React.FC = () => {
   const isAuditor = userGroups.includes('Auditor');
 
   const loadOrganizations = useCallback(async () => {
-      const idToken = auth.user?.id_token;
-      if (!auth.isAuthenticated || !idToken) return;
-      setIsDataLoading(true);
-      try {
-          const apiOrgs = await api.getOrgs(idToken);
-          const mappedClients: Client[] = apiOrgs.map((o: any) => ({
-              id: o.orgId || o.id,
-              name: o.name || 'Organization',
-              domain: o.domain || 'unverified.com',
-              industry: o.industry || 'Defense Industrial Base', 
-              contactName: auth.user?.profile.email || 'Admin',
-              logoInitial: (o.name || 'O').charAt(0).toUpperCase(),
-              primaryFramework: 'NIST-CMMC',
-              nextAuditDate: Date.now() + 31536000000,
-              accountManager: 'Self-Managed',
-              isParent: !!o.isParent
-          }));
-          setClients(mappedClients);
-          if (mappedClients.length > 0) {
-              const selectedId = mappedClients[0].id;
-              setActiveClientId(selectedId);
-              setClientDataStore(prev => {
-                  const nextStore = { ...prev };
-                  mappedClients.forEach(c => {
-                      if (!nextStore[c.id]) {
-                          nextStore[c.id] = createInitialClientData(false);
-                          
-                          // Use given_name specifically if available for "Robyn", fallback to prefix
-                          const firstName = auth.user?.profile?.given_name || 
-                                           auth.user?.profile?.nickname || 
-                                           auth.user?.profile?.name?.split(' ')[0] ||
-                                           (auth.user?.profile.email || 'User').split('@')[0];
+    const idToken = auth.user?.id_token;
+    if (!auth.isAuthenticated || !idToken) return;
+    setIsDataLoading(true);
+    try {
+      const apiOrgs = await api.getOrgs(idToken);
+      const mappedClients: Client[] = apiOrgs.map((o: any) => ({
+        id: o.orgId || o.id,
+        name: o.name || 'Organization',
+        domain: o.domain || 'unverified.com',
+        industry: o.industry || 'Defense Industrial Base', 
+        contactName: auth.user?.profile.email || 'Admin',
+        logoInitial: (o.name || 'O').charAt(0).toUpperCase(),
+        primaryFramework: 'NIST-CMMC',
+        nextAuditDate: Date.now() + 31536000000,
+        accountManager: 'Self-Managed',
+        isParent: !!o.isParent
+      }));
+      setClients(mappedClients);
+      if (mappedClients.length > 0) {
+        const selectedId = mappedClients[0].id;
+        setActiveClientId(selectedId);
+        setClientDataStore(prev => {
+          const nextStore = { ...prev };
+          mappedClients.forEach(c => {
+            if (!nextStore[c.id]) {
+              nextStore[c.id] = createInitialClientData(false);
+              
+              // IDENTITY FIX: Better parsing of names to avoid "rgg" email prefix issues
+              const profile = auth.user?.profile;
+              const displayName = profile?.name || 
+                                (profile?.given_name ? `${profile.given_name} ${profile.family_name || ''}`.trim() : null) ||
+                                profile?.nickname || 
+                                (profile?.email || 'User').split('@')[0];
 
-                          nextStore[c.id].users = [{
-                              id: auth.user?.profile.sub || 'unknown',
-                              name: firstName,
-                              email: auth.user?.profile.email || '',
-                              organizationId: c.id,
-                              domain: c.domain,
-                              role: userGroups[0] || 'Admin_Created_Users',
-                              department: 'Compliance',
-                              lastLogin: Date.now(),
-                              mfaEnabled: true,
-                              hasPasskey: false,
-                              isCuiAuthorized: true
-                          }];
-                      }
-                  });
-                  return nextStore;
-              });
-          }
-          setHasCheckedOrgs(true);
-      } catch (e) {
-          console.error("Load failed", e);
-      } finally {
-          setIsDataLoading(false);
+              nextStore[c.id].users = [{
+                id: profile?.sub || 'unknown',
+                name: displayName,
+                email: profile?.email || '',
+                organizationId: c.id,
+                domain: c.domain,
+                role: userGroups[0] || 'Admin_Created_Users',
+                department: 'Compliance',
+                lastLogin: Date.now(),
+                mfaEnabled: true,
+                hasPasskey: false,
+                isCuiAuthorized: true
+              }];
+            }
+          });
+          return nextStore;
+        });
       }
+      setHasCheckedOrgs(true);
+    } catch (e) {
+      console.error("Load failed", e);
+    } finally {
+      setIsDataLoading(false);
+    }
   }, [auth.isAuthenticated, auth.user, userGroups]);
 
   useEffect(() => {
-      if (auth.isAuthenticated && auth.user?.id_token && !fetchAttempted.current) {
-          fetchAttempted.current = true;
-          loadOrganizations();
-      }
+    if (auth.isAuthenticated && auth.user?.id_token && !fetchAttempted.current) {
+      fetchAttempted.current = true;
+      loadOrganizations();
+    }
   }, [auth.isAuthenticated, auth.user?.id_token, loadOrganizations]);
 
   const handleGlobalPromote = async (userId: string, group: CognitoGroup) => {
-      if (!auth.user?.id_token) return;
-      try {
-          await api.promoteUser(auth.user.id_token, userId, group);
-          alert("Cognito Group updated.");
-          loadOrganizations();
-      } catch (e: any) { alert(e.message); }
+    if (!auth.user?.id_token) return;
+    try {
+      await api.promoteUser(auth.user.id_token, userId, group);
+      alert("Cognito Group updated.");
+      loadOrganizations();
+    } catch (e: any) { alert(e.message); }
   };
 
   const handleAddRisk = (risk: Risk) => {
     if (!activeClientId) return;
     setClientDataStore(prev => ({
-        ...prev,
-        [activeClientId]: {
-            ...prev[activeClientId],
-            risks: [...prev[activeClientId].risks, risk]
-        }
+      ...prev,
+      [activeClientId]: {
+        ...prev[activeClientId],
+        risks: [...prev[activeClientId].risks, risk]
+      }
     }));
   };
 
   const handleDeleteRisk = (riskId: string) => {
     if (!activeClientId) return;
     setClientDataStore(prev => ({
-        ...prev,
-        [activeClientId]: {
-            ...prev[activeClientId],
-            risks: prev[activeClientId].risks.filter(r => r.id !== riskId)
-        }
+      ...prev,
+      [activeClientId]: {
+        ...prev[activeClientId],
+        risks: prev[activeClientId].risks.filter(r => r.id !== riskId)
+      }
     }));
   };
 
   const handleLogout = () => auth.signoutRedirect();
   
-  if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-900"><Loader2 className="animate-spin text-blue-500" size={48} /></div>;
+  if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-500" size={48} /></div>;
   if (!auth.isAuthenticated) return <Login />;
-  if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+  if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
 
   if (hasCheckedOrgs && !activeClientId) {
-      return (
-          <Onboarding 
-            user={{ id: auth.user?.profile.sub || '', name: '', email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }}
-            onCreateOrganization={async (name, domain) => {
-                if (!auth.user?.id_token) return;
-                setIsDataLoading(true);
-                try {
-                    await api.createOrg(auth.user.id_token, name, domain);
-                    fetchAttempted.current = false;
-                    await loadOrganizations();
-                } catch (e) { setIsDataLoading(false); }
-            }}
-            onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }}
-            debugTokens={{ idToken: auth.user?.id_token }}
-          />
-      );
+    return (
+      <Onboarding 
+        user={{ id: auth.user?.profile.sub || '', name: '', email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }}
+        onCreateOrganization={async (name, domain) => {
+          if (!auth.user?.id_token) return;
+          setIsDataLoading(true);
+          try {
+            await api.createOrg(auth.user.id_token, name, domain);
+            fetchAttempted.current = false;
+            await loadOrganizations();
+          } catch (e) { setIsDataLoading(false); }
+        }}
+        onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }}
+        debugTokens={{ idToken: auth.user?.id_token }}
+      />
+    );
   }
 
   const activeClient = clients.find(c => c.id === activeClientId) || clients[0];
   const activeData = clientDataStore[activeClientId];
-  if (!activeData) return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 size={48} className="animate-spin" /></div>;
+  if (!activeData) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 size={48} className="animate-spin" /></div>;
 
   const currentUser = activeData.users[0];
   const allUsersAcrossTenants = (Object.values(clientDataStore) as ClientData[]).flatMap(d => d.users);
 
+  // Helper to get view labels for the Top Bar
+  const getViewLabel = (view: AppView) => {
+    switch(view) {
+      case AppView.DASHBOARD: return "Executive Dashboard";
+      case AppView.REQUIREMENTS: return "Control Analysis";
+      case AppView.SPRS_SCORECARD: return "DoD SPRS Scorecard";
+      case AppView.WIZARD: return "Compliance Wizard";
+      case AppView.RISK_REGISTER: return "Risk Register (FAIR)";
+      case AppView.INVENTORY: return "Asset Inventory";
+      case AppView.REPORTS: return "Compliance Reports";
+      case AppView.ASSESSOR_PORTAL: return "Assessor Interface";
+      case AppView.ORGANIZATION_MANAGER: return "Tenant Settings";
+      case AppView.USERS: return "Team Management";
+      case AppView.GLOBAL_ADMIN: return "Global Command Center";
+      default: return "Cuallee Cyber";
+    }
+  };
+
   return (
-    <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
-      <header className="bg-slate-900 text-slate-200 h-16 shrink-0 shadow-md z-50">
-          <div className="max-w-[1920px] mx-auto px-6 h-full flex items-center justify-between">
-              <div className="flex items-center gap-8">
-                  <div className="flex items-center gap-2 text-white font-bold text-lg">
-                      <Shield className="text-blue-500" size={24} />
-                      <span className="tracking-tighter uppercase font-black">Cuallee Cyber</span>
-                  </div>
-                  <nav className="hidden md:flex items-center gap-1 h-16">
-                      <button onClick={() => setCurrentView(AppView.DASHBOARD)} className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-colors ${currentView === AppView.DASHBOARD ? 'text-blue-400' : 'text-slate-300 hover:text-white'}`}>Dashboard</button>
-                      {!isAuditor && (
-                          <NavDropdown label="Compliance" icon={ListChecks}>
-                            <NavItem label="Control Detail" icon={ListChecks} isActive={currentView === AppView.REQUIREMENTS} onClick={() => setCurrentView(AppView.REQUIREMENTS)} />
-                            <NavItem label="SPRS Score" icon={TrendingUp} isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
-                            <NavItem label="Wizard" icon={Wand2} isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} />
-                          </NavDropdown>
-                      )}
-                      <NavDropdown label="Governance" icon={Eye}>
-                          <NavItem label="FAIR Risk Register" icon={AlertTriangle} isActive={currentView === AppView.RISK_REGISTER} onClick={() => setCurrentView(AppView.RISK_REGISTER)} />
-                          <NavItem label="Asset Registry" icon={Package} isActive={currentView === AppView.INVENTORY} onClick={() => setCurrentView(AppView.INVENTORY)} />
-                          <NavItem label="Compliance Reports" icon={FileText} isActive={currentView === AppView.REPORTS} onClick={() => setCurrentView(AppView.REPORTS)} />
-                      </NavDropdown>
-                      
-                      <button 
-                        onClick={() => setCurrentView(AppView.ASSESSOR_PORTAL)} 
-                        className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 ${currentView === AppView.ASSESSOR_PORTAL ? 'text-white bg-slate-800 shadow-inner' : 'text-slate-300 hover:text-white'}`}
-                      >
-                        <ClipboardCheck size={14} className={currentView === AppView.ASSESSOR_PORTAL ? 'text-blue-500' : 'text-slate-400'} />
-                        Assessor Portal
-                      </button>
-
-                      {(isTenantAdmin || isGlobalAdmin) && (
-                        <NavDropdown label="Tenant" icon={Lock}>
-                            <NavItem label="Settings" icon={Building2} isActive={currentView === AppView.ORGANIZATION_MANAGER} onClick={() => setCurrentView(AppView.ORGANIZATION_MANAGER)} />
-                            <NavItem label="Team Control" icon={Users} isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
-                        </NavDropdown>
-                      )}
-                      {isGlobalAdmin && (
-                        <button onClick={() => setCurrentView(AppView.GLOBAL_ADMIN)} className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest flex items-center gap-2 border border-blue-500/30 ${currentView === AppView.GLOBAL_ADMIN ? 'bg-blue-600 text-white' : 'text-blue-400'}`}>
-                            <Globe size={14}/> Platform Admin
-                        </button>
-                      )}
-                  </nav>
-              </div>
-              <div className="flex items-center gap-4">
-                  <button onClick={() => setIsChatOpen(!isChatOpen)} className={`p-2 rounded-full transition-all ${isChatOpen ? 'bg-blue-600' : 'bg-slate-800 text-blue-400'}`}><MessageSquare size={20} /></button>
-                  <div className="flex items-center gap-3 relative">
-                      <div className="text-right hidden lg:block">
-                          <div className="text-sm font-bold text-white leading-none">{currentUser.name}</div>
-                      </div>
-                      <button 
-                        onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} 
-                        className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-black border-2 border-slate-700 shadow-md hover:scale-105 transition-transform"
-                      >
-                        {currentUser.name.charAt(0).toUpperCase()}
-                      </button>
-                      {isProfileMenuOpen && (
-                          <div className="absolute top-full right-0 mt-3 w-64 bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 py-3 z-[100] animate-in fade-in slide-in-from-top-2">
-                              <div className="px-5 py-3 border-b border-slate-100 mb-2">
-                                  <div className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Active Organization</div>
-                                  <div className="text-sm font-black text-slate-900 truncate uppercase">{activeClient.name}</div>
-                              </div>
-                              <button onClick={handleLogout} className="w-full text-left px-5 py-3 text-xs text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors font-black uppercase tracking-widest">
-                                  <LogOut size={14} /> Sign Out
-                              </button>
-                          </div>
-                      )}
-                  </div>
-              </div>
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
+      
+      {/* VERTICAL SIDEBAR */}
+      <aside className="w-72 bg-slate-950 text-slate-300 flex flex-col shrink-0 z-50 border-r border-slate-900 shadow-2xl">
+        <div className="p-8 pb-10">
+          <div className="flex items-center gap-3 text-white">
+            <div className="p-2 bg-blue-600 rounded-2xl shadow-lg shadow-blue-900/50">
+              <Shield size={24} className="text-white" />
+            </div>
+            <span className="tracking-tighter uppercase font-black text-xl leading-none">Cuallee<br/><span className="text-blue-500">Cyber</span></span>
           </div>
-      </header>
+        </div>
 
-      <main className="flex-1 flex overflow-hidden relative">
+        <nav className="flex-1 overflow-y-auto px-4 scrollbar-hide">
+          <SidebarSection title="General">
+            <SidebarItem icon={LayoutDashboard} label="Dashboard" isActive={currentView === AppView.DASHBOARD} onClick={() => setCurrentView(AppView.DASHBOARD)} />
+            <SidebarItem icon={Wand2} label="Step-by-Step Wizard" isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} badge="New" />
+          </SidebarSection>
+
+          {!isAuditor && (
+            <SidebarSection title="Compliance">
+              <SidebarItem icon={ListChecks} label="Control Details" isActive={currentView === AppView.REQUIREMENTS} onClick={() => setCurrentView(AppView.REQUIREMENTS)} />
+              <SidebarItem icon={TrendingUp} label="SPRS Scorecard" isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
+              <SidebarItem icon={FileText} label="Compliance Reports" isActive={currentView === AppView.REPORTS} onClick={() => setCurrentView(AppView.REPORTS)} />
+            </SidebarSection>
+          )}
+
+          <SidebarSection title="Governance">
+            <SidebarItem icon={AlertTriangle} label="Risk Register" isActive={currentView === AppView.RISK_REGISTER} onClick={() => setCurrentView(AppView.RISK_REGISTER)} />
+            <SidebarItem icon={Package} label="Asset Inventory" isActive={currentView === AppView.INVENTORY} onClick={() => setCurrentView(AppView.INVENTORY)} />
+            <SidebarItem icon={ClipboardCheck} label="Assessor Portal" isActive={currentView === AppView.ASSESSOR_PORTAL} onClick={() => setCurrentView(AppView.ASSESSOR_PORTAL)} />
+          </SidebarSection>
+
+          {(isTenantAdmin || isGlobalAdmin) && (
+            <SidebarSection title="Administration">
+              <SidebarItem icon={Settings} label="Tenant Settings" isActive={currentView === AppView.ORGANIZATION_MANAGER} onClick={() => setCurrentView(AppView.ORGANIZATION_MANAGER)} />
+              <SidebarItem icon={Users} label="Team Access" isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
+            </SidebarSection>
+          )}
+
+          {isGlobalAdmin && (
+            <SidebarSection title="System">
+              <SidebarItem icon={Globe} label="Global Admin" isActive={currentView === AppView.GLOBAL_ADMIN} onClick={() => setCurrentView(AppView.GLOBAL_ADMIN)} />
+            </SidebarSection>
+          )}
+        </nav>
+
+        <div className="p-4 border-t border-slate-900 mt-auto">
+          <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800">
+            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Organization</div>
+            <div className="text-xs font-bold text-white truncate uppercase">{activeClient.name}</div>
+          </div>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT AREA */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        
+        {/* TOP BAR */}
+        <header className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between shrink-0 z-40">
+          <div className="flex items-center gap-4">
+             <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">{getViewLabel(currentView)}</h2>
+             {selectedRequirementId && currentView === AppView.REQUIREMENTS && (
+               <>
+                 <ChevronRight size={16} className="text-slate-300" />
+                 <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">{selectedRequirementId}</span>
+               </>
+             )}
+          </div>
+
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={() => setIsChatOpen(!isChatOpen)} 
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-xs transition-all ${isChatOpen ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+            >
+              <MessageSquare size={16} /> 
+              {isChatOpen ? 'Close Assistant' : 'AI Help'}
+            </button>
+
+            <div className="h-8 w-px bg-slate-200" />
+
+            <div className="relative">
+              <button 
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              >
+                <div className="text-right hidden sm:block">
+                  <div className="text-sm font-black text-slate-900 leading-tight">{currentUser.name}</div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{userGroups[0]?.replace(/_/g, ' ') || 'Member'}</div>
+                </div>
+                <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black border-4 border-white shadow-xl shadow-blue-600/20 text-lg">
+                  {currentUser.name.charAt(0).toUpperCase()}
+                </div>
+              </button>
+
+              {isProfileMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-[-1]" onClick={() => setIsProfileMenuOpen(false)} />
+                  <div className="absolute top-full right-0 mt-4 w-64 bg-white rounded-3xl shadow-2xl border border-slate-200 py-4 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-6 py-4 border-b border-slate-100 mb-2">
+                       <div className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Active Identity</div>
+                       <div className="text-sm font-black text-slate-900 truncate">{currentUser.email}</div>
+                    </div>
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full text-left px-6 py-4 text-xs text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors font-black uppercase tracking-widest"
+                    >
+                      <LogOut size={16} /> Sign Out
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-hidden relative">
+          <div className="h-full w-full overflow-y-auto bg-slate-50/50">
             {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} onNavigate={setCurrentView} onToggleChat={() => setIsChatOpen(!isChatOpen)} />}
             {currentView === AppView.GLOBAL_ADMIN && <GlobalAdminPortal tenants={clients} allUsers={allUsersAcrossTenants} onPromoteUser={handleGlobalPromote} onDeleteTenant={() => {}} onDeleteUser={() => {}} />}
             {currentView === AppView.REQUIREMENTS && (
-                <>
-                    <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => setSelectedRequirementId(r.id)} activeFrameworkId={activeFramework.id} />
-                    {selectedRequirementId ? <RequirementDetail requirement={activeData.requirements.find(r => r.id === selectedRequirementId)!} onUpdateRequirement={handleUpdateRequirement} allArtifacts={activeData.artifacts} onAddArtifact={handleAddArtifact} onRemoveArtifact={handleRemoveArtifact} tickets={[]} onAddTicket={() => {}} cwConfig={activeData.cwConfig} jiraConfig={activeData.jiraConfig} currentUser={currentUser} activeClientId={activeClientId} /> : <div className="flex-1 flex flex-col items-center justify-center text-slate-400"><ListChecks size={64} className="opacity-10" /><p className="text-lg">Select a control.</p></div>}
-                </>
+              <div className="flex h-full overflow-hidden">
+                <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => setSelectedRequirementId(r.id)} activeFrameworkId={activeFramework.id} />
+                {selectedRequirementId ? (
+                  <RequirementDetail requirement={activeData.requirements.find(r => r.id === selectedRequirementId)!} onUpdateRequirement={handleUpdateRequirement} allArtifacts={activeData.artifacts} onAddArtifact={handleAddArtifact} onRemoveArtifact={handleRemoveArtifact} tickets={[]} onAddTicket={() => {}} cwConfig={activeData.cwConfig} jiraConfig={activeData.jiraConfig} currentUser={currentUser} activeClientId={activeClientId} />
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
+                    <ListChecks size={80} className="opacity-10 mb-4" />
+                    <p className="text-lg font-black uppercase tracking-widest">Select a Control to Audit</p>
+                  </div>
+                )}
+              </div>
             )}
             {currentView === AppView.RISK_REGISTER && <RiskRegister risks={activeData.risks} onAddRisk={handleAddRisk} onUpdateRisk={() => {}} onDeleteRisk={handleDeleteRisk} />}
             {currentView === AppView.REPORTS && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} sspMetadata={activeData.sspMetadata} />}
@@ -389,8 +470,11 @@ const App: React.FC = () => {
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={() => {}} onUpdateUser={() => {}} onDeleteUser={() => {}} />}
             {currentView === AppView.ORGANIZATION_MANAGER && <OrganizationManager clients={clients} clientDataStore={clientDataStore} activeClientId={activeClientId} onAddClient={() => {}} onUpdateClient={() => {}} onDeleteClient={() => {}} onUpdateClientData={() => {}} />}
             {currentView === AppView.INVENTORY && <Inventory assets={activeData.assets} onAddAsset={handleAddAsset} onDeleteAsset={handleDeleteAsset} />}
-      </main>
-      <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+          </div>
+        </main>
+
+        <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      </div>
     </div>
   );
 };
