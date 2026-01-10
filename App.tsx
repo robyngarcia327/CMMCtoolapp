@@ -25,7 +25,10 @@ import {
   ClipboardList,
   Eye,
   FileSearch,
-  Search
+  Search,
+  // Added missing icons
+  BarChart3,
+  ShieldCheck
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData } from './data/standards';
@@ -64,7 +67,7 @@ const SidebarItem = ({
 }) => (
   <button 
     onClick={onClick}
-    className={`w-full group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 mb-0.5 ${
+    className={`w-full group flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-200 mb-0.5 ${
       isActive 
         ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20 font-bold' 
         : 'text-slate-400 hover:bg-slate-800 hover:text-white'
@@ -73,7 +76,7 @@ const SidebarItem = ({
     <Icon size={18} className={`${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'} transition-colors`} />
     <span className="flex-1 text-left text-sm whitespace-nowrap">{label}</span>
     {badge && (
-      <span className="bg-blue-500/20 text-blue-400 text-[9px] px-1.5 py-0.5 rounded font-black uppercase">
+      <span className="bg-blue-500/20 text-blue-400 text-[8px] px-1.5 py-0.5 rounded font-black uppercase">
         {badge}
       </span>
     )}
@@ -81,8 +84,8 @@ const SidebarItem = ({
 );
 
 const SidebarSection = ({ title, children }: { title: string, children?: React.ReactNode }) => (
-  <div className="mb-5">
-    <div className="px-4 mb-1.5 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">{title}</div>
+  <div className="mb-6">
+    <div className="px-4 mb-2 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">{title}</div>
     <div className="space-y-0.5">{children}</div>
   </div>
 );
@@ -101,7 +104,6 @@ const App: React.FC = () => {
   const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
   const fetchAttempted = useRef(false);
 
-  // Identity Parsing
   const userGroups = useMemo(() => {
     const groups = auth.user?.profile?.['cognito:groups'];
     return (Array.isArray(groups) ? groups : []) as CognitoGroup[];
@@ -111,17 +113,17 @@ const App: React.FC = () => {
   const isTenantAdmin = userGroups.includes('Tenant_Admin');
   const isAuditor = userGroups.includes('Auditor');
 
-  const displayName = useMemo(() => {
+  // IDENTITY FIX: Better parsing of names to avoid "rgg" email prefix issues
+  const userDisplayName = useMemo(() => {
     const profile = auth.user?.profile;
-    if (!profile) return 'User';
-    // Priority: Name -> Given Name + Family Name -> Nickname -> Email Prefix
+    if (!profile) return 'Guest';
     return profile.name || 
-           (profile.given_name ? `${profile.given_name} ${profile.family_name || ''}`.trim() : null) ||
-           profile.nickname ||
-           profile.email?.split('@')[0] || 'User';
+           (profile.given_name ? `${profile.given_name} ${profile.family_name || ''}`.trim() : null) || 
+           profile.nickname || 
+           (profile.email || 'User').split('@')[0];
   }, [auth.user]);
 
-  // --- HANDLERS ---
+  // --- STATE HANDLERS ---
   const handleUpdateRequirement = (updatedReq: Requirement) => {
     if (!activeClientId) return;
     setClientDataStore(prev => ({
@@ -129,28 +131,6 @@ const App: React.FC = () => {
       [activeClientId]: {
         ...prev[activeClientId],
         requirements: prev[activeClientId].requirements.map(r => r.id === updatedReq.id ? updatedReq : r)
-      }
-    }));
-  };
-
-  const handleAddRisk = (risk: Risk) => {
-    if (!activeClientId) return;
-    setClientDataStore(prev => ({
-      ...prev,
-      [activeClientId]: {
-        ...prev[activeClientId],
-        risks: [...prev[activeClientId].risks, risk]
-      }
-    }));
-  };
-
-  const handleDeleteRisk = (riskId: string) => {
-    if (!activeClientId) return;
-    setClientDataStore(prev => ({
-      ...prev,
-      [activeClientId]: {
-        ...prev[activeClientId],
-        risks: prev[activeClientId].risks.filter(r => r.id !== riskId)
       }
     }));
   };
@@ -209,7 +189,7 @@ const App: React.FC = () => {
               nextStore[c.id] = createInitialClientData(false);
               nextStore[c.id].users = [{
                 id: auth.user?.profile.sub || 'unknown',
-                name: displayName,
+                name: userDisplayName,
                 email: auth.user?.profile.email || '',
                 organizationId: c.id,
                 domain: c.domain,
@@ -231,7 +211,7 @@ const App: React.FC = () => {
     } finally {
       setIsDataLoading(false);
     }
-  }, [auth.isAuthenticated, auth.user, userGroups, displayName]);
+  }, [auth.isAuthenticated, auth.user, userGroups, userDisplayName]);
 
   useEffect(() => {
     if (auth.isAuthenticated && auth.user?.id_token && !fetchAttempted.current) {
@@ -249,7 +229,7 @@ const App: React.FC = () => {
   if (hasCheckedOrgs && !activeClientId) {
     return (
       <Onboarding 
-        user={{ id: auth.user?.profile.sub || '', name: displayName, email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }}
+        user={{ id: auth.user?.profile.sub || '', name: userDisplayName, email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }}
         onCreateOrganization={async (name, domain) => {
           if (!auth.user?.id_token) return;
           setIsDataLoading(true);
@@ -273,20 +253,11 @@ const App: React.FC = () => {
 
   const getViewLabel = (view: AppView) => {
     switch(view) {
-      case AppView.DASHBOARD: return "Executive Dashboard";
-      case AppView.WIZARD: return "Compliance Wizard";
-      case AppView.REQUIREMENTS: return "Control Audit & Inventory";
-      case AppView.SPRS_SCORECARD: return "DoD SPRS Scorecard";
-      case AppView.TRAINING: return "Training Center";
-      case AppView.INVENTORY: return "Scoped Assets";
-      case AppView.USERS: return "Identity & Access";
-      case AppView.NETWORK_ANALYSIS: return "Network & Workflows";
-      case AppView.RISK_REGISTER: return "Risk Management (FAIR)";
-      case AppView.POAM_MANAGER: return "POA&M Remediation";
-      case AppView.ASSESSOR_PORTAL: return "Assessor Review Portal";
-      case AppView.REPORTS: return "Report Center";
-      case AppView.ORGANIZATION_MANAGER: return "Tenant Settings";
-      case AppView.GLOBAL_ADMIN: return "Global Command";
+      case AppView.DASHBOARD: return "Assurance Dashboard";
+      case AppView.CONTROLS: return "Control Audit";
+      case AppView.RISK_MANAGEMENT: return "Risk Modeling";
+      case AppView.ASSESSOR_PORTAL: return "Assessor Review";
+      case AppView.ASSETS: return "CUI Scoped Assets";
       default: return "Cuallee Cyber";
     }
   };
@@ -297,9 +268,9 @@ const App: React.FC = () => {
       {/* SIDEBAR */}
       <aside className="w-64 bg-slate-950 text-slate-300 flex flex-col shrink-0 z-50 border-r border-slate-900 shadow-2xl">
         <div className="p-6 pb-8">
-          <div className="flex items-center gap-2.5 text-white">
-            <div className="p-1.5 bg-blue-600 rounded-xl shadow-lg shadow-blue-900/50">
-              <Shield size={20} className="text-white" />
+          <div className="flex items-center gap-3 text-white">
+            <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-900/50">
+              <Shield size={22} className="text-white" />
             </div>
             <span className="tracking-tighter uppercase font-black text-lg leading-none">Cuallee<br/><span className="text-blue-500">Cyber</span></span>
           </div>
@@ -312,63 +283,65 @@ const App: React.FC = () => {
           </SidebarSection>
 
           <SidebarSection title="Compliance">
-            <SidebarItem icon={ListChecks} label="Controls" isActive={currentView === AppView.REQUIREMENTS} onClick={() => setCurrentView(AppView.REQUIREMENTS)} />
+            <SidebarItem icon={ListChecks} label="Controls" isActive={currentView === AppView.CONTROLS} onClick={() => setCurrentView(AppView.CONTROLS)} />
             <SidebarItem icon={TrendingUp} label="SPRS Scorecard" isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
             <SidebarItem icon={GraduationCap} label="Training" isActive={currentView === AppView.TRAINING} onClick={() => setCurrentView(AppView.TRAINING)} />
-            <SidebarItem icon={Package} label="Assets" isActive={currentView === AppView.INVENTORY} onClick={() => setCurrentView(AppView.INVENTORY)} />
+            <SidebarItem icon={Package} label="Assets" isActive={currentView === AppView.ASSETS} onClick={() => setCurrentView(AppView.ASSETS)} />
             <SidebarItem icon={Users} label="Users" isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
-            <SidebarItem icon={Network} label="Network Diagram" isActive={currentView === AppView.NETWORK_ANALYSIS} onClick={() => setCurrentView(AppView.NETWORK_ANALYSIS)} />
+            <SidebarItem icon={Network} label="Network Diagram" isActive={currentView === AppView.NETWORK_DIAGRAM} onClick={() => setCurrentView(AppView.NETWORK_DIAGRAM)} />
           </SidebarSection>
 
           <SidebarSection title="Governance">
-            <SidebarItem icon={AlertTriangle} label="Risk Management" isActive={currentView === AppView.RISK_REGISTER} onClick={() => setCurrentView(AppView.RISK_REGISTER)} />
-            <SidebarItem icon={ClipboardList} label="POA&M" isActive={currentView === AppView.POAM_MANAGER} onClick={() => setCurrentView(AppView.POAM_MANAGER)} />
+            <SidebarItem icon={AlertTriangle} label="Risk Management" isActive={currentView === AppView.RISK_MANAGEMENT} onClick={() => setCurrentView(AppView.RISK_MANAGEMENT)} />
+            <SidebarItem icon={ClipboardList} label="POA&M" isActive={currentView === AppView.POAM} onClick={() => setCurrentView(AppView.POAM)} />
           </SidebarSection>
 
           <SidebarSection title="Assessor Portal">
-            <SidebarItem icon={Eye} label="Evidence Review" isActive={currentView === AppView.ASSESSOR_PORTAL} onClick={() => setCurrentView(AppView.ASSESSOR_PORTAL)} />
+            <SidebarItem icon={Eye} label="Assessor Interface" isActive={currentView === AppView.ASSESSOR_PORTAL} onClick={() => setCurrentView(AppView.ASSESSOR_PORTAL)} />
           </SidebarSection>
 
           <SidebarSection title="Reports">
-            <SidebarItem icon={FileText} label="Policy Center" isActive={currentView === AppView.REPORTS} onClick={() => setCurrentView(AppView.REPORTS)} />
+            <SidebarItem icon={BarChart3} label="Executive Summary" isActive={currentView === AppView.REPORT_EXECUTIVE} onClick={() => setCurrentView(AppView.REPORT_EXECUTIVE)} />
+            <SidebarItem icon={ShieldCheck} label="SSP" isActive={currentView === AppView.REPORT_SSP} onClick={() => setCurrentView(AppView.REPORT_SSP)} />
+            <SidebarItem icon={FileText} label="Policy Center" isActive={currentView === AppView.REPORT_POLICY_CENTER} onClick={() => setCurrentView(AppView.REPORT_POLICY_CENTER)} />
           </SidebarSection>
 
           {(isTenantAdmin || isGlobalAdmin) && (
-            <SidebarSection title="Admin">
-              <SidebarItem icon={Settings} label="Tenant Settings" isActive={currentView === AppView.ORGANIZATION_MANAGER} onClick={() => setCurrentView(AppView.ORGANIZATION_MANAGER)} />
+            <SidebarSection title="System">
+              <SidebarItem icon={Settings} label="Tenant Admin" isActive={currentView === AppView.ORGANIZATION_MANAGER} onClick={() => setCurrentView(AppView.ORGANIZATION_MANAGER)} />
               {isGlobalAdmin && <SidebarItem icon={Globe} label="Global Admin" isActive={currentView === AppView.GLOBAL_ADMIN} onClick={() => setCurrentView(AppView.GLOBAL_ADMIN)} />}
             </SidebarSection>
           )}
         </nav>
 
-        <div className="p-4 mt-auto border-t border-slate-900 bg-slate-950/50">
-          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tenant</div>
+        <div className="p-4 border-t border-slate-900 bg-slate-950/50 mt-auto">
+          <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Tenant</div>
           <div className="text-xs font-bold text-white truncate uppercase">{activeClient.name}</div>
         </div>
       </aside>
 
-      {/* MAIN */}
+      {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between shrink-0 z-40">
           <div className="flex items-center gap-4">
-             <h2 className="text-md font-black text-slate-900 uppercase tracking-tight">{getViewLabel(currentView)}</h2>
+             <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">{getViewLabel(currentView)}</h2>
           </div>
 
-          <div className="flex items-center gap-5">
-            <button onClick={() => setIsChatOpen(!isChatOpen)} className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-[11px] transition-all ${isChatOpen ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+          <div className="flex items-center gap-6">
+            <button onClick={() => setIsChatOpen(!isChatOpen)} className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-xs transition-all ${isChatOpen ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
               <MessageSquare size={14} /> AI Help
             </button>
             
             <div className="h-6 w-px bg-slate-200" />
 
             <div className="relative">
-              <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="flex items-center gap-3 hover:opacity-80">
+              <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <div className="text-right hidden sm:block">
-                  <div className="text-xs font-black text-slate-900 leading-none mb-1">{displayName}</div>
+                  <div className="text-xs font-black text-slate-900 leading-tight mb-0.5">{userDisplayName}</div>
                   <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{userGroups[0]?.replace(/_/g, ' ') || 'Member'}</div>
                 </div>
-                <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-sm border-2 border-white shadow-xl shadow-blue-600/20">
-                  {displayName.charAt(0).toUpperCase()}
+                <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black border-2 border-white shadow-xl shadow-blue-600/20 text-sm">
+                  {userDisplayName.charAt(0).toUpperCase()}
                 </div>
               </button>
 
@@ -390,7 +363,9 @@ const App: React.FC = () => {
           <div className="h-full w-full overflow-y-auto">
             {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} onNavigate={setCurrentView} onToggleChat={() => setIsChatOpen(!isChatOpen)} />}
             {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} assets={activeData.assets} wizardProgress={activeData.wizardProgress} onUpdateRequirement={handleUpdateRequirement} onAddArtifact={handleAddArtifact} onRemoveArtifact={handleRemoveArtifact} onAddAsset={handleAddAsset} onDeleteAsset={handleDeleteAsset} onUpdateProgress={handleUpdateWizardProgress} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} />}
-            {currentView === AppView.REQUIREMENTS && (
+            
+            {/* Compliance Views */}
+            {currentView === AppView.CONTROLS && (
               <div className="flex h-full overflow-hidden">
                 <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => setSelectedRequirementId(r.id)} activeFrameworkId={activeFramework.id} />
                 {selectedRequirementId ? (
@@ -398,20 +373,30 @@ const App: React.FC = () => {
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
                     <ListChecks size={64} className="opacity-10 mb-4" />
-                    <p className="text-sm font-black uppercase tracking-widest">Select a Control to Audit</p>
+                    <p className="text-xs font-black uppercase tracking-widest">Select a Control to Audit</p>
                   </div>
                 )}
               </div>
             )}
             {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} />}
             {currentView === AppView.TRAINING && <TrainingCenter />}
-            {currentView === AppView.INVENTORY && <Inventory assets={activeData.assets} onAddAsset={handleAddAsset} onDeleteAsset={handleDeleteAsset} />}
+            {currentView === AppView.ASSETS && <Inventory assets={activeData.assets} onAddAsset={handleAddAsset} onDeleteAsset={handleDeleteAsset} />}
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={() => {}} onUpdateUser={() => {}} onDeleteUser={() => {}} />}
-            {currentView === AppView.NETWORK_ANALYSIS && <NetworkAnalyzer />}
-            {currentView === AppView.RISK_REGISTER && <RiskRegister risks={activeData.risks} onAddRisk={handleAddRisk} onUpdateRisk={() => {}} onDeleteRisk={handleDeleteRisk} />}
-            {currentView === AppView.POAM_MANAGER && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} onUpdateRequirement={handleUpdateRequirement} sspMetadata={activeData.sspMetadata} defaultTab="POAM" />}
+            {currentView === AppView.NETWORK_DIAGRAM && <NetworkAnalyzer />}
+            
+            {/* Governance Views */}
+            {currentView === AppView.RISK_MANAGEMENT && <RiskRegister risks={activeData.risks} onAddRisk={(r) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: [...prev[activeClientId].risks, r] } }))} onUpdateRisk={() => {}} onDeleteRisk={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: prev[activeClientId].risks.filter(r => r.id !== id) } }))} />}
+            {currentView === AppView.POAM && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} onUpdateRequirement={handleUpdateRequirement} defaultTab="POAM" />}
+            
+            {/* Assessor Views */}
             {currentView === AppView.ASSESSOR_PORTAL && <AssessorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} risks={activeData.risks} assets={activeData.assets} activeFramework={activeFramework} />}
-            {currentView === AppView.REPORTS && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} sspMetadata={activeData.sspMetadata} />}
+            
+            {/* Report Views */}
+            {currentView === AppView.REPORT_EXECUTIVE && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} defaultTab="EXECUTIVE" />}
+            {currentView === AppView.REPORT_SSP && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} sspMetadata={activeData.sspMetadata} defaultTab="SSP" />}
+            {currentView === AppView.REPORT_POLICY_CENTER && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} defaultTab="MATRIX" />}
+
+            {/* Admin Views */}
             {currentView === AppView.ORGANIZATION_MANAGER && <OrganizationManager clients={clients} clientDataStore={clientDataStore} activeClientId={activeClientId} onAddClient={() => {}} onUpdateClient={() => {}} onDeleteClient={() => {}} onUpdateClientData={() => {}} />}
             {currentView === AppView.GLOBAL_ADMIN && <GlobalAdminPortal tenants={clients} allUsers={allUsersAcrossTenants} onPromoteUser={() => {}} onDeleteTenant={() => {}} onDeleteUser={() => {}} />}
           </div>

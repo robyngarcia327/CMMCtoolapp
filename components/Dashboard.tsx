@@ -71,7 +71,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* High-Level KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <button 
-              onClick={() => onNavigate(AppView.REPORTS)}
+              // Fixed: Property 'REPORTS' does not exist on type 'typeof AppView'. Using REPORT_EXECUTIVE.
+              onClick={() => onNavigate(AppView.REPORT_EXECUTIVE)}
               className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-left relative overflow-hidden group hover:border-blue-300 transition-all"
             >
                 <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-2">Posture Score</h3>
@@ -82,7 +83,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
 
             <button 
-              onClick={() => onNavigate(AppView.REQUIREMENTS)}
+              // Fixed: Property 'REQUIREMENTS' does not exist on type 'typeof AppView'. Using CONTROLS.
+              onClick={() => onNavigate(AppView.CONTROLS)}
               className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-left hover:border-green-300 transition-all group"
             >
                 <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-2">Met Controls</h3>
@@ -91,7 +93,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
 
             <button 
-              onClick={() => onNavigate(AppView.REQUIREMENTS)}
+              // Fixed: Property 'REQUIREMENTS' does not exist on type 'typeof AppView'. Using CONTROLS.
+              onClick={() => onNavigate(AppView.CONTROLS)}
               className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-left hover:border-red-300 transition-all group"
             >
                 <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-2">Open Gaps</h3>
@@ -100,7 +103,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
 
             <button 
-              onClick={() => onNavigate(AppView.INVENTORY)}
+              // Fixed: Property 'INVENTORY' does not exist on type 'typeof AppView'. Using ASSETS.
+              onClick={() => onNavigate(AppView.ASSETS)}
               className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-left hover:border-indigo-300 transition-all group"
             >
                 <h3 className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-2">Evidence Repository</h3>
@@ -129,7 +133,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Action Center Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <button 
-              onClick={() => onNavigate(AppView.REQUIREMENTS)}
+              // Fixed: Property 'REQUIREMENTS' does not exist on type 'typeof AppView'. Using CONTROLS.
+              onClick={() => onNavigate(AppView.CONTROLS)}
               className="bg-slate-900 rounded-3xl p-8 text-white flex flex-col justify-between h-56 text-left group transition-all hover:scale-[1.02] shadow-xl hover:bg-slate-800"
             >
                 <div>
@@ -167,7 +172,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="pt-8 border-t border-slate-100 flex justify-center">
             <p className="text-slate-400 text-xs font-medium flex items-center gap-2">
                 <AlertTriangle size={14} className="text-amber-500" /> Need help outlining requirements? Use the 
-                <button onClick={() => onNavigate(AppView.REQUIREMENTS)} className="text-slate-900 font-bold hover:underline">Requirement Detail</button> 
+                {/* Fixed: Property 'REQUIREMENTS' does not exist on type 'typeof AppView'. Using CONTROLS. */}
+                <button onClick={() => onNavigate(AppView.CONTROLS)} className="text-slate-900 font-bold hover:underline">Requirement Detail</button> 
                 view or the 
                 <button onClick={onToggleChat} className="text-blue-600 font-bold underline">AI Assistant</button>.
             </p>

@@ -11,16 +11,6 @@ export interface TrainingModule {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
 }
 
-export interface AuvikDevice {
-  id: string;
-  name: string;
-  type: string;
-  ipAddress: string;
-  vlan?: string;
-  firmware?: string;
-  isOnline: boolean;
-}
-
 export interface AssessmentObjective {
   id: string;
   description: string;
@@ -145,18 +135,31 @@ export interface ClientData {
 }
 
 export enum AppView {
+  // General
   DASHBOARD = 'DASHBOARD',
   WIZARD = 'WIZARD',
-  REQUIREMENTS = 'REQUIREMENTS',
+  
+  // Compliance
+  CONTROLS = 'CONTROLS',
   SPRS_SCORECARD = 'SPRS_SCORECARD',
   TRAINING = 'TRAINING',
-  INVENTORY = 'INVENTORY',
+  ASSETS = 'ASSETS',
   USERS = 'USERS',
-  NETWORK_ANALYSIS = 'NETWORK_ANALYSIS',
-  RISK_REGISTER = 'RISK_REGISTER',
-  POAM_MANAGER = 'POAM_MANAGER',
+  NETWORK_DIAGRAM = 'NETWORK_DIAGRAM',
+  
+  // Governance
+  RISK_MANAGEMENT = 'RISK_MANAGEMENT',
+  POAM = 'POAM',
+  
+  // Assessor
   ASSESSOR_PORTAL = 'ASSESSOR_PORTAL',
-  REPORTS = 'REPORTS',
+  
+  // Reports
+  REPORT_EXECUTIVE = 'REPORT_EXECUTIVE',
+  REPORT_SSP = 'REPORT_SSP',
+  REPORT_POLICY_CENTER = 'REPORT_POLICY_CENTER',
+  
+  // Admin
   ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
   GLOBAL_ADMIN = 'GLOBAL_ADMIN'
 }
@@ -221,6 +224,19 @@ export interface AuvikConfig extends IntegrationConfig {
   region: 'US' | 'EU';
 }
 
+/**
+ * Added AuvikDevice interface for network topology tracking
+ */
+export interface AuvikDevice {
+  id: string;
+  name: string;
+  type: string;
+  ipAddress: string;
+  vlan: string;
+  firmware?: string;
+  isOnline: boolean;
+}
+
 export interface Ticket {
   id: string;
   requirementId: string;
@@ -233,14 +249,6 @@ export interface Ticket {
   ticketNumber?: string;
   source: 'ConnectWise' | 'Jira';
   url?: string;
-}
-
-export interface RiskProfileVersion {
-  id: string;
-  versionNumber: string;
-  timestamp: number;
-  createdBy: string;
-  risks: Risk[];
 }
 
 export interface Risk {
@@ -258,11 +266,11 @@ export interface Risk {
   threatEventFrequency?: number;
   vulnerability?: number;
   lossMagnitude?: number;
-  // Cost fields requested by user
-  laborHours?: number;
-  hourlyRate?: number;
+  // Financial fields
+  manHours?: number;
+  laborRate?: number;
   equipmentCost?: number;
-  assessorFee?: number;
+  assessorPrice?: number;
 }
 
 export interface ProjectTask {
