@@ -15,7 +15,8 @@ export const Login: React.FC = () => {
   const handleReset = () => {
     sessionStorage.clear();
     localStorage.clear();
-    window.location.href = "https://www.cualleecyber.com";
+    // Updated to subdomain
+    window.location.href = "https://app.cualleecyber.com";
   };
 
   if (auth.isLoading) {

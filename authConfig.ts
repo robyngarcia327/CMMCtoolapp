@@ -7,14 +7,12 @@ const CLIENT_ID = "5pe5430hrtohupn12gj8r66qtb";
 const REGION = "us-east-1";
 
 /**
- * Based on your browser logs, your Cognito domain is:
- * us-east-1ky47rcgyh.auth.us-east-1.amazoncognito.com
- * 
- * And your working Redirect URI is:
- * https://www.cualleecyber.com
+ * Your app is now moving to the 'app' subdomain.
+ * Ensure you have added https://app.cualleecyber.com to the 
+ * "Allowed Callback URLs" in your Cognito App Client settings.
  */
 const COGNITO_DOMAIN = "us-east-1ky47rcgyh.auth.us-east-1.amazoncognito.com";
-const REDIRECT_URI = "https://www.cualleecyber.com";
+const REDIRECT_URI = "https://app.cualleecyber.com";
 
 export const authConfig = {
   authority: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
