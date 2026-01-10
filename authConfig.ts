@@ -8,8 +8,8 @@ const REGION = "us-east-1";
 
 /**
  * Your app is now moving to the 'app' subdomain.
- * Ensure you have added https://app.cualleecyber.com to the 
- * "Allowed Callback URLs" in your Cognito App Client settings.
+ * IMPORTANT: You MUST update your Cognito App Client settings in the AWS Console
+ * to include https://app.cualleecyber.com in "Allowed Callback URLs".
  */
 const COGNITO_DOMAIN = "us-east-1ky47rcgyh.auth.us-east-1.amazoncognito.com";
 const REDIRECT_URI = "https://app.cualleecyber.com";
@@ -20,16 +20,12 @@ export const authConfig = {
   redirect_uri: REDIRECT_URI,
   post_logout_redirect_uri: REDIRECT_URI,
   response_type: "code",
-  
-  // FIX: Removed 'profile' scope which was causing 'invalid_scope' error in Cognito
   scope: "openid email",
   
-  // Required for Cognito compatibility
   monitorSession: false,
   automaticSilentRenew: true,
   loadUserInfo: true,
   
-  // Explicitly defining metadata to match the domain in your logs
   metadata: {
     issuer: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
     authorization_endpoint: `https://${COGNITO_DOMAIN}/oauth2/authorize`,
