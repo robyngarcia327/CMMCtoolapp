@@ -92,17 +92,53 @@ const SidebarSection = ({ title, children }: { title: string, children?: React.R
 
 const App: React.FC = () => {
   const auth = useAuth();
-  const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
+  
+  // --- PERSISTENCE KEYS ---
+  const KEY_VIEW = 'cuallee_cyber_v2_current_view';
+  const KEY_CLIENT = 'cuallee_cyber_v2_active_client';
+  const KEY_REQ = 'cuallee_cyber_v2_selected_req';
+
+  // --- PERSISTENT STATE INITIALIZATION ---
+  const [currentView, setCurrentView] = useState<AppView>(() => {
+    const saved = localStorage.getItem(KEY_VIEW);
+    return (saved as AppView) || AppView.DASHBOARD;
+  });
+  
+  const [activeClientId, setActiveClientId] = useState<string>(() => {
+    return localStorage.getItem(KEY_CLIENT) || '';
+  });
+
+  const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(() => {
+    return localStorage.getItem(KEY_REQ);
+  });
+
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false); 
   const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
-  const [activeClientId, setActiveClientId] = useState<string>('');
   const [activeFramework, setActiveFramework] = useState<Framework>(FRAMEWORKS[0]);
   const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>({});
-  const [selectedRequirementId, setSelectedRequirementId] = useState<string | null>(null);
   const fetchAttempted = useRef(false);
+
+  // --- PERSISTENCE SYNC ---
+  useEffect(() => {
+    localStorage.setItem(KEY_VIEW, currentView);
+  }, [currentView]);
+
+  useEffect(() => {
+    if (activeClientId) {
+      localStorage.setItem(KEY_CLIENT, activeClientId);
+    }
+  }, [activeClientId]);
+
+  useEffect(() => {
+    if (selectedRequirementId) {
+      localStorage.setItem(KEY_REQ, selectedRequirementId);
+    } else {
+      localStorage.removeItem(KEY_REQ);
+    }
+  }, [selectedRequirementId]);
 
   // Identity logic refined
   const userDisplayName = useMemo(() => {
@@ -210,7 +246,11 @@ const App: React.FC = () => {
       }));
       setClients(mappedClients);
       if (mappedClients.length > 0) {
-        const selectedId = mappedClients[0].id;
+        // Only set activeClientId if we don't have a valid persisted one
+        const persistedId = localStorage.getItem(KEY_CLIENT);
+        const isValidPersisted = mappedClients.some(c => c.id === persistedId);
+        const selectedId = isValidPersisted ? (persistedId as string) : mappedClients[0].id;
+        
         setActiveClientId(selectedId);
         setClientDataStore(prev => {
           const nextStore = { ...prev };
@@ -250,7 +290,12 @@ const App: React.FC = () => {
     }
   }, [auth.isAuthenticated, auth.user?.id_token, loadOrganizations]);
 
-  const handleLogout = () => auth.signoutRedirect();
+  const handleLogout = () => {
+    localStorage.removeItem(KEY_VIEW);
+    localStorage.removeItem(KEY_CLIENT);
+    localStorage.removeItem(KEY_REQ);
+    auth.signoutRedirect();
+  };
   
   if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-500" size={48} /></div>;
   if (!auth.isAuthenticated) return <Login />;
