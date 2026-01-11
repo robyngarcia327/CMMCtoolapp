@@ -105,7 +105,11 @@ const App: React.FC = () => {
   // --- PERSISTENT STATE INITIALIZATION ---
   const [currentView, setCurrentView] = useState<AppView>(() => {
     const saved = localStorage.getItem(KEY_VIEW);
-    return (saved as AppView) || AppView.DASHBOARD;
+    // Validate saved view against AppView enum
+    if (saved && Object.values(AppView).includes(saved as AppView)) {
+        return saved as AppView;
+    }
+    return AppView.DASHBOARD;
   });
   
   const [activeClientId, setActiveClientId] = useState<string>(() => {
@@ -389,6 +393,10 @@ const App: React.FC = () => {
     }
   };
 
+  // --- SAFETY CHECK FOR CONTROLS VIEW ---
+  // If we are in controls view and have a selected ID, ensure it actually exists in requirements
+  const selectedReq = selectedRequirementId ? activeData.requirements.find(r => r.id === selectedRequirementId) : null;
+
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
       
@@ -501,12 +509,15 @@ const App: React.FC = () => {
             {currentView === AppView.CONTROLS && (
               <div className="flex h-full overflow-hidden">
                 <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => setSelectedRequirementId(r.id)} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} />
-                {selectedRequirementId ? (
-                  <RequirementDetail requirement={activeData.requirements.find(r => r.id === selectedRequirementId)!} onUpdateRequirement={handleUpdateRequirement} allArtifacts={activeData.artifacts} onAddArtifact={handleAddArtifact} onRemoveArtifact={handleRemoveArtifact} tickets={[]} onAddTicket={() => {}} cwConfig={activeData.cwConfig} jiraConfig={activeData.jiraConfig} currentUser={currentUser} activeClientId={activeClientId} />
+                {selectedReq ? (
+                  <RequirementDetail requirement={selectedReq} onUpdateRequirement={handleUpdateRequirement} allArtifacts={activeData.artifacts} onAddArtifact={handleAddArtifact} onRemoveArtifact={handleRemoveArtifact} tickets={[]} onAddTicket={() => {}} cwConfig={activeData.cwConfig} jiraConfig={activeData.jiraConfig} currentUser={currentUser} activeClientId={activeClientId} />
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
-                    <ListChecks size={80} className="opacity-10 mb-4" />
-                    <p className="text-sm font-black uppercase tracking-widest">Select a Control to Audit</p>
+                    <div className="p-8 bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center">
+                        <ListChecks size={80} className="opacity-10 mb-4" />
+                        <p className="text-sm font-black uppercase tracking-widest">Select a Control to Audit</p>
+                        <p className="text-xs text-slate-400 mt-2">Pick a security family from the left sidebar to begin.</p>
+                    </div>
                   </div>
                 )}
               </div>

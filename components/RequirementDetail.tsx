@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Requirement, Artifact, Ticket, ConnectWiseConfig, JiraConfig, AssessmentObjective, Comment, User, IntegrationConfig } from '../types';
 import { ArtifactUploader } from './ArtifactUploader';
@@ -50,8 +49,10 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
   const [newComment, setNewComment] = useState('');
   const [isCollecting, setIsCollecting] = useState(false);
 
+  // Safety guard for requirement prop
+  if (!requirement) return null;
+
   const isOutScope = requirement.scopeStatus === 'OUT_OF_SCOPE';
-  const evidenceEmail = requirement.evidenceEmail || `upload+${requirement.id.replace(/\./g,'-')}@audit-iq.demo`;
 
   useEffect(() => {
     setAiExplanation(null);
@@ -130,7 +131,6 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
 
   const relevantArtifacts = allArtifacts.filter(a => a.requirementId === requirement.id);
   const relevantTickets = tickets.filter(t => t.requirementId === requirement.id);
-  const canCreateTicket = cwConfig.enabled || jiraConfig.enabled;
 
   return (
     <div className="flex-1 h-full overflow-y-auto bg-slate-50 p-6">
@@ -198,11 +198,11 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                             <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                                 <h3 className="font-bold text-slate-800">Assessment Objectives (NIST 800-171A)</h3>
                                 <span className="text-xs text-slate-500 bg-white border border-slate-200 px-2 py-1 rounded">
-                                    {requirement.objectives.filter(o => o.status === 'met').length} / {requirement.objectives.length} Complete
+                                    {requirement.objectives?.filter(o => o.status === 'met').length || 0} / {requirement.objectives?.length || 0} Complete
                                 </span>
                             </div>
                             <div className="divide-y divide-slate-100">
-                                {requirement.objectives.length > 0 ? requirement.objectives.map(obj => (
+                                {requirement.objectives && requirement.objectives.length > 0 ? requirement.objectives.map(obj => (
                                     <div key={obj.id} className="p-4 flex items-start gap-4 hover:bg-slate-50 transition-colors">
                                         <button 
                                             onClick={() => handleStatusChange(obj.id, obj.status === 'met' ? 'pending' : 'met')} 
@@ -297,11 +297,11 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                     <div className="space-y-2">
                         <div className="flex justify-between items-center text-xs">
                             <span className="font-bold text-slate-400">NIST 800-53:</span>
-                            <span className="text-slate-700 font-mono">{requirement.mappings.nist800_53?.join(', ') || 'N/A'}</span>
+                            <span className="text-slate-700 font-mono">{requirement.mappings?.nist800_53?.join(', ') || 'N/A'}</span>
                         </div>
                         <div className="flex justify-between items-center text-xs">
                             <span className="font-bold text-slate-400">ISO 27001:</span>
-                            <span className="text-slate-700 font-mono">{requirement.mappings.iso27001?.join(', ') || 'N/A'}</span>
+                            <span className="text-slate-700 font-mono">{requirement.mappings?.iso27001?.join(', ') || 'N/A'}</span>
                         </div>
                     </div>
                 </div>
