@@ -363,7 +363,7 @@ const App: React.FC = () => {
     );
   }
 
-  const activeClient = clients.find(c => c.id === activeClientId) || clients[0];
+  const activeClient = clients.find(c => c.id === activeClientId) || clients[0] || { name: 'Unauthorized Tenant', id: '' };
   const activeData = clientDataStore[activeClientId];
   if (!activeData) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 size={48} className="animate-spin" /></div>;
 
@@ -474,8 +474,9 @@ const App: React.FC = () => {
             <div className="relative">
               <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <div className="text-right hidden sm:block">
-                  <div className="text-xs font-black text-slate-900 leading-tight mb-0.5">{userDisplayName}</div>
-                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{userGroups[0]?.replace(/_/g, ' ') || 'Identity Member'}</div>
+                  <div className="text-[10px] font-black text-blue-600 tracking-tight uppercase leading-none mb-0.5">{activeClient.name}</div>
+                  <div className="text-xs font-bold text-slate-900 leading-tight">{userDisplayName}</div>
+                  <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{userGroups[0]?.replace(/_/g, ' ') || 'Identity Member'}</div>
                 </div>
                 <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black border-2 border-white shadow-xl shadow-blue-600/20 text-sm">
                   {userDisplayName.charAt(0).toUpperCase()}
