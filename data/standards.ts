@@ -49,24 +49,94 @@ export const ACADEMY_PHASES = [
 const createObjs = (ids: string[]) => ids.map(id => ({ id, description: `Verify assessment objective [${id}] for this control requirement.`, status: 'pending' as const }));
 
 const NIST_800_171_CONTROLS: Requirement[] = [
+  // 3.1 ACCESS CONTROL
   { 
-    id: '3.1.1', 
-    framework: 'NIST-CMMC', 
-    family: 'AC', 
-    title: 'Limit system access to authorized users', 
+    id: '3.1.1', framework: 'NIST-CMMC', family: 'AC', title: 'Limit system access to authorized users', 
     description: 'Limit system access to authorized users, processes acting on behalf of authorized users, or devices (including other systems).', 
-    discussion: 'Access control is the process of granting or denying specific requests for obtaining and using information and services.', 
-    sprsWeight: 1, 
-    cmmcLevel: 1, 
-    objectives: [
-        { id: 'a', description: 'authorized users are identified;', status: 'pending' },
-        { id: 'b', description: 'processes acting on behalf of authorized users are identified;', status: 'pending' },
-        { id: 'c', description: 'devices (and other systems) authorized to connect to the system are identified;', status: 'pending' },
-        { id: 'd', description: 'system access is limited to authorized users;', status: 'pending' },
-        { id: 'e', description: 'system access is limited to processes acting on behalf of authorized users; and', status: 'pending' },
-        { id: 'f', description: 'system access is limited to authorized devices (including other systems).', status: 'pending' }
-    ],
+    sprsWeight: 1, cmmcLevel: 1, objectives: createObjs(['a', 'b', 'c', 'd', 'e', 'f']),
     mappings: { nist800_53: ['AC-2'] } 
+  },
+  { 
+    id: '3.1.2', framework: 'NIST-CMMC', family: 'AC', title: 'Limit access to transactions and functions', 
+    description: 'Limit system access to the types of transactions and functions that authorized users are permitted to execute.', 
+    sprsWeight: 5, cmmcLevel: 1, objectives: createObjs(['a', 'b']),
+    mappings: { nist800_53: ['AC-6'] } 
+  },
+  { 
+    id: '3.1.3', framework: 'NIST-CMMC', family: 'AC', title: 'Control the flow of CUI', 
+    description: 'Control the flow of CUI in accordance with approved authorizations.', 
+    sprsWeight: 3, cmmcLevel: 2, objectives: createObjs(['a', 'b']),
+    mappings: { nist800_53: ['AC-4'] } 
+  },
+  { 
+    id: '3.1.8', framework: 'NIST-CMMC', family: 'AC', title: 'Limit unsuccessful logon attempts', 
+    description: 'Limit unsuccessful logon attempts.', 
+    sprsWeight: 1, cmmcLevel: 2, objectives: createObjs(['a', 'b', 'c']),
+    mappings: { nist800_53: ['AC-7'] } 
+  },
+
+  // 3.3 AUDIT AND ACCOUNTABILITY
+  { 
+    id: '3.3.1', framework: 'NIST-CMMC', family: 'AU', title: 'Create and retain audit logs', 
+    description: 'Create and retain system audit logs and records to enable monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity.', 
+    sprsWeight: 3, cmmcLevel: 2, objectives: createObjs(['a', 'b', 'c']),
+    mappings: { nist800_53: ['AU-2'] } 
+  },
+  { 
+    id: '3.3.2', framework: 'NIST-CMMC', family: 'AU', title: 'Audit individual user actions', 
+    description: 'Ensure that the actions of individual system users can be uniquely traced to those users so they can be held accountable for their actions.', 
+    sprsWeight: 3, cmmcLevel: 2, objectives: createObjs(['a']),
+    mappings: { nist800_53: ['AU-3'] } 
+  },
+
+  // 3.5 IDENTIFICATION AND AUTHENTICATION
+  { 
+    id: '3.5.1', framework: 'NIST-CMMC', family: 'IA', title: 'Identify system users/devices', 
+    description: 'Identify system users, processes acting on behalf of users, or devices.', 
+    sprsWeight: 1, cmmcLevel: 1, objectives: createObjs(['a', 'b']),
+    mappings: { nist800_53: ['IA-2'] } 
+  },
+  { 
+    id: '3.5.3', framework: 'NIST-CMMC', family: 'IA', title: 'Multi-Factor Authentication (MFA)', 
+    description: 'Use multi-factor authentication for local and network access to privileged accounts and for network access to non-privileged accounts.', 
+    sprsWeight: 5, cmmcLevel: 2, objectives: createObjs(['a', 'b', 'c', 'd']),
+    mappings: { nist800_53: ['IA-2(1)', 'IA-2(2)'] } 
+  },
+
+  // 3.11 RISK ASSESSMENT
+  { 
+    id: '3.11.1', framework: 'NIST-CMMC', family: 'RA', title: 'Periodically assess risk', 
+    description: 'Periodically assess the risk to organizational operations (including mission, functions, image, or reputation), organizational assets, and individuals, resulting from the operation of organizational systems and the associated processing, storage, or transmission of CUI.', 
+    sprsWeight: 5, cmmcLevel: 2, objectives: createObjs(['a', 'b', 'c', 'd', 'e']),
+    mappings: { nist800_53: ['RA-3'] } 
+  },
+
+  // 3.12 SECURITY ASSESSMENT
+  { 
+    id: '3.12.1', framework: 'NIST-CMMC', family: 'CA', title: 'Periodically assess security controls', 
+    description: 'Periodically assess the security controls in organizational systems to determine if the controls are effective in their application.', 
+    sprsWeight: 5, cmmcLevel: 2, objectives: createObjs(['a', 'b']),
+    mappings: { nist800_53: ['CA-2'] } 
+  },
+  { 
+    id: '3.12.4', framework: 'NIST-CMMC', family: 'CA', title: 'Update system security plans', 
+    description: 'Update system security plans on an ongoing basis.', 
+    sprsWeight: 3, cmmcLevel: 2, objectives: createObjs(['a']),
+    mappings: { nist800_53: ['PL-2'] } 
+  },
+
+  // 3.14 SYSTEM AND INFORMATION INTEGRITY
+  { 
+    id: '3.14.1', framework: 'NIST-CMMC', family: 'SI', title: 'Identify and correct system flaws', 
+    description: 'Identify, report, and correct system flaws in a timely manner.', 
+    sprsWeight: 5, cmmcLevel: 1, objectives: createObjs(['a', 'b', 'c']),
+    mappings: { nist800_53: ['SI-2'] } 
+  },
+  { 
+    id: '3.14.3', framework: 'NIST-CMMC', family: 'SI', title: 'Monitor for indicators of attack', 
+    description: 'Monitor system security alerts and advisories and take appropriate actions in response.', 
+    sprsWeight: 3, cmmcLevel: 2, objectives: createObjs(['a', 'b']),
+    mappings: { nist800_53: ['SI-4'] } 
   }
 ];
 
