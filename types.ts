@@ -39,6 +39,9 @@ export interface Requirement {
   comments?: Comment[];
   evidenceEmail?: string;
   interviewQuestion?: string;
+  examineOptions?: string[];
+  interviewOptions?: string[];
+  testOptions?: string[];
 }
 
 export interface Artifact {
