@@ -167,6 +167,24 @@ const App: React.FC = () => {
   const isTenantAdmin = userGroups.includes('Tenant_Admin');
   const isAuditor = userGroups.includes('Auditor');
 
+  // --- DERIVED ACTIVE CLIENT (WITH SMART NAME RECOVERY) ---
+  const activeClient = useMemo(() => {
+    const client = clients.find(c => c.id === activeClientId) || clients[0];
+    if (!client) return { name: 'Initializing...', id: '', domain: '', industry: '', contactName: '', logoInitial: '?', primaryFramework: '', targetCmmcLevel: 2 as const, nextAuditDate: 0, accountManager: '', isParent: false };
+    
+    // Recovery Logic: If the name is generic "Organization", derive from domain
+    const isGeneric = client.name.toLowerCase() === 'organization' || client.name.trim() === '';
+    if (isGeneric && client.domain) {
+        const domainPrefix = client.domain.split('.')[0];
+        const recoveredName = domainPrefix
+            .split(/[-_]/)
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+        return { ...client, name: recoveredName };
+    }
+    return client;
+  }, [clients, activeClientId]);
+
   // --- STATE HANDLERS ---
   const handleUpdateRequirement = (updatedReq: Requirement) => {
     if (!activeClientId) return;
@@ -278,7 +296,7 @@ const App: React.FC = () => {
       const mappedClients: Client[] = apiOrgs.map((o: any) => ({
         id: o.orgId || o.id,
         name: o.name || 'Organization',
-        domain: o.domain || 'unverified.com',
+        domain: o.domain || (auth.user?.profile.email || '').split('@')[1] || 'unverified.com',
         industry: o.industry || 'Defense Industrial Base', 
         contactName: auth.user?.profile.email || 'Admin',
         logoInitial: (o.name || 'O').charAt(0).toUpperCase(),
@@ -363,7 +381,6 @@ const App: React.FC = () => {
     );
   }
 
-  const activeClient = clients.find(c => c.id === activeClientId) || clients[0] || { name: 'Unauthorized Tenant', id: '' };
   const activeData = clientDataStore[activeClientId];
   if (!activeData) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 size={48} className="animate-spin" /></div>;
 
@@ -394,7 +411,6 @@ const App: React.FC = () => {
   };
 
   // --- SAFETY CHECK FOR CONTROLS VIEW ---
-  // If we are in controls view and have a selected ID, ensure it actually exists in requirements
   const selectedReq = selectedRequirementId ? activeData.requirements.find(r => r.id === selectedRequirementId) : null;
 
   return (

@@ -63,9 +63,6 @@ export const AssessorPortal: React.FC<AssessorPortalProps> = ({
     r.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Safety name derivation
-  const clientName = client?.name && client.name !== 'Organization' ? client.name : (client?.domain ? client.domain.split('.')[0].toUpperCase() : 'Restricted Tenant');
-
   return (
     <div className="max-w-7xl mx-auto p-8 space-y-8 h-full flex flex-col">
       
@@ -79,7 +76,7 @@ export const AssessorPortal: React.FC<AssessorPortalProps> = ({
                   <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase leading-none">Assessor Gateway<br/><span className="text-blue-600 text-sm tracking-widest font-black uppercase">CMMC 2.0 // NIST 800-171A</span></h1>
                   <p className="text-slate-500 font-medium mt-3 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    Review Environment: <span className="font-bold text-slate-700">{clientName}</span>
+                    Review Environment: <span className="font-bold text-slate-700">{client.name}</span>
                   </p>
               </div>
           </div>
