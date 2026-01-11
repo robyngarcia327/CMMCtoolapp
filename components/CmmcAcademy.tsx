@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { TRAINING_MODULES, ACADEMY_PHASES } from '../data/standards';
+import { TRAINING_MODULES, ACADEMY_PHASES, SimulationModule, SimulationInject } from '../data/standards';
 import { 
   BookOpen, 
   Clock, 
@@ -23,9 +23,277 @@ import {
   ExternalLink,
   Dices,
   ShieldAlert,
-  Users
+  Users,
+  Printer,
+  ChevronLeft,
+  FileBadge,
+  Save,
+  PenTool,
+  History
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+
+// --- SUBCOMPONENT: SIMULATION RUNNER ---
+const SimulationRunner: React.FC<{ 
+    module: SimulationModule, 
+    onExit: () => void 
+}> = ({ module, onExit }) => {
+    const [step, setStep] = useState<'SETUP' | 'SIM' | 'REPORT'>('SETUP');
+    const [participants, setParticipants] = useState<string>('');
+    const [injectIndex, setInjectIndex] = useState(0);
+    const [answers, setAnswers] = useState<Record<string, string>>({});
+    const [observation, setObservation] = useState('');
+
+    const currentInject = module.injects[injectIndex];
+
+    const handleNext = () => {
+        if (injectIndex < module.injects.length - 1) {
+            setInjectIndex(injectIndex + 1);
+        } else {
+            setStep('REPORT');
+        }
+    };
+
+    const handleExport = () => {
+        window.print();
+    };
+
+    if (step === 'SETUP') {
+        return (
+            <div className="max-w-3xl mx-auto py-12 px-10 animate-in fade-in zoom-in-95 duration-500">
+                <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl p-12 overflow-hidden relative">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-red-600/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="p-4 bg-red-900 text-white rounded-2xl shadow-xl shadow-red-900/20">
+                            <Dices size={32} />
+                        </div>
+                        <div>
+                            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter leading-none">Simulation Setup</h2>
+                            <p className="text-red-600 font-black text-[10px] uppercase tracking-widest mt-2">Leadership Guided Exercise</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-8">
+                        <div>
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 px-1">Participants (Names & Titles)</label>
+                            <textarea 
+                                className="w-full h-32 border-2 border-slate-100 bg-slate-50 rounded-[2rem] p-6 focus:ring-4 focus:ring-red-500/10 focus:border-red-600 focus:bg-white outline-none transition-all font-bold text-slate-900"
+                                placeholder="e.g. John Doe (CEO), Jane Smith (CIO), Sarah Evans (CISO)..."
+                                value={participants}
+                                onChange={e => setParticipants(e.target.value)}
+                            />
+                            <p className="text-[10px] text-slate-400 mt-3 italic px-2">Assessor Tip: Ensure all key decision-makers are listed for training credit.</p>
+                        </div>
+
+                        <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
+                             <h4 className="text-xs font-black text-slate-900 uppercase tracking-tight mb-2">Scenario: {module.title}</h4>
+                             <p className="text-sm text-slate-500 leading-relaxed font-medium">{module.description}</p>
+                        </div>
+
+                        <div className="flex gap-4">
+                            <button onClick={onExit} className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all">Cancel Exercise</button>
+                            <button 
+                                onClick={() => setStep('SIM')}
+                                disabled={!participants.trim()}
+                                className="flex-[2] bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl shadow-red-100 transition-all disabled:opacity-30 flex items-center justify-center gap-3"
+                            >
+                                Begin Simulation <ArrowRight size={16} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (step === 'SIM') {
+        return (
+            <div className="max-w-4xl mx-auto py-12 px-10 animate-in fade-in duration-500">
+                <div className="flex justify-between items-center mb-8">
+                    <div className="flex items-center gap-3">
+                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Inject {injectIndex + 1} of {module.injects.length}</span>
+                         <div className="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                             <div className="h-full bg-red-600 transition-all duration-500" style={{ width: `${((injectIndex + 1) / module.injects.length) * 100}%` }} />
+                         </div>
+                    </div>
+                    <span className="bg-red-900 text-white px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest animate-pulse">Live Scenario</span>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <div className="lg:col-span-7 space-y-10">
+                        <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-xl relative overflow-hidden">
+                             <div className="flex items-center gap-3 mb-6">
+                                 <div className="p-2 bg-red-50 text-red-600 rounded-lg"><PenTool size={20} /></div>
+                                 <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{currentInject.title}</h3>
+                             </div>
+                             <div className="bg-slate-900 text-red-400 p-6 rounded-2xl font-mono text-xs leading-relaxed mb-8 shadow-inner border border-slate-800">
+                                 {currentInject.scenario}
+                             </div>
+                             
+                             <div className="space-y-4">
+                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Organization Decision / Response</label>
+                                 <textarea 
+                                    className="w-full h-48 border-2 border-slate-100 bg-slate-50 rounded-[2rem] p-6 focus:ring-4 focus:ring-red-500/10 focus:border-red-600 focus:bg-white outline-none transition-all font-bold text-slate-900"
+                                    placeholder="Document the leadership team's consensus..."
+                                    value={answers[currentInject.id] || ''}
+                                    onChange={e => setAnswers({...answers, [currentInject.id]: e.target.value})}
+                                 />
+                             </div>
+                        </div>
+
+                        <div className="flex justify-between items-center px-4">
+                             <button 
+                                onClick={() => setInjectIndex(Math.max(0, injectIndex - 1))}
+                                disabled={injectIndex === 0}
+                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 disabled:opacity-0 transition-all"
+                             >
+                                <ChevronLeft size={16} /> Previous Inject
+                             </button>
+                             <button 
+                                onClick={handleNext}
+                                disabled={!answers[currentInject.id]}
+                                className="bg-slate-900 hover:bg-black text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl transition-all disabled:opacity-30"
+                             >
+                                {injectIndex === module.injects.length - 1 ? 'Finalize Report' : 'Next Inject'}
+                             </button>
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-5 space-y-6">
+                        <div className="bg-indigo-900 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
+                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16"></div>
+                             <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-6 flex items-center gap-2">
+                                 <ShieldAlert size={14}/> Regulatory Insight
+                             </h4>
+                             <p className="text-sm font-medium leading-relaxed italic opacity-90">
+                                 "{currentInject.regulatoryHint}"
+                             </p>
+                        </div>
+
+                        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
+                             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Simulation History</h4>
+                             <div className="space-y-4">
+                                 {module.injects.map((inj, idx) => (
+                                     <div key={inj.id} className="flex items-center gap-3">
+                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-[10px] border-2 transition-colors ${
+                                             idx === injectIndex ? 'bg-red-50 border-red-600 text-red-600' : 
+                                             answers[inj.id] ? 'bg-green-50 border-green-500 text-green-500' : 
+                                             'bg-white border-slate-100 text-slate-300'
+                                         }`}>
+                                             {answers[inj.id] && idx !== injectIndex ? <CheckCircle2 size={14}/> : idx + 1}
+                                         </div>
+                                         <span className={`text-[10px] font-black uppercase tracking-tight ${idx === injectIndex ? 'text-slate-900' : 'text-slate-400'}`}>{inj.title}</span>
+                                     </div>
+                                 ))}
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (step === 'REPORT') {
+        return (
+            <div className="max-w-5xl mx-auto py-12 px-10 animate-in fade-in duration-700">
+                <div className="flex justify-between items-end mb-8 print:hidden">
+                    <div>
+                        <button onClick={() => setStep('SIM')} className="text-blue-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-1 hover:underline mb-2">
+                             ← Back to Simulation
+                        </button>
+                        <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">After-Action Report (AAR)</h2>
+                    </div>
+                    <div className="flex gap-3">
+                         <button onClick={handleExport} className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-xl hover:bg-black transition-all">
+                             <Printer size={16} /> Print for Evidence Folder
+                         </button>
+                         <button onClick={onExit} className="bg-white border border-slate-200 text-slate-600 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50">
+                             Exit Simulator
+                         </button>
+                    </div>
+                </div>
+
+                {/* FORMAL DOCUMENT VIEW */}
+                <div className="bg-white shadow-2xl rounded-[3rem] p-16 min-h-[1000px] border border-slate-100 relative print:shadow-none print:border-0 print:p-8">
+                    <div className="flex justify-between items-start mb-16 border-b-8 border-slate-900 pb-8">
+                         <div className="flex items-center gap-3">
+                             <div className="p-3 bg-red-900 rounded-xl text-white shadow-lg"><FileBadge size={32} /></div>
+                             <div>
+                                 <h1 className="text-3xl font-black uppercase tracking-tighter text-slate-900 leading-none">Record of Training</h1>
+                                 <p className="text-red-600 font-black text-[10px] uppercase tracking-[0.3em] mt-2">Executive Tabletop Exercise (TTX)</p>
+                             </div>
+                         </div>
+                         <div className="text-right">
+                             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Document Integrity ID</div>
+                             <div className="text-sm font-mono font-bold text-slate-900">TTX-{Math.random().toString(36).substr(2, 9).toUpperCase()}</div>
+                             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Date Completed</div>
+                             <div className="text-sm font-bold text-slate-900">{new Date().toLocaleDateString()}</div>
+                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-12 mb-12">
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Exercise Information</h4>
+                            <div className="space-y-2">
+                                <div className="text-xs font-black text-slate-900 uppercase">Scenario: <span className="font-bold text-slate-500 normal-case">{module.title}</span></div>
+                                <div className="text-xs font-black text-slate-900 uppercase">Executive Focus: <span className="font-bold text-slate-500 normal-case">{module.executiveFocus}</span></div>
+                                <div className="text-xs font-black text-slate-900 uppercase">Duration: <span className="font-bold text-slate-500 normal-case">{module.durationMinutes} Minutes</span></div>
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Verified Participants</h4>
+                            <p className="text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-wrap">{participants}</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-12">
+                         <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight border-l-8 border-red-600 pl-4 bg-red-50/30 py-2">Exercise Observations & Outcomes</h3>
+                         
+                         {module.injects.map((inj) => (
+                             <div key={inj.id} className="space-y-4">
+                                 <div className="flex items-center gap-3">
+                                     <div className="text-[10px] font-black text-red-600 uppercase tracking-widest bg-red-50 px-2 py-0.5 rounded">Inject: {inj.title}</div>
+                                 </div>
+                                 <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Scenario Context</div>
+                                     <p className="text-sm text-slate-600 leading-relaxed mb-6 italic">{inj.scenario}</p>
+                                     <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-2">Leadership Consensus & Decision</div>
+                                     <p className="text-sm font-bold text-slate-900 leading-relaxed bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">{answers[inj.id]}</p>
+                                     <div className="mt-4 text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                                         <ShieldCheck size={12}/> Regulatory Alignment: {inj.regulatoryHint}
+                                     </div>
+                                 </div>
+                             </div>
+                         ))}
+                    </div>
+
+                    <div className="mt-20 pt-10 border-t border-slate-100">
+                         <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Executive Sign-Off & Attestation</h4>
+                         <div className="grid grid-cols-2 gap-12">
+                             <div className="border-b border-slate-300 pb-2">
+                                 <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-8">Organization Lead Signature</div>
+                                 <div className="text-sm font-black uppercase text-slate-300">Signature Line</div>
+                             </div>
+                             <div className="border-b border-slate-300 pb-2">
+                                 <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-8">Role / Title</div>
+                                 <div className="text-sm font-black uppercase text-slate-300">Designation</div>
+                             </div>
+                         </div>
+                    </div>
+
+                    <div className="mt-24 text-center">
+                        <div className="inline-block border-2 border-slate-900 px-6 py-2 text-slate-900 font-black tracking-[0.3em] text-[10px] uppercase">
+                            Official CMMC Readiness Record // Internal Use Only
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return null;
+};
+
 
 export const CmmcAcademy: React.FC = () => {
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
@@ -57,6 +325,11 @@ export const CmmcAcademy: React.FC = () => {
           default: return <Library size={18} />;
       }
   };
+
+  // If we are in a simulation, swap the entire UI for the simulator
+  if (activeModule && (activeModule as SimulationModule).isSimulation) {
+      return <SimulationRunner module={activeModule as SimulationModule} onExit={() => setActiveModuleId(null)} />;
+  }
 
   return (
     <div className="flex h-full bg-slate-50 overflow-hidden">
@@ -170,16 +443,6 @@ export const CmmcAcademy: React.FC = () => {
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1">
                                     <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase leading-none">{activeModule.title}</h1>
-                                    {activePhaseId === 'PH6' && (
-                                        <div className="flex items-center gap-2 mt-3">
-                                            <span className="bg-red-900 text-white px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 animate-pulse">
-                                                <ShieldAlert size={10}/> Executive Simulation
-                                            </span>
-                                            <span className="bg-slate-100 text-slate-500 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5">
-                                                <Users size={10}/> Leadership Track
-                                            </span>
-                                        </div>
-                                    )}
                                 </div>
                                 <div className="flex gap-2">
                                     <span className="bg-slate-900 text-white px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest">{activeModule.durationMinutes} min read</span>
