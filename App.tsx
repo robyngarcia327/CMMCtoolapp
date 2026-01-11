@@ -28,7 +28,8 @@ import {
   BarChart3,
   ShieldCheck,
   FileCheck,
-  Calculator
+  Calculator,
+  ShieldAlert
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData } from './data/standards';
@@ -48,6 +49,7 @@ import { AssessorPortal } from './components/AssessorPortal';
 import { OrganizationManager } from './components/OrganizationManager';
 import { GlobalAdminPortal } from './components/GlobalAdminPortal';
 import { RiskRegister } from './components/RiskRegister';
+import { FairRiskAnalyzer } from './components/FairRiskAnalyzer';
 import { TrainingCenter } from './components/TrainingCenter';
 import { NetworkAnalyzer } from './components/NetworkAnalyzer';
 import { BudgetCalculator } from './components/BudgetCalculator';
@@ -312,8 +314,8 @@ const App: React.FC = () => {
         });
       }
       setHasCheckedOrgs(true);
-    } catch (e) {
-      console.error("Load failed", e);
+    } catch (error) {
+      console.error("Load failed", error);
     } finally {
       setIsDataLoading(false);
     }
@@ -373,7 +375,8 @@ const App: React.FC = () => {
       case AppView.ASSETS: return "CUI Scoped Assets";
       case AppView.USERS: return "Identity Pool & Access";
       case AppView.NETWORK_DIAGRAM: return "Network & Scope Diagrams";
-      case AppView.RISK_MANAGEMENT: return "Risk Management (FAIR)";
+      case AppView.RISK_MANAGEMENT: return "Risk Register (Scenario Catalog)";
+      case AppView.FAIR_ANALYZER: return "Quantitative Risk Analysis (FAIR)";
       case AppView.POAM: return "POA&M Remediation";
       case AppView.COST_TO_COMPLIANCE: return "Certification Budgeting";
       case AppView.ASSESSOR_PORTAL: return "Assessor Review Suite";
@@ -414,7 +417,8 @@ const App: React.FC = () => {
           </SidebarSection>
 
           <SidebarSection title="Governance">
-            <SidebarItem icon={AlertTriangle} label="Risk Management" isActive={currentView === AppView.RISK_MANAGEMENT} onClick={() => setCurrentView(AppView.RISK_MANAGEMENT)} />
+            <SidebarItem icon={AlertTriangle} label="Risk Register" isActive={currentView === AppView.RISK_MANAGEMENT} onClick={() => setCurrentView(AppView.RISK_MANAGEMENT)} />
+            <SidebarItem icon={ShieldAlert} label="FAIR Analysis" isActive={currentView === AppView.FAIR_ANALYZER} onClick={() => setCurrentView(AppView.FAIR_ANALYZER)} badge="PRO" />
             <SidebarItem icon={ClipboardList} label="POA&M" isActive={currentView === AppView.POAM} onClick={() => setCurrentView(AppView.POAM)} />
             <SidebarItem icon={Calculator} label="Cost to Compliance" isActive={currentView === AppView.COST_TO_COMPLIANCE} onClick={() => setCurrentView(AppView.COST_TO_COMPLIANCE)} />
           </SidebarSection>
@@ -513,6 +517,7 @@ const App: React.FC = () => {
             
             {/* Governance Section */}
             {currentView === AppView.RISK_MANAGEMENT && <RiskRegister risks={activeData.risks} onAddRisk={(r) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: [...prev[activeClientId].risks, r] } }))} onUpdateRisk={() => {}} onDeleteRisk={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: prev[activeClientId].risks.filter(r => r.id !== id) } }))} />}
+            {currentView === AppView.FAIR_ANALYZER && <FairRiskAnalyzer risks={activeData.risks} onUpdateRisk={(r) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: prev[activeClientId].risks.map(risk => risk.id === r.id ? r : risk) } }))} />}
             {currentView === AppView.POAM && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} onUpdateRequirement={handleUpdateRequirement} defaultTab="POAM" />}
             {currentView === AppView.COST_TO_COMPLIANCE && <BudgetCalculator requirements={activeData.requirements} budgetItems={activeData.budgetItems || []} onAddItem={handleAddBudgetItem} onRemoveItem={handleRemoveBudgetItem} />}
             

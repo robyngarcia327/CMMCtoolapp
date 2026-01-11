@@ -153,6 +153,7 @@ export enum AppView {
   
   // Governance
   RISK_MANAGEMENT = 'RISK_MANAGEMENT',
+  FAIR_ANALYZER = 'FAIR_ANALYZER',
   POAM = 'POAM',
   COST_TO_COMPLIANCE = 'COST_TO_COMPLIANCE',
   
@@ -253,24 +254,35 @@ export interface Ticket {
   url?: string;
 }
 
+export interface FairFactors {
+  // Loss Event Frequency
+  threatEventFrequency: string; // Contact Frequency + Prob of Action
+  vulnerability: string; // Threat Capability + Resistance Strength
+  // Loss Magnitude
+  primaryLoss: number;
+  secondaryLoss: number;
+  ale: number; // Annualized Loss Expectancy
+}
+
 export interface Risk {
-  id: string; // The '#' numerical index in spreadsheet
-  riskTier: string; // e.g., Operational, Strategic
-  riskCategory: string; // e.g., Process, Financial, M&A
-  domainGrouping: string; // e.g., Identification & Authentication
-  riskNumber: string; // e.g., R-IAM-04
-  riskTitle: string; // Short title of the risk
-  riskOwner: string; // e.g., CIO, CAO
-  deficiencyDescription: string; // Description of risk due to control deficiency
-  probableScenarios: string; // Text field for probable scenarios
-  likelihood: string; // e.g., 4 - Probable
-  impact: string; // e.g., 2 - Medium
-  inherentRiskRating: string; // Calculated or manual
-  businessDecision: string; // Decision on IR
-  targetResidualRiskRating: string; // Target rating after mitigation
-  comments: string; // Narrative comments
+  id: string; 
+  riskTier: string; 
+  riskCategory: string; 
+  domainGrouping: string; 
+  riskNumber: string; 
+  riskTitle: string; 
+  riskOwner: string; 
+  deficiencyDescription: string; 
+  probableScenarios: string; 
+  likelihood: string; 
+  impact: string; 
+  inherentRiskRating: string; 
+  businessDecision: string; 
+  targetResidualRiskRating: string; 
+  comments: string; 
   status: 'Open' | 'Mitigated' | 'Transferred' | 'Accepted';
   dateIdentified: number;
+  fairData?: FairFactors;
 }
 
 export interface ProjectTask {

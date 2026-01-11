@@ -1,6 +1,5 @@
-
 import { GoogleGenAI } from "@google/genai";
-import { Requirement, AuvikDevice } from '../types';
+import { Requirement, AuvikDevice, Risk } from '../types';
 
 const SYSTEM_INSTRUCTION_CHAT = `
 You are an expert cybersecurity compliance consultant specialized in CMMC 2.0 and NIST SP 800-171A.
@@ -9,6 +8,15 @@ Your goal is to assist compliance teams by outlining what is required to reach c
 - Suggest specific artifacts needed for evidence based on NIST 800-171A methodology.
 - Help outline documentation requirements (SSP, POA&M).
 - Maintain a professional but helpful tone.
+`;
+
+const FAIR_SYSTEM_INSTRUCTION = `
+You are a FAIR (Factor Analysis of Information Risk) Certified Professional.
+You help cybersecurity teams quantitatively evaluate risk scenarios.
+Use the FAIR taxonomy: 
+- Loss Event Frequency (Threat Event Frequency + Vulnerability)
+- Loss Magnitude (Primary Loss + Secondary Loss)
+Provide specific, data-driven estimates for risk factors based on the user's business context.
 `;
 
 export const sendChatMessage = async (
@@ -31,6 +39,36 @@ export const sendChatMessage = async (
   } catch (error) {
     console.error("Gemini Chat Error:", error);
     return "Error connecting to the AI assistant. Please verify your API configuration.";
+  }
+};
+
+export const analyzeRiskWithFair = async (risk: Risk): Promise<string> => {
+  const prompt = `
+    Analyze this cyber risk scenario using the FAIR model ontology.
+    RISK SCENARIO:
+    Title: ${risk.riskTitle}
+    Deficiency: ${risk.deficiencyDescription}
+    Category: ${risk.riskCategory}
+
+    Provide a breakdown of the following factors with estimations:
+    1. Threat Event Frequency (TEF): How often does the threat agent contact the asset?
+    2. Vulnerability (V): What is the probability that the threat results in a loss?
+    3. Primary Loss: Immediate financial impact (e.g., productivity loss).
+    4. Secondary Loss: Long-term impact (e.g., reputation, legal, fines).
+
+    Suggest 3 specific mitigation strategies to reduce "Resistance Strength" gaps.
+  `;
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: { systemInstruction: FAIR_SYSTEM_INSTRUCTION }
+    });
+    return response.text || "Analysis failed.";
+  } catch (e) {
+    return "Error connecting to the FAIR AI engine.";
   }
 };
 
