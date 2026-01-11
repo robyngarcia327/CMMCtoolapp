@@ -1,5 +1,6 @@
 
 
+
 import React, { useState } from 'react';
 import { Client, User, UserRole, ClientData, BrandingConfig, IntegrationConfig } from '../types';
 import { Plus, Shield, Trash2, Mail, Search, Upload, Palette, Zap } from 'lucide-react';
@@ -55,6 +56,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
         });
         setEditingClient(null);
     } else {
+        // Fixed: Added targetCmmcLevel property to satisfy Client interface
         const newClient: Client = {
             id: `client-${Date.now()}`,
             name: clientForm.name,
@@ -63,6 +65,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
             contactName: 'Admin',
             logoInitial: clientForm.name.charAt(0).toUpperCase(),
             primaryFramework: 'NIST-CMMC',
+            targetCmmcLevel: 2,
             nextAuditDate: Date.now() + 1000 * 60 * 60 * 24 * 365,
             accountManager: 'Unassigned',
             isParent: false,

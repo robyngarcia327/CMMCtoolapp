@@ -172,6 +172,19 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleUpdateLevel = (lvl: 1 | 2 | 3) => {
+    if (!activeClientId) return;
+    setClientDataStore(prev => ({
+      ...prev,
+      [activeClientId]: {
+        ...prev[activeClientId],
+        targetCmmcLevel: lvl
+      }
+    }));
+    // Also update main clients array
+    setClients(prev => prev.map(c => c.id === activeClientId ? { ...c, targetCmmcLevel: lvl } : c));
+  };
+
   const handleUpdateWizardProgress = (progress: WizardProgress) => {
     if (!activeClientId) return;
     setClientDataStore(prev => ({
@@ -263,13 +276,13 @@ const App: React.FC = () => {
         contactName: auth.user?.profile.email || 'Admin',
         logoInitial: (o.name || 'O').charAt(0).toUpperCase(),
         primaryFramework: 'NIST-CMMC',
+        targetCmmcLevel: 2, // Default
         nextAuditDate: Date.now() + 31536000000,
         accountManager: 'Self-Managed',
         isParent: !!o.isParent
       }));
       setClients(mappedClients);
       if (mappedClients.length > 0) {
-        // Only set activeClientId if we don't have a valid persisted one
         const persistedId = localStorage.getItem(KEY_CLIENT);
         const isValidPersisted = mappedClients.some(c => c.id === persistedId);
         const selectedId = isValidPersisted ? (persistedId as string) : mappedClients[0].id;
@@ -346,6 +359,7 @@ const App: React.FC = () => {
   const activeData = clientDataStore[activeClientId];
   if (!activeData) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 size={48} className="animate-spin" /></div>;
 
+  const targetLevel = activeData.targetCmmcLevel;
   const currentUser = activeData.users[0];
   const allUsersAcrossTenants = (Object.values(clientDataStore) as ClientData[]).flatMap(d => d.users);
 
@@ -474,13 +488,13 @@ const App: React.FC = () => {
 
         <main className="flex-1 overflow-hidden relative bg-slate-50/50">
           <div className="h-full w-full overflow-y-auto">
-            {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} onNavigate={setCurrentView} onToggleChat={() => setIsChatOpen(!isChatOpen)} />}
-            {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} assets={activeData.assets} wizardProgress={activeData.wizardProgress} onUpdateRequirement={handleUpdateRequirement} onAddArtifact={handleAddArtifact} onRemoveArtifact={handleRemoveArtifact} onAddAsset={handleAddAsset} onDeleteAsset={handleDeleteAsset} onUpdateProgress={handleUpdateWizardProgress} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} />}
+            {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} targetLevel={targetLevel} onUpdateLevel={handleUpdateLevel} onNavigate={setCurrentView} onToggleChat={() => setIsChatOpen(!isChatOpen)} />}
+            {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} assets={activeData.assets} wizardProgress={activeData.wizardProgress} onUpdateRequirement={handleUpdateRequirement} onAddArtifact={handleAddArtifact} onRemoveArtifact={handleRemoveArtifact} onAddAsset={handleAddAsset} onDeleteAsset={handleDeleteAsset} onUpdateProgress={handleUpdateWizardProgress} onUpdateLevel={handleUpdateLevel} targetLevel={targetLevel} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} />}
             
             {/* Compliance Section */}
             {currentView === AppView.CONTROLS && (
               <div className="flex h-full overflow-hidden">
-                <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => setSelectedRequirementId(r.id)} activeFrameworkId={activeFramework.id} />
+                <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => setSelectedRequirementId(r.id)} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} />
                 {selectedRequirementId ? (
                   <RequirementDetail requirement={activeData.requirements.find(r => r.id === selectedRequirementId)!} onUpdateRequirement={handleUpdateRequirement} allArtifacts={activeData.artifacts} onAddArtifact={handleAddArtifact} onRemoveArtifact={handleRemoveArtifact} tickets={[]} onAddTicket={() => {}} cwConfig={activeData.cwConfig} jiraConfig={activeData.jiraConfig} currentUser={currentUser} activeClientId={activeClientId} />
                 ) : (
@@ -499,16 +513,16 @@ const App: React.FC = () => {
             
             {/* Governance Section */}
             {currentView === AppView.RISK_MANAGEMENT && <RiskRegister risks={activeData.risks} onAddRisk={(r) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: [...prev[activeClientId].risks, r] } }))} onUpdateRisk={() => {}} onDeleteRisk={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: prev[activeClientId].risks.filter(r => r.id !== id) } }))} />}
-            {currentView === AppView.POAM && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} onUpdateRequirement={handleUpdateRequirement} defaultTab="POAM" />}
+            {currentView === AppView.POAM && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} onUpdateRequirement={handleUpdateRequirement} defaultTab="POAM" />}
             {currentView === AppView.COST_TO_COMPLIANCE && <BudgetCalculator requirements={activeData.requirements} budgetItems={activeData.budgetItems || []} onAddItem={handleAddBudgetItem} onRemoveItem={handleRemoveBudgetItem} />}
             
             {/* Assessor Portal */}
             {currentView === AppView.ASSESSOR_PORTAL && <AssessorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} risks={activeData.risks} assets={activeData.assets} activeFramework={activeFramework} />}
             
             {/* Reports Section */}
-            {currentView === AppView.REPORT_EXECUTIVE && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} defaultTab="EXECUTIVE" />}
-            {currentView === AppView.REPORT_SSP && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} sspMetadata={activeData.sspMetadata} defaultTab="SSP" />}
-            {currentView === AppView.REPORT_POLICY_CENTER && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} defaultTab="MATRIX" />}
+            {currentView === AppView.REPORT_EXECUTIVE && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} defaultTab="EXECUTIVE" />}
+            {currentView === AppView.REPORT_SSP && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} sspMetadata={activeData.sspMetadata} defaultTab="SSP" />}
+            {currentView === AppView.REPORT_POLICY_CENTER && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} defaultTab="MATRIX" />}
 
             {/* System Admin */}
             {currentView === AppView.ORGANIZATION_MANAGER && <OrganizationManager clients={clients} clientDataStore={clientDataStore} activeClientId={activeClientId} onAddClient={() => {}} onUpdateClient={() => {}} onDeleteClient={() => {}} onUpdateClientData={() => {}} />}

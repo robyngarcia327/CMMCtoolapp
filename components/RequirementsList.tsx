@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Requirement } from '../types';
 import { NIST_CMMC_FAMILIES, SOC2_FAMILIES, HIPAA_FAMILIES } from '../data/standards';
@@ -9,6 +8,7 @@ interface RequirementsListProps {
   selectedReqId: string | null;
   onSelectReq: (req: Requirement) => void;
   activeFrameworkId: string;
+  targetLevel: 1 | 2 | 3;
 }
 
 export const RequirementsList: React.FC<RequirementsListProps> = ({
@@ -16,11 +16,14 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
   selectedReqId,
   onSelectReq,
   activeFrameworkId,
+  targetLevel
 }) => {
   const [filterFamily, setFilterFamily] = useState<string>('ALL');
 
-  // Filter first by Active Framework, then by Family
-  const frameworkReqs = requirements.filter(r => r.framework === activeFrameworkId);
+  // Filter first by Active Framework, then by CMMC Level, then by Family
+  const frameworkReqs = requirements.filter(r => 
+    r.framework === activeFrameworkId && r.cmmcLevel <= targetLevel
+  );
   
   const filteredReqs = filterFamily === 'ALL'
     ? frameworkReqs
@@ -32,8 +35,6 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
   else if (activeFrameworkId === 'SOC2') families = SOC2_FAMILIES;
   else if (activeFrameworkId === 'HIPAA') families = HIPAA_FAMILIES;
   else {
-      // Fallback for custom or unidentified frameworks
-      // Explicitly cast to string to avoid 'unknown' type issues when mapping
       families = Array.from(new Set(frameworkReqs.map(r => r.family))).map(f => ({ id: f as string, name: f as string }));
   }
 
@@ -42,9 +43,11 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
       <div className="p-4 border-b border-slate-200 bg-slate-50">
         <div className="flex items-center justify-between mb-3">
              <h2 className="font-bold text-slate-800">Requirements</h2>
-             <span className="text-[10px] bg-white border border-slate-300 px-2 py-0.5 rounded text-slate-500 font-mono font-bold">
-                 {activeFrameworkId}
-             </span>
+             <div className="flex gap-1">
+                <span className="text-[9px] bg-blue-100 border border-blue-200 px-1.5 py-0.5 rounded text-blue-700 font-mono font-black uppercase">
+                    Level {targetLevel}
+                </span>
+             </div>
         </div>
         
         <div className="relative">
@@ -53,7 +56,7 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
             onChange={(e) => setFilterFamily(e.target.value)}
             className="w-full p-2 pl-9 bg-white border border-slate-300 rounded-lg text-sm appearance-none focus:ring-2 focus:ring-blue-500 outline-none"
             >
-            <option value="ALL">All Domains</option>
+            <option value="ALL">All Scoped Domains</option>
             {families.map((f: any) => (
                 <option key={f.id} value={f.id}>{f.id}: {f.name}</option>
             ))}
@@ -89,7 +92,7 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
         {filteredReqs.length === 0 && (
             <div className="p-8 text-center text-slate-400 text-sm flex flex-col items-center">
                 <Info size={32} className="mb-2 opacity-50" />
-                No requirements found for this filter.
+                No requirements found for this level.
             </div>
         )}
       </div>

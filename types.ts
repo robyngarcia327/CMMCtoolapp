@@ -25,7 +25,7 @@ export interface Requirement {
   description: string;
   discussion?: string;
   level?: string;
-  cmmcLevel?: 1 | 2 | 3; 
+  cmmcLevel: 1 | 2 | 3; 
   objectives: AssessmentObjective[];
   sprsWeight?: number;
   response?: string;
@@ -104,6 +104,7 @@ export interface Client {
   contactName: string;
   logoInitial: string;
   primaryFramework: string;
+  targetCmmcLevel: 1 | 2 | 3;
   nextAuditDate: number;
   accountManager: string;
   isParent: boolean;
@@ -111,6 +112,7 @@ export interface Client {
 }
 
 export interface ClientData {
+  targetCmmcLevel: 1 | 2 | 3;
   requirements: Requirement[];
   assets: Asset[];
   users: User[];
@@ -168,7 +170,7 @@ export enum AppView {
 }
 
 export interface WizardProgress {
-  currentStep: 'INTRO' | 'INVENTORY' | 'NETWORK' | 'ASSESSMENT' | 'VALIDATION';
+  currentStep: 'INTRO' | 'LEVEL_SELECT' | 'INVENTORY' | 'NETWORK' | 'ASSESSMENT' | 'VALIDATION';
   currentQuestionIndex: number;
 }
 

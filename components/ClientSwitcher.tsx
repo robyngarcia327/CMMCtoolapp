@@ -26,6 +26,7 @@ export const ClientSwitcher: React.FC<ClientSwitcherProps> = ({
     e.preventDefault();
     if (!newClientName) return;
 
+    // Fixed: Added targetCmmcLevel property to satisfy Client interface
     const newClient: Client = {
         id: `client-${Date.now()}`,
         name: newClientName,
@@ -34,6 +35,7 @@ export const ClientSwitcher: React.FC<ClientSwitcherProps> = ({
         contactName: 'Admin',
         logoInitial: newClientName.charAt(0).toUpperCase(),
         primaryFramework: 'NIST800-171',
+        targetCmmcLevel: 2,
         nextAuditDate: Date.now() + 1000 * 60 * 60 * 24 * 365, // +1 year
         accountManager: 'Unassigned',
         isParent: false

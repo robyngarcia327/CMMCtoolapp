@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Requirement, Artifact, WizardProgress, Asset } from '../types';
-import { ArrowLeft, ArrowRight, CheckCircle2, Shield, AlertTriangle, PlayCircle, FileCheck, Check, Info, Monitor, Network, ListChecks, LogOut, Save } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Shield, AlertTriangle, PlayCircle, FileCheck, Check, Info, Monitor, Network, ListChecks, Target, Lock, Zap } from 'lucide-react';
 import { ArtifactUploader } from './ArtifactUploader';
 import { Inventory } from './Inventory';
 import { NetworkAnalyzer } from './NetworkAnalyzer';
@@ -17,12 +16,15 @@ interface ComplianceWizardProps {
   onAddAsset?: (asset: Asset) => void;
   onDeleteAsset?: (id: string) => void;
   onUpdateProgress: (progress: WizardProgress) => void;
+  onUpdateLevel: (level: 1 | 2 | 3) => void;
+  targetLevel: 1 | 2 | 3;
   activeFrameworkId: string;
   onComplete: () => void;
 }
 
 const STEPS = [
     { id: 'INTRO', label: 'Welcome' },
+    { id: 'LEVEL_SELECT', label: 'Target Level' },
     { id: 'INVENTORY', label: 'Asset Inventory' },
     { id: 'NETWORK', label: 'Network Scope' },
     { id: 'ASSESSMENT', label: 'Compliance Audit' },
@@ -40,11 +42,15 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   onAddAsset,
   onDeleteAsset,
   onUpdateProgress,
+  onUpdateLevel,
+  targetLevel,
   activeFrameworkId,
   onComplete
 }) => {
   
-  const activeReqs = requirements.filter(r => r.framework === activeFrameworkId);
+  const activeReqs = requirements.filter(r => 
+    r.framework === activeFrameworkId && r.cmmcLevel <= targetLevel
+  );
   
   const goToStep = (step: WizardProgress['currentStep']) => {
       onUpdateProgress({ ...wizardProgress, currentStep: step });
@@ -62,13 +68,8 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
     if (wizardProgress.currentQuestionIndex > 0) {
       onUpdateProgress({ ...wizardProgress, currentQuestionIndex: wizardProgress.currentQuestionIndex - 1 });
     } else {
-      goToStep('NETWORK');
+      goToStep('LEVEL_SELECT');
     }
-  };
-
-  const saveAndExit = () => {
-      alert("Progress saved. You can resume from the Wizard tab at any time.");
-      onComplete();
   };
 
   const currentReq = activeReqs[wizardProgress.currentQuestionIndex];
@@ -116,7 +117,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                       }`}>
                           {isCompleted ? <Check size={16} /> : idx + 1}
                       </div>
-                      <span className={`text-xs font-medium ${isCurrent ? 'text-blue-700' : 'text-slate-500'} hidden md:block`}>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${isCurrent ? 'text-blue-700' : 'text-slate-400'} hidden md:block`}>
                           {step.label}
                       </span>
                   </div>
@@ -125,84 +126,107 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
       </div>
   );
 
-  const renderHeader = () => (
-      <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-               {wizardProgress.currentStep === 'INVENTORY' && <Monitor size={24} className="text-blue-600" />}
-               {wizardProgress.currentStep === 'NETWORK' && <Network size={24} className="text-indigo-600" />}
-               {wizardProgress.currentStep === 'ASSESSMENT' && <ListChecks size={24} className="text-purple-600" />}
-               {STEPS.find(s => s.id === wizardProgress.currentStep)?.label}
-          </h2>
-          <button 
-            onClick={saveAndExit}
-            className="flex items-center gap-2 text-sm text-slate-500 hover:text-blue-600 px-3 py-1.5 rounded hover:bg-slate-100 transition-colors"
-          >
-              <Save size={16} /> Save & Exit
-          </button>
-      </div>
-  );
-
   if (wizardProgress.currentStep === 'INTRO') {
     return (
-      <div className="max-w-3xl mx-auto p-8 mt-10 bg-white rounded-2xl shadow-xl border border-slate-200 text-center animate-in fade-in zoom-in duration-300">
-        <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+      <div className="max-w-3xl mx-auto p-12 mt-10 bg-white rounded-[2.5rem] shadow-xl border border-slate-200 text-center animate-in fade-in zoom-in duration-500">
+        <div className="w-20 h-20 bg-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner rotate-3">
           <PlayCircle size={40} className="text-blue-600 ml-1" />
         </div>
-        <h1 className="text-3xl font-black text-slate-900 mb-4 tracking-tight uppercase">Start Your Assessment</h1>
-        <p className="text-lg text-slate-600 mb-8 max-w-lg mx-auto font-medium">
-          Welcome! We'll guide you through building your inventory and assessing your security controls for <strong>{activeFrameworkId}</strong>.
+        <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter uppercase leading-none">Assessment Setup</h1>
+        <p className="text-lg text-slate-500 mb-10 max-w-lg mx-auto font-medium">
+          Welcome to your guided compliance journey. We will begin by determining your target CMMC Level based on your DoD contract requirements.
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left mb-10">
-          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
-             <div className="font-black text-slate-800 mb-1 flex items-center gap-2 uppercase text-xs tracking-widest"><Monitor size={16} className="text-blue-500"/> 1. Inventory</div>
-             <p className="text-xs text-slate-500 leading-relaxed font-medium">List your hardware, software, and critical data assets.</p>
-          </div>
-          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
-             <div className="font-black text-slate-800 mb-1 flex items-center gap-2 uppercase text-xs tracking-widest"><Network size={16} className="text-indigo-500"/> 2. Scoping</div>
-             <p className="text-xs text-slate-500 leading-relaxed font-medium">Map your network boundaries and segmentation strategy.</p>
-          </div>
-          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
-             <div className="font-black text-slate-800 mb-1 flex items-center gap-2 uppercase text-xs tracking-widest"><Shield size={16} className="text-purple-500"/> 3. Audit</div>
-             <p className="text-xs text-slate-500 leading-relaxed font-medium">Answer easy questions to determine control implementation.</p>
-          </div>
-        </div>
-
         <button 
-          onClick={() => goToStep('INVENTORY')}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-black py-4 px-10 rounded-2xl shadow-2xl shadow-blue-200 transition-all hover:scale-105 uppercase tracking-widest text-sm"
+          onClick={() => goToStep('LEVEL_SELECT')}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-black py-5 px-12 rounded-[2rem] shadow-2xl shadow-blue-200 transition-all hover:scale-105 uppercase tracking-widest text-sm"
         >
-          Begin Discovery
+          Initialize Scope
         </button>
-        <div className="mt-6">
-             <button onClick={onComplete} className="text-[10px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-widest">Skip to Dashboard</button>
-        </div>
       </div>
+    );
+  }
+
+  if (wizardProgress.currentStep === 'LEVEL_SELECT') {
+    return (
+        <div className="max-w-5xl mx-auto p-6 flex flex-col h-full">
+            {renderStepper()}
+            <div className="flex-1 flex flex-col items-center justify-center space-y-10">
+                <div className="text-center max-w-2xl">
+                    <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-2">Identify Your Target Posture</h2>
+                    <p className="text-slate-500 font-medium">Your CMMC level is usually defined in your DoD contract. Select the level you are aiming for to filter your compliance requirements.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+                    {[
+                        { lvl: 1, title: 'Level 1: Foundational', icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50', desc: 'Organizations that handle Federal Contract Information (FCI). Requires self-assessment of 17 practices.', tag: '17 PRACTICES' },
+                        { lvl: 2, title: 'Level 2: Advanced', icon: Shield, color: 'text-indigo-600', bg: 'bg-indigo-50', desc: 'Organizations that handle Controlled Unclassified Information (CUI). Requires 3PAO audit of 110 practices.', tag: '110 PRACTICES' },
+                        { lvl: 3, title: 'Level 3: Expert', icon: Zap, color: 'text-purple-600', bg: 'bg-purple-50', desc: 'High-value assets and APT protection. Requires Gov-led assessment of 110+ practices.', tag: 'EXPANDED NIST 800-172' },
+                    ].map((card) => (
+                        <button 
+                            key={card.lvl}
+                            onClick={() => onUpdateLevel(card.lvl as 1 | 2 | 3)}
+                            className={`p-8 rounded-[2.5rem] border-2 transition-all text-left flex flex-col h-full relative group ${
+                                targetLevel === card.lvl ? 'border-blue-600 bg-white shadow-2xl ring-4 ring-blue-50' : 'border-slate-100 bg-white hover:border-slate-300'
+                            }`}
+                        >
+                            {targetLevel === card.lvl && (
+                                <div className="absolute -top-3 -right-3 bg-blue-600 text-white p-1.5 rounded-full shadow-lg ring-4 ring-white">
+                                    <Check size={18} />
+                                </div>
+                            )}
+                            <div className={`p-4 ${card.bg} ${card.color} rounded-2xl w-fit mb-6 shadow-sm group-hover:scale-110 transition-transform`}>
+                                <card.icon size={24} />
+                            </div>
+                            <h3 className="font-black text-slate-900 uppercase tracking-tight text-lg mb-2">{card.title}</h3>
+                            <p className="text-xs text-slate-500 font-medium leading-relaxed mb-6 flex-1">{card.desc}</p>
+                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-lg border w-fit ${
+                                targetLevel === card.lvl ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-400 border-slate-100'
+                            }`}>
+                                {card.tag}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+
+                <button 
+                    onClick={() => goToStep('INVENTORY')}
+                    className="bg-slate-900 hover:bg-black text-white font-black py-4 px-12 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-xs flex items-center gap-3"
+                >
+                    Lock Scope & Continue <ArrowRight size={16} />
+                </button>
+            </div>
+        </div>
     );
   }
 
   const WizardWrapper = ({ children, nextLabel, onNext, onPrev }: any) => (
       <div className="max-w-5xl mx-auto p-6 h-full flex flex-col">
           {renderStepper()}
-          <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-               <div className="p-6 border-b border-slate-100 bg-slate-50/50">
-                    {renderHeader()}
+          <div className="flex-1 bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+               <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                        {STEPS.find(s => s.id === wizardProgress.currentStep)?.label}
+                    </h2>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white border border-slate-200 px-3 py-1 rounded-full">
+                        Scope: CMMC Level {targetLevel}
+                    </span>
                </div>
                <div className="flex-1 overflow-y-auto">
                    {children}
                </div>
-               <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center">
+               <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
                     <button 
                         onClick={onPrev}
-                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-white hover:shadow-sm transition-all"
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-all"
                     >
-                        <ArrowLeft size={18} /> Back
+                        <ArrowLeft size={16} /> Previous
                     </button>
                     <button 
                         onClick={onNext}
-                        className="flex items-center gap-2 px-8 py-2.5 bg-blue-600 text-white rounded-xl font-bold shadow-md hover:bg-blue-700 transition-all"
+                        className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all"
                     >
-                        {nextLabel} <ArrowRight size={18} />
+                        {nextLabel} <ArrowRight size={16} />
                     </button>
                </div>
           </div>
@@ -212,9 +236,9 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   if (wizardProgress.currentStep === 'INVENTORY') {
       return (
           <WizardWrapper 
-            nextLabel="Continue to Network" 
+            nextLabel="Proceed to Scoping" 
             onNext={() => goToStep('NETWORK')}
-            onPrev={() => goToStep('INTRO')}
+            onPrev={() => goToStep('LEVEL_SELECT')}
           >
               <Inventory 
                 assets={assets} 
@@ -229,7 +253,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   if (wizardProgress.currentStep === 'NETWORK') {
       return (
            <WizardWrapper 
-            nextLabel="Start Audit Questions" 
+            nextLabel="Start Audit" 
             onNext={() => goToStep('ASSESSMENT')}
             onPrev={() => goToStep('INVENTORY')}
           >
@@ -239,104 +263,93 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   }
 
   if (wizardProgress.currentStep === 'ASSESSMENT') {
-      if (!currentReq) {
-        return (
-            <WizardWrapper 
-                nextLabel="Finish" 
-                onNext={onComplete}
-                onPrev={() => goToStep('NETWORK')}
-            >
-                <div className="flex flex-col items-center justify-center h-full p-10 text-center text-slate-500">
-                    <Shield size={48} className="mb-4 text-slate-300" />
-                    <h2 className="text-xl font-bold text-slate-700">No Requirements Found</h2>
-                    <p>There are no assessment questions configured for this framework yet.</p>
-                </div>
-            </WizardWrapper>
-        );
-      }
-
-      const progress = Math.round(((wizardProgress.currentQuestionIndex) / activeReqs.length) * 100);
-      const isMet = currentReq.objectives.every(o => o.status === 'met');
-      const isNotMet = currentReq.objectives.some(o => o.status === 'not_met');
+      const progress = Math.round(((wizardProgress.currentQuestionIndex) / (activeReqs.length || 1)) * 100);
+      const isMet = currentReq?.objectives.every(o => o.status === 'met');
+      const isNotMet = currentReq?.objectives.some(o => o.status === 'not_met');
 
       return (
           <WizardWrapper 
-            nextLabel={wizardProgress.currentQuestionIndex === activeReqs.length - 1 ? "Finish & Review" : "Next Question"}
+            nextLabel={wizardProgress.currentQuestionIndex === activeReqs.length - 1 ? "Final Review" : "Next Control"}
             onNext={handleAssessmentNext}
             onPrev={handleAssessmentPrev}
           >
              <div className="flex flex-col h-full">
-                <div className="px-6 pt-6">
-                    <div className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <div className="px-10 pt-8">
+                    <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
                         <span>Control {wizardProgress.currentQuestionIndex + 1} of {activeReqs.length}</span>
-                        <span>{progress}%</span>
+                        <span>{progress}% Mastery</span>
                     </div>
-                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
                         <div className="bg-blue-500 h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
                     </div>
                 </div>
 
-                <div className="p-6 md:p-8 space-y-8">
-                    <div>
-                        <div className="flex justify-between items-start mb-2">
-                            <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">{currentReq.id}</span>
-                            <div className="flex gap-2">
-                                {isMet && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><Check size={12}/> Met</span>}
-                                {isNotMet && <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><AlertTriangle size={12}/> Gap</span>}
+                <div className="p-10 space-y-10">
+                    {currentReq ? (
+                        <>
+                        <div>
+                            <div className="flex justify-between items-start mb-3">
+                                <span className="font-mono text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 uppercase tracking-widest">{currentReq.id}</span>
+                                <div className="flex gap-2">
+                                    {isMet && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1 border border-green-200 shadow-sm"><Check size={12}/> Met</span>}
+                                    {isNotMet && <span className="bg-red-100 text-red-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1 border border-red-200 shadow-sm"><AlertTriangle size={12}/> Gap</span>}
+                                </div>
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-900 mb-3 tracking-tight uppercase">{currentReq.interviewQuestion || currentReq.title}</h2>
+                            <p className="text-slate-500 text-sm leading-relaxed font-medium">{currentReq.description}</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Implementation Evidence</label>
+                            <textarea 
+                                className="w-full h-40 p-5 border border-slate-200 bg-slate-50 rounded-[2rem] focus:ring-4 focus:ring-blue-50 focus:border-blue-500 focus:bg-white outline-none transition-all resize-none text-slate-700 font-medium"
+                                placeholder="Describe the technical solution or administrative procedure in place..."
+                                value={currentReq.response || ''}
+                                onChange={(e) => handleResponseChange(e.target.value)}
+                            />
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={toggleNotMet}
+                                    className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm ${
+                                        isNotMet 
+                                        ? 'bg-red-50 text-red-700 border-red-600' 
+                                        : 'bg-white text-slate-400 border-slate-100 hover:border-red-600 hover:text-red-600'
+                                    }`}
+                                >
+                                    <AlertTriangle size={16} /> {isNotMet ? 'Confirmed Gap' : 'Mark as Gap'}
+                                </button>
+
+                                <button 
+                                    onClick={toggleMet}
+                                    className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm ${
+                                        isMet 
+                                        ? 'bg-green-50 text-green-700 border-green-600' 
+                                        : 'bg-white text-slate-400 border-slate-100 hover:border-green-600 hover:text-green-600'
+                                    }`}
+                                >
+                                    <CheckCircle2 size={16} /> {isMet ? 'Verified Met' : 'Mark as Met'}
+                                </button>
                             </div>
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-900 mb-2 leading-tight">{currentReq.interviewQuestion || currentReq.title}</h2>
-                        {!currentReq.interviewQuestion && (
-                            <p className="text-slate-500">{currentReq.description}</p>
-                        )}
-                    </div>
 
-                    <div className="space-y-4">
-                        <label className="block text-sm font-bold text-slate-700">Implementation Narrative</label>
-                        <textarea 
-                            className="w-full h-32 p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none text-slate-700 shadow-sm"
-                            placeholder="e.g. We enforce a 15-minute lockout policy..."
-                            value={currentReq.response || ''}
-                            onChange={(e) => handleResponseChange(e.target.value)}
-                        />
-                        <div className="flex flex-wrap gap-4">
-                            <button 
-                                onClick={toggleNotMet}
-                                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all border shadow-sm ${
-                                    isNotMet 
-                                    ? 'bg-red-50 text-red-700 border-red-200 ring-1 ring-red-400' 
-                                    : 'bg-white text-slate-600 border-slate-200 hover:border-red-300 hover:text-red-600 hover:bg-red-50'
-                                }`}
-                            >
-                                <AlertTriangle size={16} />
-                                {isNotMet ? 'Marked as Gap' : 'Mark as Gap'}
-                            </button>
-
-                             <button 
-                                onClick={toggleMet}
-                                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all border shadow-sm ${
-                                    isMet 
-                                    ? 'bg-green-50 text-green-700 border-green-200 ring-1 ring-green-400' 
-                                    : 'bg-white text-slate-600 border-slate-200 hover:border-green-300 hover:text-green-600 hover:bg-green-50'
-                                }`}
-                            >
-                                <CheckCircle2 size={16} />
-                                {isMet ? 'Marked as Met' : 'Mark as Met'}
-                            </button>
+                        <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-200 shadow-inner">
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                <FileCheck size={18} className="text-blue-500" /> Technical Proof Repository
+                            </h3>
+                            <ArtifactUploader 
+                                requirementId={currentReq.id}
+                                artifacts={artifacts.filter(a => a.requirementId === currentReq.id)}
+                                onAddArtifact={onAddArtifact}
+                                onRemoveArtifact={onRemoveArtifact}
+                            />
                         </div>
-                    </div>
-
-                    <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                        <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                            <FileCheck size={20} className="text-indigo-600" /> Evidence Collection
-                        </h3>
-                        <ArtifactUploader 
-                            requirementId={currentReq.id}
-                            artifacts={artifacts.filter(a => a.requirementId === currentReq.id)}
-                            onAddArtifact={onAddArtifact}
-                            onRemoveArtifact={onRemoveArtifact}
-                        />
-                    </div>
+                        </>
+                    ) : (
+                        <div className="p-20 text-center text-slate-300">
+                            <CheckCircle2 size={64} className="mx-auto mb-4 opacity-10" />
+                            <p className="font-black uppercase tracking-widest text-sm">Audit Complete for Level {targetLevel}</p>
+                        </div>
+                    )}
                 </div>
              </div>
           </WizardWrapper>
@@ -345,39 +358,39 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
 
   if (wizardProgress.currentStep === 'VALIDATION') {
       return (
-        <div className="max-w-5xl mx-auto p-6">
+        <div className="max-w-5xl mx-auto p-6 h-full flex flex-col">
             {renderStepper()}
-            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4">
-                <div className="bg-slate-900 p-8 text-center text-white">
-                    <CheckCircle2 size={48} className="mx-auto mb-4 text-green-400" />
-                    <h2 className="text-3xl font-bold mb-2">Assessment Review</h2>
-                    <p className="text-slate-400">Walkthrough finished. Here is your preliminary scorecard.</p>
+            <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700 flex flex-col">
+                <div className="bg-slate-900 p-12 text-center text-white relative">
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl -mr-24 -mt-24"></div>
+                    <CheckCircle2 size={64} className="mx-auto mb-6 text-green-400 drop-shadow-lg" />
+                    <h2 className="text-4xl font-black tracking-tighter uppercase mb-3">Post-Audit Scorecard</h2>
+                    <p className="text-blue-300 text-sm font-bold uppercase tracking-[0.2em]">Preliminary Scoping Review Summary</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-200 border-b border-slate-200">
-                    <div className="p-8 text-center">
-                        <div className="text-4xl font-bold text-green-600 mb-2">{completedCount}</div>
-                        <div className="text-sm font-bold text-slate-500 uppercase tracking-wider">Controls Met</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100 border-b border-slate-100">
+                    <div className="p-12 text-center group transition-colors hover:bg-green-50/30">
+                        <div className="text-5xl font-black text-green-600 mb-2">{completedCount}</div>
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scoped Controls Met</div>
                     </div>
-                     <div className="p-8 text-center">
-                        <div className="text-4xl font-bold text-red-600 mb-2">{gapsCount}</div>
-                        <div className="text-sm font-bold text-slate-500 uppercase tracking-wider">Gaps Identified</div>
+                     <div className="p-12 text-center group transition-colors hover:bg-red-50/30">
+                        <div className="text-5xl font-black text-red-600 mb-2">{gapsCount}</div>
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Identified Risks</div>
                     </div>
-                     <div className="p-8 text-center">
-                        <div className="text-4xl font-bold text-amber-500 mb-2">{pendingCount}</div>
-                        <div className="text-sm font-bold text-slate-500 uppercase tracking-wider">Pending Review</div>
+                     <div className="p-12 text-center group transition-colors hover:bg-amber-50/30">
+                        <div className="text-5xl font-black text-amber-500 mb-2">{pendingCount}</div>
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Items Pending Review</div>
                     </div>
                 </div>
 
-                <div className="p-8">
-                    <div className="flex justify-center pt-4">
-                        <button 
-                            onClick={onComplete}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-xl font-bold shadow-lg text-lg flex items-center gap-2 transition-transform hover:scale-105"
-                        >
-                            Complete & Go to Dashboard <ArrowRight size={20} />
-                        </button>
-                    </div>
+                <div className="p-12 bg-slate-50 flex flex-col items-center">
+                    <button 
+                        onClick={onComplete}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-5 rounded-[2rem] font-black uppercase tracking-widest text-sm shadow-2xl shadow-blue-200 transition-all hover:scale-105 active:scale-95 flex items-center gap-4"
+                    >
+                        Commit Findings & Exit Wizard <ArrowRight size={20} />
+                    </button>
+                    <p className="mt-8 text-xs text-slate-400 font-medium italic">You can return to the 'Level {targetLevel}' assessment at any time via the Control Audit tab.</p>
                 </div>
             </div>
         </div>

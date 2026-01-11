@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Requirement, Artifact, Framework, AppView } from '../types';
-import { ShieldCheck, AlertTriangle, Map, Sparkles, Loader2, CheckCircle2, ChevronRight } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, Map, Sparkles, Loader2, CheckCircle2, ChevronRight, Target, Shield, Info } from 'lucide-react';
 import { outlineRequirementsRoadmap } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
 
@@ -9,6 +8,8 @@ interface DashboardProps {
   requirements: Requirement[];
   artifacts: Artifact[];
   activeFramework: Framework;
+  targetLevel: 1 | 2 | 3;
+  onUpdateLevel: (level: 1 | 2 | 3) => void;
   onNavigate: (view: AppView) => void;
   onToggleChat: () => void;
 }
@@ -17,14 +18,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
   requirements, 
   artifacts, 
   activeFramework, 
+  targetLevel,
+  onUpdateLevel,
   onNavigate,
   onToggleChat
 }) => {
   const [roadmap, setRoadmap] = useState<string | null>(null);
   const [isGeneratingRoadmap, setIsGeneratingRoadmap] = useState(false);
 
-  // Stats Logic
-  const activeReqs = requirements.filter(r => r.framework === activeFramework.id);
+  // Stats Logic - Filtered by Level
+  const activeReqs = requirements.filter(r => 
+    r.framework === activeFramework.id && r.cmmcLevel <= targetLevel
+  );
+  
   const totalReqs = activeReqs.length || 1;
   
   const getReqStatus = (req: Requirement) => {
@@ -51,27 +57,45 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 overflow-y-auto h-full">
-        {/* Simple Clean Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-            <div>
-                <h1 className="text-4xl font-black text-slate-900 tracking-tight">Mission Control</h1>
-                <p className="text-slate-500 mt-1 font-medium">{activeFramework.name} Portfolio</p>
-            </div>
-            
-            <button 
-                onClick={handleGenerateRoadmap}
-                disabled={isGeneratingRoadmap}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
-            >
-                {isGeneratingRoadmap ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-                Generate AI Roadmap
-            </button>
+        
+        {/* Scoping Quick-Switch Header */}
+        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-8 relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+             <div className="flex items-center gap-6 relative z-10">
+                <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-xl rotate-3 group hover:rotate-0 transition-transform">
+                    <Target size={32} className="text-blue-500" />
+                </div>
+                <div>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Mission Control</h1>
+                    <p className="text-slate-500 font-medium flex items-center gap-2">
+                        Scoped Level: <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border border-blue-200">CMMC Level {targetLevel}</span>
+                    </p>
+                </div>
+             </div>
+
+             <div className="flex flex-col gap-2 relative z-10 w-full md:w-auto">
+                 <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-inner">
+                    {[1, 2, 3].map((lvl) => (
+                        <button 
+                            key={lvl}
+                            onClick={() => onUpdateLevel(lvl as 1 | 2 | 3)}
+                            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                targetLevel === lvl ? 'bg-white shadow text-blue-600' : 'text-slate-400 hover:text-slate-600'
+                            }`}
+                        >
+                            Level {lvl}
+                        </button>
+                    ))}
+                 </div>
+                 <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center px-4">
+                     {targetLevel === 1 ? '17 PRACTICES // FCI DATA' : targetLevel === 2 ? '110 PRACTICES // CUI DATA' : '110+ PRACTICES // EXPERT'}
+                 </div>
+             </div>
         </div>
 
         {/* High-Level KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <button 
-              // Fixed: Property 'REPORTS' does not exist on type 'typeof AppView'. Using REPORT_EXECUTIVE.
               onClick={() => onNavigate(AppView.REPORT_EXECUTIVE)}
               className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-left relative overflow-hidden group hover:border-blue-300 transition-all"
             >
@@ -83,7 +107,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
 
             <button 
-              // Fixed: Property 'REQUIREMENTS' does not exist on type 'typeof AppView'. Using CONTROLS.
               onClick={() => onNavigate(AppView.CONTROLS)}
               className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-left hover:border-green-300 transition-all group"
             >
@@ -93,7 +116,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
 
             <button 
-              // Fixed: Property 'REQUIREMENTS' does not exist on type 'typeof AppView'. Using CONTROLS.
               onClick={() => onNavigate(AppView.CONTROLS)}
               className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-left hover:border-red-300 transition-all group"
             >
@@ -103,7 +125,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
 
             <button 
-              // Fixed: Property 'INVENTORY' does not exist on type 'typeof AppView'. Using ASSETS.
               onClick={() => onNavigate(AppView.ASSETS)}
               className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-left hover:border-indigo-300 transition-all group"
             >
@@ -130,17 +151,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
         )}
 
+        <div className="flex justify-center">
+             <button 
+                onClick={handleGenerateRoadmap}
+                disabled={isGeneratingRoadmap}
+                className="bg-slate-900 hover:bg-black text-white px-10 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-3 shadow-2xl transition-all hover:scale-105 disabled:opacity-50"
+            >
+                {isGeneratingRoadmap ? <Loader2 size={18} className="animate-spin text-blue-500" /> : <Sparkles size={18} className="text-blue-500" />}
+                Generate Level {targetLevel} Remediation Roadmap
+            </button>
+        </div>
+
         {/* Action Center Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <button 
-              // Fixed: Property 'REQUIREMENTS' does not exist on type 'typeof AppView'. Using CONTROLS.
               onClick={() => onNavigate(AppView.CONTROLS)}
-              className="bg-slate-900 rounded-3xl p-8 text-white flex flex-col justify-between h-56 text-left group transition-all hover:scale-[1.02] shadow-xl hover:bg-slate-800"
+              className="bg-slate-900 rounded-[2.5rem] p-8 text-white flex flex-col justify-between h-56 text-left group transition-all hover:scale-[1.02] shadow-xl hover:bg-slate-800"
             >
                 <div>
                     <h3 className="text-xl font-black mb-2 flex items-center gap-2">Assessment Hub <ChevronRight className="text-blue-500 group-hover:translate-x-1 transition-transform" /></h3>
-                    <p className="text-slate-400 text-sm leading-relaxed">
-                        You have <span className="text-white font-bold">{pendingReqs + gapsReqs} controls</span> currently awaiting implementation or review.
+                    <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
+                        You have <span className="text-white font-bold">{pendingReqs + gapsReqs} controls</span> currently awaiting review for Level {targetLevel}.
                     </p>
                 </div>
                 <div className="text-xs font-bold text-blue-400 tracking-widest uppercase flex items-center gap-2">
@@ -148,35 +179,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
             </button>
 
-            <div className="bg-white border border-slate-200 rounded-3xl p-8 flex flex-col justify-between h-56 shadow-sm">
+            <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 flex flex-col justify-between h-56 shadow-sm">
                 <div>
-                    <h3 className="text-xl font-black text-slate-900 mb-2 flex items-center gap-2"><CheckCircle2 className="text-green-500" /> Evidence Health</h3>
+                    <h3 className="text-xl font-black text-slate-900 mb-2 flex items-center gap-2"><CheckCircle2 className="text-green-500" /> Control Health</h3>
                     <p className="text-slate-500 text-sm leading-relaxed">
-                        Validation coverage: <span className="font-bold text-slate-900">{metReqs} / {totalReqs}</span> controls successfully linked to evidence artifacts.
+                        Level {targetLevel} coverage: <span className="font-bold text-slate-900">{metReqs} / {totalReqs}</span> requirements verified with technical evidence.
                     </p>
                 </div>
                 <div className="flex gap-4">
-                    <div className="bg-slate-50 px-4 py-2 rounded-xl text-center flex-1">
-                        <div className="text-[10px] font-black text-slate-400 uppercase">Satisfied</div>
+                    <div className="bg-slate-50 px-4 py-2 rounded-2xl text-center flex-1">
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Satisfied</div>
                         <div className="text-xl font-black text-slate-900">{metReqs}</div>
                     </div>
-                    <div className="bg-slate-50 px-4 py-2 rounded-xl text-center flex-1">
-                        <div className="text-[10px] font-black text-slate-400 uppercase">Coverage</div>
+                    <div className="bg-slate-50 px-4 py-2 rounded-2xl text-center flex-1">
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</div>
                         <div className="text-xl font-black text-slate-900">{complianceScore}%</div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        {/* Guidance Footer */}
-        <div className="pt-8 border-t border-slate-100 flex justify-center">
-            <p className="text-slate-400 text-xs font-medium flex items-center gap-2">
-                <AlertTriangle size={14} className="text-amber-500" /> Need help outlining requirements? Use the 
-                {/* Fixed: Property 'REQUIREMENTS' does not exist on type 'typeof AppView'. Using CONTROLS. */}
-                <button onClick={() => onNavigate(AppView.CONTROLS)} className="text-slate-900 font-bold hover:underline">Requirement Detail</button> 
-                view or the 
-                <button onClick={onToggleChat} className="text-blue-600 font-bold underline">AI Assistant</button>.
-            </p>
         </div>
     </div>
   );
