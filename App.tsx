@@ -29,7 +29,8 @@ import {
   ShieldCheck,
   FileCheck,
   Calculator,
-  ShieldAlert
+  ShieldAlert,
+  BookOpen
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData } from './data/standards';
@@ -50,7 +51,7 @@ import { OrganizationManager } from './components/OrganizationManager';
 import { GlobalAdminPortal } from './components/GlobalAdminPortal';
 import { RiskRegister } from './components/RiskRegister';
 import { FairRiskAnalyzer } from './components/FairRiskAnalyzer';
-import { TrainingCenter } from './components/TrainingCenter';
+import { CmmcAcademy } from './components/CmmcAcademy';
 import { NetworkAnalyzer } from './components/NetworkAnalyzer';
 import { BudgetCalculator } from './components/BudgetCalculator';
 import { api } from './services/api';
@@ -295,6 +296,7 @@ const App: React.FC = () => {
           mappedClients.forEach(c => {
             if (!nextStore[c.id]) {
               nextStore[c.id] = createInitialClientData(false);
+              nextStore[c.id].requirements = nextStore[c.id].requirements || [];
               nextStore[c.id].users = [{
                 id: auth.user?.profile.sub || 'unknown',
                 name: userDisplayName,
@@ -371,7 +373,7 @@ const App: React.FC = () => {
       case AppView.WIZARD: return "Guided Compliance Wizard";
       case AppView.CONTROLS: return "Security Control Audit";
       case AppView.SPRS_SCORECARD: return "DoD SPRS Scoring";
-      case AppView.TRAINING: return "Compliance Training Center";
+      case AppView.TRAINING: return "CMMC Academy / Holistic Prep";
       case AppView.ASSETS: return "CUI Scoped Assets";
       case AppView.USERS: return "Identity Pool & Access";
       case AppView.NETWORK_DIAGRAM: return "Network & Scope Diagrams";
@@ -405,12 +407,12 @@ const App: React.FC = () => {
           <SidebarSection title="General">
             <SidebarItem icon={LayoutDashboard} label="Dashboard" isActive={currentView === AppView.DASHBOARD} onClick={() => setCurrentView(AppView.DASHBOARD)} />
             <SidebarItem icon={Wand2} label="Wizard" isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} badge="Guided" />
+            <SidebarItem icon={GraduationCap} label="CMMC Academy" isActive={currentView === AppView.TRAINING} onClick={() => setCurrentView(AppView.TRAINING)} badge="New" />
           </SidebarSection>
 
           <SidebarSection title="Compliance">
             <SidebarItem icon={ListChecks} label="Controls" isActive={currentView === AppView.CONTROLS} onClick={() => setCurrentView(AppView.CONTROLS)} />
             <SidebarItem icon={TrendingUp} label="SPRS Scorecard" isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
-            <SidebarItem icon={GraduationCap} label="Training" isActive={currentView === AppView.TRAINING} onClick={() => setCurrentView(AppView.TRAINING)} />
             <SidebarItem icon={Package} label="Assets" isActive={currentView === AppView.ASSETS} onClick={() => setCurrentView(AppView.ASSETS)} />
             <SidebarItem icon={Users} label="Users" isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
             <SidebarItem icon={Network} label="Network Diagram" isActive={currentView === AppView.NETWORK_DIAGRAM} onClick={() => setCurrentView(AppView.NETWORK_DIAGRAM)} />
@@ -510,7 +512,7 @@ const App: React.FC = () => {
               </div>
             )}
             {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} />}
-            {currentView === AppView.TRAINING && <TrainingCenter />}
+            {currentView === AppView.TRAINING && <CmmcAcademy />}
             {currentView === AppView.ASSETS && <Inventory assets={activeData.assets} onAddAsset={handleAddAsset} onDeleteAsset={handleDeleteAsset} />}
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={() => {}} onUpdateUser={() => {}} onDeleteUser={() => {}} />}
             {currentView === AppView.NETWORK_DIAGRAM && <NetworkAnalyzer />}

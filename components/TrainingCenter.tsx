@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
-import { TRAINING_MODULES, NIST_CMMC_FAMILIES, CCP_BLUEPRINT_DOMAINS } from '../data/standards';
+// Fixed error: Removed non-existent import CCP_BLUEPRINT_DOMAINS and unused NIST_CMMC_FAMILIES from standards data
+import { TRAINING_MODULES } from '../data/standards';
 import { 
   BookOpen, 
   Clock, 
