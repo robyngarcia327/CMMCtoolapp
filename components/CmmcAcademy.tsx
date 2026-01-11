@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { TRAINING_MODULES, ACADEMY_PHASES } from '../data/standards';
 import { 
@@ -19,7 +20,9 @@ import {
   MessageCircle,
   FileText,
   PlayCircle,
-  Trophy
+  Trophy,
+  // Added missing ExternalLink icon
+  ExternalLink
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -47,6 +50,7 @@ export const CmmcAcademy: React.FC = () => {
           case 'Target': return <Target size={18} />;
           case 'Shield': return <ShieldCheck size={18} />;
           case 'ClipboardCheck': return <FileText size={18} />;
+          case 'FileText': return <FileText size={18} />;
           case 'Award': return <Award size={18} />;
           default: return <Library size={18} />;
       }
@@ -64,20 +68,20 @@ export const CmmcAcademy: React.FC = () => {
                         <GraduationCap size={24} />
                         <span className="font-black uppercase tracking-[0.2em] text-[10px]">CMMC Academy</span>
                     </div>
-                    <h2 className="text-xl font-black uppercase tracking-tight leading-none">Curriculum Map</h2>
+                    <h2 className="text-xl font-black uppercase tracking-tight leading-none">Assessment Readiness</h2>
                     <div className="mt-6 flex items-center justify-between">
-                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mastery Status</div>
-                         <div className="text-[10px] font-black text-blue-400 uppercase">Level 1 Practitioner</div>
+                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Training Progress</div>
+                         <div className="text-[10px] font-black text-blue-400 uppercase">Phase {activePhaseId.replace('PH','')}</div>
                     </div>
                     <div className="h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-                        <div className="h-full bg-blue-500 w-1/4 transition-all duration-1000"></div>
+                        <div className="h-full bg-blue-500 w-1/5 transition-all duration-1000"></div>
                     </div>
                 </div>
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
                 <div>
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 px-2">Learning Path Phases</h3>
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 px-2">Knowledge Domains</h3>
                     <div className="space-y-1">
                         {ACADEMY_PHASES.map(phase => (
                             <button 
@@ -99,23 +103,21 @@ export const CmmcAcademy: React.FC = () => {
                     </div>
                 </div>
 
-                <div>
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 px-2">CCP Exam Simulations</h3>
-                    <div className="space-y-1">
-                        <button className="w-full text-left px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition-all border border-transparent hover:border-slate-200">
-                             <Trophy size={18} className="text-amber-500" />
-                             <span className="text-xs font-bold">Practice Assessment</span>
-                        </button>
-                    </div>
+                <div className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100">
+                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3">Resource Center</h4>
+                    <ul className="space-y-2">
+                        <li><button className="text-xs font-bold text-slate-600 hover:text-blue-600 flex items-center gap-2">NIST SP 800-171A <ExternalLink size={10}/></button></li>
+                        <li><button className="text-xs font-bold text-slate-600 hover:text-blue-600 flex items-center gap-2">CMMC CAP Guide <ExternalLink size={10}/></button></li>
+                    </ul>
                 </div>
             </div>
 
             <div className="p-6 border-t border-slate-100 bg-slate-50/50">
                  <div className="flex items-center gap-3 text-slate-400 mb-1">
                     <CheckCircle2 size={16} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Enrollment Status</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Enrolled Member</span>
                  </div>
-                 <div className="text-xs font-bold text-slate-900">Corporate Enterprise License</div>
+                 <div className="text-xs font-bold text-slate-900 truncate">Compliance Readiness Track</div>
             </div>
         </aside>
 
@@ -129,7 +131,7 @@ export const CmmcAcademy: React.FC = () => {
                         <Search className="absolute left-4 top-2.5 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={20} />
                         <input 
                             className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium text-sm"
-                            placeholder="Search curriculum for ITAR, IT, Audit, etc..."
+                            placeholder="Search curriculum for ITAR, CUI, Artifact standards..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
@@ -137,7 +139,7 @@ export const CmmcAcademy: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-4">
                     <button className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-100 transition-all border border-indigo-100">
-                        <Star size={14} className="fill-indigo-700" /> My Certifications
+                        <Star size={14} className="fill-indigo-700" /> My Saved Modules
                     </button>
                     <div className="h-8 w-px bg-slate-200" />
                     <button className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
@@ -184,11 +186,11 @@ export const CmmcAcademy: React.FC = () => {
                                     <Sparkles className="text-blue-400" size={32} />
                                 </div>
                                 <div className="relative z-10">
-                                    <h4 className="text-lg font-black uppercase tracking-tight">Stuck on a concept?</h4>
-                                    <p className="text-blue-200 text-sm font-medium mt-1">Ask our AI Academy Instructor for clarification or real-world examples.</p>
+                                    <h4 className="text-lg font-black uppercase tracking-tight">Need technical help?</h4>
+                                    <p className="text-blue-200 text-sm font-medium mt-1">Ask our AI Academy Instructor for clarification or real-world implementation examples.</p>
                                 </div>
                                 <button className="relative z-10 bg-white text-indigo-900 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-blue-50 transition-all flex items-center gap-2">
-                                    <MessageCircle size={14} /> Open Instructor Chat
+                                    <MessageCircle size={14} /> Instructor Chat
                                 </button>
                             </div>
                         </div>
@@ -197,11 +199,11 @@ export const CmmcAcademy: React.FC = () => {
                     <div className="p-12 animate-in fade-in duration-500">
                         <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-[3rem] p-12 text-center flex flex-col items-center justify-center min-h-[600px]">
                             <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center shadow-lg mb-8 border border-slate-100 text-slate-300">
-                                <Zap size={48} className="opacity-20" />
+                                <ShieldCheck size={48} className="opacity-20 text-blue-600" />
                             </div>
-                            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Welcome to CMMC Academy</h2>
+                            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Organizational Academy</h2>
                             <p className="text-slate-500 max-w-md mt-4 text-lg font-medium leading-relaxed">
-                                Our holistic training program bridges technical implementation with assessment professionalism. Select a module from your learning path to begin.
+                                Master CMMC assessment standards through thorough training. Select a domain to deep-dive into implementation and readiness requirements.
                             </p>
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 w-full max-w-3xl">
@@ -220,7 +222,7 @@ export const CmmcAcademy: React.FC = () => {
                                         <h3 className="font-black text-xs uppercase tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors mb-2">{module.title}</h3>
                                         <p className="text-[10px] text-slate-500 font-medium line-clamp-3 leading-relaxed">{module.description}</p>
                                         <div className="mt-4 flex items-center gap-1 text-[9px] font-black text-blue-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                                            Begin Module <ArrowRight size={10} />
+                                            Begin Training <ArrowRight size={10} />
                                         </div>
                                     </button>
                                 ))}

@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { Requirement } from '../types';
-// Add Download to the imported icons from lucide-react
-import { Shield, AlertTriangle, CheckCircle2, XCircle, TrendingUp, Info, ShieldAlert, ShieldCheck, Download } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle2, XCircle, TrendingUp, Info, ShieldAlert, ShieldCheck, Download, FileSpreadsheet } from 'lucide-react';
 
 interface SPRSScorecardProps {
   requirements: Requirement[];
@@ -28,8 +27,6 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
   };
 
   // --- SPRS Calculation Logic ---
-  // Official SPRS starts at 110 (the number of L2 practices)
-  // Deductions are 1, 3, or 5 points per practice not met.
   const scoredData = useMemo(() => {
     const scored = activeReqs.map(req => {
       const status = getReqStatus(req);
@@ -43,14 +40,40 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
     });
 
     const totalDeductions = scored.reduce((sum, r) => sum + r.deduction, 0);
-    // Note: Official SPRS is only for Level 2 (110 practices). 
-    // For L1 (17 practices), we show a adjusted readiness score but clarify the L2 context.
     const baseScore = targetLevel === 1 ? 17 : 110; 
     const currentScore = baseScore - totalDeductions;
     const readinessPercentage = Math.round((scored.filter(r => r.computedStatus === 'met').length / (activeReqs.length || 1)) * 100);
 
     return { scored, totalDeductions, currentScore, baseScore, readinessPercentage };
   }, [activeReqs, targetLevel]);
+
+  const handleExportSPRS = () => {
+    const headers = ["Requirement ID", "Title", "Status", "SPRS Value", "Deduction", "Implementation Date"];
+    
+    const rows = scoredData.scored.map(r => [
+      r.id,
+      `"${r.title.replace(/"/g, '""')}"`,
+      r.computedStatus.toUpperCase(),
+      r.sprsWeight || 1,
+      r.deduction,
+      new Date().toLocaleDateString()
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "SPRS Assessment Export\n"
+      + `Target CMMC Level,${targetLevel}\n`
+      + `Final SPRS Score,${scoredData.currentScore}\n\n`
+      + headers.join(",") + "\n"
+      + rows.map(e => e.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `SPRS_Scorecard_Export_L${targetLevel}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const getScoreColor = (score: number) => {
       if (score >= (scoredData.baseScore * 0.9)) return 'text-green-600';
@@ -89,8 +112,14 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
             <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">SPRS Posture Scorecard</h1>
             <p className="text-slate-500 font-medium mt-1">Self-Assessment score for CMMC Level {targetLevel} compliance. (NIST SP 800-171A)</p>
         </div>
-        <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-inner">
-             <div className="px-6 py-2 bg-white rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest text-slate-600 border border-slate-200">
+        <div className="flex items-center gap-3">
+             <button 
+                onClick={handleExportSPRS}
+                className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-black transition-all"
+             >
+                <FileSpreadsheet size={16} className="text-blue-400" /> Export for PIEE / SPRS
+             </button>
+             <div className="px-6 py-2 bg-slate-100 rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest text-slate-600 border border-slate-200">
                 Scope: {activeReqs.length} Practices
              </div>
         </div>
@@ -199,16 +228,17 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
               <TrendingUp className="text-blue-400" size={32} />
           </div>
           <div className="space-y-4">
-              <h4 className="text-xl font-black uppercase tracking-tight">Understanding the SPRS Multiplier</h4>
+              <h4 className="text-xl font-black uppercase tracking-tight">PIEE / SPRS Reporting Guide</h4>
               <p className="text-blue-200 text-sm leading-relaxed max-w-4xl font-medium">
-                  The NIST SP 800-171 DoD Assessment Methodology doesn't treat all controls equally.
-                  Practices are weighted based on their impact to CUI confidentiality. 
-                  <span className="text-white font-bold"> Critical items (5 points)</span> usually involve access control, encryption, or boundary protection. 
-                  Missing just <span className="text-white font-bold">three</span> of these high-weight items drops your score below 100, which can significantly impact contract eligibility.
+                  To report your score in PIEE, use the "Export for PIEE / SPRS" button above to get a CSV of your assessment values. 
+                  When entering your score into the SPRS website, you must provide your <span className="text-white font-bold">final score</span>, 
+                  the <span className="text-white font-bold">CMMC Level</span> assessed, and the date the assessment was completed.
+                  Your score should be supported by a <span className="text-white font-bold">System Security Plan (SSP)</span> and an active 
+                  <span className="text-white font-bold"> POA&M</span> for any deductions.
               </p>
               <div className="flex gap-4">
                 <button className="bg-white text-blue-900 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-50 transition-all flex items-center gap-2">
-                    <Download size={14}/> Download Official SPRS Guide
+                    <Download size={14}/> Download Official SPRS Submission Guide
                 </button>
               </div>
           </div>

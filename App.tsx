@@ -373,7 +373,7 @@ const App: React.FC = () => {
       case AppView.WIZARD: return "Guided Compliance Wizard";
       case AppView.CONTROLS: return "Security Control Audit";
       case AppView.SPRS_SCORECARD: return "DoD SPRS Scoring";
-      case AppView.TRAINING: return "CMMC Academy / Holistic Prep";
+      case AppView.TRAINING: return "CMMC Academy // Assessment Mastery";
       case AppView.ASSETS: return "CUI Scoped Assets";
       case AppView.USERS: return "Identity Pool & Access";
       case AppView.NETWORK_DIAGRAM: return "Network & Scope Diagrams";

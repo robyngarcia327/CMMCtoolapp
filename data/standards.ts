@@ -43,8 +43,8 @@ export const ACADEMY_PHASES = [
   { id: 'PH1', name: 'The Foundation', icon: 'BookOpen' },
   { id: 'PH2', name: 'Scoping & Strategy', icon: 'Target' },
   { id: 'PH3', name: 'The 14 Domains (Technical)', icon: 'Shield' },
-  { id: 'PH4', name: 'Assessment Process (CAP)', icon: 'ClipboardCheck' },
-  { id: 'PH5', name: 'CCP Professional Practice', icon: 'Award' }
+  { id: 'PH4', name: 'Documentation & Narrative', icon: 'FileText' },
+  { id: 'PH5', name: 'Assessment Readiness (CAP)', icon: 'Award' }
 ];
 
 const createObjs = (ids: string[]) => ids.map(id => ({ id, description: `Verify assessment objective [${id}] for this control requirement.`, status: 'pending' as const }));
@@ -244,14 +244,33 @@ Access control is about the principle of **Least Privilege**.
     durationMinutes: 60, difficulty: 'Intermediate'
   },
 
-  // --- PHASE 4: ASSESSMENT PROCESS (CAP) ---
+  // --- PHASE 4: DOCUMENTATION ---
   {
-    id: 'cap-1', familyId: 'PH4', title: 'The CMMC Assessment Process (CAP)',
+    id: 'doc-1', familyId: 'PH4', title: 'Writing Implementation Narratives',
+    description: 'Learn to write descriptive, objective-based implementation statements for your SSP.',
+    content: `
+# Module 5: Narrative Excellence
+
+Assessors evaluate your "Implementation Statement" before they look at technical proof.
+
+### Common Narrative Gaps:
+- **Too Vague:** "We have a firewall." -> *Fixed: "We utilize a Palo Alto Next-Gen Firewall (SN: 123) configured with rule-set AC-01 to restrict..."*
+- **Policy-Only:** Describing what *should* happen rather than what *is* happening.
+- **Missing Specificity:** Failing to name the specific tool or department responsible.
+
+**The Golden Rule:** Address every single Assessment Objective (a, b, c...) within the NIST 800-171A guide.
+    `,
+    durationMinutes: 30, difficulty: 'Intermediate'
+  },
+
+  // --- PHASE 5: ASSESSMENT PROCESS (CAP) ---
+  {
+    id: 'cap-1', familyId: 'PH5', title: 'The CMMC Assessment Process (CAP)',
     description: 'Walking through the four phases of a certified assessment.',
     content: `
 # The CAP Guide
 
-The official methodology used by CCA (Certified CMMC Assessors).
+The official methodology used by Certified CMMC Assessors.
 
 1. **Phase 1: Preparation.** OSC shares the SSP. Assessor reviews for readiness.
 2. **Phase 2: Execution.** The "on-site" phase. Methods: Examine, Interview, Test.
@@ -261,26 +280,6 @@ The official methodology used by CCA (Certified CMMC Assessors).
 **Rule of Three:** For every control, an assessor ideally looks for two pieces of evidence from different methods (e.g., a policy [Examine] and a demo [Test]).
     `,
     durationMinutes: 35, difficulty: 'Advanced'
-  },
-
-  // --- PHASE 5: CCP PROFESSIONAL PRACTICE ---
-  {
-    id: 'ccp-1', familyId: 'PH5', title: 'Ethics & Professional Conduct',
-    description: 'The mandatory Code of Professional Conduct (CoPC) for ecosystem members.',
-    content: `
-# Module 6: The CoPC
-
-As a CCP (Certified CMMC Professional), you are bound by the Cyber-AB ethics code.
-
-### Core Values:
-- **Objectivity:** You must report what is true, not what the client wants to hear.
-- **Confidentiality:** OSC data is highly sensitive.
-- **Conflict of Interest:** You cannot audit a network you designed (Consult-to-Audit gap).
-- **Integrity:** Evidence must never be forged or misrepresented.
-
-Violation of the CoPC can result in permanent decertification.
-    `,
-    durationMinutes: 30, difficulty: 'Intermediate'
   }
 ];
 
