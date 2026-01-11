@@ -1,5 +1,4 @@
-
-import { Asset, User, IntegrationConfig, UserRole } from '../types';
+import { Asset, User, IntegrationConfig, UserRole, Risk } from '../types';
 
 /**
  * Mock automated evidence collection
@@ -90,6 +89,45 @@ export const integrationService = {
       });
       
       return user;
+    });
+  },
+
+  /**
+   * Parses CSV string into Risk objects
+   */
+  parseRiskCsv: (csvText: string): Partial<Risk>[] => {
+    const lines = csvText.split(/\r?\n/);
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    
+    return lines.slice(1).filter(line => line.trim()).map(line => {
+      // Handle commas inside quotes
+      const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+      const cleanValues = values.map(v => v.replace(/^"|"$/g, '').trim());
+      const risk: any = { status: 'Open', dateIdentified: Date.now() };
+      
+      headers.forEach((header, i) => {
+        const val = cleanValues[i];
+        if (!val) return;
+
+        if (header.includes('tier')) risk.riskTier = val;
+        if (header.includes('category')) risk.riskCategory = val;
+        if (header.includes('domain')) risk.domainGrouping = val;
+        if (header.includes('number')) risk.riskNumber = val;
+        if (header.includes('title')) risk.riskTitle = val;
+        if (header.includes('owner')) risk.riskOwner = val;
+        if (header.includes('description')) risk.deficiencyDescription = val;
+        if (header.includes('scenario')) risk.probableScenarios = val;
+        if (header.includes('likelihood')) risk.likelihood = val;
+        if (header.includes('impact')) risk.impact = val;
+        if (header.includes('inherent')) risk.inherentRiskRating = val;
+        if (header.includes('decision')) risk.businessDecision = val;
+        if (header.includes('residual')) risk.targetResidualRiskRating = val;
+        if (header.includes('comment')) risk.comments = val;
+      });
+      
+      return risk;
     });
   },
 

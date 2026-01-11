@@ -1,7 +1,7 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Risk } from '../types';
-import { AlertTriangle, Plus, Trash2, Save, Download, Filter, Search, ChevronDown, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, Plus, Trash2, Save, Download, Filter, Search, ChevronDown, CheckCircle2, ShieldAlert, FileSpreadsheet, Upload } from 'lucide-react';
+import { integrationService } from '../services/integrations';
 
 interface RiskRegisterProps {
   risks: Risk[];
@@ -47,6 +47,7 @@ const BUSINESS_DECISION_OPTIONS = [
 export const RiskRegister: React.FC<RiskRegisterProps> = ({ risks, onAddRisk, onUpdateRisk, onDeleteRisk }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [newRisk, setNewRisk] = useState<Partial<Risk>>({
     riskTier: 'Operational',
@@ -73,7 +74,7 @@ export const RiskRegister: React.FC<RiskRegisterProps> = ({ risks, onAddRisk, on
     }
 
     const risk: Risk = {
-      id: (risks.length + 4).toString(), // Mimicking index from user image (starts at 4)
+      id: `R-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       riskTier: newRisk.riskTier || 'Operational',
       riskCategory: newRisk.riskCategory || 'Process',
       domainGrouping: newRisk.domainGrouping || '',
@@ -106,6 +107,82 @@ export const RiskRegister: React.FC<RiskRegisterProps> = ({ risks, onAddRisk, on
     });
   };
 
+  const handleDownloadTemplate = () => {
+    const headers = [
+      "Risk Tier",
+      "Risk Category",
+      "Domain Grouping",
+      "Risk Number",
+      "Risk Title",
+      "Risk Owner",
+      "Description of Deficiency",
+      "Probable Scenarios",
+      "Likelihood",
+      "Impact",
+      "Inherent Risk Rating",
+      "Business Decision",
+      "Target Residual Risk Rating",
+      "Comments"
+    ];
+    
+    const sample = [
+      "Operational",
+      "Process",
+      "Access Control",
+      "R-AC-01",
+      "Weak Password Policy",
+      "CIO",
+      "Password complexity not enforced for legacy systems.",
+      "Brute force attack succeeds on non-MFA enabled systems.",
+      "3 - Possible",
+      "4 - Very High",
+      "3 - High",
+      "1 - Address",
+      "1 - Low",
+      "Legacy upgrade scheduled for Q3."
+    ];
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(",") + "\n"
+      + sample.map(s => `"${s}"`).join(",");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "Risk_Register_Template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleBulkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const parsedRisks = integrationService.parseRiskCsv(text);
+      
+      let addedCount = 0;
+      parsedRisks.forEach(pr => {
+        if (!pr.riskTitle) return;
+        
+        onAddRisk({
+          ...pr as Risk,
+          id: `R-BULK-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          dateIdentified: Date.now(),
+          status: 'Open'
+        });
+        addedCount++;
+      });
+      
+      alert(`Bulk Import Complete: Successfully added ${addedCount} entries to the register.`);
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const filteredRisks = risks.filter(r => 
     r.riskTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
     r.riskNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -115,7 +192,7 @@ export const RiskRegister: React.FC<RiskRegisterProps> = ({ risks, onAddRisk, on
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Header Bar */}
-      <div className="p-6 border-b border-slate-200 shrink-0 bg-slate-50 flex justify-between items-center shadow-sm z-20">
+      <div className="p-6 border-b border-slate-200 shrink-0 bg-slate-50 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm z-20">
         <div>
           <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2 uppercase">
             <AlertTriangle className="text-amber-500" size={24} /> 
@@ -124,16 +201,29 @@ export const RiskRegister: React.FC<RiskRegisterProps> = ({ risks, onAddRisk, on
           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Compliance & Operational Safeguard Portfolio</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <div className="flex items-center gap-2 flex-wrap justify-center">
+          <div className="relative mr-2">
             <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
             <input 
-              className="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm w-64 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              className="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm w-48 md:w-64 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               placeholder="Filter register..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
+          
+          <button 
+            onClick={handleDownloadTemplate}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm"
+          >
+            <Download size={14} className="text-blue-600" /> Template
+          </button>
+
+          <label className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">
+            <Upload size={14} className="text-green-600" /> Bulk Import
+            <input type="file" className="hidden" accept=".csv" ref={fileInputRef} onChange={handleBulkUpload} />
+          </label>
+
           <button 
             onClick={() => setIsAdding(!isAdding)}
             className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl text-sm font-black uppercase tracking-widest shadow-lg hover:bg-black transition-all"
@@ -254,7 +344,7 @@ export const RiskRegister: React.FC<RiskRegisterProps> = ({ risks, onAddRisk, on
                   <tr><td colSpan={16} className="p-20 text-center text-slate-400 font-bold uppercase tracking-widest bg-slate-50 italic">Registry Empty - Add first risk to begin assessment</td></tr>
                 ) : filteredRisks.map((risk, idx) => (
                   <tr key={risk.id} className="hover:bg-slate-50 border-b group transition-colors">
-                    <td className="p-3 border-r text-center font-bold text-slate-500 bg-slate-50/50">{risk.id}</td>
+                    <td className="p-3 border-r text-center font-bold text-slate-500 bg-slate-50/50">{idx + 1}</td>
                     <td className="p-3 border-r font-medium text-slate-700">{risk.riskTier}</td>
                     <td className="p-3 border-r text-slate-600">{risk.riskCategory}</td>
                     <td className="p-3 border-r bg-slate-100/30 text-slate-900 font-bold">{risk.domainGrouping}</td>
