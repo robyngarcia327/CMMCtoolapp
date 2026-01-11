@@ -1,4 +1,3 @@
-
 export type CognitoGroup = 'Admin_Created_Users' | 'Application_Administrator' | 'Tenant_Admin' | 'Auditor';
 
 export interface TrainingModule {
@@ -150,6 +149,7 @@ export enum AppView {
   // Governance
   RISK_MANAGEMENT = 'RISK_MANAGEMENT',
   POAM = 'POAM',
+  COST_TO_COMPLIANCE = 'COST_TO_COMPLIANCE',
   
   // Assessor
   ASSESSOR_PORTAL = 'ASSESSOR_PORTAL',
@@ -284,9 +284,11 @@ export interface BudgetLineItem {
   id: string;
   linkedRequirementId: string;
   name: string;
-  category: 'Software' | 'Hardware' | 'Labor' | 'Consulting';
+  category: 'Software' | 'Hardware' | 'Internal Labor' | 'Vendor Fees' | 'Assessor Fees';
   costType: 'One-Time' | 'Recurring/Year';
   amount: number;
+  hours?: number;
+  rate?: number;
   notes?: string;
 }
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from "react-oidc-context";
 import { 
@@ -28,11 +27,12 @@ import {
   Search,
   BarChart3,
   ShieldCheck,
-  FileCheck
+  FileCheck,
+  Calculator
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData } from './data/standards';
-import { Requirement, Artifact, AppView, Ticket, User, Framework, Client, ClientData, CognitoGroup, Risk, WizardProgress, Asset } from './types';
+import { Requirement, Artifact, AppView, Ticket, User, Framework, Client, ClientData, CognitoGroup, Risk, WizardProgress, Asset, BudgetLineItem } from './types';
 import { RequirementsList } from './components/RequirementsList';
 import { RequirementDetail } from './components/RequirementDetail';
 import { AIChat } from './components/AIChat';
@@ -50,6 +50,7 @@ import { GlobalAdminPortal } from './components/GlobalAdminPortal';
 import { RiskRegister } from './components/RiskRegister';
 import { TrainingCenter } from './components/TrainingCenter';
 import { NetworkAnalyzer } from './components/NetworkAnalyzer';
+import { BudgetCalculator } from './components/BudgetCalculator';
 import { api } from './services/api';
 
 const SidebarItem = ({ 
@@ -226,6 +227,28 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleAddBudgetItem = (item: BudgetLineItem) => {
+    if (!activeClientId) return;
+    setClientDataStore(prev => ({
+      ...prev,
+      [activeClientId]: {
+        ...prev[activeClientId],
+        budgetItems: [...(prev[activeClientId].budgetItems || []), item]
+      }
+    }));
+  };
+
+  const handleRemoveBudgetItem = (id: string) => {
+    if (!activeClientId) return;
+    setClientDataStore(prev => ({
+      ...prev,
+      [activeClientId]: {
+        ...prev[activeClientId],
+        budgetItems: (prev[activeClientId].budgetItems || []).filter(i => i.id !== id)
+      }
+    }));
+  };
+
   const loadOrganizations = useCallback(async () => {
     const idToken = auth.user?.id_token;
     if (!auth.isAuthenticated || !idToken) return;
@@ -338,6 +361,7 @@ const App: React.FC = () => {
       case AppView.NETWORK_DIAGRAM: return "Network & Scope Diagrams";
       case AppView.RISK_MANAGEMENT: return "Risk Management (FAIR)";
       case AppView.POAM: return "POA&M Remediation";
+      case AppView.COST_TO_COMPLIANCE: return "Certification Budgeting";
       case AppView.ASSESSOR_PORTAL: return "Assessor Review Suite";
       case AppView.REPORT_EXECUTIVE: return "Executive Summary";
       case AppView.REPORT_SSP: return "System Security Plan (SSP)";
@@ -378,6 +402,7 @@ const App: React.FC = () => {
           <SidebarSection title="Governance">
             <SidebarItem icon={AlertTriangle} label="Risk Management" isActive={currentView === AppView.RISK_MANAGEMENT} onClick={() => setCurrentView(AppView.RISK_MANAGEMENT)} />
             <SidebarItem icon={ClipboardList} label="POA&M" isActive={currentView === AppView.POAM} onClick={() => setCurrentView(AppView.POAM)} />
+            <SidebarItem icon={Calculator} label="Cost to Compliance" isActive={currentView === AppView.COST_TO_COMPLIANCE} onClick={() => setCurrentView(AppView.COST_TO_COMPLIANCE)} />
           </SidebarSection>
 
           <SidebarSection title="Assessor Portal">
@@ -475,6 +500,7 @@ const App: React.FC = () => {
             {/* Governance Section */}
             {currentView === AppView.RISK_MANAGEMENT && <RiskRegister risks={activeData.risks} onAddRisk={(r) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: [...prev[activeClientId].risks, r] } }))} onUpdateRisk={() => {}} onDeleteRisk={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: prev[activeClientId].risks.filter(r => r.id !== id) } }))} />}
             {currentView === AppView.POAM && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} onUpdateRequirement={handleUpdateRequirement} defaultTab="POAM" />}
+            {currentView === AppView.COST_TO_COMPLIANCE && <BudgetCalculator requirements={activeData.requirements} budgetItems={activeData.budgetItems || []} onAddItem={handleAddBudgetItem} onRemoveItem={handleRemoveBudgetItem} />}
             
             {/* Assessor Portal */}
             {currentView === AppView.ASSESSOR_PORTAL && <AssessorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} risks={activeData.risks} assets={activeData.assets} activeFramework={activeFramework} />}
