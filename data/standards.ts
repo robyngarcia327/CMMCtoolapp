@@ -1,3 +1,4 @@
+
 import { Requirement, Framework, ClientData, TrainingModule } from '../types';
 
 export const FRAMEWORKS: Framework[] = [
@@ -23,20 +24,20 @@ export const NIST_CMMC_FAMILIES = [
   { id: 'SI', name: 'System and Information Integrity' }
 ];
 
+// Fix: Add missing SOC2_FAMILIES constant used in RequirementsList.tsx
 export const SOC2_FAMILIES = [
-  { id: 'CC', name: 'Common Criteria / Security' },
+  { id: 'CC', name: 'Common Criteria' },
   { id: 'A', name: 'Availability' },
-  { id: 'PI', name: 'Processing Integrity' },
   { id: 'C', name: 'Confidentiality' },
+  { id: 'PI', name: 'Processing Integrity' },
   { id: 'P', name: 'Privacy' }
 ];
 
+// Fix: Add missing HIPAA_FAMILIES constant used in RequirementsList.tsx
 export const HIPAA_FAMILIES = [
-  { id: 'AS', name: 'Administrative Safeguards' },
-  { id: 'PS', name: 'Physical Safeguards' },
-  { id: 'TS', name: 'Technical Safeguards' },
-  { id: 'OR', name: 'Organizational Requirements' },
-  { id: 'PD', name: 'Policies and Documentation' }
+  { id: 'ADMIN', name: 'Administrative Safeguards' },
+  { id: 'PHYS', name: 'Physical Safeguards' },
+  { id: 'TECH', name: 'Technical Safeguards' }
 ];
 
 export const ACADEMY_PHASES = [
@@ -44,7 +45,8 @@ export const ACADEMY_PHASES = [
   { id: 'PH2', name: 'Scoping & Strategy', icon: 'Target' },
   { id: 'PH3', name: 'The 14 Domains (Technical)', icon: 'Shield' },
   { id: 'PH4', name: 'Documentation & Narrative', icon: 'FileText' },
-  { id: 'PH5', name: 'Assessment Readiness (CAP)', icon: 'Award' }
+  { id: 'PH5', name: 'Assessment Readiness (CAP)', icon: 'Award' },
+  { id: 'PH6', name: 'Tabletop Simulations (TTX)', icon: 'Dices' }
 ];
 
 const createObjs = (ids: string[]) => ids.map(id => ({ id, description: `Verify assessment objective [${id}] for this control requirement.`, status: 'pending' as const }));
@@ -174,112 +176,50 @@ CMMC 2.0 streamlines requirements to align with NIST standards and reduce costs 
 1. **Level 1 (Foundational):** 17 Practices. Focuses on protecting Federal Contract Information (FCI). Requires annual self-assessment.
 2. **Level 2 (Advanced):** 110 Practices (Direct alignment with NIST SP 800-171). Focuses on Controlled Unclassified Information (CUI). Requires triennial 3PAO assessments for prioritized contracts.
 3. **Level 3 (Expert):** 110+ Practices. Focuses on Advanced Persistent Threats (APTs). Government-led assessments.
-
-### Key Governance Sources:
-- **32 CFR Part 170:** The official CMMC program rule.
-- **DFARS 252.204-7012:** The primary contract clause for CUI protection.
-- **NARA CUI Registry:** The authoritative source for what constitutes CUI.
     `,
     durationMinutes: 20, difficulty: 'Beginner'
   },
+
+  // --- PHASE 6: TABLETOP SIMULATIONS (TTX) ---
   {
-    id: 'fnd-2', familyId: 'PH1', title: 'FCI vs. CUI: Data Mastery',
-    description: 'Learn to distinguish between the two primary data types handled by defense contractors.',
+    id: 'ttx-1', familyId: 'PH6', title: 'Sim: The 72-Hour Clock (Breach Reporting)',
+    description: 'Leadership Exercise: A ransomware attack is detected on a CUI server. Test your DC3 reporting speed.',
     content: `
-# Module 2: Data Classification
+# Simulation: Federal Breach Reporting
 
-If you cannot identify the data, you cannot secure the scope.
+**Objective:** Successfully report a CUI breach to the DoD within the mandated timeframe.
 
-### Federal Contract Information (FCI)
-Information provided by or generated for the Government under contract that is not intended for public release. 
-*Example: A contract document or delivery schedule.*
+### SITUATION INJECT:
+At 02:00 AM on a Saturday, your lead sysadmin receives a notification that the "Project Blue-Beam" file server (which processes ITAR-controlled technical drawings) has been encrypted. A ransom note is present.
 
-### Controlled Unclassified Information (CUI)
-Unclassified information that requires safeguarding or dissemination controls pursuant to and consistent with law, regulations, and Government-wide policies.
-*Example: Technical drawings, export-controlled data (ITAR), or sensitive financial records.*
+### DECISION POINTS:
+1. **Reporting Threshold:** Does this incident require notification via the DIBNet portal? (Ref: DFARS 252.204-7012).
+2. **The Timer:** You have exactly 72 hours from the *moment of discovery* to file the medium-to-high impact report.
+3. **Information Requirements:** Do you have your Medium Assurance Certificate ready to log into the reporting portal?
 
-**The "Flow-Down" Rule:** Safeguarding requirements apply to subcontractors who receive or generate this data.
-    `,
-    durationMinutes: 15, difficulty: 'Beginner'
-  },
-
-  // --- PHASE 2: SCOPING & STRATEGY ---
-  {
-    id: 'scp-1', familyId: 'PH2', title: 'Scoping the Assessment Boundary',
-    description: 'Master the categorization of CUI Assets, SPA, CRMA, and Out-of-Scope assets.',
-    content: `
-# Module 3: Scoping Methodology
-
-Scoping is the most critical phase of preparation. An incorrect scope leads to a failed audit.
-
-### Asset Categories:
-1. **CUI Assets:** Process, store, or transmit CUI. High scrutiny.
-2. **Security Protection Assets (SPA):** Provide security for CUI assets (e.g., Firewalls, SIEM, MFA). Full compliance required.
-3. **Contractor Risk Managed Assets (CRMA):** Can reach the CUI environment but don't process CUI. Focus on segmentation.
-4. **Specialized Assets:** OT, IoT, Govt property. Documentation required, technical controls may vary.
-5. **Out-of-Scope Assets:** Physically or logically separated.
-
-**Assessor Tip:** "Flat networks" (no segmentation) make your entire company "In Scope," dramatically increasing cost.
+**Executive Challenge:** Balancing the need for "perfect information" with the legal mandate for "rapid reporting."
     `,
     durationMinutes: 45, difficulty: 'Advanced'
   },
-
-  // --- PHASE 3: THE 14 DOMAINS ---
   {
-    id: 'dom-1', familyId: 'PH3', title: 'Access Control (AC) Deep-Dive',
-    description: 'Deep dive into the 22 practices of the AC family.',
+    id: 'ttx-2', familyId: 'PH6', title: 'Sim: Insider Threat & CUI Handling',
+    description: 'Leadership Exercise: Managing an executive who accidentally BCC’d their personal email with sensitive technical data.',
     content: `
-# The AC Domain: Access Control
+# Simulation: Unauthorized Disclosure
 
-Access control is about the principle of **Least Privilege**.
+**Objective:** Handle an accidental disclosure by a Key Management Personnel (KMP) without compromising the CMMC assessment boundary.
 
-### Key Practices:
-- **3.1.1 (L1):** Limit access to authorized users. *Proof: Active Directory logs, termination checklists.*
-- **3.1.3 (L2):** Control flow of CUI. *Proof: Network diagrams showing data paths.*
-- **3.1.12 (L2):** Remote access session control. *Proof: VPN configuration and MFA enforcement.*
+### SITUATION INJECT:
+Your VP of Sales, working from home on a personal laptop, accidentally BCC'd their Gmail account with a Technical Proposal containing CUI/CDI. The file is now residing in Google's cloud infrastructure, which is *Out of Scope* and not FedRAMP Moderate authorized.
 
-### Assessor Question:
-"Show me how you ensure that a terminated employee cannot access CUI within 24 hours."
-    `,
-    durationMinutes: 60, difficulty: 'Intermediate'
-  },
+### DECISION POINTS:
+1. **Cleanup:** How do you verify the destruction of the data on a personal, unmanaged device?
+2. **CMMC Impact:** Does this "spill" require a full re-scoping of the VP's home office?
+3. **Disciplinary Governance:** How does your Personnel Security (PS) policy handle "accidental" vs "malicious" intent for CMMC purposes?
 
-  // --- PHASE 4: DOCUMENTATION ---
-  {
-    id: 'doc-1', familyId: 'PH4', title: 'Writing Implementation Narratives',
-    description: 'Learn to write descriptive, objective-based implementation statements for your SSP.',
-    content: `
-# Module 5: Narrative Excellence
-
-Assessors evaluate your "Implementation Statement" before they look at technical proof.
-
-### Common Narrative Gaps:
-- **Too Vague:** "We have a firewall." -> *Fixed: "We utilize a Palo Alto Next-Gen Firewall (SN: 123) configured with rule-set AC-01 to restrict..."*
-- **Policy-Only:** Describing what *should* happen rather than what *is* happening.
-- **Missing Specificity:** Failing to name the specific tool or department responsible.
-
-**The Golden Rule:** Address every single Assessment Objective (a, b, c...) within the NIST 800-171A guide.
+**Leadership Takeaway:** Technical controls (DLP) are the primary defense, but Leadership "Culture of Security" is the secondary fail-safe.
     `,
     durationMinutes: 30, difficulty: 'Intermediate'
-  },
-
-  // --- PHASE 5: ASSESSMENT PROCESS (CAP) ---
-  {
-    id: 'cap-1', familyId: 'PH5', title: 'The CMMC Assessment Process (CAP)',
-    description: 'Walking through the four phases of a certified assessment.',
-    content: `
-# The CAP Guide
-
-The official methodology used by Certified CMMC Assessors.
-
-1. **Phase 1: Preparation.** OSC shares the SSP. Assessor reviews for readiness.
-2. **Phase 2: Execution.** The "on-site" phase. Methods: Examine, Interview, Test.
-3. **Phase 3: Reporting.** Final findings and scores sent to the C3PAO.
-4. **Phase 4: Closeout.** Addressing any qualifying POA&M items within 180 days.
-
-**Rule of Three:** For every control, an assessor ideally looks for two pieces of evidence from different methods (e.g., a policy [Examine] and a demo [Test]).
-    `,
-    durationMinutes: 35, difficulty: 'Advanced'
   }
 ];
 

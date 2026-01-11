@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { TRAINING_MODULES, ACADEMY_PHASES } from '../data/standards';
 import { 
@@ -21,8 +20,10 @@ import {
   FileText,
   PlayCircle,
   Trophy,
-  // Added missing ExternalLink icon
-  ExternalLink
+  ExternalLink,
+  Dices,
+  ShieldAlert,
+  Users
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -52,6 +53,7 @@ export const CmmcAcademy: React.FC = () => {
           case 'ClipboardCheck': return <FileText size={18} />;
           case 'FileText': return <FileText size={18} />;
           case 'Award': return <Award size={18} />;
+          case 'Dices': return <Dices size={18} />;
           default: return <Library size={18} />;
       }
   };
@@ -166,7 +168,19 @@ export const CmmcAcademy: React.FC = () => {
 
                         <div className="mb-12">
                             <div className="flex justify-between items-start mb-4">
-                                <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase leading-none">{activeModule.title}</h1>
+                                <div className="flex-1">
+                                    <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase leading-none">{activeModule.title}</h1>
+                                    {activePhaseId === 'PH6' && (
+                                        <div className="flex items-center gap-2 mt-3">
+                                            <span className="bg-red-900 text-white px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 animate-pulse">
+                                                <ShieldAlert size={10}/> Executive Simulation
+                                            </span>
+                                            <span className="bg-slate-100 text-slate-500 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                                                <Users size={10}/> Leadership Track
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="flex gap-2">
                                     <span className="bg-slate-900 text-white px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest">{activeModule.durationMinutes} min read</span>
                                     <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-200">{activeModule.difficulty}</span>
@@ -199,11 +213,19 @@ export const CmmcAcademy: React.FC = () => {
                     <div className="p-12 animate-in fade-in duration-500">
                         <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-[3rem] p-12 text-center flex flex-col items-center justify-center min-h-[600px]">
                             <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center shadow-lg mb-8 border border-slate-100 text-slate-300">
-                                <ShieldCheck size={48} className="opacity-20 text-blue-600" />
+                                {activePhaseId === 'PH6' ? (
+                                    <Dices size={48} className="opacity-20 text-red-600" />
+                                ) : (
+                                    <ShieldCheck size={48} className="opacity-20 text-blue-600" />
+                                )}
                             </div>
-                            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Organizational Academy</h2>
+                            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">
+                                {activePhaseId === 'PH6' ? 'Command & Control Simulations' : 'Organizational Academy'}
+                            </h2>
                             <p className="text-slate-500 max-w-md mt-4 text-lg font-medium leading-relaxed">
-                                Master CMMC assessment standards through thorough training. Select a domain to deep-dive into implementation and readiness requirements.
+                                {activePhaseId === 'PH6' 
+                                    ? 'High-stakes tabletop exercises designed for Leadership and Executive decision-making during federal cyber incidents.'
+                                    : 'Master CMMC assessment standards through thorough training. Select a domain to deep-dive into implementation and readiness requirements.'}
                             </p>
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 w-full max-w-3xl">
@@ -211,18 +233,26 @@ export const CmmcAcademy: React.FC = () => {
                                     <button 
                                         key={module.id}
                                         onClick={() => setActiveModuleId(module.id)}
-                                        className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:border-blue-600 hover:shadow-xl transition-all text-left group"
+                                        className={`bg-white p-6 rounded-3xl border shadow-sm transition-all text-left group ${
+                                            activePhaseId === 'PH6' ? 'hover:border-red-600' : 'hover:border-blue-600'
+                                        }`}
                                     >
                                         <div className="flex justify-between items-start mb-4">
-                                            <div className="p-2 bg-slate-50 rounded-lg text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                            <div className={`p-2 bg-slate-50 rounded-lg text-slate-400 group-hover:text-white transition-all ${
+                                                activePhaseId === 'PH6' ? 'group-hover:bg-red-600' : 'group-hover:bg-blue-600'
+                                            }`}>
                                                 <PlayCircle size={18} />
                                             </div>
                                             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{module.durationMinutes}m</span>
                                         </div>
-                                        <h3 className="font-black text-xs uppercase tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors mb-2">{module.title}</h3>
+                                        <h3 className={`font-black text-xs uppercase tracking-tight text-slate-900 transition-colors mb-2 ${
+                                            activePhaseId === 'PH6' ? 'group-hover:text-red-700' : 'group-hover:text-blue-600'
+                                        }`}>{module.title}</h3>
                                         <p className="text-[10px] text-slate-500 font-medium line-clamp-3 leading-relaxed">{module.description}</p>
-                                        <div className="mt-4 flex items-center gap-1 text-[9px] font-black text-blue-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                                            Begin Training <ArrowRight size={10} />
+                                        <div className={`mt-4 flex items-center gap-1 text-[9px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity ${
+                                            activePhaseId === 'PH6' ? 'text-red-600' : 'text-blue-600'
+                                        }`}>
+                                            {activePhaseId === 'PH6' ? 'Begin Simulation' : 'Begin Training'} <ArrowRight size={10} />
                                         </div>
                                     </button>
                                 ))}
