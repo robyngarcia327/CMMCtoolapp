@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Requirement, PoamEntry, Artifact, SspMetadata, Risk } from '../types';
 import { Printer, BarChart3, ShieldCheck, FileText, Shield, Info, ClipboardList, CheckCircle2, AlertTriangle, Search, Save, Edit2 } from 'lucide-react';
@@ -8,6 +7,7 @@ interface ReportsProps {
   risks?: Risk[];
   artifacts?: Artifact[];
   activeFrameworkId: string;
+  targetLevel: 1 | 2 | 3;
   onUpdateRequirement?: (req: Requirement) => void;
   sspMetadata?: SspMetadata;
   defaultTab?: 'EXECUTIVE' | 'POAM' | 'MATRIX' | 'SSP';
@@ -20,6 +20,7 @@ export const Reports: React.FC<ReportsProps> = ({
   risks = [], 
   artifacts = [], 
   activeFrameworkId, 
+  targetLevel,
   onUpdateRequirement, 
   sspMetadata,
   defaultTab 
@@ -31,7 +32,9 @@ export const Reports: React.FC<ReportsProps> = ({
     if (defaultTab) setActiveReport(defaultTab);
   }, [defaultTab]);
 
-  const filteredRequirements = requirements.filter(r => r.framework === activeFrameworkId);
+  const filteredRequirements = requirements.filter(r => 
+    r.framework === activeFrameworkId && r.cmmcLevel <= targetLevel
+  );
 
   const getReqStatus = (req: Requirement) => {
     const statuses = req.objectives.map(o => o.status);
