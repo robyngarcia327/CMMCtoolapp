@@ -1,35 +1,24 @@
-
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Requirement } from '../types';
-import { Shield, AlertTriangle, CheckCircle2, XCircle, TrendingUp, Info } from 'lucide-react';
+// Add Download to the imported icons from lucide-react
+import { Shield, AlertTriangle, CheckCircle2, XCircle, TrendingUp, Info, ShieldAlert, ShieldCheck, Download } from 'lucide-react';
 
 interface SPRSScorecardProps {
   requirements: Requirement[];
   activeFrameworkId: string;
+  targetLevel: 1 | 2 | 3;
 }
 
-export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, activeFrameworkId }) => {
-  // NIST 800-171 / CMMC 2.0 uses SPRS
+export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, activeFrameworkId, targetLevel }) => {
+  // NIST 800-171 / CMMC 2.0 uses SPRS methodology
   const isApplicable = activeFrameworkId === 'NIST-CMMC';
-  const relevantReqs = requirements.filter(r => r.framework === 'NIST-CMMC');
-
-  if (!isApplicable) {
-    return (
-      <div className="max-w-4xl mx-auto p-6 text-center mt-20">
-        <Shield size={64} className="mx-auto text-slate-300 mb-4" />
-        <h2 className="text-2xl font-bold text-slate-700">SPRS Scorecard Not Applicable</h2>
-        <p className="text-slate-500 mt-2">
-          The Supplier Performance Risk System (SPRS) scoring methodology is specific to NIST 800-171 (DFARS 252.204-7012/7019/7020).
-          <br />
-          Please switch the active framework to <strong>NIST 800-171 / CMMC 2.0</strong> to view your DoD assessment score.
-        </p>
-      </div>
-    );
-  }
-
-  // --- SPRS Calculation Logic ---
-  const MAX_SCORE = 110;
   
+  // Filter requirements by both framework and the user's selected target level scope
+  const activeReqs = useMemo(() => 
+    requirements.filter(r => r.framework === 'NIST-CMMC' && r.cmmcLevel <= targetLevel),
+    [requirements, targetLevel]
+  );
+
   const getReqStatus = (req: Requirement) => {
     const statuses = req.objectives.map(o => o.status);
     if (statuses.some(s => s === 'not_met')) return 'not_met';
@@ -38,7 +27,11 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
     return 'pending';
   };
 
-  const scoredReqs = relevantReqs.map(req => {
+  // --- SPRS Calculation Logic ---
+  // Official SPRS starts at 110 (the number of L2 practices)
+  // Deductions are 1, 3, or 5 points per practice not met.
+  const scoredData = useMemo(() => {
+    const scored = activeReqs.map(req => {
       const status = getReqStatus(req);
       const isMet = status === 'met';
       const weight = req.sprsWeight || 1;
@@ -47,125 +40,177 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
           computedStatus: status,
           deduction: isMet ? 0 : weight
       };
-  });
+    });
 
-  const totalDeductions = scoredReqs.reduce((sum, r) => sum + r.deduction, 0);
-  const currentScore = MAX_SCORE - totalDeductions;
+    const totalDeductions = scored.reduce((sum, r) => sum + r.deduction, 0);
+    // Note: Official SPRS is only for Level 2 (110 practices). 
+    // For L1 (17 practices), we show a adjusted readiness score but clarify the L2 context.
+    const baseScore = targetLevel === 1 ? 17 : 110; 
+    const currentScore = baseScore - totalDeductions;
+    const readinessPercentage = Math.round((scored.filter(r => r.computedStatus === 'met').length / (activeReqs.length || 1)) * 100);
+
+    return { scored, totalDeductions, currentScore, baseScore, readinessPercentage };
+  }, [activeReqs, targetLevel]);
 
   const getScoreColor = (score: number) => {
-      if (score === 110) return 'text-green-600';
-      if (score >= 90) return 'text-blue-600';
-      if (score >= 70) return 'text-amber-500';
+      if (score >= (scoredData.baseScore * 0.9)) return 'text-green-600';
+      if (score >= (scoredData.baseScore * 0.7)) return 'text-amber-500';
       return 'text-red-600';
   };
 
-  const notMetList = scoredReqs.filter(r => r.deduction > 0).sort((a,b) => b.deduction - a.deduction);
+  const notMetList = scoredData.scored
+    .filter(r => r.deduction > 0)
+    .sort((a, b) => b.deduction - a.deduction);
+
+  if (!isApplicable) {
+    return (
+      <div className="max-w-4xl mx-auto p-12 text-center mt-20 bg-white rounded-[3rem] border border-slate-200 shadow-sm">
+        <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-6 text-slate-300">
+            <Shield size={48} />
+        </div>
+        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">SPRS Scorecard Not Applicable</h2>
+        <p className="text-slate-500 mt-3 max-w-md mx-auto leading-relaxed">
+          The Supplier Performance Risk System (SPRS) scoring methodology is specific to NIST 800-171 and CMMC environments.
+        </p>
+        <div className="mt-8 p-4 bg-blue-50 text-blue-700 text-xs font-bold rounded-2xl border border-blue-100 inline-block">
+            Framework Alignment Required: NIST-CMMC / 800-171
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <TrendingUp className="text-blue-600" /> SPRS Scorecard
-        </h1>
-        <p className="text-slate-600">
-            DoD Assessment Methodology (NIST SP 800-171A). This score must be uploaded to PIEE for DFARS compliance.
-        </p>
+    <div className="max-w-7xl mx-auto p-8 space-y-8 h-full overflow-y-auto pb-20">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div>
+            <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mb-2">
+                <ShieldCheck size={14}/> DoD Assessment Methodology
+            </div>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">SPRS Posture Scorecard</h1>
+            <p className="text-slate-500 font-medium mt-1">Self-Assessment score for CMMC Level {targetLevel} compliance. (NIST SP 800-171A)</p>
+        </div>
+        <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-inner">
+             <div className="px-6 py-2 bg-white rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest text-slate-600 border border-slate-200">
+                Scope: {activeReqs.length} Practices
+             </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 p-8 flex flex-col items-center justify-center text-center">
-              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Current Assessment Score</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Main Score Widget */}
+          <div className="lg:col-span-4 bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-10 flex flex-col items-center text-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
               
-              <div className={`w-48 h-48 rounded-full border-8 flex items-center justify-center mb-6 relative ${
-                  currentScore >= 90 ? 'border-green-100' : currentScore >= 50 ? 'border-amber-100' : 'border-red-100'
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Official Assessment Score</h3>
+              
+              <div className={`w-56 h-56 rounded-full border-[12px] flex flex-col items-center justify-center mb-8 relative transition-colors duration-500 ${
+                  scoredData.currentScore >= (scoredData.baseScore * 0.8) ? 'border-green-100' : 'border-red-100'
               }`}>
-                   <div className={`text-6xl font-black ${getScoreColor(currentScore)}`}>
-                       {currentScore}
+                   <div className={`text-7xl font-black tracking-tighter ${getScoreColor(scoredData.currentScore)}`}>
+                       {scoredData.currentScore}
                    </div>
-                   <div className="absolute bottom-10 text-xs text-slate-400 font-medium">OUT OF 110</div>
+                   <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Scale: -203 to {scoredData.baseScore}</div>
               </div>
 
-              <div className="w-full bg-slate-50 rounded-lg p-3 text-sm text-slate-600 border border-slate-100">
-                  <div className="flex justify-between mb-1">
-                      <span>Max Possible</span>
-                      <span className="font-bold">110</span>
+              <div className="w-full grid grid-cols-2 gap-4">
+                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Readiness</div>
+                      <div className="text-xl font-black text-slate-900">{scoredData.readinessPercentage}%</div>
                   </div>
-                  <div className="flex justify-between text-red-600">
-                      <span>Deductions</span>
-                      <span className="font-bold">-{totalDeductions}</span>
+                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Deductions</div>
+                      <div className="text-xl font-black text-red-600">-{scoredData.totalDeductions}</div>
+                  </div>
+              </div>
+
+              <div className="mt-8 pt-8 border-t border-slate-100 w-full">
+                  <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+                      <span>Risk Tiering</span>
+                      <span className={scoredData.currentScore > 70 ? 'text-green-600' : 'text-red-600'}>
+                        {scoredData.currentScore > 90 ? 'Low Risk' : scoredData.currentScore > 50 ? 'Medium Risk' : 'High Risk'}
+                      </span>
+                  </div>
+                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden flex">
+                      <div className="h-full bg-red-500" style={{ width: '33.33%' }} />
+                      <div className="h-full bg-amber-500" style={{ width: '33.33%' }} />
+                      <div className="h-full bg-green-500" style={{ width: '33.33%' }} />
                   </div>
               </div>
           </div>
 
-          <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
-              <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                      <AlertTriangle size={18} className="text-amber-600"/> Score Impact Analysis
+          {/* Impact Analysis List */}
+          <div className="lg:col-span-8 bg-white rounded-[2.5rem] shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+              <div className="p-6 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center">
+                  <h3 className="font-black text-slate-900 uppercase tracking-tight flex items-center gap-2 text-sm">
+                      <ShieldAlert size={18} className="text-red-600"/> High-Impact Remediation Priorities
                   </h3>
-                  <span className="text-xs bg-white px-2 py-1 rounded border border-slate-200 text-slate-500">
-                      {notMetList.length} Items Reducing Score
-                  </span>
+                  <div className="flex gap-2">
+                      <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-black uppercase">5pt Gaps: {notMetList.filter(r => r.deduction === 5).length}</span>
+                      <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-black uppercase">3pt Gaps: {notMetList.filter(r => r.deduction === 3).length}</span>
+                  </div>
               </div>
               
-              <div className="flex-1 overflow-y-auto max-h-[400px]">
+              <div className="flex-1 overflow-y-auto max-h-[500px] p-6 space-y-3">
                   {notMetList.length === 0 ? (
-                      <div className="h-full flex flex-col items-center justify-center text-slate-400 p-8">
-                          <CheckCircle2 size={48} className="text-green-500 mb-4 opacity-50" />
-                          <p className="font-medium text-slate-600">Perfect Score!</p>
-                          <p className="text-sm">All tracked requirements are implemented.</p>
+                      <div className="h-full flex flex-col items-center justify-center text-slate-300 py-20">
+                          <div className="p-6 bg-green-50 rounded-full mb-4">
+                              <CheckCircle2 size={48} className="text-green-500" />
+                          </div>
+                          <p className="font-black uppercase tracking-widest text-slate-500">Perfect Score Achieved</p>
+                          <p className="text-xs text-slate-400 mt-1">All practices in Level {targetLevel} scope are fully implemented.</p>
                       </div>
                   ) : (
-                      <table className="w-full text-sm text-left">
-                          <thead className="bg-slate-50 text-slate-600 sticky top-0 z-10">
-                              <tr>
-                                  <th className="p-3">Req ID</th>
-                                  <th className="p-3">Title</th>
-                                  <th className="p-3">Status</th>
-                                  <th className="p-3 text-right">Impact</th>
-                              </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                              {notMetList.map(req => (
-                                  <tr key={req.id} className="hover:bg-slate-50 group">
-                                      <td className="p-3 font-mono text-xs font-bold text-slate-600">{req.id}</td>
-                                      <td className="p-3">
-                                          <div className="font-medium text-slate-800">{req.title}</div>
-                                          <div className="text-xs text-slate-500 truncate max-w-[200px]">{req.family}</div>
-                                      </td>
-                                      <td className="p-3">
-                                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
-                                              req.computedStatus === 'not_met' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'
-                                          }`}>
-                                              {req.computedStatus === 'not_met' ? <XCircle size={10} /> : <Info size={10} />}
-                                              {req.computedStatus.replace('_', ' ')}
-                                          </span>
-                                      </td>
-                                      <td className="p-3 text-right">
-                                          <span className="font-bold text-red-600 bg-red-50 px-2 py-1 rounded text-xs border border-red-100">
-                                              -{req.deduction} pts
-                                          </span>
-                                      </td>
-                                  </tr>
-                              ))}
-                          </tbody>
-                      </table>
+                      notMetList.map(req => (
+                          <div key={req.id} className="flex items-center gap-4 p-4 rounded-2xl border border-slate-100 hover:border-red-200 transition-all group bg-white shadow-sm">
+                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg shadow-sm shrink-0 ${
+                                  req.deduction === 5 ? 'bg-red-600 text-white' : 
+                                  req.deduction === 3 ? 'bg-amber-500 text-white' : 
+                                  'bg-slate-900 text-white'
+                              }`}>
+                                  -{req.deduction}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-0.5">
+                                      <span className="font-mono text-[10px] font-black text-slate-400 uppercase tracking-widest">{req.id}</span>
+                                      <div className="w-1 h-1 rounded-full bg-slate-200" />
+                                      <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">{req.family}</span>
+                                  </div>
+                                  <div className="font-bold text-slate-900 text-sm truncate uppercase tracking-tight">{req.title}</div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</div>
+                                  <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${
+                                      req.computedStatus === 'not_met' ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-400'
+                                  }`}>
+                                      {req.computedStatus.replace('_', ' ')}
+                                  </span>
+                              </div>
+                          </div>
+                      ))
                   )}
               </div>
           </div>
       </div>
         
-      <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex gap-4">
-          <Info className="text-indigo-600 shrink-0 mt-1" size={24} />
-          <div>
-              <h4 className="font-bold text-indigo-900 text-sm mb-1">How is this calculated?</h4>
-              <p className="text-sm text-indigo-800 leading-relaxed">
-                  The NIST SP 800-171 DoD Assessment Methodology assigns a weight of <strong>1, 3, or 5 points</strong> to each requirement.
-                  The score starts at <strong>110</strong>. Points are deducted for every requirement that is not "Met". 
-                  <br/>
-                  <span className="italic opacity-80 mt-1 block">
-                    *Evidence collection status determines if a requirement is Met. If any objective is 'Pending' or 'Not Met', the full point deduction applies.
-                  </span>
+      {/* Educational Footer */}
+      <div className="bg-indigo-900 rounded-3xl p-8 text-white flex flex-col md:flex-row gap-8 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+          <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-md h-fit">
+              <TrendingUp className="text-blue-400" size={32} />
+          </div>
+          <div className="space-y-4">
+              <h4 className="text-xl font-black uppercase tracking-tight">Understanding the SPRS Multiplier</h4>
+              <p className="text-blue-200 text-sm leading-relaxed max-w-4xl font-medium">
+                  The NIST SP 800-171 DoD Assessment Methodology doesn't treat all controls equally.
+                  Practices are weighted based on their impact to CUI confidentiality. 
+                  <span className="text-white font-bold"> Critical items (5 points)</span> usually involve access control, encryption, or boundary protection. 
+                  Missing just <span className="text-white font-bold">three</span> of these high-weight items drops your score below 100, which can significantly impact contract eligibility.
               </p>
+              <div className="flex gap-4">
+                <button className="bg-white text-blue-900 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-50 transition-all flex items-center gap-2">
+                    <Download size={14}/> Download Official SPRS Guide
+                </button>
+              </div>
           </div>
       </div>
     </div>
