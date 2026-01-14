@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Requirement } from '../types';
-import { NIST_CMMC_FAMILIES, SOC2_FAMILIES, HIPAA_FAMILIES } from '../data/standards';
+// Removed non-existent imports SOC2_FAMILIES and HIPAA_FAMILIES
+import { NIST_CMMC_FAMILIES } from '../data/standards';
 import { Info, Filter } from 'lucide-react';
 
 interface RequirementsListProps {
@@ -31,10 +32,10 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
 
   // Extract families based on framework
   let families: { id: string, name: string }[] = [];
-  if (activeFrameworkId === 'NIST-CMMC') families = NIST_CMMC_FAMILIES;
-  else if (activeFrameworkId === 'SOC2') families = SOC2_FAMILIES;
-  else if (activeFrameworkId === 'HIPAA') families = HIPAA_FAMILIES;
-  else {
+  // Fixed: Removed branches for SOC2_FAMILIES and HIPAA_FAMILIES which do not exist in the standards file
+  if (activeFrameworkId === 'NIST-CMMC') {
+      families = NIST_CMMC_FAMILIES;
+  } else {
       families = Array.from(new Set(frameworkReqs.map(r => r.family))).map(f => ({ id: f as string, name: f as string }));
   }
 

@@ -23,20 +23,6 @@ export const NIST_CMMC_FAMILIES = [
   { id: 'SI', name: 'System and Information Integrity' }
 ];
 
-export const SOC2_FAMILIES = [
-  { id: 'CC', name: 'Common Criteria' },
-  { id: 'A', name: 'Availability' },
-  { id: 'C', name: 'Confidentiality' },
-  { id: 'PI', name: 'Processing Integrity' },
-  { id: 'P', name: 'Privacy' }
-];
-
-export const HIPAA_FAMILIES = [
-  { id: 'ADMIN', name: 'Administrative Safeguards' },
-  { id: 'PHYS', name: 'Physical Safeguards' },
-  { id: 'TECH', name: 'Technical Safeguards' }
-];
-
 export const ACADEMY_PHASES = [
   { id: 'PH1', name: 'The Foundation', icon: 'BookOpen' },
   { id: 'PH2', name: 'Scoping & Strategy', icon: 'Target' },
@@ -49,7 +35,7 @@ export const ACADEMY_PHASES = [
 const createObjs = (ids: string[]) => ids.map(id => ({ id, description: `Verify assessment objective [${id}] for this control requirement.`, status: 'pending' as const }));
 
 const NIST_800_171_CONTROLS: Requirement[] = [
-  // 3.1 ACCESS CONTROL
+  // 3.1 ACCESS CONTROL (AC)
   { 
     id: '3.1.1', framework: 'NIST-CMMC', family: 'AC', title: 'Limit system access to authorized users', 
     description: 'Limit system access to authorized users, processes acting on behalf of authorized users, or devices (including other systems).', 
@@ -69,13 +55,39 @@ const NIST_800_171_CONTROLS: Requirement[] = [
     mappings: { nist800_53: ['AC-4'] } 
   },
   { 
+    id: '3.1.5', framework: 'NIST-CMMC', family: 'AC', title: 'Employ least privilege', 
+    description: 'Employ the principle of least privilege, including for specific security functions and privileged accounts.', 
+    sprsWeight: 3, cmmcLevel: 2, objectives: createObjs(['a', 'b', 'c']),
+    mappings: { nist800_53: ['AC-6'] } 
+  },
+  { 
     id: '3.1.8', framework: 'NIST-CMMC', family: 'AC', title: 'Limit unsuccessful logon attempts', 
     description: 'Limit unsuccessful logon attempts.', 
     sprsWeight: 1, cmmcLevel: 2, objectives: createObjs(['a', 'b', 'c']),
     mappings: { nist800_53: ['AC-7'] } 
   },
+  { 
+    id: '3.1.12', framework: 'NIST-CMMC', family: 'AC', title: 'Monitor and control remote access sessions', 
+    description: 'Monitor and control remote access sessions.', 
+    sprsWeight: 3, cmmcLevel: 2, objectives: createObjs(['a', 'b', 'c']),
+    mappings: { nist800_53: ['AC-17'] } 
+  },
 
-  // 3.3 AUDIT AND ACCOUNTABILITY
+  // 3.2 AWARENESS AND TRAINING (AT)
+  { 
+    id: '3.2.1', framework: 'NIST-CMMC', family: 'AT', title: 'Ensure managers and users are aware of security risks', 
+    description: 'Ensure that managers, systems administrators, and users of organizational systems are made aware of the security risks associated with their activities.', 
+    sprsWeight: 1, cmmcLevel: 2, objectives: createObjs(['a', 'b']),
+    mappings: { nist800_53: ['AT-2'] } 
+  },
+  { 
+    id: '3.2.2', framework: 'NIST-CMMC', family: 'AT', title: 'Provide security awareness training', 
+    description: 'Ensure that personnel are adequately trained to carry out their assigned information security-related duties and responsibilities.', 
+    sprsWeight: 1, cmmcLevel: 2, objectives: createObjs(['a', 'b', 'c']),
+    mappings: { nist800_53: ['AT-3'] } 
+  },
+
+  // 3.3 AUDIT AND ACCOUNTABILITY (AU)
   { 
     id: '3.3.1', framework: 'NIST-CMMC', family: 'AU', title: 'Create and retain audit logs', 
     description: 'Create and retain system audit logs and records to enable monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity.', 
@@ -88,12 +100,38 @@ const NIST_800_171_CONTROLS: Requirement[] = [
     sprsWeight: 3, cmmcLevel: 2, objectives: createObjs(['a']),
     mappings: { nist800_53: ['AU-3'] } 
   },
+  { 
+    id: '3.3.5', framework: 'NIST-CMMC', family: 'AU', title: 'Correlate audit record review', 
+    description: 'Use automated mechanisms to integrate and correlate audit and reporting functions.', 
+    sprsWeight: 1, cmmcLevel: 2, objectives: createObjs(['a']),
+    mappings: { nist800_53: ['AU-6'] } 
+  },
 
-  // 3.5 IDENTIFICATION AND AUTHENTICATION
+  // 3.4 CONFIGURATION MANAGEMENT (CM)
+  { 
+    id: '3.4.1', framework: 'NIST-CMMC', family: 'CM', title: 'Establish baseline configurations', 
+    description: 'Establish and maintain baseline configurations and inventories of organizational systems throughout the respective system development life cycles.', 
+    sprsWeight: 1, cmmcLevel: 2, objectives: createObjs(['a', 'b', 'c']),
+    mappings: { nist800_53: ['CM-2'] } 
+  },
+  { 
+    id: '3.4.2', framework: 'NIST-CMMC', family: 'CM', title: 'Enforce security configuration settings', 
+    description: 'Establish and enforce security configuration settings for information technology products employed in organizational systems.', 
+    sprsWeight: 1, cmmcLevel: 2, objectives: createObjs(['a', 'b']),
+    mappings: { nist800_53: ['CM-6'] } 
+  },
+
+  // 3.5 IDENTIFICATION AND AUTHENTICATION (IA)
   { 
     id: '3.5.1', framework: 'NIST-CMMC', family: 'IA', title: 'Identify system users/devices', 
     description: 'Identify system users, processes acting on behalf of users, or devices.', 
     sprsWeight: 1, cmmcLevel: 1, objectives: createObjs(['a', 'b']),
+    mappings: { nist800_53: ['IA-2'] } 
+  },
+  { 
+    id: '3.5.2', framework: 'NIST-CMMC', family: 'IA', title: 'Authenticate users/devices', 
+    description: 'Authenticate (or verify) the identities of those users, processes, or devices, as a prerequisite to allowing access to organizational systems.', 
+    sprsWeight: 1, cmmcLevel: 1, objectives: createObjs(['a']),
     mappings: { nist800_53: ['IA-2'] } 
   },
   { 
@@ -103,15 +141,59 @@ const NIST_800_171_CONTROLS: Requirement[] = [
     mappings: { nist800_53: ['IA-2(1)', 'IA-2(2)'] } 
   },
 
-  // 3.11 RISK ASSESSMENT
+  // 3.6 INCIDENT RESPONSE (IR)
+  { 
+    id: '3.6.1', framework: 'NIST-CMMC', family: 'IR', title: 'Establish incident response capability', 
+    description: 'Establish an operational incident-handling capability for organizational systems that includes preparation, detection, analysis, containment, recovery, and user response activities.', 
+    sprsWeight: 1, cmmcLevel: 2, objectives: createObjs(['a', 'b', 'c']),
+    mappings: { nist800_53: ['IR-4'] } 
+  },
+
+  // 3.8 MEDIA PROTECTION (MP)
+  { 
+    id: '3.8.1', framework: 'NIST-CMMC', family: 'MP', title: 'Protect system media', 
+    description: 'Protect (i.e., physically control and securely store) system media containing CUI, both paper and digital.', 
+    sprsWeight: 3, cmmcLevel: 2, objectives: createObjs(['a', 'b']),
+    mappings: { nist800_53: ['MP-2'] } 
+  },
+  { 
+    id: '3.8.3', framework: 'NIST-CMMC', family: 'MP', title: 'Sanitize media for reuse', 
+    description: 'Sanitize or destroy system media containing CUI before disposal or release for reuse.', 
+    sprsWeight: 5, cmmcLevel: 2, objectives: createObjs(['a', 'b']),
+    mappings: { nist800_53: ['MP-6'] } 
+  },
+
+  // 3.9 PERSONNEL SECURITY (PS)
+  { 
+    id: '3.9.1', framework: 'NIST-CMMC', family: 'PS', title: 'Screen individuals prior to access', 
+    description: 'Screen individuals prior to authorizing access to organizational systems containing CUI.', 
+    sprsWeight: 1, cmmcLevel: 2, objectives: createObjs(['a']),
+    mappings: { nist800_53: ['PS-3'] } 
+  },
+
+  // 3.10 PHYSICAL PROTECTION (PE)
+  { 
+    id: '3.10.1', framework: 'NIST-CMMC', family: 'PE', title: 'Limit physical access', 
+    description: 'Limit physical access to organizational systems, equipment, and the respective operating environments to authorized individuals.', 
+    sprsWeight: 1, cmmcLevel: 1, objectives: createObjs(['a', 'b', 'c']),
+    mappings: { nist800_53: ['PE-2'] } 
+  },
+
+  // 3.11 RISK ASSESSMENT (RA)
   { 
     id: '3.11.1', framework: 'NIST-CMMC', family: 'RA', title: 'Periodically assess risk', 
     description: 'Periodically assess the risk to organizational operations (including mission, functions, image, or reputation), organizational assets, and individuals, resulting from the operation of organizational systems and the associated processing, storage, or transmission of CUI.', 
     sprsWeight: 5, cmmcLevel: 2, objectives: createObjs(['a', 'b', 'c', 'd', 'e']),
     mappings: { nist800_53: ['RA-3'] } 
   },
+  { 
+    id: '3.11.2', framework: 'NIST-CMMC', family: 'RA', title: 'Scan for system vulnerabilities', 
+    description: 'Scan for vulnerabilities in organizational systems and applications periodically and when new vulnerabilities affecting those systems and applications are identified.', 
+    sprsWeight: 5, cmmcLevel: 2, objectives: createObjs(['a', 'b', 'c']),
+    mappings: { nist800_53: ['RA-5'] } 
+  },
 
-  // 3.12 SECURITY ASSESSMENT
+  // 3.12 SECURITY ASSESSMENT (CA)
   { 
     id: '3.12.1', framework: 'NIST-CMMC', family: 'CA', title: 'Periodically assess security controls', 
     description: 'Periodically assess the security controls in organizational systems to determine if the controls are effective in their application.', 
@@ -119,18 +201,38 @@ const NIST_800_171_CONTROLS: Requirement[] = [
     mappings: { nist800_53: ['CA-2'] } 
   },
   { 
-    id: '3.12.4', framework: 'NIST-CMMC', family: 'CA', title: 'Update system security plans', 
-    description: 'Update system security plans on an ongoing basis.', 
-    sprsWeight: 3, cmmcLevel: 2, objectives: createObjs(['a']),
-    mappings: { nist800_53: ['PL-2'] } 
+    id: '3.12.3', framework: 'NIST-CMMC', family: 'CA', title: 'Monitor security controls', 
+    description: 'Monitor organizational system security controls on an ongoing basis to ensure the continued effectiveness of the controls.', 
+    sprsWeight: 3, cmmcLevel: 2, objectives: createObjs(['a', 'b']),
+    mappings: { nist800_53: ['CA-7'] } 
   },
 
-  // 3.14 SYSTEM AND INFORMATION INTEGRITY
+  // 3.13 SYSTEM AND COMMUNICATIONS PROTECTION (SC)
+  { 
+    id: '3.13.1', framework: 'NIST-CMMC', family: 'SC', title: 'Separate system architecture', 
+    description: 'Monitor, control, and protect organizational communications (i.e., information transmitted or received by organizational systems) at the external boundaries and key internal boundaries of the systems.', 
+    sprsWeight: 1, cmmcLevel: 2, objectives: createObjs(['a', 'b']),
+    mappings: { nist800_53: ['SC-7'] } 
+  },
+  { 
+    id: '3.13.11', framework: 'NIST-CMMC', family: 'SC', title: 'Employ FIPS-validated cryptography', 
+    description: 'Employ FIPS-validated cryptography when used to protect the confidentiality of CUI.', 
+    sprsWeight: 1, cmmcLevel: 2, objectives: createObjs(['a', 'b']),
+    mappings: { nist800_53: ['SC-13'] } 
+  },
+
+  // 3.14 SYSTEM AND INFORMATION INTEGRITY (SI)
   { 
     id: '3.14.1', framework: 'NIST-CMMC', family: 'SI', title: 'Identify and correct system flaws', 
     description: 'Identify, report, and correct system flaws in a timely manner.', 
     sprsWeight: 5, cmmcLevel: 1, objectives: createObjs(['a', 'b', 'c']),
     mappings: { nist800_53: ['SI-2'] } 
+  },
+  { 
+    id: '3.14.2', framework: 'NIST-CMMC', family: 'SI', title: 'Provide protection from malicious code', 
+    description: 'Provide protection from malicious code at appropriate locations within organizational systems.', 
+    sprsWeight: 1, cmmcLevel: 1, objectives: createObjs(['a', 'b', 'c']),
+    mappings: { nist800_53: ['SI-3'] } 
   },
   { 
     id: '3.14.3', framework: 'NIST-CMMC', family: 'SI', title: 'Monitor for indicators of attack', 

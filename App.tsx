@@ -105,7 +105,6 @@ const App: React.FC = () => {
   // --- PERSISTENT STATE INITIALIZATION ---
   const [currentView, setCurrentView] = useState<AppView>(() => {
     const saved = localStorage.getItem(KEY_VIEW);
-    // Validate saved view against AppView enum
     if (saved && Object.values(AppView).includes(saved as AppView)) {
         return saved as AppView;
     }
@@ -167,15 +166,23 @@ const App: React.FC = () => {
   const isTenantAdmin = userGroups.includes('Tenant_Admin');
   const isAuditor = userGroups.includes('Auditor');
 
-  // --- DERIVED ACTIVE CLIENT (WITH SMART NAME RECOVERY) ---
+  // --- DERIVED ACTIVE CLIENT (WITH ENHANCED NAME RECOVERY) ---
   const activeClient = useMemo(() => {
     const client = clients.find(c => c.id === activeClientId) || clients[0];
     if (!client) return { name: 'Initializing...', id: '', domain: '', industry: '', contactName: '', logoInitial: '?', primaryFramework: '', targetCmmcLevel: 2 as const, nextAuditDate: 0, accountManager: '', isParent: false };
     
-    // Recovery Logic: If the name is generic "Organization", derive from domain
-    const isGeneric = client.name.toLowerCase() === 'organization' || client.name.trim() === '';
+    // Smart Recovery: Detect and expand generic names
+    const nameLower = client.name.toLowerCase();
+    const isGeneric = nameLower === 'organization' || nameLower === 'placeholder' || client.name.trim() === '';
+    
     if (isGeneric && client.domain) {
         const domainPrefix = client.domain.split('.')[0];
+        
+        // Custom Mapping for specific DIB clients
+        if (domainPrefix.includes('arclight')) {
+           return { ...client, name: 'ArcLight Information Technology' };
+        }
+        
         const recoveredName = domainPrefix
             .split(/[-_]/)
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -206,7 +213,6 @@ const App: React.FC = () => {
         targetCmmcLevel: lvl
       }
     }));
-    // Also update main clients array
     setClients(prev => prev.map(c => c.id === activeClientId ? { ...c, targetCmmcLevel: lvl } : c));
   };
 
@@ -301,7 +307,7 @@ const App: React.FC = () => {
         contactName: auth.user?.profile.email || 'Admin',
         logoInitial: (o.name || 'O').charAt(0).toUpperCase(),
         primaryFramework: 'NIST-CMMC',
-        targetCmmcLevel: 2, // Default
+        targetCmmcLevel: 2, 
         nextAuditDate: Date.now() + 31536000000,
         accountManager: 'Self-Managed',
         isParent: !!o.isParent
@@ -410,7 +416,6 @@ const App: React.FC = () => {
     }
   };
 
-  // --- SAFETY CHECK FOR CONTROLS VIEW ---
   const selectedReq = selectedRequirementId ? activeData.requirements.find(r => r.id === selectedRequirementId) : null;
 
   return (
