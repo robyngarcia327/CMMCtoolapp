@@ -1,4 +1,3 @@
-
 import { Client, ClientData, Requirement } from '../types';
 import { REQUIREMENTS_DATA } from '../data/standards';
 
@@ -8,7 +7,6 @@ const STORAGE_KEY_DATA_STORE = 'cybercomply_datastore';
 export const storageService = {
   
   loadClients: async (): Promise<Client[]> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
     try {
       const stored = localStorage.getItem(STORAGE_KEY_CLIENTS);
       return stored ? JSON.parse(stored) : [];
@@ -18,57 +16,49 @@ export const storageService = {
   },
 
   loadDataStore: async (): Promise<Record<string, ClientData>> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const stored = localStorage.getItem(STORAGE_KEY_DATA_STORE);
       let store: Record<string, ClientData> = stored ? JSON.parse(stored) : {};
       
-      // Upgrade logic: Ensure all current requirements are present in every client's active dataset
+      // INTEGRITY SYNC: Ensure 110 controls exist for every tenant
       Object.keys(store).forEach(clientId => {
           const clientData = store[clientId];
           if (!clientData.requirements) clientData.requirements = [];
           
-          const existingIds = new Set(clientData.requirements.map(r => r.id));
+          const currentReqMap = new Map(clientData.requirements.map(r => [r.id, r]));
           
-          REQUIREMENTS_DATA.forEach(officialReq => {
-              if (!existingIds.has(officialReq.id)) {
-                  // Add missing requirement from newest standards
-                  clientData.requirements.push(JSON.parse(JSON.stringify(officialReq)));
-              } else {
-                  // Optional: Refresh labels or descriptions if they are default/empty
-                  const idx = clientData.requirements.findIndex(r => r.id === officialReq.id);
-                  const current = clientData.requirements[idx];
-                  
-                  // Force refresh if content is empty or placeholder to ensure data completeness
-                  if (!current.description || current.description === "" || current.title === "Placeholder") {
-                      current.title = officialReq.title;
-                      current.description = officialReq.description;
-                      current.discussion = officialReq.discussion;
-                      current.family = officialReq.family;
-                      current.cmmcLevel = officialReq.cmmcLevel;
-                      // Don't overwrite objectives if they have status work, unless they are empty
-                      if (!current.objectives || current.objectives.length === 0) {
-                          current.objectives = JSON.parse(JSON.stringify(officialReq.objectives));
-                      }
-                  }
+          // Use the full official set to rebuild or expand the list
+          const syncedRequirements = REQUIREMENTS_DATA.map(official => {
+              const existing = currentReqMap.get(official.id);
+              if (existing) {
+                  // CRITICAL: Preserve implementation narrative and objectives status
+                  return {
+                      ...official,
+                      response: existing.response || "",
+                      objectives: official.objectives.map(o => {
+                          const existingObj = existing.objectives?.find(eo => eo.id === o.id);
+                          return existingObj ? { ...o, status: existingObj.status } : o;
+                      }),
+                      scopeStatus: existing.scopeStatus || 'IN_SCOPE',
+                      comments: existing.comments || [],
+                      poam: existing.poam
+                  };
               }
+              return JSON.parse(JSON.stringify(official));
           });
           
-          // Re-sort requirements by ID numerically to maintain order
-          clientData.requirements.sort((a, b) => {
-              const parseId = (id: string) => {
-                  // Clean ID of non-numeric characters for sorting (e.g. 3.1.1)
-                  const parts = id.split('.').map(Number);
-                  return parts.some(isNaN) ? [0,0,0] : parts;
-              };
-              const aParts = parseId(a.id);
-              const bParts = parseId(b.id);
-              for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
-                  if ((aParts[i] || 0) < (bParts[i] || 0)) return -1;
-                  if ((aParts[i] || 0) > (bParts[i] || 0)) return 1;
+          // Re-sort numerically to maintain standards order (3.1.1 before 3.1.10)
+          syncedRequirements.sort((a, b) => {
+              const aP = a.id.split('.').map(Number);
+              const bP = b.id.split('.').map(Number);
+              for (let i = 0; i < Math.max(aP.length, bP.length); i++) {
+                  if ((aP[i] || 0) < (bP[i] || 0)) return -1;
+                  if ((aP[i] || 0) > (bP[i] || 0)) return 1;
               }
               return 0;
           });
+
+          clientData.requirements = syncedRequirements;
       });
 
       return store;
