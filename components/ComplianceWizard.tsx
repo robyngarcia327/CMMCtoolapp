@@ -1,6 +1,6 @@
-import React from 'react';
-import { Requirement, Artifact, WizardProgress, Asset } from '../types';
-import { ArrowLeft, ArrowRight, CheckCircle2, Shield, AlertTriangle, PlayCircle, FileCheck, Check, Info, Monitor, Network, ListChecks, Target, Lock, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { Requirement, Artifact, WizardProgress, Asset, CmmcAssetCategory } from '../types';
+import { ArrowLeft, ArrowRight, CheckCircle2, Shield, AlertTriangle, PlayCircle, FileCheck, Check, Info, Monitor, Network, ListChecks, Target, Lock, Zap, Box, Cloud, Users, FileSearch } from 'lucide-react';
 import { ArtifactUploader } from './ArtifactUploader';
 import { Inventory } from './Inventory';
 import { NetworkAnalyzer } from './NetworkAnalyzer';
@@ -25,6 +25,7 @@ interface ComplianceWizardProps {
 const STEPS = [
     { id: 'INTRO', label: 'Welcome' },
     { id: 'LEVEL_SELECT', label: 'Target Level' },
+    { id: 'SCOPING', label: 'Environment Scoping' },
     { id: 'INVENTORY', label: 'Asset Inventory' },
     { id: 'NETWORK', label: 'Network Scope' },
     { id: 'ASSESSMENT', label: 'Compliance Audit' },
@@ -48,6 +49,8 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   onComplete
 }) => {
   
+  const [scopingAnswers, setScopingAnswers] = useState<Record<string, boolean>>({});
+
   const activeReqs = requirements.filter(r => 
     r.framework === activeFrameworkId && r.cmmcLevel <= targetLevel
   );
@@ -68,7 +71,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
     if (wizardProgress.currentQuestionIndex > 0) {
       onUpdateProgress({ ...wizardProgress, currentQuestionIndex: wizardProgress.currentQuestionIndex - 1 });
     } else {
-      goToStep('LEVEL_SELECT');
+      goToStep('SCOPING');
     }
   };
 
@@ -134,7 +137,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
         </div>
         <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter uppercase leading-none">Assessment Setup</h1>
         <p className="text-lg text-slate-500 mb-10 max-w-lg mx-auto font-medium">
-          Welcome to your guided compliance journey. We will begin by determining your target CMMC Level based on your DoD contract requirements.
+          Welcome to your guided compliance journey. We will follow the official 2024 Scoping Guides to ensure your boundary is correctly defined.
         </p>
         
         <button 
@@ -154,14 +157,14 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
             <div className="flex-1 flex flex-col items-center justify-center space-y-10">
                 <div className="text-center max-w-2xl">
                     <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-2">Identify Your Target Posture</h2>
-                    <p className="text-slate-500 font-medium">Your CMMC level is usually defined in your DoD contract. Select the level you are aiming for to filter your compliance requirements.</p>
+                    <p className="text-slate-500 font-medium">Your CMMC level is defined by your contract. Level 1 covers FCI, Level 2 covers CUI, and Level 3 adds protection for APTs.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
                     {[
-                        { lvl: 1, title: 'Level 1: Foundational', icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50', desc: 'Organizations that handle Federal Contract Information (FCI). Requires self-assessment of 17 practices.', tag: '17 PRACTICES' },
-                        { lvl: 2, title: 'Level 2: Advanced', icon: Shield, color: 'text-indigo-600', bg: 'bg-indigo-50', desc: 'Organizations that handle Controlled Unclassified Information (CUI). Requires 3PAO audit of 110 practices.', tag: '110 PRACTICES' },
-                        { lvl: 3, title: 'Level 3: Expert', icon: Zap, color: 'text-purple-600', bg: 'bg-purple-50', desc: 'High-value assets and APT protection. Requires Gov-led assessment of 110+ practices.', tag: 'EXPANDED NIST 800-172' },
+                        { lvl: 1, title: 'Level 1: Foundational', icon: CheckCircle2, color: 'text-blue-600', bg: 'bg-blue-50', desc: 'Organizations that handle Federal Contract Information (FCI). Requires self-assessment of 17 practices.', tag: 'FCI DATA' },
+                        { lvl: 2, title: 'Level 2: Advanced', icon: Shield, color: 'text-indigo-600', bg: 'bg-indigo-50', desc: 'Organizations that handle Controlled Unclassified Information (CUI). Requires 3PAO audit of 110 practices.', tag: 'CUI DATA' },
+                        { lvl: 3, title: 'Level 3: Expert', icon: Zap, color: 'text-purple-600', bg: 'bg-purple-50', desc: 'High-value assets and APT protection. Requires Gov-led assessment of 110+ practices.', tag: 'APT PROTECTION' },
                     ].map((card) => (
                         <button 
                             key={card.lvl}
@@ -190,7 +193,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                 </div>
 
                 <button 
-                    onClick={() => goToStep('INVENTORY')}
+                    onClick={() => goToStep('SCOPING')}
                     className="bg-slate-900 hover:bg-black text-white font-black py-4 px-12 rounded-2xl shadow-xl transition-all uppercase tracking-widest text-xs flex items-center gap-3"
                 >
                     Lock Scope & Continue <ArrowRight size={16} />
@@ -198,6 +201,99 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
             </div>
         </div>
     );
+  }
+
+  const ScopingQuestion = ({ id, label, description, icon: Icon }: any) => (
+      <div 
+        onClick={() => setScopingAnswers(prev => ({ ...prev, [id]: !prev[id] }))}
+        className={`p-6 rounded-2xl border-2 transition-all cursor-pointer flex gap-4 ${scopingAnswers[id] ? 'bg-blue-50 border-blue-600 shadow-md' : 'bg-white border-slate-100 hover:border-slate-200'}`}
+      >
+          <div className={`p-3 rounded-xl ${scopingAnswers[id] ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+              <Icon size={20} />
+          </div>
+          <div className="flex-1">
+              <div className="flex justify-between items-center">
+                  <h4 className={`text-sm font-black uppercase tracking-tight ${scopingAnswers[id] ? 'text-blue-900' : 'text-slate-800'}`}>{label}</h4>
+                  {scopingAnswers[id] && <CheckCircle2 size={18} className="text-blue-600" />}
+              </div>
+              <p className="text-xs text-slate-500 mt-1 font-medium">{description}</p>
+          </div>
+      </div>
+  );
+
+  if (wizardProgress.currentStep === 'SCOPING') {
+      return (
+          <div className="max-w-5xl mx-auto p-6 flex flex-col h-full">
+              {renderStepper()}
+              <div className="flex-1 bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                  <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                       <div>
+                            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Environmental Scoping</h2>
+                            <p className="text-xs text-slate-500 font-medium">Identify key components of your assessment boundary per CMMC guides.</p>
+                       </div>
+                       <div className="bg-white border border-slate-200 px-4 py-1 rounded-full text-[10px] font-black uppercase text-blue-600 tracking-widest">Guide v2.13 Aligned</div>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto p-8 space-y-4">
+                      <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex gap-3 mb-6">
+                          <Info className="text-indigo-600 shrink-0" size={20} />
+                          <p className="text-xs text-indigo-800 leading-relaxed">
+                              Select all that apply to your environment. This will help auto-categorize your asset inventory in the next step.
+                          </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <ScopingQuestion 
+                            id="esp" 
+                            label="External Service Providers (ESP)" 
+                            description="Do you use consultants or MSPs for IT/Cybersecurity?" 
+                            icon={Users} 
+                          />
+                          <ScopingQuestion 
+                            id="csp" 
+                            label="Cloud Service Providers (CSP)" 
+                            description="Do you host CUI or security data in M365, AWS, Azure, etc?" 
+                            icon={Cloud} 
+                          />
+                          <ScopingQuestion 
+                            id="iot" 
+                            label="Specialized Assets (IoT/OT)" 
+                            description="Do you have manufacturing equipment, cameras, or test equipment?" 
+                            icon={Box} 
+                          />
+                          <ScopingQuestion 
+                            id="gfe" 
+                            label="Gov Furnished Equipment (GFE)" 
+                            description="Does the Government own or lease any equipment on your network?" 
+                            icon={Shield} 
+                          />
+                          <ScopingQuestion 
+                            id="enclave" 
+                            label="Secure Enclave" 
+                            description="Do you isolate CUI into a specific network segment (VLAN/VDI)?" 
+                            icon={Lock} 
+                          />
+                          <ScopingQuestion 
+                            id="rma" 
+                            label="Risk Managed Assets (CRMA)" 
+                            description="Assets that *can* but are not *intended* to process CUI (Level 2 only)." 
+                            icon={AlertTriangle} 
+                          />
+                      </div>
+                  </div>
+
+                  <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <button onClick={() => goToStep('LEVEL_SELECT')} className="text-[10px] font-black uppercase text-slate-400">Back</button>
+                    <button 
+                        onClick={() => goToStep('INVENTORY')}
+                        className="bg-blue-600 text-white px-10 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-blue-700"
+                    >
+                        Map Inventory <ArrowRight size={16} className="inline ml-2" />
+                    </button>
+                  </div>
+              </div>
+          </div>
+      );
   }
 
   const WizardWrapper = ({ children, nextLabel, onNext, onPrev }: any) => (
@@ -236,16 +332,28 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   if (wizardProgress.currentStep === 'INVENTORY') {
       return (
           <WizardWrapper 
-            nextLabel="Proceed to Scoping" 
+            nextLabel="Proceed to Boundary Analysis" 
             onNext={() => goToStep('NETWORK')}
-            onPrev={() => goToStep('LEVEL_SELECT')}
+            onPrev={() => goToStep('SCOPING')}
           >
-              <Inventory 
-                assets={assets} 
-                onAddAsset={onAddAsset!} 
-                onDeleteAsset={onDeleteAsset!} 
-                variant="wizard"
-              />
+              <div className="p-6 space-y-6">
+                <div className="bg-amber-50 p-6 rounded-2xl border border-amber-200 flex gap-4">
+                    <div className="p-3 bg-white rounded-xl shadow-sm text-amber-600 h-fit"><Box size={24}/></div>
+                    <div>
+                        <h4 className="text-sm font-black uppercase text-amber-900">Categorization Notice</h4>
+                        <p className="text-xs text-amber-800 leading-relaxed mt-1">
+                            Per Table 1 of the Scoping Guide, categorize your assets as **CUI Assets**, **SPAs**, **CRMAs**, or **Specialized Assets**. 
+                            {targetLevel === 3 && " Note: For Level 3, all CRMAs from Level 2 are treated as CUI Assets."}
+                        </p>
+                    </div>
+                </div>
+                <Inventory 
+                    assets={assets} 
+                    onAddAsset={onAddAsset!} 
+                    onDeleteAsset={onDeleteAsset!} 
+                    variant="wizard"
+                />
+              </div>
           </WizardWrapper>
       );
   }
@@ -257,7 +365,19 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
             onNext={() => goToStep('ASSESSMENT')}
             onPrev={() => goToStep('INVENTORY')}
           >
-             <NetworkAnalyzer variant="wizard" />
+             <div className="p-6">
+                <div className="mb-6 bg-blue-900 rounded-3xl p-6 text-white flex items-center gap-6 shadow-xl">
+                    <Network size={40} className="text-blue-400" />
+                    <div>
+                        <h4 className="font-black uppercase tracking-tight">Boundary Verification</h4>
+                        <p className="text-xs text-blue-200 font-medium leading-relaxed">
+                            Upload your network diagram. Our AI will analyze it for "Logical" vs "Physical" separation, 
+                            consistent with 32 CFR § 170.19 guidelines.
+                        </p>
+                    </div>
+                </div>
+                <NetworkAnalyzer variant="wizard" />
+             </div>
           </WizardWrapper>
       );
   }

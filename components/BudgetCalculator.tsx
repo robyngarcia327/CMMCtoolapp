@@ -3,7 +3,8 @@ import { Requirement, BudgetLineItem } from '../types';
 import { 
   DollarSign, Plus, Trash2, PieChart, Download, Calculator, 
   Hammer, HardDrive, Laptop, Users, Briefcase, 
-  ArrowRight, ShieldCheck, ListRestart, AlertCircle, TrendingUp
+  ArrowRight, ShieldCheck, ListRestart, AlertCircle, TrendingUp,
+  MapPin, Clock, UserCheck, Plane, FileBadge
 } from 'lucide-react';
 
 interface BudgetCalculatorProps {
@@ -21,11 +22,22 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
 }) => {
   const [selectedReq, setSelectedReq] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [showAssessorPlanner, setShowAssessorPlanner] = useState(false);
+  
   const [newItem, setNewItem] = useState<Partial<BudgetLineItem>>({ 
     category: 'Software', 
     costType: 'One-Time',
     hours: 0,
     rate: 0
+  });
+
+  // Assessor Specific State
+  const [assessorData, setAssessorData] = useState({
+      name: 'C3PAO Certification Assessment',
+      count: 2,
+      dayRate: 2500,
+      days: 5,
+      travel: 3500
   });
 
   // Data Selectors
@@ -53,7 +65,6 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
   const handleAdd = () => {
     if (!newItem.name || (!newItem.amount && !newItem.hours)) return;
     
-    // Auto-calculate amount if labor
     const finalAmount = (newItem.category === 'Internal Labor' || newItem.category === 'Vendor Fees') && newItem.rate && newItem.hours
       ? newItem.rate * newItem.hours
       : Number(newItem.amount || 0);
@@ -73,12 +84,26 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
     setIsAdding(false);
   };
 
+  const handleAddAssessorFees = () => {
+      const professionalFees = assessorData.count * assessorData.dayRate * assessorData.days;
+      const total = professionalFees + assessorData.travel;
+      
+      onAddItem({
+          id: `BUDGET-ASSESSOR-${Date.now()}`,
+          linkedRequirementId: 'General',
+          name: assessorData.name,
+          category: 'Assessor Fees',
+          costType: 'One-Time',
+          amount: total,
+          notes: `Professional Fees: $${professionalFees.toLocaleString()} (${assessorData.count} assessors x $${assessorData.dayRate}/day x ${assessorData.days} days). Travel/Logistics: $${assessorData.travel.toLocaleString()}.`
+      });
+      setShowAssessorPlanner(false);
+  };
+
   const syncFromPoam = () => {
     let count = 0;
     gaps.forEach(gap => {
-      // Check if already in budget
       if (budgetItems.some(bi => bi.linkedRequirementId === gap.id)) return;
-      
       onAddItem({
         id: `BUDGET-POAM-${gap.id}-${Date.now()}`,
         linkedRequirementId: gap.id,
@@ -90,7 +115,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
       });
       count++;
     });
-    alert(`Identified ${count} new remediation requirements from POA&M. Added as $0 draft entries.`);
+    alert(`Identified ${count} new remediation requirements from POA&M.`);
   };
 
   const getCategoryIcon = (cat: string) => {
@@ -119,13 +144,19 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
         
         <div className="flex gap-3">
             <button 
+                onClick={() => setShowAssessorPlanner(true)}
+                className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-emerald-700 transition-all"
+            >
+                <FileBadge size={14} /> Assessor Planner
+            </button>
+            <button 
                 onClick={syncFromPoam}
                 className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all"
             >
                 <ListRestart size={14} className="text-blue-600" /> Sync POA&M ({gaps.length})
             </button>
             <button 
-                onClick={() => setIsAdding(!isAdding)}
+                onClick={() => { setIsAdding(!isAdding); setShowAssessorPlanner(false); }}
                 className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-black transition-all"
             >
                 <Plus size={14} /> {isAdding ? 'Cancel' : 'New Line Item'}
@@ -147,10 +178,12 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
               <div className="text-4xl font-black text-indigo-600">${summary.recurring.toLocaleString()}</div>
               <div className="text-xs text-slate-400 font-bold mt-6">Projected Maintenance Cost</div>
           </div>
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between">
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Assessor Provisions</div>
-              <div className="text-4xl font-black text-emerald-600">${summary.byCategory['Assessor Fees'].toLocaleString()}</div>
-              <div className="text-xs text-slate-400 font-bold mt-6">C3PAO Allocation</div>
+          <div className="bg-emerald-50 p-8 rounded-3xl shadow-sm border border-emerald-100 flex flex-col justify-between">
+              <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-4">Assessor Provisions</div>
+              <div className="text-4xl font-black text-emerald-700">${summary.byCategory['Assessor Fees'].toLocaleString()}</div>
+              <div className="text-xs text-emerald-500 font-bold mt-6 flex items-center gap-1.5">
+                  <ShieldCheck size={12}/> Allocated to C3PAO
+              </div>
           </div>
           <div className="bg-slate-900 p-8 rounded-3xl shadow-2xl flex flex-col justify-between text-white">
               <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Total Certification Cost</div>
@@ -158,6 +191,127 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
               <div className="text-[10px] text-white/50 font-bold mt-6 uppercase tracking-widest">Year 1 Projection</div>
           </div>
       </div>
+
+      {/* Assessor Fee Planner (Dedicated Tool) */}
+      {showAssessorPlanner && (
+          <div className="bg-emerald-900 text-white p-10 rounded-[3rem] shadow-2xl animate-in fade-in slide-in-from-top-6 duration-500 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -mr-48 -mt-48"></div>
+              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12">
+                  <div className="lg:col-span-4">
+                      <div className="p-4 bg-white/10 rounded-2xl w-fit mb-6"><FileBadge size={32} className="text-emerald-400" /></div>
+                      <h2 className="text-3xl font-black tracking-tight uppercase mb-4 leading-none">Assessor Fee Planner</h2>
+                      <p className="text-emerald-100 text-sm leading-relaxed mb-8">
+                          Certification costs vary by C3PAO. Use this tool to estimate professional fees based on assessment duration and personnel requirements.
+                      </p>
+                      
+                      <div className="space-y-3">
+                          <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Readiness Presets</h4>
+                          <div className="flex flex-wrap gap-2">
+                              <button 
+                                onClick={() => setAssessorData({...assessorData, days: 3, count: 1, travel: 1500})}
+                                className="px-3 py-1.5 bg-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-white/20 transition-all border border-white/10"
+                              >
+                                L1 Self-Guided
+                              </button>
+                              <button 
+                                onClick={() => setAssessorData({...assessorData, days: 5, count: 2, travel: 3500})}
+                                className="px-3 py-1.5 bg-white/20 rounded-lg text-[9px] font-black uppercase tracking-widest border border-emerald-400"
+                              >
+                                L2 Standard
+                              </button>
+                              <button 
+                                onClick={() => setAssessorData({...assessorData, days: 10, count: 3, travel: 6000})}
+                                className="px-3 py-1.5 bg-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-white/20 transition-all border border-white/10"
+                              >
+                                L3 High-Complexity
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div className="lg:col-span-8 bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-sm grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                           <div>
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2 px-1">Engagement Name</label>
+                                <input 
+                                    className="w-full bg-white/10 border border-white/20 rounded-xl p-4 text-white font-bold outline-none focus:ring-2 focus:ring-emerald-400"
+                                    value={assessorData.name}
+                                    onChange={e => setAssessorData({...assessorData, name: e.target.value})}
+                                />
+                           </div>
+                           <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2 px-1">Assessors</label>
+                                    <div className="flex items-center gap-2 bg-white/10 p-4 rounded-xl border border-white/20">
+                                        <Users size={16} className="text-emerald-400" />
+                                        <input 
+                                            type="number" 
+                                            className="bg-transparent border-none outline-none font-bold text-lg w-full"
+                                            value={assessorData.count}
+                                            onChange={e => setAssessorData({...assessorData, count: parseInt(e.target.value) || 0})}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2 px-1">Daily Rate ($)</label>
+                                    <div className="flex items-center gap-2 bg-white/10 p-4 rounded-xl border border-white/20">
+                                        <DollarSign size={16} className="text-emerald-400" />
+                                        <input 
+                                            type="number" 
+                                            className="bg-transparent border-none outline-none font-bold text-lg w-full"
+                                            value={assessorData.dayRate}
+                                            onChange={e => setAssessorData({...assessorData, dayRate: parseInt(e.target.value) || 0})}
+                                        />
+                                    </div>
+                                </div>
+                           </div>
+                      </div>
+
+                      <div className="space-y-6">
+                           <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2 px-1">Days on Site</label>
+                                    <div className="flex items-center gap-2 bg-white/10 p-4 rounded-xl border border-white/20">
+                                        <Clock size={16} className="text-emerald-400" />
+                                        <input 
+                                            type="number" 
+                                            className="bg-transparent border-none outline-none font-bold text-lg w-full"
+                                            value={assessorData.days}
+                                            onChange={e => setAssessorData({...assessorData, days: parseInt(e.target.value) || 0})}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2 px-1">Logistics / T&E</label>
+                                    <div className="flex items-center gap-2 bg-white/10 p-4 rounded-xl border border-white/20">
+                                        <Plane size={16} className="text-emerald-400" />
+                                        <input 
+                                            type="number" 
+                                            className="bg-transparent border-none outline-none font-bold text-lg w-full"
+                                            value={assessorData.travel}
+                                            onChange={e => setAssessorData({...assessorData, travel: parseInt(e.target.value) || 0})}
+                                        />
+                                    </div>
+                                </div>
+                           </div>
+                           
+                           <div className="bg-emerald-950/50 p-6 rounded-2xl border border-emerald-800/50 flex justify-between items-center">
+                               <div>
+                                   <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Total Fee Estimate</div>
+                                   <div className="text-3xl font-black text-white">${(assessorData.count * assessorData.dayRate * assessorData.days + assessorData.travel).toLocaleString()}</div>
+                               </div>
+                               <button 
+                                 onClick={handleAddAssessorFees}
+                                 className="bg-emerald-400 hover:bg-emerald-300 text-emerald-950 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl"
+                               >
+                                   Lock in Budget
+                               </button>
+                           </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
 
       {isAdding && (
           <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-blue-100 animate-in fade-in slide-in-from-top-4">
@@ -182,7 +336,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Item Name</label>
                           <input 
                             className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none" 
-                            placeholder="e.g. C3PAO Final Assessment"
+                            placeholder="e.g. SIEM Software Subscription"
                             value={newItem.name || ''}
                             onChange={e => setNewItem({...newItem, name: e.target.value})}
                           />
@@ -313,9 +467,12 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                                </div>
                            </td></tr>
                        ) : budgetItems.map(item => (
-                           <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
+                           <tr key={item.id} className={`hover:bg-slate-50/80 transition-colors group ${item.category === 'Assessor Fees' ? 'bg-emerald-50/20' : ''}`}>
                                <td className="p-5">
-                                   <div className="font-black text-slate-900 uppercase tracking-tight">{item.name}</div>
+                                   <div className="font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                                       {item.category === 'Assessor Fees' && <ShieldCheck size={14} className="text-emerald-600" />}
+                                       {item.name}
+                                   </div>
                                    {item.notes && <div className="text-[10px] text-slate-500 mt-1 italic leading-relaxed">{item.notes}</div>}
                                </td>
                                <td className="p-5">
@@ -324,7 +481,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                                    </span>
                                </td>
                                <td className="p-5">
-                                   <div className="flex items-center gap-2 text-slate-700 font-bold text-xs uppercase tracking-tight">
+                                   <div className={`flex items-center gap-2 font-bold text-xs uppercase tracking-tight ${item.category === 'Assessor Fees' ? 'text-emerald-700' : 'text-slate-700'}`}>
                                        {getCategoryIcon(item.category)} {item.category}
                                    </div>
                                </td>
@@ -334,7 +491,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                                            {item.hours}h @ ${item.rate}/hr
                                        </span>
                                    ) : (
-                                       <span className="text-slate-300">Fixed</span>
+                                       <span className="text-slate-300">Lump Sum</span>
                                    )}
                                </td>
                                <td className="p-5 text-right font-mono font-black text-slate-900">

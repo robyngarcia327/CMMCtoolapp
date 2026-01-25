@@ -54,12 +54,12 @@ export interface Artifact {
   source?: 'USER_UPLOAD' | 'API_AUTO';
 }
 
-export type CmmcAssetCategory = 'CUI' | 'FCI' | 'SPA' | 'CRMA' | 'Out-of-Scope';
+export type CmmcAssetCategory = 'CUI' | 'FCI' | 'SPA' | 'CRMA' | 'Specialized' | 'Out-of-Scope';
 
 export interface Asset {
   id: string;
   name: string;
-  type: 'Server' | 'Workstation' | 'Mobile' | 'Software' | 'Network Device';
+  type: 'Server' | 'Workstation' | 'Mobile' | 'Software' | 'Network Device' | 'IoT/OT' | 'Test Equipment';
   owner: string;
   location: string;
   cmmcCategory: CmmcAssetCategory;
@@ -171,7 +171,7 @@ export enum AppView {
 }
 
 export interface WizardProgress {
-  currentStep: 'INTRO' | 'LEVEL_SELECT' | 'INVENTORY' | 'NETWORK' | 'ASSESSMENT' | 'VALIDATION';
+  currentStep: 'INTRO' | 'LEVEL_SELECT' | 'SCOPING' | 'INVENTORY' | 'NETWORK' | 'ASSESSMENT' | 'VALIDATION';
   currentQuestionIndex: number;
 }
 
