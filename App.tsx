@@ -31,7 +31,8 @@ import {
   Calculator,
   ShieldAlert,
   BookOpen,
-  ArrowRight
+  ArrowRight,
+  Settings2
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData, REQUIREMENTS_DATA } from './data/standards';
@@ -52,6 +53,7 @@ import { RiskRegister } from './components/RiskRegister';
 import { FairRiskAnalyzer } from './components/FairRiskAnalyzer';
 import { CmmcAcademy } from './components/CmmcAcademy';
 import { RmfLifecycle } from './components/RmfLifecycle';
+import { BudgetCalculator } from './components/BudgetCalculator';
 import { api } from './services/api';
 
 const SidebarItem = ({ 
@@ -116,7 +118,6 @@ const App: React.FC = () => {
   });
 
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false); 
   const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
@@ -146,34 +147,14 @@ const App: React.FC = () => {
   const userDisplayName = useMemo(() => {
     const profile = auth.user?.profile;
     if (!profile) return 'Guest User';
-    return profile.name || 
-           (profile.given_name ? `${profile.given_name} ${profile.family_name || ''}`.trim() : null) || 
-           profile.nickname || 
-           (profile.email || 'User').split('@')[0];
-  }, [auth.user]);
-
-  const userGroups = useMemo(() => {
-    const groups = auth.user?.profile?.['cognito:groups'];
-    return (Array.isArray(groups) ? groups : []) as CognitoGroup[];
+    return profile.name || (profile.email || 'User').split('@')[0];
   }, [auth.user]);
 
   const activeClient = useMemo(() => {
     const client = clients.find(c => c.id === activeClientId);
     if (client) return client;
     if (clients.length > 0) return clients[0];
-
-    return { 
-      name: 'Unauthorized Tenant', 
-      id: '', domain: '', 
-      industry: '', 
-      contactName: '', 
-      logoInitial: '?', 
-      primaryFramework: '', 
-      targetCmmcLevel: 2 as const, 
-      nextAuditDate: 0, 
-      accountManager: '', 
-      isParent: false 
-    };
+    return { name: 'Unauthorized Tenant', id: '', domain: '', industry: '', contactName: '', logoInitial: '?', primaryFramework: '', targetCmmcLevel: 2 as const, nextAuditDate: 0, accountManager: '', isParent: false };
   }, [clients, activeClientId]);
 
   const handleUpdateRequirement = (updatedReq: Requirement) => {
@@ -182,9 +163,7 @@ const App: React.FC = () => {
         ...prev,
         [activeClientId]: {
             ...prev[activeClientId],
-            requirements: prev[activeClientId].requirements.some(r => r.id === updatedReq.id)
-                ? prev[activeClientId].requirements.map(r => r.id === updatedReq.id ? updatedReq : r)
-                : [...prev[activeClientId].requirements, updatedReq]
+            requirements: prev[activeClientId].requirements.map(r => r.id === updatedReq.id ? updatedReq : r)
         }
     }));
   };
@@ -192,65 +171,34 @@ const App: React.FC = () => {
   const handleBatchUpdateRequirements = (newReqs: Requirement[]) => {
       if (!activeClientId) return;
       setClientDataStore(prev => {
-          const currentReqs = prev[activeClientId].requirements;
-          const merged = [...currentReqs];
-          
+          const merged = [...prev[activeClientId].requirements];
           newReqs.forEach(nr => {
               const idx = merged.findIndex(r => r.id === nr.id);
-              if (idx !== -1) {
-                merged[idx] = { 
-                  ...merged[idx], 
-                  response: nr.response,
-                  objectives: nr.objectives
-                };
-              }
+              if (idx !== -1) merged[idx] = nr;
               else merged.push(nr);
           });
-
-          return {
-              ...prev,
-              [activeClientId]: {
-                  ...prev[activeClientId],
-                  requirements: merged
-              }
-          };
+          return { ...prev, [activeClientId]: { ...prev[activeClientId], requirements: merged } };
       });
   };
 
   const handleUpdateFinancials = (fin: OrganizationFinancials) => {
       if (!activeClientId) return;
-      setClientDataStore(prev => ({
-          ...prev,
-          [activeClientId]: { ...prev[activeClientId], financials: fin }
-      }));
+      setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], financials: fin } }));
   };
 
   const handleUpdateRisk = (risk: Risk) => {
     if (!activeClientId) return;
-    setClientDataStore(prev => ({
-        ...prev,
-        [activeClientId]: {
-            ...prev[activeClientId],
-            risks: prev[activeClientId].risks.map(r => r.id === risk.id ? risk : r)
-        }
-    }));
+    setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: prev[activeClientId].risks.map(r => r.id === risk.id ? risk : r) } }));
   };
 
   const handleAddRisk = (risk: Risk) => {
     if (!activeClientId) return;
-    setClientDataStore(prev => ({
-        ...prev,
-        [activeClientId]: {
-            ...prev[activeClientId],
-            risks: [...prev[activeClientId].risks, risk]
-        }
-    }));
+    setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: [...prev[activeClientId].risks, risk] } }));
   };
 
   const handleUpdateLevel = (lvl: 1 | 2 | 3) => {
     if (!activeClientId) return;
     setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], targetCmmcLevel: lvl } }));
-    setClients(prev => prev.map(c => c.id === activeClientId ? { ...c, targetCmmcLevel: lvl } : c));
   };
 
   const loadOrganizations = useCallback(async () => {
@@ -260,82 +208,38 @@ const App: React.FC = () => {
     try {
       const apiOrgs = await api.getOrgs(idToken);
       const mappedClients: Client[] = apiOrgs.map((o: any) => ({
-        id: o.orgId || o.id,
-        name: o.name || 'Organization',
-        domain: o.domain || (auth.user?.profile.email || '').split('@')[1] || 'unverified.com',
-        industry: o.industry || 'Defense Industrial Base', 
-        contactName: auth.user?.profile.email || 'Admin',
-        logoInitial: (o.name || 'O').charAt(0).toUpperCase(),
-        primaryFramework: 'NIST-CMMC',
-        targetCmmcLevel: 2, 
-        nextAuditDate: Date.now() + 31536000000,
-        accountManager: 'Self-Managed',
-        isParent: !!o.isParent
+        id: o.orgId || o.id, name: o.name || 'Organization', domain: o.domain || 'domain.com', industry: o.industry || 'Defense Industrial Base', contactName: auth.user?.profile.email || 'Admin', logoInitial: (o.name || 'O').charAt(0).toUpperCase(), primaryFramework: 'NIST-CMMC', targetCmmcLevel: 2, nextAuditDate: Date.now() + 31536000000, accountManager: 'Self-Managed', isParent: !!o.isParent
       }));
       setClients(mappedClients);
-      
       if (mappedClients.length > 0) {
-        const selectedId = mappedClients[0].id;
-        setActiveClientId(selectedId);
-        
+        const selId = mappedClients[0].id;
+        setActiveClientId(selId);
         setClientDataStore(prev => {
           const nextStore = { ...prev };
           mappedClients.forEach(c => {
-            if (!nextStore[c.id]) {
-              const initial = createInitialClientData(false);
-              nextStore[c.id] = initial;
-              nextStore[c.id].users = [{ id: auth.user?.profile.sub || 'unknown', name: userDisplayName, email: auth.user?.profile.email || '', organizationId: c.id, domain: c.domain, role: userGroups[0] || 'Admin_Created_Users', department: 'Compliance', lastLogin: Date.now(), mfaEnabled: true, hasPasskey: false, isCuiAuthorized: true }];
-            }
+            if (!nextStore[c.id]) nextStore[c.id] = createInitialClientData(false);
           });
           return nextStore;
         });
       }
-    } catch (error) { 
-      console.error("Load failed", error); 
-    } finally { 
-      setIsDataLoading(false); 
-      setHasCheckedOrgs(true); 
-    }
-  }, [auth.isAuthenticated, auth.user, userGroups, userDisplayName]);
+    } catch (error) { console.error(error); } finally { setIsDataLoading(false); setHasCheckedOrgs(true); }
+  }, [auth.isAuthenticated, auth.user]);
 
   useEffect(() => {
     if (auth.isAuthenticated && auth.user?.id_token && !fetchAttempted.current) {
       fetchAttempted.current = true;
       loadOrganizations();
     }
-  }, [auth.isAuthenticated, auth.user?.id_token, loadOrganizations]);
+  }, [auth.isAuthenticated, auth.user, loadOrganizations]);
 
-  const handleLogout = () => {
-    localStorage.removeItem(KEY_VIEW);
-    localStorage.removeItem(KEY_CLIENT);
-    localStorage.removeItem(KEY_REQ);
-    auth.signoutRedirect();
-  };
+  const handleLogout = () => { auth.signoutRedirect(); };
   
   if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-500" size={48} /></div>;
   if (!auth.isAuthenticated) return <Login />;
   if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
 
   if (hasCheckedOrgs && (clients.length === 0 || !activeClientId)) {
-    return (
-      <Onboarding 
-        user={{ id: auth.user?.profile.sub || '', name: userDisplayName, email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }} 
-        onCreateOrganization={async (name, domain, financials) => {
-          if (!auth.user?.id_token) return;
-          setIsDataLoading(true);
-          try { 
-            const newOrg = await api.createOrg(auth.user.id_token, name, domain); 
-            setClientDataStore(prev => ({ ...prev, [newOrg.orgId]: { ...createInitialClientData(false), financials: financials || createInitialClientData(false).financials } }));
-            fetchAttempted.current = false; 
-            await loadOrganizations(); 
-          } catch (e) { 
-            console.error("Onboarding failed", e);
-          } finally { setIsDataLoading(false); }
-        }} 
-        onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }}
-        debugTokens={{ idToken: auth.user?.id_token }}
-      />
-    );
+    return <Onboarding user={{ id: auth.user?.profile.sub || '', name: userDisplayName, email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }} onCreateOrganization={async (name, domain, financials) => { if (!auth.user?.id_token) return; setIsDataLoading(true); try { const newOrg = await api.createOrg(auth.user.id_token, name, domain); setClientDataStore(prev => ({ ...prev, [newOrg.orgId]: { ...createInitialClientData(false), financials } })); fetchAttempted.current = false; await loadOrganizations(); } finally { setIsDataLoading(false); } }} onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }} debugTokens={{ idToken: auth.user?.id_token }} />;
   }
 
   const activeData = clientDataStore[activeClientId];
@@ -344,18 +248,19 @@ const App: React.FC = () => {
   const getViewLabel = (view: AppView) => {
     switch(view) {
       case AppView.DASHBOARD: return "Posture Insights";
-      case AppView.WIZARD: return "Guided Compliance Wizard";
-      case AppView.CONTROLS: return "NIST Control Audit";
+      case AppView.WIZARD: return "Guided Wizard";
+      case AppView.CONTROLS: return "Audit Criteria";
       case AppView.SPRS_SCORECARD: return "DoD Scorecard";
-      case AppView.ASSESSOR_PORTAL: return "Assessor View";
-      case AppView.RISK_MANAGEMENT: return "Quantitative Risk Registry";
-      case AppView.FAIR_ANALYZER: return "FAIR Risk Modeler";
-      case AppView.RMF_LIFECYCLE: return "RMF Operations Center";
       case AppView.TRAINING: return "CMMC Academy";
+      case AppView.ASSESSOR_PORTAL: return "Assessor View";
+      case AppView.ASSETS: return "Asset Pool";
+      case AppView.USERS: return "Identity Management";
+      case AppView.RISK_MANAGEMENT: return "Risk Registry";
+      case AppView.FAIR_ANALYZER: return "FAIR Modeler";
+      case AppView.RMF_LIFECYCLE: return "RMF Lifecycle";
+      case AppView.COST_TO_COMPLIANCE: return "Financial Strategy";
       case AppView.REPORT_EXECUTIVE: return "Executive Report";
       case AppView.REPORT_SSP: return "System Security Plan";
-      case AppView.ASSETS: return "Asset Inventory";
-      case AppView.USERS: return "Identity Pool";
       default: return "Cuallee Cyber";
     }
   };
@@ -372,13 +277,13 @@ const App: React.FC = () => {
         <nav className="flex-1 overflow-y-auto px-4 scrollbar-hide">
           <SidebarSection title="General">
             <SidebarItem icon={LayoutDashboard} label="Dashboard" isActive={currentView === AppView.DASHBOARD} onClick={() => setCurrentView(AppView.DASHBOARD)} />
-            <SidebarItem icon={Wand2} label="Wizard" isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} badge="Save & Import" />
+            <SidebarItem icon={Wand2} label="Wizard" isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} badge="Guided" />
             <SidebarItem icon={GraduationCap} label="Academy" isActive={currentView === AppView.TRAINING} onClick={() => setCurrentView(AppView.TRAINING)} />
           </SidebarSection>
           <SidebarSection title="Compliance">
             <SidebarItem icon={ListChecks} label="Controls" isActive={currentView === AppView.CONTROLS} onClick={() => setCurrentView(AppView.CONTROLS)} />
             <SidebarItem icon={TrendingUp} label="SPRS Scorecard" isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
-            <SidebarItem icon={ClipboardCheck} label="Assessor View" isActive={currentView === AppView.ASSESSOR_PORTAL} onClick={() => setCurrentView(AppView.ASSESSOR_PORTAL)} badge="Official" />
+            <SidebarItem icon={ClipboardCheck} label="Assessor View" isActive={currentView === AppView.ASSESSOR_PORTAL} onClick={() => setCurrentView(AppView.ASSESSOR_PORTAL)} badge="CAP 2.0" />
             <SidebarItem icon={Package} label="Assets" isActive={currentView === AppView.ASSETS} onClick={() => setCurrentView(AppView.ASSETS)} />
             <SidebarItem icon={Users} label="Users" isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
           </SidebarSection>
@@ -386,17 +291,18 @@ const App: React.FC = () => {
             <SidebarItem icon={AlertTriangle} label="Risk Registry" isActive={currentView === AppView.RISK_MANAGEMENT} onClick={() => setCurrentView(AppView.RISK_MANAGEMENT)} />
             <SidebarItem icon={Calculator} label="FAIR Analyzer" isActive={currentView === AppView.FAIR_ANALYZER} onClick={() => setCurrentView(AppView.FAIR_ANALYZER)} />
             <SidebarItem icon={ShieldAlert} label="RMF Lifecycle" isActive={currentView === AppView.RMF_LIFECYCLE} onClick={() => setCurrentView(AppView.RMF_LIFECYCLE)} />
+            <SidebarItem icon={BarChart3} label="Budgeting" isActive={currentView === AppView.COST_TO_COMPLIANCE} onClick={() => setCurrentView(AppView.COST_TO_COMPLIANCE)} />
           </SidebarSection>
-          <SidebarSection title="Documentation">
+          <SidebarSection title="Reports">
             <SidebarItem icon={FileCheck} label="Executive Summary" isActive={currentView === AppView.REPORT_EXECUTIVE} onClick={() => setCurrentView(AppView.REPORT_EXECUTIVE)} />
             <SidebarItem icon={FileText} label="System Security Plan" isActive={currentView === AppView.REPORT_SSP} onClick={() => setCurrentView(AppView.REPORT_SSP)} />
           </SidebarSection>
         </nav>
         <div className="p-4 mt-auto border-t border-slate-900 bg-slate-950/50">
-          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Active Context</div>
+          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Context</div>
           <div className="text-xs font-bold text-white truncate uppercase">{activeClient.name}</div>
           <button onClick={handleLogout} className="mt-4 w-full flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 hover:text-red-400 transition-colors">
-            <LogOut size={14} /> Log Out Securely
+            <LogOut size={14} /> Log Out
           </button>
         </div>
       </aside>
@@ -405,8 +311,8 @@ const App: React.FC = () => {
         <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between shrink-0 z-40">
           <div className="flex items-center gap-4"><h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">{getViewLabel(currentView)}</h2></div>
           <div className="flex items-center gap-6">
-            <button onClick={() => setIsChatOpen(!isChatOpen)} className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-[11px] transition-all ${isChatOpen ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}><MessageSquare size={14} /> AI Support</button>
-            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black">{userDisplayName.charAt(0).toUpperCase()}</div>
+            <button onClick={() => setIsChatOpen(!isChatOpen)} className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-[11px] transition-all ${isChatOpen ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}><MessageSquare size={14} /> AI Expert</button>
+            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-200">{userDisplayName.charAt(0).toUpperCase()}</div>
           </div>
         </header>
 
@@ -421,8 +327,8 @@ const App: React.FC = () => {
                         <RequirementDetail requirement={activeData.requirements.find(r => r.id === selectedRequirementId)!} onUpdateRequirement={handleUpdateRequirement} allArtifacts={activeData.artifacts} onAddArtifact={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: [...prev[activeClientId].artifacts, a] }}))} onRemoveArtifact={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id) }}))} tickets={activeData.tickets} onAddTicket={(t) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], tickets: [...prev[activeClientId].tickets, t] }}))} cwConfig={activeData.cwConfig} jiraConfig={activeData.jiraConfig} currentUser={activeData.users[0]} activeClientId={activeClientId} />
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
-                            <div className="bg-slate-100 p-8 rounded-full mb-4"><ListChecks size={64} className="opacity-10" /></div>
-                            <p className="font-bold uppercase tracking-widest text-sm">Select a practice to review details</p>
+                            <div className="bg-slate-100 p-12 rounded-full mb-4 shadow-inner"><ListChecks size={64} className="opacity-10" /></div>
+                            <p className="font-bold uppercase tracking-widest text-sm">Select a requirement to audit criteria</p>
                         </div>
                     )}
                 </div>
@@ -430,9 +336,10 @@ const App: React.FC = () => {
             {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} />}
             {currentView === AppView.TRAINING && <CmmcAcademy />}
             {currentView === AppView.ASSESSOR_PORTAL && <AssessorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} assets={activeData.assets} risks={activeData.risks} />}
-            {currentView === AppView.RISK_MANAGEMENT && <RiskRegister risks={activeData.risks} financials={activeData.financials} onAddRisk={handleAddRisk} onUpdateRisk={handleUpdateRisk} onDeleteRisk={(id) => {}} onUpdateFinancials={handleUpdateFinancials} />}
+            {currentView === AppView.RISK_MANAGEMENT && <RiskRegister risks={activeData.risks} financials={activeData.financials} onAddRisk={handleAddRisk} onUpdateRisk={handleUpdateRisk} onDeleteRisk={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: prev[activeClientId].risks.filter(r => r.id !== id) }}))} onUpdateFinancials={handleUpdateFinancials} />}
             {currentView === AppView.FAIR_ANALYZER && <FairRiskAnalyzer risks={activeData.risks} financials={activeData.financials} onUpdateRisk={handleUpdateRisk} />}
             {currentView === AppView.RMF_LIFECYCLE && <RmfLifecycle />}
+            {currentView === AppView.COST_TO_COMPLIANCE && <BudgetCalculator requirements={activeData.requirements} budgetItems={activeData.budgetItems} onAddItem={(i) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], budgetItems: [...prev[activeClientId].budgetItems, i] }}))} onRemoveItem={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], budgetItems: prev[activeClientId].budgetItems.filter(i => i.id !== id) }}))} />}
             {currentView === AppView.ASSETS && <Inventory assets={activeData.assets} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: [...prev[activeClientId].users, u] }}))} onUpdateUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.map(usr => usr.id === u.id ? u : usr) }}))} onDeleteUser={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.filter(u => u.id !== id) }}))} />}
             {currentView === AppView.REPORT_EXECUTIVE && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} defaultTab="EXECUTIVE" />}
