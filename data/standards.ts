@@ -48,15 +48,87 @@ export const RMF_TASKS = [
     { id: 'M-1', step: 'M', name: 'System and Environment Changes', description: 'Monitor the system and its environment for changes impacting posture.', role: 'System Owner' }
 ];
 
-// NIST SP 800-171_CONTROLS omitted for brevity but assumed present
+// NIST SP 800-171A Granular Determination Statements with Guided Wizard Content
+export const REQUIREMENTS_DATA: Requirement[] = [
+  // --- 3.1 ACCESS CONTROL (AC) ---
+  { 
+    id: '3.1.1', framework: 'NIST-CMMC', family: 'AC', title: 'Limit system access to authorized users', 
+    description: 'Limit system access to authorized users, processes acting on behalf of authorized users, or devices (including other systems).', 
+    interviewQuestion: 'How do you define an "authorized user" and where is that enforced?',
+    examineOptions: ['List of authorized user groups', 'Device management policies'],
+    sprsWeight: 1, cmmcLevel: 1, 
+    objectives: [
+        { id: 'a', description: 'authorized users are identified;', status: 'pending' },
+        { id: 'b', description: 'system access is limited to authorized users;', status: 'pending' }
+    ], 
+    mappings: { nist800_53: ['AC-2'] } 
+  },
+  { 
+    id: '3.1.2', framework: 'NIST-CMMC', family: 'AC', title: 'Limit system access to types of transactions', 
+    description: 'Limit system access to the types of transactions and functions that authorized users are permitted to execute.', 
+    sprsWeight: 1, cmmcLevel: 1, 
+    objectives: [
+        { id: 'a', description: 'permitted types of transactions and functions are identified;', status: 'pending' },
+        { id: 'b', description: 'system access is limited to those types of transactions and functions.', status: 'pending' }
+    ], 
+    mappings: { nist800_53: ['AC-3'] } 
+  },
+  { 
+    id: '3.1.3', framework: 'NIST-CMMC', family: 'AC', title: 'Control CUI Flow', 
+    description: 'Control the flow of CUI in accordance with approved authorizations.', 
+    sprsWeight: 3, cmmcLevel: 2, 
+    objectives: [
+        { id: 'a', description: 'approved authorizations for controlling the flow of CUI are defined;', status: 'pending' },
+        { id: 'b', description: 'the flow of CUI is controlled in accordance with approved authorizations.', status: 'pending' }
+    ], 
+    mappings: { nist800_53: ['AC-4'] } 
+  },
+  { 
+    id: '3.1.8', framework: 'NIST-CMMC', family: 'AC', title: 'Limit unsuccessful logon attempts', 
+    description: 'Limit unsuccessful logon attempts.', 
+    sprsWeight: 3, cmmcLevel: 2, 
+    objectives: [
+        { id: 'a', description: 'the number of consecutive invalid logon attempts is defined;', status: 'pending' },
+        { id: 'b', description: 'system access is locked after the defined number of attempts.', status: 'pending' }
+    ], 
+    mappings: { nist800_53: ['AC-7'] } 
+  },
+  { 
+    id: '3.1.12', framework: 'NIST-CMMC', family: 'AC', title: 'Monitor and control remote access', 
+    description: 'Monitor and control remote access sessions.', 
+    sprsWeight: 3, cmmcLevel: 2, 
+    objectives: [
+        { id: 'a', description: 'remote access sessions are monitored;', status: 'pending' },
+        { id: 'b', description: 'remote access sessions are controlled.', status: 'pending' }
+    ], 
+    mappings: { nist800_53: ['AC-17'] } 
+  },
 
-export const REQUIREMENTS_DATA: Requirement[] = []; // Populate as needed
+  // --- 3.2 AWARENESS AND TRAINING (AT) ---
+  { 
+    id: '3.2.1', framework: 'NIST-CMMC', family: 'AT', title: 'Security awareness training', 
+    description: 'Ensure that managers, systems administrators, and users of organizational systems are made aware of the security risks associated with their activities.', 
+    sprsWeight: 1, cmmcLevel: 2, 
+    objectives: [
+        { id: 'a', description: 'security risks associated with activities are identified;', status: 'pending' },
+        { id: 'b', description: 'users are made aware of those risks through training.', status: 'pending' }
+    ], 
+    mappings: { nist800_53: ['AT-2'] } 
+  }
+];
 
-export const TRAINING_MODULES: TrainingModule[] = []; // Populate as needed
+export const TRAINING_MODULES: TrainingModule[] = [
+  {
+    id: 'intro-1', familyId: 'PH1', title: 'Compliance Fundamentals',
+    description: 'Overview of the CMMC 2.0 framework and NIST 800-171 standards.',
+    content: '# CMMC 2.0 Basics\nWelcome to your journey towards compliance.',
+    durationMinutes: 15, difficulty: 'Beginner'
+  }
+];
 
 export const createInitialClientData = (isParent: boolean): ClientData => ({
   targetCmmcLevel: 2, 
-  requirements: [],
+  requirements: JSON.parse(JSON.stringify(REQUIREMENTS_DATA)),
   assets: [],
   users: [],
   artifacts: [],

@@ -173,7 +173,9 @@ const App: React.FC = () => {
         ...prev,
         [activeClientId]: {
             ...prev[activeClientId],
-            requirements: prev[activeClientId].requirements.map(r => r.id === updatedReq.id ? updatedReq : r)
+            requirements: prev[activeClientId].requirements.some(r => r.id === updatedReq.id)
+                ? prev[activeClientId].requirements.map(r => r.id === updatedReq.id ? updatedReq : r)
+                : [...prev[activeClientId].requirements, updatedReq]
         }
     }));
   };
@@ -244,8 +246,8 @@ const App: React.FC = () => {
           const nextStore = { ...prev };
           mappedClients.forEach(c => {
             if (!nextStore[c.id]) {
-              nextStore[c.id] = createInitialClientData(false);
-              nextStore[c.id].requirements = JSON.parse(JSON.stringify(REQUIREMENTS_DATA));
+              const initial = createInitialClientData(false);
+              nextStore[c.id] = initial;
               nextStore[c.id].users = [{ id: auth.user?.profile.sub || 'unknown', name: userDisplayName, email: auth.user?.profile.email || '', organizationId: c.id, domain: c.domain, role: userGroups[0] || 'Admin_Created_Users', department: 'Compliance', lastLogin: Date.now(), mfaEnabled: true, hasPasskey: false, isCuiAuthorized: true }];
             }
           });
@@ -256,7 +258,7 @@ const App: React.FC = () => {
       console.error("Load failed", error); 
     } finally { 
       setIsDataLoading(false); 
-      setHasCheckedOrgs(true); // CRITICAL: Stop spinning even if it fails
+      setHasCheckedOrgs(true); 
     }
   }, [auth.isAuthenticated, auth.user, userGroups, userDisplayName]);
 
@@ -277,10 +279,8 @@ const App: React.FC = () => {
   if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-500" size={48} /></div>;
   if (!auth.isAuthenticated) return <Login />;
   
-  // SPINNING FIX: Only spin if loading AND we haven't confirmed org check status
   if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
 
-  // ONBOARDING GATE: If checked and no orgs, force setup
   if (hasCheckedOrgs && (clients.length === 0 || !activeClientId)) {
     return (
       <Onboarding 
@@ -302,7 +302,7 @@ const App: React.FC = () => {
           setIsDataLoading(true);
           try { 
             const newOrg = await api.createOrg(auth.user.id_token, name, domain); 
-            // Initialize financials locally if the API doesn't support them yet
+            // Initialize with deep copy of standards
             setClientDataStore(prev => ({
               ...prev,
               [newOrg.orgId]: {
@@ -325,7 +325,6 @@ const App: React.FC = () => {
   }
 
   const activeData = clientDataStore[activeClientId];
-  // If we have clients but data isn't initialized yet (rare race condition)
   if (!activeData) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 size={48} className="animate-spin" /></div>;
 
   const targetLevel = (activeData as ClientData).targetCmmcLevel;
@@ -346,8 +345,6 @@ const App: React.FC = () => {
       default: return "Cuallee Cyber";
     }
   };
-
-  const selectedReq = selectedRequirementId ? activeData.requirements.find(r => r.id === selectedRequirementId) : null;
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
@@ -406,10 +403,75 @@ const App: React.FC = () => {
         <main className="flex-1 overflow-hidden relative bg-slate-50/50">
           <div className="h-full w-full overflow-y-auto">
             {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} targetLevel={targetLevel} onUpdateLevel={handleUpdateLevel} onNavigate={setCurrentView} onToggleChat={() => setIsChatOpen(!isChatOpen)} />}
+            {currentView === AppView.CONTROLS && (
+                <div className="flex h-full">
+                    <RequirementsList 
+                        requirements={activeData.requirements} 
+                        selectedReqId={selectedRequirementId} 
+                        onSelectReq={(r) => {
+                            setSelectedRequirementId(r.id);
+                            localStorage.setItem(KEY_REQ, r.id);
+                        }}
+                        onUpdateRequirement={handleUpdateRequirement}
+                        activeFrameworkId={activeFramework.id} 
+                        targetLevel={targetLevel} 
+                    />
+                    {selectedRequirementId ? (
+                        <RequirementDetail 
+                            requirement={activeData.requirements.find(r => r.id === selectedRequirementId)!}
+                            onUpdateRequirement={handleUpdateRequirement}
+                            allArtifacts={activeData.artifacts}
+                            onAddArtifact={(a) => {
+                                setClientDataStore(prev => ({
+                                    ...prev,
+                                    [activeClientId]: {
+                                        ...prev[activeClientId],
+                                        artifacts: [...prev[activeClientId].artifacts, a]
+                                    }
+                                }));
+                            }}
+                            onRemoveArtifact={(id) => {
+                                setClientDataStore(prev => ({
+                                    ...prev,
+                                    [activeClientId]: {
+                                        ...prev[activeClientId],
+                                        artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id)
+                                    }
+                                }));
+                            }}
+                            tickets={activeData.tickets}
+                            onAddTicket={(t) => {
+                                setClientDataStore(prev => ({
+                                    ...prev,
+                                    [activeClientId]: {
+                                        ...prev[activeClientId],
+                                        tickets: [...prev[activeClientId].tickets, t]
+                                    }
+                                }));
+                            }}
+                            cwConfig={activeData.cwConfig}
+                            jiraConfig={activeData.jiraConfig}
+                            currentUser={currentUser}
+                            activeClientId={activeClientId}
+                        />
+                    ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
+                            <div className="bg-slate-100 p-8 rounded-full mb-4">
+                                <ListChecks size={64} className="opacity-10" />
+                            </div>
+                            <p className="font-bold uppercase tracking-widest text-sm">Select a practice to review findings</p>
+                        </div>
+                    )}
+                </div>
+            )}
             {currentView === AppView.RISK_MANAGEMENT && <RiskRegister risks={activeData.risks} financials={activeData.financials} onAddRisk={handleAddRisk} onUpdateRisk={handleUpdateRisk} onDeleteRisk={(id) => {}} onUpdateFinancials={handleUpdateFinancials} />}
             {currentView === AppView.FAIR_ANALYZER && <FairRiskAnalyzer risks={activeData.risks} financials={activeData.financials} onUpdateRisk={handleUpdateRisk} />}
             {currentView === AppView.RMF_LIFECYCLE && <RmfLifecycle />}
             {currentView === AppView.TRAINING && <CmmcAcademy />}
+            {currentView === AppView.REPORT_EXECUTIVE && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} defaultTab="EXECUTIVE" />}
+            {currentView === AppView.REPORT_SSP && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} defaultTab="SSP" />}
+            {currentView === AppView.ASSETS && <Inventory assets={activeData.assets} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
+            {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: [...prev[activeClientId].users, u] }}))} onUpdateUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.map(usr => usr.id === u.id ? u : usr) }}))} onDeleteUser={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.filter(u => u.id !== id) }}))} />}
           </div>
         </main>
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Requirement } from '../types';
-// Removed non-existent imports SOC2_FAMILIES and HIPAA_FAMILIES
-import { NIST_CMMC_FAMILIES } from '../data/standards';
-import { Info, Filter } from 'lucide-react';
+import { NIST_CMMC_FAMILIES, REQUIREMENTS_DATA } from '../data/standards';
+import { Info, Filter, Database, Plus } from 'lucide-react';
 
 interface RequirementsListProps {
   requirements: Requirement[];
@@ -10,6 +9,7 @@ interface RequirementsListProps {
   onSelectReq: (req: Requirement) => void;
   activeFrameworkId: string;
   targetLevel: 1 | 2 | 3;
+  onUpdateRequirement?: (req: Requirement) => void;
 }
 
 export const RequirementsList: React.FC<RequirementsListProps> = ({
@@ -17,7 +17,8 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
   selectedReqId,
   onSelectReq,
   activeFrameworkId,
-  targetLevel
+  targetLevel,
+  onUpdateRequirement
 }) => {
   const [filterFamily, setFilterFamily] = useState<string>('ALL');
 
@@ -32,11 +33,36 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
 
   // Extract families based on framework
   let families: { id: string, name: string }[] = [];
-  // Fixed: Removed branches for SOC2_FAMILIES and HIPAA_FAMILIES which do not exist in the standards file
   if (activeFrameworkId === 'NIST-CMMC') {
       families = NIST_CMMC_FAMILIES;
   } else {
       families = Array.from(new Set(frameworkReqs.map(r => r.family))).map(f => ({ id: f as string, name: f as string }));
+  }
+
+  // Fallback for empty state (Fix for "Controls are gone" issue)
+  if (requirements.length === 0) {
+      return (
+          <div className="flex flex-col h-full bg-white border-r border-slate-200 w-80 md:w-96 shrink-0 items-center justify-center p-12 text-center">
+              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300 mb-4 border border-slate-200 shadow-inner">
+                  <Database size={32} />
+              </div>
+              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Library Offline</h3>
+              <p className="text-xs text-slate-500 font-medium mt-2 leading-relaxed">
+                  No compliance requirements are mapped to this organization. Please seed the library to begin your assessment.
+              </p>
+              <button 
+                onClick={() => {
+                    if (onUpdateRequirement) {
+                        REQUIREMENTS_DATA.forEach(r => onUpdateRequirement(r));
+                        window.location.reload(); // Refresh to rebuild state
+                    }
+                }}
+                className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
+              >
+                  <Plus size={14}/> Seed Compliance Library
+              </button>
+          </div>
+      );
   }
 
   return (
