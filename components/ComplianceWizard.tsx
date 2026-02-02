@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Requirement, Artifact, WizardProgress, Asset, CmmcAssetCategory } from '../types';
-import { ArrowLeft, ArrowRight, CheckCircle2, Shield, AlertTriangle, PlayCircle, FileCheck, Check, Info, Monitor, Network, ListChecks, Target, Lock, Zap, Box, Cloud, Users, FileSearch, ClipboardList } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Shield, AlertTriangle, PlayCircle, FileCheck, Check, Info, Monitor, Network, ListChecks, Target, Lock, Zap, Box, Cloud, Users, FileSearch, ClipboardList, MessageSquare } from 'lucide-react';
 import { ArtifactUploader } from './ArtifactUploader';
 import { Inventory } from './Inventory';
 import { NetworkAnalyzer } from './NetworkAnalyzer';
@@ -235,50 +235,13 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                   </div>
                   
                   <div className="flex-1 overflow-y-auto p-8 space-y-4">
-                      <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex gap-3 mb-6">
-                          <Info className="text-indigo-600 shrink-0" size={20} />
-                          <p className="text-xs text-indigo-800 leading-relaxed">
-                              Select all that apply to your environment. This will help auto-categorize your asset inventory in the next step.
-                          </p>
-                      </div>
-
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <ScopingQuestion 
-                            id="esp" 
-                            label="External Service Providers (ESP)" 
-                            description="Do you use consultants or MSPs for IT/Cybersecurity?" 
-                            icon={Users} 
-                          />
-                          <ScopingQuestion 
-                            id="csp" 
-                            label="Cloud Service Providers (CSP)" 
-                            description="Do you host CUI or security data in M365, AWS, Azure, etc?" 
-                            icon={Cloud} 
-                          />
-                          <ScopingQuestion 
-                            id="iot" 
-                            label="Specialized Assets (IoT/OT)" 
-                            description="Do you have manufacturing equipment, cameras, or test equipment?" 
-                            icon={Box} 
-                          />
-                          <ScopingQuestion 
-                            id="gfe" 
-                            label="Gov Furnished Equipment (GFE)" 
-                            description="Does the Government own or lease any equipment on your network?" 
-                            icon={Shield} 
-                          />
-                          <ScopingQuestion 
-                            id="enclave" 
-                            label="Secure Enclave" 
-                            description="Do you isolate CUI into a specific network segment (VLAN/VDI)?" 
-                            icon={Lock} 
-                          />
-                          <ScopingQuestion 
-                            id="rma" 
-                            label="Risk Managed Assets (CRMA)" 
-                            description="Assets that *can* but are not *intended* to process CUI (Level 2 only)." 
-                            icon={AlertTriangle} 
-                          />
+                          <ScopingQuestion id="esp" label="External Service Providers (ESP)" description="Do you use consultants or MSPs for IT/Cybersecurity?" icon={Users} />
+                          <ScopingQuestion id="csp" label="Cloud Service Providers (CSP)" description="Do you host CUI or security data in M365, AWS, Azure, etc?" icon={Cloud} />
+                          <ScopingQuestion id="iot" label="Specialized Assets (IoT/OT)" description="Do you have manufacturing equipment, cameras, or test equipment?" icon={Box} />
+                          <ScopingQuestion id="gfe" label="Gov Furnished Equipment (GFE)" description="Does the Government own or lease any equipment on your network?" icon={Shield} />
+                          <ScopingQuestion id="enclave" label="Secure Enclave" description="Do you isolate CUI into a specific network segment (VLAN/VDI)?" icon={Lock} />
+                          <ScopingQuestion id="rma" label="Risk Managed Assets (CRMA)" description="Assets that *can* but are not *intended* to process CUI (Level 2 only)." icon={AlertTriangle} />
                       </div>
                   </div>
 
@@ -331,28 +294,9 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
 
   if (wizardProgress.currentStep === 'INVENTORY') {
       return (
-          <WizardWrapper 
-            nextLabel="Proceed to Boundary Analysis" 
-            onNext={() => goToStep('NETWORK')}
-            onPrev={() => goToStep('SCOPING')}
-          >
+          <WizardWrapper nextLabel="Proceed to Boundary Analysis" onNext={() => goToStep('NETWORK')} onPrev={() => goToStep('SCOPING')}>
               <div className="p-6 space-y-6">
-                <div className="bg-amber-50 p-6 rounded-2xl border border-amber-200 flex gap-4">
-                    <div className="p-3 bg-white rounded-xl shadow-sm text-amber-600 h-fit"><Box size={24}/></div>
-                    <div>
-                        <h4 className="text-sm font-black uppercase text-amber-900">Categorization Notice</h4>
-                        <p className="text-xs text-amber-800 leading-relaxed mt-1">
-                            Per Table 1 of the Scoping Guide, categorize your assets as **CUI Assets**, **SPAs**, **CRMAs**, or **Specialized Assets**. 
-                            {targetLevel === 3 && " Note: For Level 3, all CRMAs from Level 2 are treated as CUI Assets."}
-                        </p>
-                    </div>
-                </div>
-                <Inventory 
-                    assets={assets} 
-                    onAddAsset={onAddAsset!} 
-                    onDeleteAsset={onDeleteAsset!} 
-                    variant="wizard"
-                />
+                <Inventory assets={assets} onAddAsset={onAddAsset!} onDeleteAsset={onDeleteAsset!} variant="wizard" />
               </div>
           </WizardWrapper>
       );
@@ -360,22 +304,8 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
 
   if (wizardProgress.currentStep === 'NETWORK') {
       return (
-           <WizardWrapper 
-            nextLabel="Start Audit" 
-            onNext={() => goToStep('ASSESSMENT')}
-            onPrev={() => goToStep('INVENTORY')}
-          >
+           <WizardWrapper nextLabel="Start Audit" onNext={() => goToStep('ASSESSMENT')} onPrev={() => goToStep('INVENTORY')}>
              <div className="p-6">
-                <div className="mb-6 bg-blue-900 rounded-3xl p-6 text-white flex items-center gap-6 shadow-xl">
-                    <Network size={40} className="text-blue-400" />
-                    <div>
-                        <h4 className="font-black uppercase tracking-tight">Boundary Verification</h4>
-                        <p className="text-xs text-blue-200 font-medium leading-relaxed">
-                            Upload your network diagram. Our AI will analyze it for "Logical" vs "Physical" separation, 
-                            consistent with 32 CFR § 170.19 guidelines.
-                        </p>
-                    </div>
-                </div>
                 <NetworkAnalyzer variant="wizard" />
              </div>
           </WizardWrapper>
@@ -394,7 +324,6 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
             onPrev={handleAssessmentPrev}
           >
              <div className="flex h-full min-h-0">
-                {/* Main Content Area */}
                 <div className="flex-1 flex flex-col h-full overflow-y-auto">
                     <div className="px-10 pt-8">
                         <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
@@ -418,121 +347,56 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                                     </div>
                                 </div>
                                 <h2 className="text-2xl font-black text-slate-900 mb-3 tracking-tight uppercase leading-tight">
-                                    {currentReq.interviewQuestion || currentReq.title}
+                                    {currentReq.title}
                                 </h2>
                                 <p className="text-slate-500 text-sm leading-relaxed font-medium bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                                     {currentReq.description}
                                 </p>
                             </div>
 
+                            {/* AUDITOR INTERVIEW SECTION - THE CORE ENHANCEMENT */}
+                            <div className="bg-indigo-50/50 border border-indigo-100 rounded-[2rem] p-8 space-y-6">
+                                <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                                    <MessageSquare size={16}/> Auditor Interview Guide
+                                </h3>
+                                <p className="text-xs text-indigo-800 font-medium">To satisfy this control, provide clear answers to these specific audit questions:</p>
+                                <div className="space-y-4">
+                                    {currentReq.interviewOptions?.map((q, i) => (
+                                        <div key={i} className="flex gap-3 bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm">
+                                            <div className="text-indigo-600 font-black text-sm">Q.</div>
+                                            <p className="text-sm font-bold text-slate-700 leading-relaxed">{q}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
                             <div className="space-y-4">
-                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Implementation Evidence</label>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Implementation Response (SSP Narrative)</label>
                                 <textarea 
                                     className="w-full h-48 p-5 border border-slate-200 bg-white rounded-[2rem] focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all shadow-inner resize-none text-slate-700 font-medium"
-                                    placeholder="Describe the technical solution or administrative procedure in place..."
+                                    placeholder="Based on the questions above, describe your organization's implementation..."
                                     value={currentReq.response || ''}
                                     onChange={(e) => handleResponseChange(e.target.value)}
                                 />
                                 <div className="flex gap-4">
-                                    <button 
-                                        onClick={toggleNotMet}
-                                        className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm ${
-                                            isNotMet 
-                                            ? 'bg-red-50 text-red-700 border-red-600' 
-                                            : 'bg-white text-slate-400 border-slate-100 hover:border-red-600 hover:text-red-600'
-                                        }`}
-                                    >
-                                        <AlertTriangle size={16} /> {isNotMet ? 'Confirmed Gap' : 'Mark as Gap'}
-                                    </button>
-
-                                    <button 
-                                        onClick={toggleMet}
-                                        className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm ${
-                                            isMet 
-                                            ? 'bg-green-50 text-green-700 border-green-600' 
-                                            : 'bg-white text-slate-400 border-slate-100 hover:border-green-600 hover:text-green-600'
-                                        }`}
-                                    >
-                                        <CheckCircle2 size={16} /> {isMet ? 'Verified Met' : 'Mark as Met'}
-                                    </button>
+                                    <button onClick={toggleNotMet} className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm ${isNotMet ? 'bg-red-50 text-red-700 border-red-600' : 'bg-white text-slate-400 border-slate-100 hover:border-red-600 hover:text-red-600'}`}><AlertTriangle size={16} /> {isNotMet ? 'Confirmed Gap' : 'Mark as Gap'}</button>
+                                    <button onClick={toggleMet} className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm ${isMet ? 'bg-green-50 text-green-700 border-green-600' : 'bg-white text-slate-400 border-slate-100 hover:border-green-600 hover:text-green-600'}`}><CheckCircle2 size={16} /> {isMet ? 'Verified Met' : 'Mark as Met'}</button>
                                 </div>
                             </div>
 
                             <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-200 shadow-inner">
-                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                                    <FileCheck size={18} className="text-blue-500" /> Technical Proof Repository
-                                </h3>
-                                <ArtifactUploader 
-                                    requirementId={currentReq.id}
-                                    artifacts={artifacts.filter(a => a.requirementId === currentReq.id)}
-                                    onAddArtifact={onAddArtifact}
-                                    onRemoveArtifact={onRemoveArtifact}
-                                />
+                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><FileCheck size={18} className="text-blue-500" /> Evidence Upload</h3>
+                                <ArtifactUploader requirementId={currentReq.id} artifacts={artifacts.filter(a => a.requirementId === currentReq.id)} onAddArtifact={onAddArtifact} onRemoveArtifact={onRemoveArtifact} />
                             </div>
                             </>
-                        ) : (
-                            <div className="p-20 text-center text-slate-300">
-                                <CheckCircle2 size={64} className="mx-auto mb-4 opacity-10" />
-                                <p className="font-black uppercase tracking-widest text-sm">Audit Complete for Level {targetLevel}</p>
-                            </div>
-                        )}
+                        ) : null}
                     </div>
                 </div>
 
-                {/* Audit Context Sidebar (Guided Evidence Checklist) */}
-                <div className="w-80 bg-slate-50 border-l border-slate-200 flex flex-col shrink-0 overflow-y-auto hidden lg:flex">
-                    <div className="p-6 border-b border-slate-200 bg-white">
-                        <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <ClipboardList size={14} /> Guided Audit Checklist
-                        </h3>
-                        <p className="text-xs text-slate-500 leading-relaxed font-medium">Use these criteria to verify your implementation meets NIST 800-171A standards.</p>
-                    </div>
-                    
-                    <div className="p-6 space-y-8">
-                        {currentReq?.examineOptions && currentReq.examineOptions.length > 0 && (
-                            <div>
-                                <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 px-1">Examine: Wizard Inputs</h4>
-                                <div className="space-y-2">
-                                    {currentReq.examineOptions.map((opt, i) => (
-                                        <div key={i} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
-                                            <div className="mt-0.5 w-4 h-4 rounded border-2 border-slate-200 flex-shrink-0"></div>
-                                            <span className="text-[11px] font-bold text-slate-700 leading-tight">{opt}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {currentReq?.interviewOptions && currentReq.interviewOptions.length > 0 && (
-                            <div>
-                                <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 px-1">Interview: Prep Points</h4>
-                                <div className="space-y-2">
-                                    {currentReq.interviewOptions.map((opt, i) => (
-                                        <div key={i} className="flex items-start gap-3 px-1">
-                                            <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0"></div>
-                                            <span className="text-[11px] font-medium text-slate-500 leading-relaxed">{opt}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-xl shadow-blue-900/20">
-                             <div className="flex items-center gap-2 mb-3">
-                                 <Monitor size={16} className="text-blue-200" />
-                                 <h5 className="text-[10px] font-black uppercase tracking-widest">Environment Scoping</h5>
-                             </div>
-                             <div className="space-y-2">
-                                 {Object.keys(scopingAnswers).filter(k => scopingAnswers[k]).map(key => (
-                                     <div key={key} className="flex items-center gap-2 text-[10px] font-bold bg-white/10 px-2 py-1 rounded-lg border border-white/10 uppercase tracking-widest">
-                                         <Check size={10} className="text-blue-300" /> {key}
-                                     </div>
-                                 ))}
-                                 {Object.keys(scopingAnswers).filter(k => scopingAnswers[k]).length === 0 && (
-                                     <p className="text-[10px] text-blue-200 font-bold italic">No specific environment types selected.</p>
-                                 )}
-                             </div>
-                        </div>
+                <div className="w-80 bg-slate-50 border-l border-slate-200 flex flex-col shrink-0 overflow-y-auto hidden lg:flex p-6 space-y-8">
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-2"><ClipboardList size={14} /> Audit Integrity</h3>
+                        <p className="text-xs text-slate-500 leading-relaxed font-medium">Following NIST 800-171A ensures your responses match the official assessment criteria auditors use.</p>
                     </div>
                 </div>
              </div>
@@ -546,35 +410,17 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
             {renderStepper()}
             <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700 flex flex-col">
                 <div className="bg-slate-900 p-12 text-center text-white relative">
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl -mr-24 -mt-24"></div>
                     <CheckCircle2 size={64} className="mx-auto mb-6 text-green-400 drop-shadow-lg" />
-                    <h2 className="text-4xl font-black tracking-tighter uppercase mb-3">Post-Audit Scorecard</h2>
-                    <p className="text-blue-300 text-sm font-bold uppercase tracking-[0.2em]">Preliminary Scoping Review Summary</p>
+                    <h2 className="text-4xl font-black tracking-tighter uppercase mb-3">Assessment Scorecard</h2>
+                    <p className="text-blue-300 text-sm font-bold uppercase tracking-[0.2em]">Preliminary Readiness Result</p>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100 border-b border-slate-100">
-                    <div className="p-12 text-center group transition-colors hover:bg-green-50/30">
-                        <div className="text-5xl font-black text-green-600 mb-2">{completedCount}</div>
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scoped Controls Met</div>
-                    </div>
-                     <div className="p-12 text-center group transition-colors hover:bg-red-50/30">
-                        <div className="text-5xl font-black text-red-600 mb-2">{gapsCount}</div>
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Identified Risks</div>
-                    </div>
-                     <div className="p-12 text-center group transition-colors hover:bg-amber-50/30">
-                        <div className="text-5xl font-black text-amber-500 mb-2">{pendingCount}</div>
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Items Pending Review</div>
-                    </div>
+                    <div className="p-12 text-center"><div className="text-5xl font-black text-green-600 mb-2">{completedCount}</div><div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Controls Met</div></div>
+                    <div className="p-12 text-center"><div className="text-5xl font-black text-red-600 mb-2">{gapsCount}</div><div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Gaps Found</div></div>
+                    <div className="p-12 text-center"><div className="text-5xl font-black text-amber-500 mb-2">{pendingCount}</div><div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Remaining</div></div>
                 </div>
-
                 <div className="p-12 bg-slate-50 flex flex-col items-center">
-                    <button 
-                        onClick={onComplete}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-5 rounded-[2rem] font-black uppercase tracking-widest text-sm shadow-2xl shadow-blue-200 transition-all hover:scale-105 active:scale-95 flex items-center gap-4"
-                    >
-                        Commit Findings & Exit Wizard <ArrowRight size={20} />
-                    </button>
-                    <p className="mt-8 text-xs text-slate-400 font-medium italic">You can return to the 'Level {targetLevel}' assessment at any time via the Control Audit tab.</p>
+                    <button onClick={onComplete} className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-5 rounded-[2rem] font-black uppercase tracking-widest text-sm shadow-2xl transition-all hover:scale-105 flex items-center gap-4">Commit Assessment <ArrowRight size={20} /></button>
                 </div>
             </div>
         </div>
