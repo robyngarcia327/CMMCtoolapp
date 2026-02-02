@@ -6,7 +6,6 @@ import { PolicyAnalyzer } from './PolicyAnalyzer';
 import { explainRequirement } from '../services/gemini';
 import { fetchAutomatedEvidence } from '../services/integrations';
 import ReactMarkdown from 'react-markdown';
-// Added missing Eye icon import
 import { CheckCircle, Sparkles, Ticket as TicketIcon, ExternalLink, Share2, Layers, MessageSquare, Send, Mail, Copy, Clock, AlertTriangle, Cloud, Server, Shield, Loader2, PlayCircle, Lock, RefreshCw, Check, History, Eye } from 'lucide-react';
 
 interface RequirementDetailProps {
@@ -153,7 +152,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                                                 </span>
                                                 {obj.status === 'met' && <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest flex items-center gap-1"><Check size={12}/> Verified</span>}
                                             </div>
-                                            {/* REMOVED PLACEHOLDER - SHOWING ACTUAL OBJECTIVE DESCRIPTION AS THE TITLE */}
+                                            {/* Renders ACTUAL NIST description from requirements data */}
                                             <p className="text-base text-slate-800 font-bold leading-relaxed">{obj.description}</p>
                                         </div>
                                     </div>
@@ -175,22 +174,10 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                                 onChange={(e) => onUpdateRequirement({ ...requirement, response: e.target.value })}
                             />
                             <div className="mt-4 flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-widest justify-end">
-                                <History size={14}/> Auto-saved to Secure Vault
+                                <History size={14}/> Secure Vault Autosave Enabled
                             </div>
                         </div>
                     </>
-                )}
-                {activeTab === 'EVIDENCE' && (
-                    <div className="bg-white rounded-[2.5rem] border border-slate-200 p-10 shadow-sm">
-                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-8">Technical Evidence Repository</h3>
-                        <ArtifactUploader 
-                            requirementId={requirement.id} 
-                            artifacts={relevantArtifacts} 
-                            onAddArtifact={onAddArtifact} 
-                            onRemoveArtifact={onRemoveArtifact} 
-                            activeClientId={activeClientId}
-                        />
-                    </div>
                 )}
             </div>
 
@@ -216,7 +203,6 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Verification Methods</h4>
                     <div className="space-y-4">
                         <div className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                             {/* Fixed missing Eye icon from lucide-react */}
                              <div className="p-2 bg-white rounded-lg shadow-sm h-fit"><Eye size={16} className="text-blue-500"/></div>
                              <div>
                                 <span className="text-[9px] font-black uppercase text-slate-400">Examine</span>
