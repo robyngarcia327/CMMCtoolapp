@@ -6,7 +6,7 @@ import { PolicyAnalyzer } from './PolicyAnalyzer';
 import { explainRequirement } from '../services/gemini';
 import { fetchAutomatedEvidence } from '../services/integrations';
 import ReactMarkdown from 'react-markdown';
-import { CheckCircle, Sparkles, Ticket as TicketIcon, ExternalLink, Share2, Layers, MessageSquare, Send, Mail, Copy, Clock, AlertTriangle, Cloud, Server, Shield, Loader2, PlayCircle, Lock, RefreshCw, Check } from 'lucide-react';
+import { CheckCircle, Sparkles, Ticket as TicketIcon, ExternalLink, Share2, Layers, MessageSquare, Send, Mail, Copy, Clock, AlertTriangle, Cloud, Server, Shield, Loader2, PlayCircle, Lock, RefreshCw, Check, History } from 'lucide-react';
 
 interface RequirementDetailProps {
   requirement: Requirement;
@@ -100,7 +100,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
             <div>
                 <div className="flex items-center gap-3 mb-2">
                     <span className="font-mono text-sm font-black text-blue-700 bg-blue-100 px-2 py-1 rounded border border-blue-200">{requirement.id}</span>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">DOMAIN: {requirement.family}</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">DOMAIN: {requirement.family}</span>
                 </div>
                 <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight leading-none">{requirement.title}</h1>
             </div>
@@ -139,7 +139,6 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                             )}
                         </div>
 
-                        {/* Assessment Objectives Workbench */}
                         <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
                             <div className="bg-slate-900 px-10 py-6 border-b border-slate-800 flex justify-between items-center text-white">
                                 <h3 className="font-black text-[10px] uppercase tracking-[0.3em]">Assessment Objectives (800-171A)</h3>
@@ -187,7 +186,6 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                         </div>
                     </>
                 )}
-                {/* ... other tabs ... */}
             </div>
 
             <div className="lg:col-span-4 space-y-8">
@@ -201,12 +199,6 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">NIST 800-53:</span>
                             <span className="text-blue-300 font-mono font-bold">{requirement.mappings?.nist800_53?.join(', ') || 'N/A'}</span>
                         </div>
-                        {requirement.mappings?.iso27001 && (
-                            <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">ISO 27001:</span>
-                                <span className="text-indigo-300 font-mono font-bold">{requirement.mappings.iso27001.join(', ')}</span>
-                            </div>
-                        )}
                     </div>
                 </div>
 

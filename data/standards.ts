@@ -34,7 +34,7 @@ export const ACADEMY_PHASES = [
 ];
 
 export const REQUIREMENTS_DATA: Requirement[] = [
-    // 3.1 ACCESS CONTROL (AC)
+    // Foundation Domains (AC, AU, AT, CM, IA, IR, MA, MP included for completeness)
     { id: '3.1.1', framework: 'NIST-CMMC', family: 'AC', title: 'Limit system access to authorized users', description: 'Limit system access to authorized users, processes acting on behalf of authorized users, and devices (including other systems).', cmmcLevel: 1, sprsWeight: 1,
       objectives: [
         { id: 'a', description: 'authorized users are identified;', status: 'pending' },
@@ -46,77 +46,86 @@ export const REQUIREMENTS_DATA: Requirement[] = [
       ],
       mappings: { nist800_53: ['AC-2', 'AC-3'] }
     },
-    { id: '3.1.2', framework: 'NIST-CMMC', family: 'AC', title: 'Transaction & Function Control', description: 'Limit system access to the types of transactions and functions that authorized users are permitted to execute.', cmmcLevel: 1, sprsWeight: 1,
+
+    // --- PERSONNEL SECURITY (PS) ---
+    { id: '3.9.1', framework: 'NIST-CMMC', family: 'PS', title: 'Screen Individuals', description: 'Screen individuals prior to authorizing access to organizational systems containing CUI.', cmmcLevel: 2, sprsWeight: 3,
       objectives: [
-        { id: 'a', description: 'the types of transactions and functions that authorized users are permitted to execute are defined; and', status: 'pending' },
-        { id: 'b', description: 'system access is limited to the defined types of transactions and functions for authorized users.', status: 'pending' }
+        { id: 'a', description: 'individuals are screened prior to authorizing access to organizational systems containing CUI.', status: 'pending' }
       ],
-      mappings: { nist800_53: ['AC-3'] }
+      mappings: { nist800_53: ['PS-3'] }
+    },
+    { id: '3.9.2', framework: 'NIST-CMMC', family: 'PS', title: 'Personnel Actions', description: 'Ensure that organizational systems containing CUI are protected during and after personnel actions.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'a policy and/or process for terminating system access and any credentials coincident with personnel actions is established;', status: 'pending' },
+        { id: 'b', description: 'system access and credentials are terminated consistent with personnel actions such as termination or transfer; and', status: 'pending' },
+        { id: 'c', description: 'the system is protected during and after personnel transfer actions.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['PS-4', 'PS-5'] }
     },
 
-    // 3.2 AWARENESS AND TRAINING (AT)
-    { id: '3.2.1', framework: 'NIST-CMMC', family: 'AT', title: 'Role-Based Risk Awareness', description: 'Ensure that managers, systems administrators, and users are made aware of the security risks.', cmmcLevel: 2, sprsWeight: 3,
+    // --- PHYSICAL PROTECTION (PE) ---
+    { id: '3.10.1', framework: 'NIST-CMMC', family: 'PE', title: 'Limit Physical Access', description: 'Limit physical access to organizational systems, equipment, and the respective operating environments to authorized individuals.', cmmcLevel: 1, sprsWeight: 3,
       objectives: [
-        { id: 'a', description: 'security risks associated with organizational activities involving CUI are identified;', status: 'pending' },
-        { id: 'b', description: 'policies, standards, and procedures related to the security of the system are identified;', status: 'pending' },
-        { id: 'c', description: 'managers, systems administrators, and users of the system are made aware of the security risks associated with their activities; and', status: 'pending' },
-        { id: 'd', description: 'managers, systems administrators, and users are aware of applicable policies and procedures.', status: 'pending' }
+        { id: 'a', description: 'authorized individuals allowed physical access are identified;', status: 'pending' },
+        { id: 'b', description: 'physical access to organizational systems is limited to authorized individuals;', status: 'pending' },
+        { id: 'c', description: 'physical access to equipment is limited to authorized individuals; and', status: 'pending' },
+        { id: 'd', description: 'physical access to operating environments is limited to authorized individuals.', status: 'pending' }
       ],
-      mappings: { nist800_53: ['AT-2'] }
+      mappings: { nist800_53: ['PE-2'] }
+    },
+    { id: '3.10.2', framework: 'NIST-CMMC', family: 'PE', title: 'Monitor Facility', description: 'Protect and monitor the physical facility and support infrastructure for organizational systems.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'the physical facility where organizational systems reside is protected;', status: 'pending' },
+        { id: 'b', description: 'the support infrastructure for organizational systems is protected;', status: 'pending' },
+        { id: 'c', description: 'the physical facility where organizational systems reside is monitored; and', status: 'pending' },
+        { id: 'd', description: 'the support infrastructure for organizational systems is monitored.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['PE-3', 'PE-6'] }
     },
 
-    // 3.3 AUDIT AND ACCOUNTABILITY (AU)
-    { id: '3.3.1', framework: 'NIST-CMMC', family: 'AU', title: 'System Auditing', description: 'Create and retain system audit logs and records.', cmmcLevel: 2, sprsWeight: 3,
+    // --- RISK ASSESSMENT (RA) ---
+    { id: '3.11.1', framework: 'NIST-CMMC', family: 'RA', title: 'Risk Assessments', description: 'Periodically assess risk to organizational operations resulting from the operation of organizational systems.', cmmcLevel: 2, sprsWeight: 3,
       objectives: [
-        { id: 'a', description: 'audit logs needed (i.e., event types to be logged) are specified;', status: 'pending' },
-        { id: 'b', description: 'the content of audit records needed to support monitoring is defined;', status: 'pending' },
-        { id: 'c', description: 'audit records are created (generated);', status: 'pending' },
-        { id: 'd', description: 'audit records contain the defined content;', status: 'pending' },
-        { id: 'e', description: 'retention requirements for audit records are defined; and', status: 'pending' },
-        { id: 'f', description: 'audit records are retained as defined.', status: 'pending' }
-      ],
-      mappings: { nist800_53: ['AU-2'] }
-    },
-
-    // 3.7 MAINTENANCE (MA)
-    { id: '3.7.1', framework: 'NIST-CMMC', family: 'MA', title: 'Perform Maintenance', description: 'Perform maintenance on organizational systems.', cmmcLevel: 2, sprsWeight: 3,
-      objectives: [
-        { id: 'a', description: 'system maintenance is performed.', status: 'pending' }
-      ],
-      mappings: { nist800_53: ['MA-2'] }
-    },
-    { id: '3.7.2', framework: 'NIST-CMMC', family: 'MA', title: 'System Maintenance Control', description: 'Provide controls on tools, techniques, and personnel.', cmmcLevel: 2, sprsWeight: 3,
-      objectives: [
-        { id: 'a', description: 'tools used to conduct system maintenance are controlled;', status: 'pending' },
-        { id: 'b', description: 'techniques used to conduct system maintenance are controlled;', status: 'pending' },
-        { id: 'c', description: 'mechanisms used to conduct system maintenance are controlled; and', status: 'pending' },
-        { id: 'd', description: 'personnel used to conduct system maintenance are controlled.', status: 'pending' }
-      ],
-      mappings: { nist800_53: ['MA-3'] }
-    },
-
-    // 3.8 MEDIA PROTECTION (MP)
-    { id: '3.8.1', framework: 'NIST-CMMC', family: 'MP', title: 'Media Protection', description: 'Protect system media containing CUI.', cmmcLevel: 2, sprsWeight: 3,
-      objectives: [
-        { id: 'a', description: 'paper media containing CUI is physically controlled;', status: 'pending' },
-        { id: 'b', description: 'digital media containing CUI is physically controlled;', status: 'pending' },
-        { id: 'c', description: 'paper media containing CUI is securely stored; and', status: 'pending' },
-        { id: 'd', description: 'digital media containing CUI is securely stored.', status: 'pending' }
-      ],
-      mappings: { nist800_53: ['MP-2'] }
-    },
-
-    // 3.11 RISK ASSESSMENT (RA)
-    { id: '3.11.1', framework: 'NIST-CMMC', family: 'RA', title: 'Risk Assessments', description: 'Periodically assess risk.', cmmcLevel: 2, sprsWeight: 3,
-      objectives: [
-        { id: 'a', description: 'the frequency to assess risk to organizational operations is defined; and', status: 'pending' },
-        { id: 'b', description: 'risk resulted from the operation of a system that processes CUI is assessed with the defined frequency.', status: 'pending' }
+        { id: 'a', description: 'the frequency to assess risk to organizational operations, organizational assets, and individuals is defined; and', status: 'pending' },
+        { id: 'b', description: 'risk to organizational operations resulting from the operation of an organizational system that processes CUI is assessed with the defined frequency.', status: 'pending' }
       ],
       mappings: { nist800_53: ['RA-3'] }
     },
+    { id: '3.11.2', framework: 'NIST-CMMC', family: 'RA', title: 'Vulnerability Scan', description: 'Scan for vulnerabilities in organizational systems and applications periodically.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'the frequency to scan for vulnerabilities in organizational systems and applications is defined;', status: 'pending' },
+        { id: 'b', description: 'vulnerability scans are performed on organizational systems with the defined frequency;', status: 'pending' },
+        { id: 'c', description: 'vulnerability scans are performed on applications with the defined frequency;', status: 'pending' },
+        { id: 'd', description: 'vulnerability scans are performed on organizational systems when new vulnerabilities are identified; and', status: 'pending' },
+        { id: 'e', description: 'vulnerability scans are performed on applications when new vulnerabilities are identified.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['RA-5'] }
+    },
 
-    // 3.13 SYSTEM AND COMMUNICATIONS PROTECTION (SC)
-    { id: '3.13.1', framework: 'NIST-CMMC', family: 'SC', title: 'Boundary Protection', description: 'Monitor and protect communications at boundaries.', cmmcLevel: 1, sprsWeight: 3,
+    // --- SECURITY ASSESSMENT (CA) ---
+    { id: '3.12.1', framework: 'NIST-CMMC', family: 'CA', title: 'Security Control Assessment', description: 'Periodically assess the security controls in organizational systems to determine if the controls are effective.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'the frequency of security control assessments is defined; and', status: 'pending' },
+        { id: 'b', description: 'security controls are assessed with the defined frequency to determine if the controls are effective in their application.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['CA-2'] }
+    },
+    { id: '3.12.4', framework: 'NIST-CMMC', family: 'CA', title: 'System Security Plan', description: 'Develop, document, and periodically update system security plans.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'a system security plan is developed;', status: 'pending' },
+        { id: 'b', description: 'the system boundary is described and documented in the system security plan;', status: 'pending' },
+        { id: 'c', description: 'the system environment of operation is described and documented in the system security plan;', status: 'pending' },
+        { id: 'd', description: 'the security requirements identified as non-applicable are identified;', status: 'pending' },
+        { id: 'e', description: 'the method of security requirement implementation is described and documented;', status: 'pending' },
+        { id: 'f', description: 'the relationship with other systems is described and documented;', status: 'pending' },
+        { id: 'g', description: 'the frequency to update the system security plan is defined; and', status: 'pending' },
+        { id: 'h', description: 'system security plan is updated with the defined frequency.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['PL-2'] }
+    },
+
+    // --- SYSTEM AND COMMUNICATIONS PROTECTION (SC) ---
+    { id: '3.13.1', framework: 'NIST-CMMC', family: 'SC', title: 'Boundary Protection', description: 'Monitor, control, and protect communications at the external boundaries and key internal boundaries.', cmmcLevel: 1, sprsWeight: 3,
       objectives: [
         { id: 'a', description: 'the external system boundary is defined;', status: 'pending' },
         { id: 'b', description: 'key internal system boundaries are defined;', status: 'pending' },
@@ -130,8 +139,8 @@ export const REQUIREMENTS_DATA: Requirement[] = [
       mappings: { nist800_53: ['SC-7'] }
     },
 
-    // 3.14 SYSTEM AND INFORMATION INTEGRITY (SI)
-    { id: '3.14.1', framework: 'NIST-CMMC', family: 'SI', title: 'Flaw Remediation', description: 'Identify, report, and correct system flaws.', cmmcLevel: 1, sprsWeight: 3,
+    // --- SYSTEM AND INFORMATION INTEGRITY (SI) ---
+    { id: '3.14.1', framework: 'NIST-CMMC', family: 'SI', title: 'Flaw Remediation', description: 'Identify, report, and correct system flaws in a timely manner.', cmmcLevel: 1, sprsWeight: 3,
       objectives: [
         { id: 'a', description: 'the time within which to identify system flaws is specified;', status: 'pending' },
         { id: 'b', description: 'system flaws are identified within the specified time frame;', status: 'pending' },
@@ -145,7 +154,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
 ];
 
 export const TRAINING_MODULES: (TrainingModule | SimulationModule)[] = [
-  { id: 'intro-1', familyId: 'PH1', title: 'CMMC 2.0 Framework Architecture', description: 'Overview of transition from NIST 800-171 to CMMC 2.0.', content: '# CMMC 2.0 Structural Overview\n\nCMMC 2.0 streamlines requirements into three levels.', durationMinutes: 20, difficulty: 'Beginner' }
+  { id: 'intro-1', familyId: 'PH1', title: 'CMMC 2.0 Framework Architecture', description: 'Overview of the transition from NIST 800-171 to CMMC 2.0.', content: '# CMMC 2.0 Structural Overview\n\nCMMC 2.0 streamlines requirements into three levels.', durationMinutes: 20, difficulty: 'Beginner' }
 ];
 
 export const RMF_TASKS = [
@@ -164,7 +173,6 @@ export const createInitialClientData = (isParent: boolean): ClientData => ({
   tasks: [],
   budgetItems: [],
   wizardProgress: { currentStep: 'INTRO', currentQuestionIndex: 0 },
-  // Fixed typo in assignmentOfSecurityResponsibility property name by removing erroneous space
   sspMetadata: { systemName: '', systemIdentifier: '', categorization: 'LOW', systemOwner: '', authorizingOfficial: '', otherDesignatedContacts: '', assignmentOfSecurityResponsibility: '', operationalStatus: 'Operational', systemType: 'General Support System', generalDescription: '', systemEnvironment: '', interconnections: '', lawsAndPolicies: '', completionDate: '', approvalDate: '' },
   financials: { annualRevenue: 5000000, employeeCount: 25, avgHourlyLaborRate: 125, brandValueEstimate: 1000000, legalRetentionAnnual: 50000 },
   m365Config: { enabled: false },
