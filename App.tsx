@@ -127,6 +127,15 @@ const App: React.FC = () => {
   const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>({});
   const fetchAttempted = useRef(false);
 
+  // Persistence effect
+  useEffect(() => {
+    localStorage.setItem(KEY_VIEW, currentView);
+  }, [currentView]);
+
+  useEffect(() => {
+    if (activeClientId) localStorage.setItem(KEY_CLIENT, activeClientId);
+  }, [activeClientId]);
+
   // Identity logic
   const userDisplayName = useMemo(() => {
     const profile = auth.user?.profile;
@@ -342,6 +351,7 @@ const App: React.FC = () => {
       case AppView.RISK_MANAGEMENT: return "Quantitative Risk Register";
       case AppView.RMF_LIFECYCLE: return "NIST Risk Management Framework";
       case AppView.FAIR_ANALYZER: return "FAIR Modeling Exercise";
+      case AppView.ASSESSOR_PORTAL: return "Official Assessor View";
       default: return "Cuallee Cyber";
     }
   };
@@ -364,6 +374,7 @@ const App: React.FC = () => {
           <SidebarSection title="Compliance">
             <SidebarItem icon={ListChecks} label="Controls" isActive={currentView === AppView.CONTROLS} onClick={() => setCurrentView(AppView.CONTROLS)} />
             <SidebarItem icon={TrendingUp} label="SPRS Scorecard" isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
+            <SidebarItem icon={ClipboardCheck} label="Assessor View" isActive={currentView === AppView.ASSESSOR_PORTAL} onClick={() => setCurrentView(AppView.ASSESSOR_PORTAL)} badge="CAP 2.0" />
             <SidebarItem icon={Package} label="Assets" isActive={currentView === AppView.ASSETS} onClick={() => setCurrentView(AppView.ASSETS)} />
             <SidebarItem icon={Users} label="Users" isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
           </SidebarSection>
@@ -380,6 +391,9 @@ const App: React.FC = () => {
         <div className="p-4 mt-auto border-t border-slate-900 bg-slate-950/50">
           <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Active Tenant</div>
           <div className="text-xs font-bold text-white truncate uppercase">{activeClient.name}</div>
+          <button onClick={handleLogout} className="mt-4 w-full flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 hover:text-red-400 transition-colors">
+            <LogOut size={14} /> Log Out Securely
+          </button>
         </div>
       </aside>
 
@@ -403,6 +417,7 @@ const App: React.FC = () => {
         <main className="flex-1 overflow-hidden relative bg-slate-50/50">
           <div className="h-full w-full overflow-y-auto">
             {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} targetLevel={targetLevel} onUpdateLevel={handleUpdateLevel} onNavigate={setCurrentView} onToggleChat={() => setIsChatOpen(!isChatOpen)} />}
+            {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} assets={activeData.assets} wizardProgress={activeData.wizardProgress} onUpdateRequirement={handleUpdateRequirement} onAddArtifact={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: [...prev[activeClientId].artifacts, a] }}))} onRemoveArtifact={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id) }}))} onUpdateProgress={(p) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], wizardProgress: p }}))} onUpdateLevel={handleUpdateLevel} targetLevel={targetLevel} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
             {currentView === AppView.CONTROLS && (
                 <div className="flex h-full">
                     <RequirementsList 
@@ -464,6 +479,8 @@ const App: React.FC = () => {
                     )}
                 </div>
             )}
+            {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} />}
+            {currentView === AppView.ASSESSOR_PORTAL && <AssessorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} assets={activeData.assets} risks={activeData.risks} />}
             {currentView === AppView.RISK_MANAGEMENT && <RiskRegister risks={activeData.risks} financials={activeData.financials} onAddRisk={handleAddRisk} onUpdateRisk={handleUpdateRisk} onDeleteRisk={(id) => {}} onUpdateFinancials={handleUpdateFinancials} />}
             {currentView === AppView.FAIR_ANALYZER && <FairRiskAnalyzer risks={activeData.risks} financials={activeData.financials} onUpdateRisk={handleUpdateRisk} />}
             {currentView === AppView.RMF_LIFECYCLE && <RmfLifecycle />}

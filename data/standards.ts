@@ -1,4 +1,4 @@
-import { Requirement, Framework, ClientData, TrainingModule } from '../types';
+import { Requirement, Framework, ClientData, TrainingModule, SimulationModule } from '../types';
 
 export const FRAMEWORKS: Framework[] = [
   { id: 'NIST-CMMC', name: 'CMMC 2.0 / NIST 800-171', description: 'Comprehensive DoD Compliance Portfolio (Levels 1-2)' },
@@ -33,7 +33,6 @@ export const ACADEMY_PHASES = [
   { id: 'PH7', name: 'Risk Management Framework (RMF)', icon: 'ShieldAlert' }
 ];
 
-// NIST SP 800-37 Revision 2 Full Task Registry
 export const RMF_TASKS = [
     { id: 'P-1', step: 'P', name: 'Risk Management Roles', description: 'Identify and assign individuals to specific roles for security and privacy risk management.', role: 'Head of Agency / CIO' },
     { id: 'P-2', step: 'P', name: 'Risk Management Strategy', description: 'Establish a risk management strategy for the organization including a determination of risk tolerance.', role: 'Head of Agency' },
@@ -48,9 +47,7 @@ export const RMF_TASKS = [
     { id: 'M-1', step: 'M', name: 'System and Environment Changes', description: 'Monitor the system and its environment for changes impacting posture.', role: 'System Owner' }
 ];
 
-// NIST SP 800-171 Revision 2 Core Control Set
 export const REQUIREMENTS_DATA: Requirement[] = [
-  // --- 3.1 ACCESS CONTROL (AC) ---
   { 
     id: '3.1.1', framework: 'NIST-CMMC', family: 'AC', title: 'Limit system access to authorized users', 
     description: 'Limit system access to authorized users, processes acting on behalf of authorized users, or devices (including other systems).', 
@@ -102,18 +99,6 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     mappings: { nist800_53: ['AC-7'] } 
   },
   { 
-    id: '3.1.12', framework: 'NIST-CMMC', family: 'AC', title: 'Monitor and control remote access', 
-    description: 'Monitor and control remote access sessions.', 
-    sprsWeight: 3, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'remote access sessions are monitored;', status: 'pending' },
-        { id: 'b', description: 'remote access sessions are controlled.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['AC-17'] } 
-  },
-
-  // --- 3.2 AWARENESS AND TRAINING (AT) ---
-  { 
     id: '3.2.1', framework: 'NIST-CMMC', family: 'AT', title: 'Security awareness training', 
     description: 'Ensure that managers, systems administrators, and users of organizational systems are made aware of the security risks associated with their activities.', 
     sprsWeight: 1, cmmcLevel: 2, 
@@ -124,72 +109,6 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     mappings: { nist800_53: ['AT-2'] } 
   },
   { 
-    id: '3.2.2', framework: 'NIST-CMMC', family: 'AT', title: 'Ensure personnel are trained', 
-    description: 'Ensure that organizational personnel are adequately trained to carry out their assigned information security-related duties and responsibilities.', 
-    sprsWeight: 1, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'personnel are trained for security duties;', status: 'pending' },
-        { id: 'b', description: 'training effectiveness is verified.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['AT-3'] } 
-  },
-
-  // --- 3.3 AUDIT AND ACCOUNTABILITY (AU) ---
-  { 
-    id: '3.3.1', framework: 'NIST-CMMC', family: 'AU', title: 'Create and retain audit logs', 
-    description: 'Create and retain system audit logs and records to the extent needed to enable the monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity.', 
-    sprsWeight: 3, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'audit logs are created;', status: 'pending' },
-        { id: 'b', description: 'audit logs are retained.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['AU-2'] } 
-  },
-  { 
-    id: '3.3.2', framework: 'NIST-CMMC', family: 'AU', title: 'Ensure actions can be traced to users', 
-    description: 'Ensure that the actions of individual system users can be uniquely traced to those users so they can be held accountable for their actions.', 
-    sprsWeight: 3, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'users are uniquely identified;', status: 'pending' },
-        { id: 'b', description: 'actions are traceable to users.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['AU-3'] } 
-  },
-
-  // --- 3.4 CONFIGURATION MANAGEMENT (CM) ---
-  { 
-    id: '3.4.1', framework: 'NIST-CMMC', family: 'CM', title: 'Baseline configurations', 
-    description: 'Establish and maintain baseline configurations and inventories of organizational systems (including hardware, software, firmware, and documentation) throughout the respective system development lifecycles.', 
-    sprsWeight: 3, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'baseline configurations are established;', status: 'pending' },
-        { id: 'b', description: 'system inventories are maintained.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['CM-2'] } 
-  },
-  { 
-    id: '3.4.2', framework: 'NIST-CMMC', family: 'CM', title: 'Configure security settings', 
-    description: 'Establish and enforce security configuration settings for information technology products employed in organizational systems.', 
-    sprsWeight: 3, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'security settings are established;', status: 'pending' },
-        { id: 'b', description: 'security settings are enforced.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['CM-6'] } 
-  },
-
-  // --- 3.5 IDENTIFICATION AND AUTHENTICATION (IA) ---
-  { 
-    id: '3.5.1', framework: 'NIST-CMMC', family: 'IA', title: 'Identify system users', 
-    description: 'Identify system users, processes acting on behalf of users, or devices.', 
-    sprsWeight: 3, cmmcLevel: 1, 
-    objectives: [
-        { id: 'a', description: 'users are identified;', status: 'pending' },
-        { id: 'b', description: 'processes are identified.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['IA-2'] } 
-  },
-  { 
     id: '3.5.3', framework: 'NIST-CMMC', family: 'IA', title: 'Use multi-factor authentication (MFA)', 
     description: 'Use multi-factor authentication for local and network access to privileged accounts and for network access to non-privileged accounts.', 
     sprsWeight: 3, cmmcLevel: 2, 
@@ -198,133 +117,45 @@ export const REQUIREMENTS_DATA: Requirement[] = [
         { id: 'b', description: 'MFA is used for network access.', status: 'pending' }
     ], 
     mappings: { nist800_53: ['IA-2(1)'] } 
-  },
-
-  // --- 3.6 INCIDENT RESPONSE (IR) ---
-  { 
-    id: '3.6.1', framework: 'NIST-CMMC', family: 'IR', title: 'Incident response capability', 
-    description: 'Establish an operational incident-handling capability for organizational systems that includes preparation, detection, analysis, containment, recovery, and user response activities.', 
-    sprsWeight: 3, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'incident handling capability is established;', status: 'pending' },
-        { id: 'b', description: 'preparation and detection activities are included.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['IR-4'] } 
-  },
-
-  // --- 3.7 MAINTENANCE (MA) ---
-  { 
-    id: '3.7.1', framework: 'NIST-CMMC', family: 'MA', title: 'Perform system maintenance', 
-    description: 'Perform maintenance on organizational systems.', 
-    sprsWeight: 3, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'maintenance is performed;', status: 'pending' },
-        { id: 'b', description: 'maintenance is documented.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['MA-2'] } 
-  },
-
-  // --- 3.8 MEDIA PROTECTION (MP) ---
-  { 
-    id: '3.8.1', framework: 'NIST-CMMC', family: 'MP', title: 'Protect system media', 
-    description: 'Protect (i.e., physically control and securely store) system media containing CUI, both paper and digital.', 
-    sprsWeight: 3, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'digital media is protected;', status: 'pending' },
-        { id: 'b', description: 'paper media is protected.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['MP-2'] } 
-  },
-
-  // --- 3.9 PERSONNEL SECURITY (PS) ---
-  { 
-    id: '3.9.1', framework: 'NIST-CMMC', family: 'PS', title: 'Screen individuals', 
-    description: 'Screen individuals prior to authorizing access to organizational systems containing CUI.', 
-    sprsWeight: 1, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'individuals are screened;', status: 'pending' },
-        { id: 'b', description: 'screening is performed prior to access.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['PS-3'] } 
-  },
-
-  // --- 3.10 PHYSICAL PROTECTION (PE) ---
-  { 
-    id: '3.10.1', framework: 'NIST-CMMC', family: 'PE', title: 'Limit physical access', 
-    description: 'Limit physical access to organizational systems, equipment, and the respective operating environments to authorized individuals.', 
-    sprsWeight: 3, cmmcLevel: 1, 
-    objectives: [
-        { id: 'a', description: 'physical access is limited;', status: 'pending' },
-        { id: 'b', description: 'operating environments are protected.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['PE-2'] } 
-  },
-
-  // --- 3.11 RISK ASSESSMENT (RA) ---
-  { 
-    id: '3.11.1', framework: 'NIST-CMMC', family: 'RA', title: 'Periodically assess risk', 
-    description: 'Periodically assess the risk to organizational operations (including mission, functions, image, or reputation), organizational assets, and individuals, resulting from the operation of organizational systems and the associated processing, storage, or transmission of CUI.', 
-    sprsWeight: 3, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'risks are assessed periodically;', status: 'pending' },
-        { id: 'b', description: 'assessment includes CUI impact.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['RA-3'] } 
-  },
-
-  // --- 3.12 SECURITY ASSESSMENT (CA) ---
-  { 
-    id: '3.12.1', framework: 'NIST-CMMC', family: 'CA', title: 'Periodically assess security controls', 
-    description: 'Periodically assess the security controls in organizational systems to determine if the controls are effective in their application.', 
-    sprsWeight: 3, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'security controls are assessed;', status: 'pending' },
-        { id: 'b', description: 'effectiveness is determined.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['CA-2'] } 
-  },
-
-  // --- 3.13 SYSTEM AND COMMUNICATIONS PROTECTION (SC) ---
-  { 
-    id: '3.13.1', framework: 'NIST-CMMC', family: 'SC', title: 'Monitor and protect communications', 
-    description: 'Monitor, control, and protect organizational communications (i.e., information transmitted or received by organizational systems) at the external boundaries and key internal boundaries of organizational systems.', 
-    sprsWeight: 3, cmmcLevel: 1, 
-    objectives: [
-        { id: 'a', description: 'external boundaries are monitored;', status: 'pending' },
-        { id: 'b', description: 'communications are protected.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['SC-7'] } 
-  },
-
-  // --- 3.14 SYSTEM AND INFORMATION INTEGRITY (SI) ---
-  { 
-    id: '3.14.1', framework: 'NIST-CMMC', family: 'SI', title: 'Identify and report flaws', 
-    description: 'Identify, report, and correct system flaws in a timely manner.', 
-    sprsWeight: 3, cmmcLevel: 1, 
-    objectives: [
-        { id: 'a', description: 'system flaws are identified;', status: 'pending' },
-        { id: 'b', description: 'flaws are corrected in a timely manner.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['SI-2'] } 
-  },
-  { 
-    id: '3.14.2', framework: 'NIST-CMMC', family: 'SI', title: 'Provide protection from malicious code', 
-    description: 'Provide protection from malicious code at appropriate locations within organizational systems.', 
-    sprsWeight: 3, cmmcLevel: 1, 
-    objectives: [
-        { id: 'a', description: 'malicious code protection is provided;', status: 'pending' },
-        { id: 'b', description: 'locations for protection are appropriate.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['SI-3'] } 
   }
 ];
 
-export const TRAINING_MODULES: TrainingModule[] = [
+export const TRAINING_MODULES: (TrainingModule | SimulationModule)[] = [
   {
-    id: 'intro-1', familyId: 'PH1', title: 'Compliance Fundamentals',
-    description: 'Overview of the CMMC 2.0 framework and NIST 800-171 standards.',
-    content: '# CMMC 2.0 Basics\nWelcome to your journey towards compliance.',
-    durationMinutes: 15, difficulty: 'Beginner'
+    id: 'intro-1', familyId: 'PH1', title: 'CMMC 2.0 Framework Architecture',
+    description: 'Deep dive into the transition from NIST 800-171 Rev 2 to CMMC 2.0 Levels 1-3.',
+    content: '# CMMC 2.0 Structural Overview\n\nCMMC 2.0 streamlines the requirements into three distinct levels:\n\n1. **Level 1 (Foundational)**: 17 Practices (Identical to FAR 52.204-21)\n2. **Level 2 (Advanced)**: 110 Practices (Direct alignment with NIST SP 800-171)\n3. **Level 3 (Expert)**: 110+ Practices (Based on NIST SP 800-172)\n\n## Key Assessment Changes\nAssessments are now bifurcated between **Self-Assessments** for Level 1 and some Level 2 (non-prioritized CUI), and **Third-Party Assessments** for Level 2 (prioritized CUI) and Level 3.',
+    durationMinutes: 20, difficulty: 'Beginner'
+  },
+  {
+    id: 'scope-1', familyId: 'PH2', title: 'Scoping the Assessment Boundary',
+    description: 'Identify the five asset categories required for a valid CMMC assessment.',
+    content: '# Defining the Boundary\n\nPer the CMMC Scoping Guide v2.11, assets must be classified into:\n\n- **CUI Assets**: Process, store, or transmit CUI.\n- **Security Protection Assets (SPA)**: Provide security functions (e.g., Firewalls, SIEM).\n- **Contractor Risk Managed Assets (CRMA)**: Can but do not intended to process CUI.\n- **Specialized Assets**: IoT, OT, GFE.\n- **Out-of-Scope Assets**: No access to CUI.\n\n> *Crucial*: All CUI Assets and SPAs are subject to full assessment.',
+    durationMinutes: 25, difficulty: 'Intermediate'
+  },
+  {
+    id: 'tech-ac-1', familyId: 'PH3', title: 'Domain Deep Dive: Access Control (AC)',
+    description: 'Implementing least privilege and transaction-level monitoring for CUI.',
+    content: '# Access Control (AC) Domain\n\nAccess Control is the largest domain in NIST 800-171. It focuses on ensuring only the right people have access to the right data.\n\n## Key Requirements\n- **3.1.1**: Use of authorized users/devices.\n- **3.1.3**: Controlling CUI flow.\n- **3.1.12**: Remote access encryption and monitoring.',
+    durationMinutes: 45, difficulty: 'Advanced'
+  },
+  {
+    id: 'tech-ia-1', familyId: 'PH3', title: 'Identity & Authentication Mastery',
+    description: 'MFA implementation and password lifecycle management for federal data.',
+    content: '# Identification and Authentication (IA)\n\nNIST 800-171 requires robust identity verification.\n\n## Multi-Factor Authentication (3.5.3)\nMFA is mandated for all local and network access to privileged accounts and all network access to non-privileged accounts. \n\n*Assessor Tip*: Auditors look for "something you have" (TOTP, Hardware Key) + "something you know" (Password).',
+    durationMinutes: 30, difficulty: 'Intermediate'
+  },
+  {
+    id: 'sim-inc-1', familyId: 'PH6', title: 'Sim: Ransomware Incident Response',
+    description: 'Live tabletop exercise for executive leadership during a CUI data breach.',
+    isSimulation: true,
+    executiveFocus: 'Leadership Decision-making & Disclosure Obligations',
+    injects: [
+        { id: 'ij1', title: 'The Initial Alert', scenario: 'The IT Director reports that the main CUI file server is unresponsive. A text file on the root drive demands 10 BTC.', regulatoryHint: 'Reference IR 3.6.1: Is your IR capability operational right now?' },
+        { id: 'ij2', title: 'Scope Verification', scenario: 'The CISO confirms CUI was exfiltrated. Legal reminds the team of the 72-hour DoD reporting requirement via DIBNet.', regulatoryHint: 'Reference IR 3.6.2: Have you tracked the incident according to your plan?' }
+    ],
+    content: 'Interactive Tabletop Simulation Engine Initialized.',
+    durationMinutes: 60, difficulty: 'Advanced'
   }
 ];
 

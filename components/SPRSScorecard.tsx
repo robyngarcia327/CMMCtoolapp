@@ -19,9 +19,9 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
   );
 
   const getReqStatus = (req: Requirement) => {
+    if (!req.objectives || req.objectives.length === 0) return 'pending';
     const statuses = req.objectives.map(o => o.status);
     if (statuses.some(s => s === 'not_met')) return 'not_met';
-    if (statuses.some(s => s === 'pending')) return 'pending'; 
     if (statuses.every(s => s === 'met' || s === 'na')) return 'met';
     return 'pending';
   };
@@ -31,6 +31,8 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
     const scored = activeReqs.map(req => {
       const status = getReqStatus(req);
       const isMet = status === 'met';
+      // In SPRS, if it's not met, we deduct the weight. 
+      // Default to 1 if weight is missing.
       const weight = req.sprsWeight || 1;
       return {
           ...req,
@@ -40,6 +42,7 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
     });
 
     const totalDeductions = scored.reduce((sum, r) => sum + r.deduction, 0);
+    // Base score for Level 2 is usually 110. Level 1 is 17.
     const baseScore = targetLevel === 1 ? 17 : 110; 
     const currentScore = baseScore - totalDeductions;
     const readinessPercentage = Math.round((scored.filter(r => r.computedStatus === 'met').length / (activeReqs.length || 1)) * 100);
@@ -103,7 +106,7 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-8 space-y-8 h-full overflow-y-auto pb-20">
+    <div className="max-w-7xl mx-auto p-8 space-y-8 h-full overflow-y-auto pb-20 bg-slate-50/50">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
             <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mb-2">
@@ -126,7 +129,6 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Main Score Widget */}
           <div className="lg:col-span-4 bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-10 flex flex-col items-center text-center relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
               
@@ -167,7 +169,6 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
               </div>
           </div>
 
-          {/* Impact Analysis List */}
           <div className="lg:col-span-8 bg-white rounded-[2.5rem] shadow-sm border border-slate-200 flex flex-col overflow-hidden">
               <div className="p-6 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center">
                   <h3 className="font-black text-slate-900 uppercase tracking-tight flex items-center gap-2 text-sm">
@@ -221,7 +222,6 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
           </div>
       </div>
         
-      {/* Educational Footer */}
       <div className="bg-indigo-900 rounded-3xl p-8 text-white flex flex-col md:flex-row gap-8 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
           <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-md h-fit">
@@ -236,11 +236,6 @@ export const SPRSScorecard: React.FC<SPRSScorecardProps> = ({ requirements, acti
                   Your score should be supported by a <span className="text-white font-bold">System Security Plan (SSP)</span> and an active 
                   <span className="text-white font-bold"> POA&M</span> for any deductions.
               </p>
-              <div className="flex gap-4">
-                <button className="bg-white text-blue-900 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-50 transition-all flex items-center gap-2">
-                    <Download size={14}/> Download Official SPRS Submission Guide
-                </button>
-              </div>
           </div>
       </div>
     </div>
