@@ -49,7 +49,7 @@ import { Login } from './components/Login';
 import { Onboarding } from './components/Onboarding'; 
 import { Dashboard } from './components/Dashboard'; 
 import { AssessorPortal } from './components/AssessorPortal';
-import { RiskRegister } from './components/RiskRegister';
+import { RiskRegistry } from './components/RiskRegistry';
 import { FairRiskAnalyzer } from './components/FairRiskAnalyzer';
 import { CmmcAcademy } from './components/CmmcAcademy';
 import { RmfLifecycle } from './components/RmfLifecycle';
@@ -129,6 +129,45 @@ const App: React.FC = () => {
   });
 
   const fetchAttempted = useRef(false);
+
+  // --- DATA INTEGRITY SYNC: overwrite placeholders with official NIST text ---
+  useEffect(() => {
+    if (activeClientId && clientDataStore[activeClientId]) {
+        const clientReqs = clientDataStore[activeClientId].requirements;
+        let needsSync = false;
+
+        const syncedReqs = clientReqs.map(existing => {
+            const official = REQUIREMENTS_DATA.find(o => o.id === existing.id);
+            if (official) {
+                // If official objectives list is longer or descriptions differ, force an update
+                const objectivesMatch = official.objectives.every(o => {
+                    const matched = existing.objectives?.find(eo => eo.id === o.id);
+                    return matched && matched.description === o.description;
+                });
+
+                if (!objectivesMatch || official.objectives.length !== existing.objectives.length) {
+                    needsSync = true;
+                    return {
+                        ...existing,
+                        objectives: official.objectives.map(o => {
+                            const existingObj = existing.objectives?.find(eo => eo.id === o.id);
+                            return existingObj ? { ...o, status: existingObj.status } : o;
+                        })
+                    };
+                }
+            }
+            return existing;
+        });
+
+        if (needsSync) {
+            setClientDataStore(prev => ({
+                ...prev,
+                [activeClientId]: { ...prev[activeClientId], requirements: syncedReqs }
+            }));
+            console.log("Audit engine synced objective descriptions from NIST master library.");
+        }
+    }
+  }, [activeClientId]);
 
   useEffect(() => {
     localStorage.setItem(KEY_VIEW, currentView);
@@ -270,7 +309,7 @@ const App: React.FC = () => {
       <aside className="w-64 bg-slate-950 text-slate-300 flex flex-col shrink-0 z-50 border-r border-slate-900 shadow-2xl">
         <div className="p-6 pb-10">
           <div className="flex items-center gap-3 text-white">
-            <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-900/50"><Shield size={20} className="text-white" /></div>
+            <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-900/20"><Shield size={20} className="text-white" /></div>
             <span className="tracking-tighter uppercase font-black text-lg leading-none">Cuallee<br/><span className="text-blue-500">Cyber</span></span>
           </div>
         </div>
@@ -336,7 +375,7 @@ const App: React.FC = () => {
             {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} />}
             {currentView === AppView.TRAINING && <CmmcAcademy />}
             {currentView === AppView.ASSESSOR_PORTAL && <AssessorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} assets={activeData.assets} risks={activeData.risks} />}
-            {currentView === AppView.RISK_MANAGEMENT && <RiskRegister risks={activeData.risks} financials={activeData.financials} onAddRisk={handleAddRisk} onUpdateRisk={handleUpdateRisk} onDeleteRisk={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: prev[activeClientId].risks.filter(r => r.id !== id) }}))} onUpdateFinancials={handleUpdateFinancials} />}
+            {currentView === AppView.RISK_MANAGEMENT && <RiskRegistry risks={activeData.risks} financials={activeData.financials} onAddRisk={handleAddRisk} onUpdateRisk={handleUpdateRisk} onDeleteRisk={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: prev[activeClientId].risks.filter(r => r.id !== id) }}))} onUpdateFinancials={handleUpdateFinancials} />}
             {currentView === AppView.FAIR_ANALYZER && <FairRiskAnalyzer risks={activeData.risks} financials={activeData.financials} onUpdateRisk={handleUpdateRisk} />}
             {currentView === AppView.RMF_LIFECYCLE && <RmfLifecycle />}
             {currentView === AppView.COST_TO_COMPLIANCE && <BudgetCalculator requirements={activeData.requirements} budgetItems={activeData.budgetItems} onAddItem={(i) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], budgetItems: [...prev[activeClientId].budgetItems, i] }}))} onRemoveItem={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], budgetItems: prev[activeClientId].budgetItems.filter(i => i.id !== id) }}))} />}
