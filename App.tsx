@@ -147,9 +147,23 @@ const App: React.FC = () => {
 
   // DERIVED ACTIVE CLIENT
   const activeClient = useMemo(() => {
-    const client = clients.find(c => c.id === activeClientId) || clients[0];
-    if (!client) return { name: 'Unauthorized Tenant', id: '', domain: '', industry: '', contactName: '', logoInitial: '?', primaryFramework: '', targetCmmcLevel: 2 as const, nextAuditDate: 0, accountManager: '', isParent: false };
-    return client;
+    const client = clients.find(c => c.id === activeClientId);
+    if (client) return client;
+    
+    if (clients.length > 0) return clients[0];
+
+    return { 
+      name: 'Unauthorized Tenant', 
+      id: '', domain: '', 
+      industry: '', 
+      contactName: '', 
+      logoInitial: '?', 
+      primaryFramework: '', 
+      targetCmmcLevel: 2 as const, 
+      nextAuditDate: 0, 
+      accountManager: '', 
+      isParent: false 
+    };
   }, [clients, activeClientId]);
 
   // Data Handlers
@@ -220,6 +234,7 @@ const App: React.FC = () => {
         isParent: !!o.isParent
       }));
       setClients(mappedClients);
+      
       if (mappedClients.length > 0) {
         const persistedId = localStorage.getItem(KEY_CLIENT);
         const selectedId = mappedClients.some(c => c.id === persistedId) ? (persistedId as string) : mappedClients[0].id;
@@ -237,8 +252,12 @@ const App: React.FC = () => {
           return nextStore;
         });
       }
-      setHasCheckedOrgs(true);
-    } catch (error) { console.error("Load failed", error); } finally { setIsDataLoading(false); }
+    } catch (error) { 
+      console.error("Load failed", error); 
+    } finally { 
+      setIsDataLoading(false); 
+      setHasCheckedOrgs(true); // CRITICAL: Stop spinning even if it fails
+    }
   }, [auth.isAuthenticated, auth.user, userGroups, userDisplayName]);
 
   useEffect(() => {
@@ -257,20 +276,56 @@ const App: React.FC = () => {
   
   if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-500" size={48} /></div>;
   if (!auth.isAuthenticated) return <Login />;
+  
+  // SPINNING FIX: Only spin if loading AND we haven't confirmed org check status
   if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
 
-  if (hasCheckedOrgs && !activeClientId) {
+  // ONBOARDING GATE: If checked and no orgs, force setup
+  if (hasCheckedOrgs && (clients.length === 0 || !activeClientId)) {
     return (
-      <Onboarding user={{ id: auth.user?.profile.sub || '', name: userDisplayName, email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }} onCreateOrganization={async (name, domain) => {
+      <Onboarding 
+        user={{ 
+          id: auth.user?.profile.sub || '', 
+          name: userDisplayName, 
+          email: auth.user?.profile.email || '', 
+          role: 'Admin_Created_Users', 
+          domain: (auth.user?.profile.email || '').split('@')[1], 
+          organizationId: '', 
+          department: '', 
+          lastLogin: 0, 
+          mfaEnabled: false, 
+          hasPasskey: false, 
+          isCuiAuthorized: false 
+        }} 
+        onCreateOrganization={async (name, domain, financials) => {
           if (!auth.user?.id_token) return;
           setIsDataLoading(true);
-          try { await api.createOrg(auth.user.id_token, name, domain); fetchAttempted.current = false; await loadOrganizations(); } catch (e) { setIsDataLoading(false); }
-        }} onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }}
+          try { 
+            const newOrg = await api.createOrg(auth.user.id_token, name, domain); 
+            // Initialize financials locally if the API doesn't support them yet
+            setClientDataStore(prev => ({
+              ...prev,
+              [newOrg.orgId]: {
+                ...createInitialClientData(false),
+                financials: financials || createInitialClientData(false).financials
+              }
+            }));
+            fetchAttempted.current = false; 
+            await loadOrganizations(); 
+          } catch (e) { 
+            console.error("Onboarding failed", e);
+          } finally {
+            setIsDataLoading(false); 
+          }
+        }} 
+        onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }}
+        debugTokens={{ idToken: auth.user?.id_token }}
       />
     );
   }
 
   const activeData = clientDataStore[activeClientId];
+  // If we have clients but data isn't initialized yet (rare race condition)
   if (!activeData) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 size={48} className="animate-spin" /></div>;
 
   const targetLevel = (activeData as ClientData).targetCmmcLevel;
@@ -355,7 +410,6 @@ const App: React.FC = () => {
             {currentView === AppView.FAIR_ANALYZER && <FairRiskAnalyzer risks={activeData.risks} financials={activeData.financials} onUpdateRisk={handleUpdateRisk} />}
             {currentView === AppView.RMF_LIFECYCLE && <RmfLifecycle />}
             {currentView === AppView.TRAINING && <CmmcAcademy />}
-            {/* Other views omitted for brevity */}
           </div>
         </main>
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
