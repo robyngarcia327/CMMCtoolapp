@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Cloud, 
@@ -193,7 +192,8 @@ export const IntegrationsHub: React.FC<IntegrationsHubProps> = ({ data, onUpdate
                         <div className={`p-8 text-white ${selectedConnector.providerColor}`}>
                             <div className="flex justify-between items-start mb-6">
                                 <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
-                                    {React.cloneElement(selectedConnector.icon as React.ReactElement, { className: 'text-white', size: 24 })}
+                                    {/* Added fix: casting selectedConnector.icon to React.ReactElement<any> to satisfy props requirements for Lucide icons */}
+                                    {React.cloneElement(selectedConnector.icon as React.ReactElement<any>, { className: 'text-white', size: 24 })}
                                 </div>
                                 <button onClick={() => setSelectedConnectorId(null)} className="p-2 hover:bg-white/10 rounded-full">
                                     <AlertCircle size={20} className="rotate-45" />

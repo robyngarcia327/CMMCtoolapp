@@ -36,7 +36,7 @@ export const ACADEMY_PHASES = [
 export const REQUIREMENTS_DATA: Requirement[] = [
     // --- ACCESS CONTROL (AC) DOMAIN - FULL NIST 800-171A POPULATION ---
     
-    { id: '3.1.1', framework: 'NIST-CMMC', family: 'AC', title: 'Limit system access to authorized users', description: 'Limit system access to authorized users, processes acting on behalf of authorized users, and devices (including other systems).', cmmcLevel: 1, sprsWeight: 1,
+    { id: '3.1.1', framework: 'NIST-CMMC', family: 'AC', title: 'Authorized Access Control', description: 'Limit system access to authorized users, processes acting on behalf of authorized users, and devices (including other systems).', cmmcLevel: 1, sprsWeight: 1,
       objectives: [
         { id: 'a', description: 'authorized users are identified;', status: 'pending' },
         { id: 'b', description: 'processes acting on behalf of authorized users are identified;', status: 'pending' },

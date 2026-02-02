@@ -129,31 +129,31 @@ const App: React.FC = () => {
 
   const fetchAttempted = useRef(false);
 
-  // --- DATA INTEGRITY SYNC: Force refresh official NIST text into local state ---
+  // --- DEEP DATA INTEGRITY SYNC ---
+  // Overwrites placeholders with NIST text and injects missing controls
   useEffect(() => {
     if (activeClientId && clientDataStore[activeClientId]) {
-        const clientReqs = clientDataStore[activeClientId].requirements;
+        const clientData = clientDataStore[activeClientId];
+        const clientReqs = clientData.requirements;
         let needsSync = false;
 
         const syncedReqs = clientReqs.map(existing => {
             const official = REQUIREMENTS_DATA.find(o => o.id === existing.id);
             if (official) {
-                // Determine if we are still holding placeholder values
+                // Check if descriptions mismatch or placeholders exist
                 const isPlaceholder = existing.objectives?.some(eo => eo.description.includes('is satisfied') || eo.description.includes('objective ['));
-                
-                // If official objectives list is longer, descriptions differ, or placeholders exist, force an update
-                const objectivesMatch = official.objectives.every(o => {
+                const needsDescriptionSync = isPlaceholder || official.objectives.some(o => {
                     const matched = existing.objectives?.find(eo => eo.id === o.id);
-                    return matched && matched.description === o.description;
+                    return !matched || matched.description !== o.description;
                 });
 
-                if (isPlaceholder || !objectivesMatch || official.objectives.length !== existing.objectives.length) {
+                if (needsDescriptionSync || official.objectives.length !== (existing.objectives?.length || 0)) {
                     needsSync = true;
                     return {
                         ...existing,
                         objectives: official.objectives.map(o => {
                             const existingObj = existing.objectives?.find(eo => eo.id === o.id);
-                            // Preserve user status (Met/Gap) but update text to NIST official
+                            // Keep 'met'/'gap' status, but update the actual objective text
                             return existingObj ? { ...o, status: existingObj.status } : o;
                         })
                     };
@@ -162,15 +162,31 @@ const App: React.FC = () => {
             return existing;
         });
 
-        if (needsSync) {
+        // Also check if entire controls are missing (e.g. only 9 of 22 AC controls show)
+        const currentIds = new Set(clientReqs.map(r => r.id));
+        const missingFromClient = REQUIREMENTS_DATA.filter(r => r.framework === 'NIST-CMMC' && !currentIds.has(r.id));
+        
+        if (needsSync || missingFromClient.length > 0) {
+            const finalReqs = [...syncedReqs, ...missingFromClient];
+            // Sort numerically (3.1.1, 3.1.2, etc.)
+            finalReqs.sort((a, b) => {
+                const aParts = a.id.split('.').map(Number);
+                const bParts = b.id.split('.').map(Number);
+                for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+                    if ((aParts[i] || 0) < (bParts[i] || 0)) return -1;
+                    if ((aParts[i] || 0) > (bParts[i] || 0)) return 1;
+                }
+                return 0;
+            });
+
             setClientDataStore(prev => ({
                 ...prev,
-                [activeClientId]: { ...prev[activeClientId], requirements: syncedReqs }
+                [activeClientId]: { ...prev[activeClientId], requirements: finalReqs }
             }));
-            console.info("Standards integrity check: Syncing official NIST descriptions from master library.");
+            console.info("Standards integrity check: Synced official NIST descriptions and added missing controls.");
         }
     }
-  }, [activeClientId, clientDataStore]);
+  }, [activeClientId]); // Critical: Depend ONLY on activeClientId to prevent recursive loops
 
   useEffect(() => {
     localStorage.setItem(KEY_VIEW, currentView);
@@ -382,6 +398,7 @@ const App: React.FC = () => {
             {currentView === AppView.FAIR_ANALYZER && <FairRiskAnalyzer risks={activeData.risks} financials={activeData.financials} onUpdateRisk={handleUpdateRisk} />}
             {currentView === AppView.RMF_LIFECYCLE && <RmfLifecycle />}
             {currentView === AppView.COST_TO_COMPLIANCE && <BudgetCalculator requirements={activeData.requirements} budgetItems={activeData.budgetItems} onAddItem={(i) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], budgetItems: [...prev[activeClientId].budgetItems, i] }}))} onRemoveItem={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], budgetItems: prev[activeClientId].budgetItems.filter(i => i.id !== id) }}))} />}
+            {/* Added fix: spreading assets instead of artifacts to fix type error */}
             {currentView === AppView.ASSETS && <Inventory assets={activeData.assets} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: [...prev[activeClientId].users, u] }}))} onUpdateUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.map(usr => usr.id === u.id ? u : usr) }}))} onDeleteUser={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.filter(u => u.id !== id) }}))} />}
             {currentView === AppView.REPORT_EXECUTIVE && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} defaultTab="EXECUTIVE" />}
