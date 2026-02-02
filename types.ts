@@ -42,6 +42,13 @@ export interface Requirement {
   examineOptions?: string[];
   interviewOptions?: string[];
   testOptions?: string[];
+  // RMF Specific Interview Questions for Roles
+  roleQuestions?: {
+    authorizingOfficial?: string[];
+    systemOwner?: string[];
+    riskExecutive?: string[];
+    securityOfficer?: string[];
+  };
 }
 
 export interface Artifact {
@@ -153,6 +160,7 @@ export enum AppView {
   
   // Governance
   RISK_MANAGEMENT = 'RISK_MANAGEMENT',
+  RMF_LIFECYCLE = 'RMF_LIFECYCLE',
   FAIR_ANALYZER = 'FAIR_ANALYZER',
   POAM = 'POAM',
   COST_TO_COMPLIANCE = 'COST_TO_COMPLIANCE',
@@ -218,6 +226,14 @@ export interface JiraConfig extends IntegrationConfig {
   apiToken: string;
   projectKey: string;
   issueType: string;
+}
+
+export interface IntegrationConfig {
+  enabled: boolean;
+  connectedAt?: number;
+  accountName?: string;
+  tenantId?: string;
+  apiKey?: string;
 }
 
 export interface ConfluenceConfig extends IntegrationConfig {

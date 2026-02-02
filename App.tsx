@@ -30,7 +30,8 @@ import {
   FileCheck,
   Calculator,
   ShieldAlert,
-  BookOpen
+  BookOpen,
+  ArrowRight
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData, REQUIREMENTS_DATA } from './data/standards';
@@ -54,6 +55,7 @@ import { FairRiskAnalyzer } from './components/FairRiskAnalyzer';
 import { CmmcAcademy } from './components/CmmcAcademy';
 import { NetworkAnalyzer } from './components/NetworkAnalyzer';
 import { BudgetCalculator } from './components/BudgetCalculator';
+import { RmfLifecycle } from './components/RmfLifecycle';
 import { api } from './services/api';
 
 const SidebarItem = ({ 
@@ -264,11 +266,8 @@ const App: React.FC = () => {
   const activeData = clientDataStore[activeClientId];
   if (!activeData) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 size={48} className="animate-spin" /></div>;
 
-  // FIX: Explicitly cast activeData to ClientData to resolve type inference issues where users property was being seen as part of 'unknown'
   const targetLevel = (activeData as ClientData).targetCmmcLevel;
-  // FIX: Explicitly cast activeData to ClientData to resolve type inference issues where users property was being seen as part of 'unknown'
   const currentUser = (activeData as ClientData).users[0];
-  // FIX: Explicitly type the iteration variable 'd' as ClientData to resolve 'unknown' type error in flatMap
   const allUsersAcrossTenants = Object.values(clientDataStore).flatMap((d: ClientData) => d.users);
 
   const getViewLabel = (view: AppView) => {
@@ -282,6 +281,7 @@ const App: React.FC = () => {
       case AppView.USERS: return "Identity Pool & Access";
       case AppView.NETWORK_DIAGRAM: return "Network & Scope Diagrams";
       case AppView.RISK_MANAGEMENT: return "Risk Register";
+      case AppView.RMF_LIFECYCLE: return "NIST Risk Management Framework";
       case AppView.FAIR_ANALYZER: return "Quantitative Risk Analysis (FAIR)";
       case AppView.POAM: return "POA&M Remediation";
       case AppView.COST_TO_COMPLIANCE: return "Certification Budgeting";
@@ -319,7 +319,8 @@ const App: React.FC = () => {
           </SidebarSection>
           <SidebarSection title="Governance">
             <SidebarItem icon={AlertTriangle} label="Risk Register" isActive={currentView === AppView.RISK_MANAGEMENT} onClick={() => setCurrentView(AppView.RISK_MANAGEMENT)} />
-            <SidebarItem icon={ShieldAlert} label="FAIR Analysis" isActive={currentView === AppView.FAIR_ANALYZER} onClick={() => setCurrentView(AppView.FAIR_ANALYZER)} badge="PRO" />
+            <SidebarItem icon={ShieldAlert} label="RMF Lifecycle" isActive={currentView === AppView.RMF_LIFECYCLE} onClick={() => setCurrentView(AppView.RMF_LIFECYCLE)} badge="800-37" />
+            <SidebarItem icon={Calculator} label="FAIR Analysis" isActive={currentView === AppView.FAIR_ANALYZER} onClick={() => setCurrentView(AppView.FAIR_ANALYZER)} badge="PRO" />
             <SidebarItem icon={ClipboardList} label="POA&M" isActive={currentView === AppView.POAM} onClick={() => setCurrentView(AppView.POAM)} />
             <SidebarItem icon={Calculator} label="Cost to Compliance" isActive={currentView === AppView.COST_TO_COMPLIANCE} onClick={() => setCurrentView(AppView.COST_TO_COMPLIANCE)} />
           </SidebarSection>
@@ -400,6 +401,7 @@ const App: React.FC = () => {
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={() => {}} onUpdateUser={() => {}} onDeleteUser={() => {}} />}
             {currentView === AppView.NETWORK_DIAGRAM && <NetworkAnalyzer />}
             {currentView === AppView.RISK_MANAGEMENT && <RiskRegister risks={activeData.risks} onAddRisk={(r) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: [...prev[activeClientId].risks, r] } }))} onUpdateRisk={() => {}} onDeleteRisk={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: prev[activeClientId].risks.filter(r => r.id !== id) } }))} />}
+            {currentView === AppView.RMF_LIFECYCLE && <RmfLifecycle />}
             {currentView === AppView.FAIR_ANALYZER && <FairRiskAnalyzer risks={activeData.risks} onUpdateRisk={(r) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: prev[activeClientId].risks.map(risk => risk.id === r.id ? r : risk) } }))} />}
             {currentView === AppView.POAM && <Reports requirements={activeData.requirements} risks={activeData.risks} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} onUpdateRequirement={handleUpdateRequirement} defaultTab="POAM" />}
             {currentView === AppView.COST_TO_COMPLIANCE && <BudgetCalculator requirements={activeData.requirements} budgetItems={activeData.budgetItems || []} onAddItem={(i) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], budgetItems: [...prev[activeClientId].budgetItems, i] } }))} onRemoveItem={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], budgetItems: prev[activeClientId].budgetItems.filter(i => i.id !== id) } }))} />}
