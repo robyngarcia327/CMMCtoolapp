@@ -143,6 +143,7 @@ const App: React.FC = () => {
     if (activeClientId) localStorage.setItem(KEY_CLIENT, activeClientId);
   }, [activeClientId]);
 
+  // Synchronize store to disk on every change
   useEffect(() => {
     if (Object.keys(clientDataStore).length > 0) {
       localStorage.setItem(KEY_DATASTORE, JSON.stringify(clientDataStore));
@@ -207,11 +208,11 @@ const App: React.FC = () => {
           newReqs.forEach(nr => {
               const idx = merged.findIndex(r => r.id === nr.id);
               if (idx !== -1) {
-                // Preserving metadata like comments but updating narrative/status
+                // Preserving objectives structure but updating status/narrative
                 merged[idx] = { 
                   ...merged[idx], 
-                  ...nr, 
-                  comments: merged[idx].comments || nr.comments 
+                  response: nr.response,
+                  objectives: nr.objectives
                 };
               }
               else merged.push(nr);
@@ -285,8 +286,7 @@ const App: React.FC = () => {
       setClients(mappedClients);
       
       if (mappedClients.length > 0) {
-        const persistedId = localStorage.getItem(KEY_CLIENT);
-        const selectedId = mappedClients.some(c => c.id === persistedId) ? (persistedId as string) : mappedClients[0].id;
+        const selectedId = mappedClients[0].id;
         setActiveClientId(selectedId);
         
         setClientDataStore(prev => {
@@ -320,8 +320,6 @@ const App: React.FC = () => {
     localStorage.removeItem(KEY_VIEW);
     localStorage.removeItem(KEY_CLIENT);
     localStorage.removeItem(KEY_REQ);
-    // Note: We might want to keep KEY_DATASTORE if we want offline persistence after logout,
-    // but standard practice is to clear on logout if it's sensitive.
     auth.signoutRedirect();
   };
   
@@ -351,7 +349,6 @@ const App: React.FC = () => {
           setIsDataLoading(true);
           try { 
             const newOrg = await api.createOrg(auth.user.id_token, name, domain); 
-            // Initialize with deep copy of full standards
             setClientDataStore(prev => ({
               ...prev,
               [newOrg.orgId]: {
@@ -381,17 +378,11 @@ const App: React.FC = () => {
 
   const getViewLabel = (view: AppView) => {
     switch(view) {
-      case AppView.DASHBOARD: return "Assurance Insights";
+      case AppView.DASHBOARD: return "Posture Insights";
       case AppView.WIZARD: return "Guided Compliance Wizard";
-      case AppView.CONTROLS: return "Security Control Audit";
-      case AppView.SPRS_SCORECARD: return "DoD SPRS Scoring";
-      case AppView.TRAINING: return "Academy & Simulation";
-      case AppView.ASSETS: return "CUI Scoped Assets";
-      case AppView.USERS: return "Identity Pool";
-      case AppView.RISK_MANAGEMENT: return "Quantitative Risk Register";
-      case AppView.RMF_LIFECYCLE: return "NIST Risk Management Framework";
-      case AppView.FAIR_ANALYZER: return "FAIR Modeling Exercise";
-      case AppView.ASSESSOR_PORTAL: return "Official Assessor View";
+      case AppView.CONTROLS: return "NIST Control Audit";
+      case AppView.SPRS_SCORECARD: return "DoD Scorecard";
+      case AppView.ASSESSOR_PORTAL: return "Assessor View";
       default: return "Cuallee Cyber";
     }
   };
@@ -408,28 +399,23 @@ const App: React.FC = () => {
         <nav className="flex-1 overflow-y-auto px-4 scrollbar-hide">
           <SidebarSection title="General">
             <SidebarItem icon={LayoutDashboard} label="Dashboard" isActive={currentView === AppView.DASHBOARD} onClick={() => setCurrentView(AppView.DASHBOARD)} />
-            <SidebarItem icon={Wand2} label="Wizard" isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} badge="Guided" />
+            <SidebarItem icon={Wand2} label="Wizard" isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} badge="Save & Import" />
             <SidebarItem icon={GraduationCap} label="Academy" isActive={currentView === AppView.TRAINING} onClick={() => setCurrentView(AppView.TRAINING)} />
           </SidebarSection>
           <SidebarSection title="Compliance">
             <SidebarItem icon={ListChecks} label="Controls" isActive={currentView === AppView.CONTROLS} onClick={() => setCurrentView(AppView.CONTROLS)} />
             <SidebarItem icon={TrendingUp} label="SPRS Scorecard" isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
-            <SidebarItem icon={ClipboardCheck} label="Assessor View" isActive={currentView === AppView.ASSESSOR_PORTAL} onClick={() => setCurrentView(AppView.ASSESSOR_PORTAL)} badge="CAP 2.0" />
+            <SidebarItem icon={ClipboardCheck} label="Assessor Portal" isActive={currentView === AppView.ASSESSOR_PORTAL} onClick={() => setCurrentView(AppView.ASSESSOR_PORTAL)} />
             <SidebarItem icon={Package} label="Assets" isActive={currentView === AppView.ASSETS} onClick={() => setCurrentView(AppView.ASSETS)} />
             <SidebarItem icon={Users} label="Users" isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
           </SidebarSection>
           <SidebarSection title="Governance">
-            <SidebarItem icon={AlertTriangle} label="Risk Register" isActive={currentView === AppView.RISK_MANAGEMENT} onClick={() => setCurrentView(AppView.RISK_MANAGEMENT)} />
-            <SidebarItem icon={Calculator} label="FAIR Analyzer" isActive={currentView === AppView.FAIR_ANALYZER} onClick={() => setCurrentView(AppView.FAIR_ANALYZER)} badge="Modeling" />
-            <SidebarItem icon={ShieldAlert} label="RMF Lifecycle" isActive={currentView === AppView.RMF_LIFECYCLE} onClick={() => setCurrentView(AppView.RMF_LIFECYCLE)} badge="800-37" />
-          </SidebarSection>
-          <SidebarSection title="Reports">
-            <SidebarItem icon={BarChart3} label="Executive Summary" isActive={currentView === AppView.REPORT_EXECUTIVE} onClick={() => setCurrentView(AppView.REPORT_EXECUTIVE)} />
-            <SidebarItem icon={ShieldCheck} label="SSP Generator" isActive={currentView === AppView.REPORT_SSP} onClick={() => setCurrentView(AppView.REPORT_SSP)} />
+            <SidebarItem icon={AlertTriangle} label="Risk Registry" isActive={currentView === AppView.RISK_MANAGEMENT} onClick={() => setCurrentView(AppView.RISK_MANAGEMENT)} />
+            <SidebarItem icon={Calculator} label="FAIR Analyzer" isActive={currentView === AppView.FAIR_ANALYZER} onClick={() => setCurrentView(AppView.FAIR_ANALYZER)} />
           </SidebarSection>
         </nav>
         <div className="p-4 mt-auto border-t border-slate-900 bg-slate-950/50">
-          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Active Tenant</div>
+          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Organization Context</div>
           <div className="text-xs font-bold text-white truncate uppercase">{activeClient.name}</div>
           <button onClick={handleLogout} className="mt-4 w-full flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 hover:text-red-400 transition-colors">
             <LogOut size={14} /> Log Out Securely
@@ -442,15 +428,7 @@ const App: React.FC = () => {
           <div className="flex items-center gap-4"><h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">{getViewLabel(currentView)}</h2></div>
           <div className="flex items-center gap-6">
             <button onClick={() => setIsChatOpen(!isChatOpen)} className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-[11px] transition-all ${isChatOpen ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}><MessageSquare size={14} /> AI Support</button>
-            <div className="relative">
-              <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="flex items-center gap-3">
-                <div className="text-right hidden sm:block">
-                  <div className="text-[10px] font-black text-blue-600 uppercase">{userDisplayName}</div>
-                  <div className="text-[8px] font-bold text-slate-400 uppercase">{userGroups[0] || 'Member'}</div>
-                </div>
-                <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black">{userDisplayName.charAt(0).toUpperCase()}</div>
-              </button>
-            </div>
+            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black">{userDisplayName.charAt(0).toUpperCase()}</div>
           </div>
         </header>
 
@@ -460,76 +438,19 @@ const App: React.FC = () => {
             {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} assets={activeData.assets} wizardProgress={activeData.wizardProgress} onUpdateRequirement={handleUpdateRequirement} onBatchUpdate={handleBatchUpdateRequirements} onAddArtifact={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: [...prev[activeClientId].artifacts, a] }}))} onRemoveArtifact={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id) }}))} onUpdateProgress={(p) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], wizardProgress: p }}))} onUpdateLevel={handleUpdateLevel} targetLevel={targetLevel} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
             {currentView === AppView.CONTROLS && (
                 <div className="flex h-full">
-                    <RequirementsList 
-                        requirements={activeData.requirements} 
-                        selectedReqId={selectedRequirementId} 
-                        onSelectReq={(r) => {
-                            setSelectedRequirementId(r.id);
-                            localStorage.setItem(KEY_REQ, r.id);
-                        }}
-                        onUpdateRequirement={handleUpdateRequirement}
-                        onBatchUpdate={handleBatchUpdateRequirements}
-                        activeFrameworkId={activeFramework.id} 
-                        targetLevel={targetLevel} 
-                    />
+                    <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => { setSelectedRequirementId(r.id); localStorage.setItem(KEY_REQ, r.id); }} onUpdateRequirement={handleUpdateRequirement} onBatchUpdate={handleBatchUpdateRequirements} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} />
                     {selectedRequirementId ? (
-                        <RequirementDetail 
-                            requirement={activeData.requirements.find(r => r.id === selectedRequirementId)!}
-                            onUpdateRequirement={handleUpdateRequirement}
-                            allArtifacts={activeData.artifacts}
-                            onAddArtifact={(a) => {
-                                setClientDataStore(prev => ({
-                                    ...prev,
-                                    [activeClientId]: {
-                                        ...prev[activeClientId],
-                                        artifacts: [...prev[activeClientId].artifacts, a]
-                                    }
-                                }));
-                            }}
-                            onRemoveArtifact={(id) => {
-                                setClientDataStore(prev => ({
-                                    ...prev,
-                                    [activeClientId]: {
-                                        ...prev[activeClientId],
-                                        artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id)
-                                    }
-                                }));
-                            }}
-                            tickets={activeData.tickets}
-                            onAddTicket={(t) => {
-                                setClientDataStore(prev => ({
-                                    ...prev,
-                                    [activeClientId]: {
-                                        ...prev[activeClientId],
-                                        tickets: [...prev[activeClientId].tickets, t]
-                                    }
-                                }));
-                            }}
-                            cwConfig={activeData.cwConfig}
-                            jiraConfig={activeData.jiraConfig}
-                            currentUser={currentUser}
-                            activeClientId={activeClientId}
-                        />
+                        <RequirementDetail requirement={activeData.requirements.find(r => r.id === selectedRequirementId)!} onUpdateRequirement={handleUpdateRequirement} allArtifacts={activeData.artifacts} onAddArtifact={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: [...prev[activeClientId].artifacts, a] }}))} onRemoveArtifact={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id) }}))} tickets={activeData.tickets} onAddTicket={(t) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], tickets: [...prev[activeClientId].tickets, t] }}))} cwConfig={activeData.cwConfig} jiraConfig={activeData.jiraConfig} currentUser={currentUser} activeClientId={activeClientId} />
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
-                            <div className="bg-slate-100 p-8 rounded-full mb-4">
-                                <ListChecks size={64} className="opacity-10" />
-                            </div>
-                            <p className="font-bold uppercase tracking-widest text-sm">Select a practice to review findings</p>
+                            <div className="bg-slate-100 p-8 rounded-full mb-4"><ListChecks size={64} className="opacity-10" /></div>
+                            <p className="font-bold uppercase tracking-widest text-sm">Select a practice to review implementation details</p>
                         </div>
                     )}
                 </div>
             )}
             {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} />}
             {currentView === AppView.ASSESSOR_PORTAL && <AssessorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} assets={activeData.assets} risks={activeData.risks} />}
-            {currentView === AppView.RISK_MANAGEMENT && <RiskRegister risks={activeData.risks} financials={activeData.financials} onAddRisk={handleAddRisk} onUpdateRisk={handleUpdateRisk} onDeleteRisk={(id) => {}} onUpdateFinancials={handleUpdateFinancials} />}
-            {currentView === AppView.FAIR_ANALYZER && <FairRiskAnalyzer risks={activeData.risks} financials={activeData.financials} onUpdateRisk={handleUpdateRisk} />}
-            {currentView === AppView.RMF_LIFECYCLE && <RmfLifecycle />}
-            {currentView === AppView.TRAINING && <CmmcAcademy />}
-            {currentView === AppView.REPORT_EXECUTIVE && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} defaultTab="EXECUTIVE" />}
-            {currentView === AppView.REPORT_SSP && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} defaultTab="SSP" />}
-            {currentView === AppView.ASSETS && <Inventory assets={activeData.assets} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
-            {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: [...prev[activeClientId].users, u] }}))} onUpdateUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.map(usr => usr.id === u.id ? u : usr) }}))} onDeleteUser={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.filter(u => u.id !== id) }}))} />}
           </div>
         </main>
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
