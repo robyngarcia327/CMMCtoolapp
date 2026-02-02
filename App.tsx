@@ -103,6 +103,7 @@ const App: React.FC = () => {
   const KEY_VIEW = 'cuallee_cyber_v2_current_view';
   const KEY_CLIENT = 'cuallee_cyber_v2_active_client';
   const KEY_REQ = 'cuallee_cyber_v2_selected_req';
+  const KEY_DATASTORE = 'cuallee_cyber_v2_datastore';
 
   const [currentView, setCurrentView] = useState<AppView>(() => {
     const saved = localStorage.getItem(KEY_VIEW);
@@ -124,10 +125,16 @@ const App: React.FC = () => {
   const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [activeFramework, setActiveFramework] = useState<Framework>(FRAMEWORKS[0]);
-  const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>({});
+  
+  // Initialize data store from localStorage
+  const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>(() => {
+    const saved = localStorage.getItem(KEY_DATASTORE);
+    return saved ? JSON.parse(saved) : {};
+  });
+
   const fetchAttempted = useRef(false);
 
-  // Persistence effect
+  // Persistence effects
   useEffect(() => {
     localStorage.setItem(KEY_VIEW, currentView);
   }, [currentView]);
@@ -135,6 +142,12 @@ const App: React.FC = () => {
   useEffect(() => {
     if (activeClientId) localStorage.setItem(KEY_CLIENT, activeClientId);
   }, [activeClientId]);
+
+  useEffect(() => {
+    if (Object.keys(clientDataStore).length > 0) {
+      localStorage.setItem(KEY_DATASTORE, JSON.stringify(clientDataStore));
+    }
+  }, [clientDataStore]);
 
   // Identity logic
   const userDisplayName = useMemo(() => {
@@ -193,7 +206,14 @@ const App: React.FC = () => {
           
           newReqs.forEach(nr => {
               const idx = merged.findIndex(r => r.id === nr.id);
-              if (idx !== -1) merged[idx] = nr;
+              if (idx !== -1) {
+                // Preserving metadata like comments but updating narrative/status
+                merged[idx] = { 
+                  ...merged[idx], 
+                  ...nr, 
+                  comments: merged[idx].comments || nr.comments 
+                };
+              }
               else merged.push(nr);
           });
 
@@ -300,6 +320,8 @@ const App: React.FC = () => {
     localStorage.removeItem(KEY_VIEW);
     localStorage.removeItem(KEY_CLIENT);
     localStorage.removeItem(KEY_REQ);
+    // Note: We might want to keep KEY_DATASTORE if we want offline persistence after logout,
+    // but standard practice is to clear on logout if it's sensitive.
     auth.signoutRedirect();
   };
   
@@ -435,7 +457,7 @@ const App: React.FC = () => {
         <main className="flex-1 overflow-hidden relative bg-slate-50/50">
           <div className="h-full w-full overflow-y-auto">
             {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} targetLevel={targetLevel} onUpdateLevel={handleUpdateLevel} onNavigate={setCurrentView} onToggleChat={() => setIsChatOpen(!isChatOpen)} />}
-            {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} assets={activeData.assets} wizardProgress={activeData.wizardProgress} onUpdateRequirement={handleUpdateRequirement} onAddArtifact={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: [...prev[activeClientId].artifacts, a] }}))} onRemoveArtifact={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id) }}))} onUpdateProgress={(p) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], wizardProgress: p }}))} onUpdateLevel={handleUpdateLevel} targetLevel={targetLevel} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
+            {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} assets={activeData.assets} wizardProgress={activeData.wizardProgress} onUpdateRequirement={handleUpdateRequirement} onBatchUpdate={handleBatchUpdateRequirements} onAddArtifact={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: [...prev[activeClientId].artifacts, a] }}))} onRemoveArtifact={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id) }}))} onUpdateProgress={(p) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], wizardProgress: p }}))} onUpdateLevel={handleUpdateLevel} targetLevel={targetLevel} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
             {currentView === AppView.CONTROLS && (
                 <div className="flex h-full">
                     <RequirementsList 

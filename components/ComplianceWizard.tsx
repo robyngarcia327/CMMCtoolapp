@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
-import { Requirement, Artifact, WizardProgress, Asset, CmmcAssetCategory } from '../types';
-import { ArrowLeft, ArrowRight, CheckCircle2, Shield, AlertTriangle, PlayCircle, FileCheck, Check, Info, Monitor, Network, ListChecks, Target, Lock, Zap, Box, Cloud, Users, FileSearch, ClipboardList, MessageSquare } from 'lucide-react';
+import { Requirement, Artifact, WizardProgress, Asset, AssessmentObjective } from '../types';
+import { 
+  ArrowLeft, ArrowRight, CheckCircle2, Shield, AlertTriangle, 
+  PlayCircle, FileCheck, Check, Info, Monitor, Network, 
+  ListChecks, Target, Lock, Zap, Box, Cloud, Users, 
+  FileSearch, ClipboardList, MessageSquare, Download, Upload, 
+  FileSpreadsheet, Loader2 
+} from 'lucide-react';
 import { ArtifactUploader } from './ArtifactUploader';
 import { Inventory } from './Inventory';
 import { NetworkAnalyzer } from './NetworkAnalyzer';
@@ -11,6 +17,7 @@ interface ComplianceWizardProps {
   assets?: Asset[];
   wizardProgress: WizardProgress;
   onUpdateRequirement: (req: Requirement) => void;
+  onBatchUpdate?: (reqs: Requirement[]) => void;
   onAddArtifact: (artifact: Artifact) => void;
   onRemoveArtifact: (id: string) => void;
   onAddAsset?: (asset: Asset) => void;
@@ -38,6 +45,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   assets = [],
   wizardProgress,
   onUpdateRequirement,
+  onBatchUpdate,
   onAddArtifact,
   onRemoveArtifact,
   onAddAsset,
@@ -50,6 +58,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
 }) => {
   
   const [scopingAnswers, setScopingAnswers] = useState<Record<string, boolean>>({});
+  const [isImporting, setIsImporting] = useState(false);
 
   const activeReqs = requirements.filter(r => 
     r.framework === activeFrameworkId && r.cmmcLevel <= targetLevel
@@ -73,6 +82,81 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
     } else {
       goToStep('SCOPING');
     }
+  };
+
+  const handleDownloadTemplate = () => {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Control ID,Title,Domain,Auditor Interview Guide,Implementation Narrative,Status (met/not_met/pending)\n";
+
+    activeReqs.forEach(req => {
+      const interviewQuestions = `"${(req.interviewOptions || []).join(' | ').replace(/"/g, '""')}"`;
+      const narrative = `"${(req.response || '').replace(/"/g, '""')}"`;
+      const status = req.objectives.every(o => o.status === 'met') ? 'met' : 
+                     req.objectives.some(o => o.status === 'not_met') ? 'not_met' : 'pending';
+      
+      const row = [
+        req.id,
+        `"${req.title.replace(/"/g, '""')}"`,
+        req.family,
+        interviewQuestions,
+        narrative,
+        status
+      ].join(",");
+      csvContent += row + "\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `CMMC_Level_${targetLevel}_Audit_Template.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !onBatchUpdate) return;
+
+    setIsImporting(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const text = event.target?.result as string;
+        const lines = text.split(/\r?\n/);
+        const updatedBatch: Requirement[] = [];
+
+        // Skip header
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+
+            const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+            if (parts.length < 6) continue;
+
+            const [id, title, domain, questions, narrative, status] = parts.map(p => p.replace(/^"|"$/g, '').trim());
+            const existing = requirements.find(r => r.id === id);
+            
+            if (existing) {
+                const cleanStatus = status.toLowerCase() as AssessmentObjective['status'];
+                const validStatuses: AssessmentObjective['status'][] = ['met', 'not_met', 'pending', 'na'];
+                const finalStatus = validStatuses.includes(cleanStatus) ? cleanStatus : 'pending';
+
+                updatedBatch.push({
+                    ...existing,
+                    response: narrative,
+                    objectives: existing.objectives.map(obj => ({ ...obj, status: finalStatus }))
+                });
+            }
+        }
+
+        if (updatedBatch.length > 0) {
+            onBatchUpdate(updatedBatch);
+            alert(`Sync complete: Updated ${updatedBatch.length} requirements.`);
+        }
+        setIsImporting(false);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   const currentReq = activeReqs[wizardProgress.currentQuestionIndex];
@@ -131,21 +215,61 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
 
   if (wizardProgress.currentStep === 'INTRO') {
     return (
-      <div className="max-w-3xl mx-auto p-12 mt-10 bg-white rounded-[2.5rem] shadow-xl border border-slate-200 text-center animate-in fade-in zoom-in duration-500">
-        <div className="w-20 h-20 bg-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner rotate-3">
-          <PlayCircle size={40} className="text-blue-600 ml-1" />
+      <div className="max-w-4xl mx-auto p-12 mt-10 space-y-8 animate-in fade-in zoom-in duration-500">
+        <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 p-12 text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/5 rounded-full blur-3xl -mr-24 -mt-24"></div>
+            <div className="w-20 h-20 bg-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner rotate-3">
+            <PlayCircle size={40} className="text-blue-600 ml-1" />
+            </div>
+            <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter uppercase leading-none">Assessment Journey</h1>
+            <p className="text-lg text-slate-500 mb-10 max-w-lg mx-auto font-medium">
+            Welcome to your guided compliance lifecycle. We will step through scoping, discovery, and audit verification.
+            </p>
+            
+            <button 
+            onClick={() => goToStep('LEVEL_SELECT')}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-black py-5 px-12 rounded-[2rem] shadow-2xl shadow-blue-200 transition-all hover:scale-105 uppercase tracking-widest text-sm"
+            >
+            Initialize Guided Scope
+            </button>
         </div>
-        <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter uppercase leading-none">Assessment Setup</h1>
-        <p className="text-lg text-slate-500 mb-10 max-w-lg mx-auto font-medium">
-          Welcome to your guided compliance journey. We will follow the official 2024 Scoping Guides to ensure your boundary is correctly defined.
-        </p>
-        
-        <button 
-          onClick={() => goToStep('LEVEL_SELECT')}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-black py-5 px-12 rounded-[2rem] shadow-2xl shadow-blue-200 transition-all hover:scale-105 uppercase tracking-widest text-sm"
-        >
-          Initialize Scope
-        </button>
+
+        {/* Bulk Operations Sidebar/Card */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-indigo-900 rounded-[2rem] p-8 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16"></div>
+                <div>
+                    <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-2 mb-4">
+                        <Download size={24} className="text-indigo-400" /> Bulk Workbench
+                    </h3>
+                    <p className="text-indigo-100 text-xs font-medium leading-relaxed mb-8 opacity-80">
+                        Prefer to work offline? Download the official audit template, fill in your narratives, and upload it back to the system.
+                    </p>
+                </div>
+                <button 
+                    onClick={handleDownloadTemplate}
+                    className="w-full bg-white/10 hover:bg-white/20 border border-white/20 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3"
+                >
+                    <FileSpreadsheet size={16} /> Download CSV Template
+                </button>
+            </div>
+
+            <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2 mb-4">
+                        <Upload size={24} className="text-blue-600" /> Restore Progress
+                    </h3>
+                    <p className="text-slate-500 text-xs font-medium leading-relaxed mb-8">
+                        Upload your completed spreadsheet to synchronize implementations and objective statuses instantly.
+                    </p>
+                </div>
+                <label className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 cursor-pointer border-2 border-dashed ${isImporting ? 'bg-slate-50 border-slate-200 text-slate-400' : 'bg-blue-50 border-blue-100 text-blue-600 hover:bg-blue-100'}`}>
+                    {isImporting ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
+                    {isImporting ? 'Parsing Batch...' : 'Upload Completed CSV'}
+                    <input type="file" accept=".csv" className="hidden" onChange={handleImportCSV} disabled={isImporting} />
+                </label>
+            </div>
+        </div>
       </div>
     );
   }
@@ -203,62 +327,6 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
     );
   }
 
-  const ScopingQuestion = ({ id, label, description, icon: Icon }: any) => (
-      <div 
-        onClick={() => setScopingAnswers(prev => ({ ...prev, [id]: !prev[id] }))}
-        className={`p-6 rounded-2xl border-2 transition-all cursor-pointer flex gap-4 ${scopingAnswers[id] ? 'bg-blue-50 border-blue-600 shadow-md' : 'bg-white border-slate-100 hover:border-slate-200'}`}
-      >
-          <div className={`p-3 rounded-xl ${scopingAnswers[id] ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
-              <Icon size={20} />
-          </div>
-          <div className="flex-1">
-              <div className="flex justify-between items-center">
-                  <h4 className={`text-sm font-black uppercase tracking-tight ${scopingAnswers[id] ? 'text-blue-900' : 'text-slate-800'}`}>{label}</h4>
-                  {scopingAnswers[id] && <CheckCircle2 size={18} className="text-blue-600" />}
-              </div>
-              <p className="text-xs text-slate-500 mt-1 font-medium">{description}</p>
-          </div>
-      </div>
-  );
-
-  if (wizardProgress.currentStep === 'SCOPING') {
-      return (
-          <div className="max-w-5xl mx-auto p-6 flex flex-col h-full">
-              {renderStepper()}
-              <div className="flex-1 bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                  <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                       <div>
-                            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Environmental Scoping</h2>
-                            <p className="text-xs text-slate-500 font-medium">Identify key components of your assessment boundary per CMMC guides.</p>
-                       </div>
-                       <div className="bg-white border border-slate-200 px-4 py-1 rounded-full text-[10px] font-black uppercase text-blue-600 tracking-widest">Guide v2.13 Aligned</div>
-                  </div>
-                  
-                  <div className="flex-1 overflow-y-auto p-8 space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <ScopingQuestion id="esp" label="External Service Providers (ESP)" description="Do you use consultants or MSPs for IT/Cybersecurity?" icon={Users} />
-                          <ScopingQuestion id="csp" label="Cloud Service Providers (CSP)" description="Do you host CUI or security data in M365, AWS, Azure, etc?" icon={Cloud} />
-                          <ScopingQuestion id="iot" label="Specialized Assets (IoT/OT)" description="Do you have manufacturing equipment, cameras, or test equipment?" icon={Box} />
-                          <ScopingQuestion id="gfe" label="Gov Furnished Equipment (GFE)" description="Does the Government own or lease any equipment on your network?" icon={Shield} />
-                          <ScopingQuestion id="enclave" label="Secure Enclave" description="Do you isolate CUI into a specific network segment (VLAN/VDI)?" icon={Lock} />
-                          <ScopingQuestion id="rma" label="Risk Managed Assets (CRMA)" description="Assets that *can* but are not *intended* to process CUI (Level 2 only)." icon={AlertTriangle} />
-                      </div>
-                  </div>
-
-                  <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                    <button onClick={() => goToStep('LEVEL_SELECT')} className="text-[10px] font-black uppercase text-slate-400">Back</button>
-                    <button 
-                        onClick={() => goToStep('INVENTORY')}
-                        className="bg-blue-600 text-white px-10 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-blue-700"
-                    >
-                        Map Inventory <ArrowRight size={16} className="inline ml-2" />
-                    </button>
-                  </div>
-              </div>
-          </div>
-      );
-  }
-
   const WizardWrapper = ({ children, nextLabel, onNext, onPrev }: any) => (
       <div className="max-w-7xl mx-auto p-6 h-full flex flex-col">
           {renderStepper()}
@@ -291,26 +359,6 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
           </div>
       </div>
   );
-
-  if (wizardProgress.currentStep === 'INVENTORY') {
-      return (
-          <WizardWrapper nextLabel="Proceed to Boundary Analysis" onNext={() => goToStep('NETWORK')} onPrev={() => goToStep('SCOPING')}>
-              <div className="p-6 space-y-6">
-                <Inventory assets={assets} onAddAsset={onAddAsset!} onDeleteAsset={onDeleteAsset!} variant="wizard" />
-              </div>
-          </WizardWrapper>
-      );
-  }
-
-  if (wizardProgress.currentStep === 'NETWORK') {
-      return (
-           <WizardWrapper nextLabel="Start Audit" onNext={() => goToStep('ASSESSMENT')} onPrev={() => goToStep('INVENTORY')}>
-             <div className="p-6">
-                <NetworkAnalyzer variant="wizard" />
-             </div>
-          </WizardWrapper>
-      );
-  }
 
   if (wizardProgress.currentStep === 'ASSESSMENT') {
       const progress = Math.round(((wizardProgress.currentQuestionIndex) / (activeReqs.length || 1)) * 100);
@@ -354,7 +402,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                                 </p>
                             </div>
 
-                            {/* AUDITOR INTERVIEW SECTION - THE CORE ENHANCEMENT */}
+                            {/* AUDITOR INTERVIEW SECTION */}
                             <div className="bg-indigo-50/50 border border-indigo-100 rounded-[2rem] p-8 space-y-6">
                                 <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
                                     <MessageSquare size={16}/> Auditor Interview Guide
@@ -392,13 +440,65 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                         ) : null}
                     </div>
                 </div>
+             </div>
+          </WizardWrapper>
+      );
+  }
 
-                <div className="w-80 bg-slate-50 border-l border-slate-200 flex flex-col shrink-0 overflow-y-auto hidden lg:flex p-6 space-y-8">
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-2"><ClipboardList size={14} /> Audit Integrity</h3>
-                        <p className="text-xs text-slate-500 leading-relaxed font-medium">Following NIST 800-171A ensures your responses match the official assessment criteria auditors use.</p>
-                    </div>
-                </div>
+  // Handle other steps similarly to the existing file but ensuring onBatchUpdate is available
+  if (wizardProgress.currentStep === 'SCOPING') {
+      return (
+          <div className="max-w-5xl mx-auto p-6 flex flex-col h-full">
+              {renderStepper()}
+              <div className="flex-1 bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                  <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                       <div>
+                            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Environmental Scoping</h2>
+                            <p className="text-xs text-slate-500 font-medium">Identify key components of your assessment boundary per CMMC guides.</p>
+                       </div>
+                       <div className="bg-white border border-slate-200 px-4 py-1 rounded-full text-[10px] font-black uppercase text-blue-600 tracking-widest">Guide v2.13 Aligned</div>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto p-8 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <ScopingQuestion id="esp" label="External Service Providers (ESP)" description="Do you use consultants or MSPs for IT/Cybersecurity?" icon={Users} scopingAnswers={scopingAnswers} setScopingAnswers={setScopingAnswers} />
+                          <ScopingQuestion id="csp" label="Cloud Service Providers (CSP)" description="Do you host CUI or security data in M365, AWS, Azure, etc?" icon={Cloud} scopingAnswers={scopingAnswers} setScopingAnswers={setScopingAnswers} />
+                          <ScopingQuestion id="iot" label="Specialized Assets (IoT/OT)" description="Do you have manufacturing equipment, cameras, or test equipment?" icon={Box} scopingAnswers={scopingAnswers} setScopingAnswers={setScopingAnswers} />
+                          <ScopingQuestion id="gfe" label="Gov Furnished Equipment (GFE)" description="Does the Government own or lease any equipment on your network?" icon={Shield} scopingAnswers={scopingAnswers} setScopingAnswers={setScopingAnswers} />
+                          <ScopingQuestion id="enclave" label="Secure Enclave" description="Do you isolate CUI into a specific network segment (VLAN/VDI)?" icon={Lock} scopingAnswers={scopingAnswers} setScopingAnswers={setScopingAnswers} />
+                          <ScopingQuestion id="rma" label="Risk Managed Assets (CRMA)" description="Assets that *can* but are not *intended* to process CUI (Level 2 only)." icon={AlertTriangle} scopingAnswers={scopingAnswers} setScopingAnswers={setScopingAnswers} />
+                      </div>
+                  </div>
+
+                  <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <button onClick={() => goToStep('LEVEL_SELECT')} className="text-[10px] font-black uppercase text-slate-400">Back</button>
+                    <button 
+                        onClick={() => goToStep('INVENTORY')}
+                        className="bg-blue-600 text-white px-10 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-blue-700"
+                    >
+                        Map Inventory <ArrowRight size={16} className="inline ml-2" />
+                    </button>
+                  </div>
+              </div>
+          </div>
+      );
+  }
+
+  if (wizardProgress.currentStep === 'INVENTORY') {
+      return (
+          <WizardWrapper nextLabel="Proceed to Boundary Analysis" onNext={() => goToStep('NETWORK')} onPrev={() => goToStep('SCOPING')}>
+              <div className="p-6 space-y-6">
+                <Inventory assets={assets} onAddAsset={onAddAsset!} onDeleteAsset={onDeleteAsset!} variant="wizard" />
+              </div>
+          </WizardWrapper>
+      );
+  }
+
+  if (wizardProgress.currentStep === 'NETWORK') {
+      return (
+           <WizardWrapper nextLabel="Start Audit" onNext={() => goToStep('ASSESSMENT')} onPrev={() => goToStep('INVENTORY')}>
+             <div className="p-6">
+                <NetworkAnalyzer variant="wizard" />
              </div>
           </WizardWrapper>
       );
@@ -429,3 +529,21 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
 
   return null;
 };
+
+const ScopingQuestion = ({ id, label, description, icon: Icon, scopingAnswers, setScopingAnswers }: any) => (
+    <div 
+      onClick={() => setScopingAnswers((prev: any) => ({ ...prev, [id]: !prev[id] }))}
+      className={`p-6 rounded-2xl border-2 transition-all cursor-pointer flex gap-4 ${scopingAnswers[id] ? 'bg-blue-50 border-blue-600 shadow-md' : 'bg-white border-slate-100 hover:border-slate-200'}`}
+    >
+        <div className={`p-3 rounded-xl ${scopingAnswers[id] ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+            <Icon size={20} />
+        </div>
+        <div className="flex-1">
+            <div className="flex justify-between items-center">
+                <h4 className={`text-sm font-black uppercase tracking-tight ${scopingAnswers[id] ? 'text-blue-900' : 'text-slate-800'}`}>{label}</h4>
+                {scopingAnswers[id] && <CheckCircle2 size={18} className="text-blue-600" />}
+            </div>
+            <p className="text-xs text-slate-500 mt-1 font-medium">{description}</p>
+        </div>
+    </div>
+);
