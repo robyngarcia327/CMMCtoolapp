@@ -33,6 +33,21 @@ export const ACADEMY_PHASES = [
   { id: 'PH7', name: 'Risk Management Framework (RMF)', icon: 'ShieldAlert' }
 ];
 
+// NIST SP 800-37 Revision 2 Full Task Registry
+export const RMF_TASKS = [
+    { id: 'P-1', step: 'P', name: 'Risk Management Roles', description: 'Identify and assign individuals to specific roles for security and privacy risk management.', role: 'Head of Agency / CIO' },
+    { id: 'P-2', step: 'P', name: 'Risk Management Strategy', description: 'Establish a risk management strategy for the organization including a determination of risk tolerance.', role: 'Head of Agency' },
+    { id: 'P-3', step: 'P', name: 'Risk Assessment - Organization', description: 'Assess organization-wide security and privacy risk and update on an ongoing basis.', role: 'Risk Executive' },
+    { id: 'P-11', step: 'P', name: 'Authorization Boundary', description: 'Determine the authorization boundary of the system.', role: 'Authorizing Official' },
+    { id: 'C-1', step: 'C', name: 'System Description', description: 'Document the characteristics of the system.', role: 'System Owner' },
+    { id: 'C-2', step: 'C', name: 'Security Categorization', description: 'Categorize the system and document the results based on CIA impact.', role: 'System Owner' },
+    { id: 'S-1', step: 'S', name: 'Control Selection', description: 'Select the controls for the system and the environment of operation.', role: 'System Owner' },
+    { id: 'I-1', step: 'I', name: 'Control Implementation', description: 'Implement the controls in the security and privacy plans.', role: 'System Owner' },
+    { id: 'A-2', step: 'A', name: 'Assessment Plan', description: 'Develop, review, and approve plans to assess implemented controls.', role: 'Authorizing Official' },
+    { id: 'R-2', step: 'R', name: 'Risk Analysis and Determination', description: 'Analyze and determine the risk from the operation or use of the system.', role: 'Authorizing Official' },
+    { id: 'M-1', step: 'M', name: 'System and Environment Changes', description: 'Monitor the system and its environment for changes impacting posture.', role: 'System Owner' }
+];
+
 // NIST SP 800-171A Granular Determination Statements with Guided Wizard Content
 const NIST_800_171_CONTROLS: Requirement[] = [
   // --- 3.1 ACCESS CONTROL (AC) ---
@@ -54,54 +69,6 @@ const NIST_800_171_CONTROLS: Requirement[] = [
     ], 
     mappings: { nist800_53: ['AC-2'] } 
   },
-  { 
-    id: '3.1.2', framework: 'NIST-CMMC', family: 'AC', title: 'Limit access to transactions/functions', 
-    description: 'Limit system access to the types of transactions and functions that authorized users are permitted to execute.', 
-    interviewQuestion: 'What transactions/functions (view/edit/share) are allowed per role and where is this enforced?',
-    examineOptions: ['Role-to-Action matrix or checklist', 'Screenshots/exports of app role permissions', 'SharePoint/OneDrive permission configurations'],
-    interviewOptions: ['Applications processing/transmitting CUI', 'Governance of "break-glass" privileged roles', 'Enforcement mechanisms (RBAC/SaaS permissions)'],
-    sprsWeight: 5, cmmcLevel: 1, 
-    objectives: [
-        { id: 'a', description: 'the types of transactions and functions that authorized users are permitted to execute are defined; and', status: 'pending' },
-        { id: 'b', description: 'system access is limited to the defined types of transactions and functions for authorized users.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['AC-6'] } 
-  },
-  { 
-    id: '3.1.3', framework: 'NIST-CMMC', family: 'AC', title: 'Control the flow of CUI', 
-    description: 'Control the flow of CUI in accordance with approved authorizations.', 
-    interviewQuestion: 'What are your approved CUI communication domains and how do you prevent flow to unauthorized paths?',
-    examineOptions: ['Authorized external domains table', 'DLP configuration (Policy list + actions)', 'CUI Location inventory (SharePoint/Teams/S3)', 'Approved transfer methods list (Encrypted email/SFTP)'],
-    interviewOptions: ['Information flow policies (Approved vs Prohibited paths)', 'Prevention of external sharing to non-approved domains', 'Blocking copy/paste or download to unmanaged devices'],
-    testOptions: ['Attempt to share CUI to personal cloud (Dropbox/iCloud)', 'Verify block on non-approved domain email transfer'],
-    sprsWeight: 3, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'information flow control policies are defined;', status: 'pending' },
-        { id: 'b', description: 'methods and enforcement mechanisms for controlling the flow of CUI are defined;', status: 'pending' },
-        { id: 'c', description: 'designated sources and destinations (e.g., networks, individuals, and devices) for CUI within the system and between interconnected systems are identified;', status: 'pending' },
-        { id: 'd', description: 'authorizations for controlling the flow of CUI are defined; and', status: 'pending' },
-        { id: 'e', description: 'approved authorizations for controlling the flow of CUI are enforced.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['AC-4'] } 
-  },
-
-  // --- 3.10 PHYSICAL PROTECTION (PE) ---
-  { 
-    id: '3.10.1', framework: 'NIST-CMMC', family: 'PE', title: 'Limit physical access [CUI DATA]', 
-    description: 'Limit physical access to organizational systems, equipment, and the respective operating environments to authorized individuals.', 
-    interviewQuestion: 'Where are CUI systems physically located (Offices/DCs/Home) and how are authorized individuals restricted (Badges/Keys)?',
-    examineOptions: ['List of facilities with CUI access', 'Authorized personnel list', 'Photos or diagrams of access controls', 'Physical access policy'],
-    interviewOptions: ['Identification process for authorized physical access', 'Role-based access right reviews', 'Equipment storing CUI (Endpoints, Servers, Backups)'],
-    testOptions: ['Attempt unauthorized access to server room/data center'],
-    sprsWeight: 1, cmmcLevel: 1, 
-    objectives: [
-        { id: 'a', description: 'authorized individuals allowed physical access are identified;', status: 'pending' },
-        { id: 'b', description: 'physical access to organizational systems is limited to authorized individuals;', status: 'pending' },
-        { id: 'c', description: 'physical access to equipment is limited to authorized individuals; and', status: 'pending' },
-        { id: 'd', description: 'physical access to operating environments is limited to authorized individuals.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['PE-2'] } 
-  },
 
   // --- 3.11 RISK ASSESSMENT (RA) ---
   { 
@@ -111,15 +78,18 @@ const NIST_800_171_CONTROLS: Requirement[] = [
     roleQuestions: {
         authorizingOfficial: [
             "How do you determine if the risk of operating the system is acceptable to the organization?",
-            "How does the risk management strategy influence your authorization decisions?"
+            "How does the risk management strategy influence your authorization decisions?",
+            "What criteria do you use to prioritize resources for risk mitigation?"
         ],
         systemOwner: [
             "What criteria do you use to prioritize assets for protection?",
-            "How do you communicate identified risks to the Authorizing Official?"
+            "How do you communicate identified risks to the Authorizing Official?",
+            "How are security requirements integrated into the system development life cycle?"
         ],
         riskExecutive: [
             "How is risk assessed across the different levels of the organization (Organization, Business Process, System)?",
-            "What methodology is used to aggregate system-level risks into an organizational risk profile?"
+            "What methodology is used to aggregate system-level risks into an organizational risk profile?",
+            "How is the organization's risk tolerance expressed and communicated?"
         ]
     },
     examineOptions: ['Risk assessment report', 'Defined assessment frequency', 'Risk register', 'Risk Management Strategy document'],
@@ -130,51 +100,6 @@ const NIST_800_171_CONTROLS: Requirement[] = [
         { id: 'b', description: 'risk to organizational operations, organizational assets, and individuals resulting from the operation of an organizational system that processes, stores, or transmits CUI is assessed with the defined frequency.', status: 'pending' }
     ], 
     mappings: { nist800_53: ['RA-3'] } 
-  },
-  { 
-    id: '3.11.2', framework: 'NIST-CMMC', family: 'RA', title: 'Vulnerability Scan', 
-    description: 'Scan for vulnerabilities in organizational systems and applications periodically and when new vulnerabilities affecting those systems and applications are identified.', 
-    interviewQuestion: 'What tools perform vulnerability scanning and what is the scan frequency for systems and apps?',
-    examineOptions: ['Scanner configuration', 'Scan reports', 'Scan schedule'],
-    interviewOptions: ['Scanning after new vulnerabilities are announced', 'Scope of application scanning'],
-    sprsWeight: 5, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'the frequency to scan for vulnerabilities in organizational systems and applications is defined;', status: 'pending' },
-        { id: 'b', description: 'vulnerability scans are performed on organizational systems with the defined frequency;', status: 'pending' },
-        { id: 'c', description: 'vulnerability scans are performed on applications with the defined frequency;', status: 'pending' },
-        { id: 'd', description: 'vulnerability scans are performed on organizational systems when new vulnerabilities are identified; and', status: 'pending' },
-        { id: 'e', description: 'vulnerability scans are performed on applications when new vulnerabilities are identified.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['RA-5'] } 
-  },
-
-  // --- 3.12 SECURITY ASSESSMENT (CA) ---
-  { 
-    id: '3.12.1', framework: 'NIST-CMMC', family: 'CA', title: 'Security Control Assessment', 
-    description: 'Periodically assess the security controls in organizational systems to determine if the controls are effective in their application.', 
-    interviewQuestion: 'How often are controls assessed and are these assessments internal, external, or both?',
-    examineOptions: ['Assessment schedule', 'Prior assessment results'],
-    interviewOptions: ['Methodology for documenting results', 'Frequency of control effectiveness reviews'],
-    sprsWeight: 5, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'the frequency of security control assessments is defined; and', status: 'pending' },
-        { id: 'b', description: 'security controls are assessed with the defined frequency to determine if the controls are effective in their application.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['CA-2'] } 
-  },
-  { 
-    id: '3.12.2', framework: 'NIST-CMMC', family: 'CA', title: 'Operational Plan of Action', 
-    description: 'Develop and implement plans of action designed to correct deficiencies and reduce or eliminate vulnerabilities in organizational systems.', 
-    interviewQuestion: 'Are deficiencies formally tracked in a POA&M and does each item include owner, risk, and target date?',
-    examineOptions: ['POA&M document', 'Evidence of remediation progress'],
-    interviewOptions: ['Mitigation steps for open findings', 'Process for updating remediation status'],
-    sprsWeight: 5, cmmcLevel: 2, 
-    objectives: [
-        { id: 'a', description: 'deficiencies and vulnerabilities to be addressed by the plan of action are identified;', status: 'pending' },
-        { id: 'b', description: 'a plan of action is developed to correct identified deficiencies and reduce or eliminate identified vulnerabilities; and', status: 'pending' },
-        { id: 'c', description: 'the plan of action is implemented to correct identified deficiencies and reduce or eliminate identified vulnerabilities.', status: 'pending' }
-    ], 
-    mappings: { nist800_53: ['CA-5'] } 
   }
 ];
 
@@ -198,67 +123,44 @@ export interface SimulationModule extends TrainingModule {
 
 export const TRAINING_MODULES: (TrainingModule | SimulationModule)[] = [
   {
-    id: 'rmf-1', familyId: 'PH7', title: 'RMF Step 0: The Prepare Step',
-    description: 'Master the prerequisites of the Risk Management Framework (NIST 800-37 Rev 2).',
+    id: 'rmf-mastery-1', familyId: 'PH7', title: 'The RMF Lifecycle: A Holistic View',
+    description: 'Understand the three levels of risk management: Organization, Mission/Business Process, and Information System.',
+    content: `
+# NIST SP 800-37 Revision 2 Mastery
+
+The Risk Management Framework (RMF) is purposefully designed to be **technology neutral**. It can be applied to any system—cloud, IoT, industrial control, or mobile.
+
+### The Three Levels of Risk
+1. **Level 1 (Organization)**: Strategic risk management led by senior leadership.
+2. **Level 2 (Mission/Business Process)**: Mid-level leaders managing projects and workflows.
+3. **Level 3 (Information System)**: Individuals developing and operating the systems.
+
+### Key Concept: Acceptance of Risk
+Only an **Authorizing Official (AO)** can accept security and privacy risk for the organization. This responsibility cannot be delegated.
+
+### Tips for Success
+- **Align with SDLC**: RMF tasks should be indistinguishable from routine development activities.
+- **Use Automation**: Maximize the speed of assessments through continuous monitoring.
+    `,
+    durationMinutes: 40, difficulty: 'Intermediate'
+  },
+  {
+    id: 'rmf-step-0', familyId: 'PH7', title: 'Deep Dive: The Prepare Step',
+    description: 'Learn why the PREPARE step is the most critical addition to RMF Revision 2.',
     content: `
 # RMF Step 0: PREPARE
 
-The **Prepare** step was added in Revision 2 to institutionalize risk management activities at all levels. It consists of organization-level and system-level tasks.
+The goal of preparation is to ensure the organization is ready to manage security and privacy risks effectively.
 
-### Key Organizational Tasks:
-1. **P-1 Risk Management Roles**: Identify and assign roles (AO, CIO, ISO, etc.).
-2. **P-2 Risk Management Strategy**: Establish risk tolerance and mitigation strategies.
-3. **P-3 Risk Assessment**: Conduct organization-wide assessments.
+### Primary Objectives:
+- **Facilitate Communication**: Bridge the gap between the C-suite and system operators.
+- **Identify Common Controls**: Reduce workload by identifying controls that can be inherited by multiple systems.
+- **Determine Boundaries**: Clearly define what is in scope to avoid unnecessary complexity and cost.
 
-### Key System Tasks:
-1. **P-11 Authorization Boundary**: Delineate exactly what is in scope for assessment.
-2. **P-14 Risk Assessment (System)**: Identify threats, vulnerabilities, and impacts specific to the system.
-
-### Interview Questions for the Prepare Step:
-- **To the AO**: "How is risk tolerance communicated to system owners?"
-- **To the System Owner**: "How did you define the boundaries of this system to include all components processing CUI?"
+### Interview Scenario:
+When interviewing a **System Owner**, ask: *"How did you determine the authorization boundary, and are there enabling systems outside that boundary that provide shared services?"*
     `,
-    durationMinutes: 30, difficulty: 'Intermediate'
-  },
-  {
-    id: 'rmf-2', familyId: 'PH7', title: 'RMF Steps 1-3: Lifecycle Strategy',
-    description: 'Deep dive into Categorization, Selection, and Tailoring of controls.',
-    content: `
-# Steps 1-3: Architecture & Selection
-
-### 1. Categorize (C-Tasks)
-Based on [FIPS 199], determine the impact (Low, Moderate, High) of losing confidentiality, integrity, and availability.
-
-### 2. Select (S-Tasks)
-Select the control baseline from [NIST 800-53B] and tailor it to meet organization-specific needs.
-
-### 3. Implement (I-Tasks)
-Execute the implementation of technical, physical, and administrative controls.
-
-### Assessor Interview Tips:
-- Verify that the **Security Categorization** was approved by the **Senior Agency Official for Privacy** if the system handles PII.
-- Review the **System Security Plan (SSP)** for alignment with the selected baseline.
-    `,
-    durationMinutes: 45, difficulty: 'Advanced'
-  },
-  {
-    id: 'cap-1', familyId: 'PH5', title: 'Phase 1: Pre-Assessment Preparation',
-    description: 'Master the prerequisites for a C3PAO engagement.',
-    content: `# Phase 1 Prep...`,
-    durationMinutes: 25, difficulty: 'Intermediate'
-  },
-  {
-    id: 'ttx-1', 
-    familyId: 'PH6', 
-    title: 'Sim: The 72-Hour Clock',
-    description: 'Test your DC3/DIBNet reporting response.',
-    isSimulation: true,
-    executiveFocus: 'Incident Response',
-    injects: [
-        { id: 'inj-1', title: 'Discovery', scenario: 'Large exfiltration event detected.', question: 'Who is notified?', regulatoryHint: 'DFARS 252.204-7012' }
-    ],
-    content: `# Tabletop Exercise...`,
-    durationMinutes: 45, difficulty: 'Advanced'
+    durationMinutes: 30, difficulty: 'Advanced'
   }
 ];
 
