@@ -49,9 +49,9 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
         
         if (missingReqs.length > 0) {
             onBatchUpdate(missingReqs);
-            alert(`Added ${missingReqs.length} missing controls to your environment.`);
+            alert(`Synchronized ${missingReqs.length} missing controls to your environment. Total controls in scope: ${requirements.length + missingReqs.length}`);
         } else {
-            alert("Library is already fully synchronized.");
+            alert("Your compliance library is already fully synchronized with the NIST 800-171 standard.");
         }
     }
   };
@@ -65,12 +65,12 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
                 <button 
                     onClick={handleSeedLibrary}
                     className="p-1.5 bg-white border border-slate-200 rounded text-slate-400 hover:text-blue-600 transition-colors"
-                    title="Sync Library Standards"
+                    title="Sync Official Standards"
                 >
                     <RefreshCw size={12} />
                 </button>
                 <span className="text-[9px] bg-blue-100 border border-blue-200 px-1.5 py-0.5 rounded text-blue-700 font-mono font-black uppercase">
-                    Level {targetLevel}
+                    Level {targetLevel} Scope
                 </span>
              </div>
         </div>
@@ -81,7 +81,7 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
             onChange={(e) => setFilterFamily(e.target.value)}
             className="w-full p-2 pl-9 bg-white border border-slate-300 rounded-lg text-sm appearance-none focus:ring-2 focus:ring-blue-500 outline-none"
             >
-            <option value="ALL">All Scoped Domains</option>
+            <option value="ALL">All 14 Security Domains</option>
             {families.map((f: any) => (
                 <option key={f.id} value={f.id}>{f.id}: {f.name}</option>
             ))}
@@ -119,13 +119,13 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
                 <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-200 mb-4 border border-dashed border-slate-300">
                     <Database size={32} />
                 </div>
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Library Offline</h3>
-                <p className="text-xs text-slate-500 mt-2">No controls found for Level {targetLevel}.</p>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Scope Empty</h3>
+                <p className="text-xs text-slate-500 mt-2">No active controls mapped for Level {targetLevel}.</p>
                 <button 
                     onClick={handleSeedLibrary}
-                    className="mt-6 w-full bg-blue-600 text-white font-black py-2.5 rounded-xl text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
+                    className="mt-6 w-full bg-blue-600 text-white font-black py-2.5 rounded-xl text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-blue-100"
                 >
-                    <Plus size={14}/> Seed Standard Library
+                    <Plus size={14}/> Seed 110 Practices
                 </button>
             </div>
         )}
