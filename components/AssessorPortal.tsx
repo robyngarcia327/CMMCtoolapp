@@ -1,6 +1,8 @@
+
 import React, { useState, useMemo } from 'react';
 import { Requirement, Artifact, Client, Risk, Asset, Framework, AssessmentObjective } from '../types';
 import { NIST_CMMC_FAMILIES } from '../data/standards';
+// Added Award icon to the imports list
 import { 
   ShieldCheck, 
   FileText, 
@@ -27,7 +29,12 @@ import {
   Activity,
   UserPlus,
   Mail,
-  X
+  X,
+  FileBadge,
+  Shield,
+  Target,
+  Box,
+  Award
 } from 'lucide-react';
 
 interface AssessorPortalProps {
@@ -41,14 +48,11 @@ interface AssessorPortalProps {
 
 type CAPPhase = 'PH1_PRE_ASSESSMENT' | 'PH2_ASSESSMENT' | 'PH3_REPORTING' | 'PH4_CERTIFICATION';
 
-// FIX: Moved Award component declaration before its usage in CAP_PHASES to avoid 'used before its declaration' error
-const Award = ({ size, className }: any) => <ShieldCheck size={size} className={className} />;
-
 const CAP_PHASES = [
     { id: 'PH1_PRE_ASSESSMENT', label: 'Phase 1: Pre-Assessment', icon: FileCheck, description: 'Review SSP, Validate Scope, Confirm Evidence' },
     { id: 'PH2_ASSESSMENT', label: 'Phase 2: Assessment', icon: SearchCode, description: 'In-Brief, Fieldwork (Examine/Interview/Test)' },
     { id: 'PH3_REPORTING', label: 'Phase 3: Reporting', icon: ClipboardCheck, description: 'Out-Brief, eMASS Upload, QA Review' },
-    { id: 'PH4_CERTIFICATION', label: 'Phase 4: Certification', icon: Award, description: 'Final/Conditional Certificate Issuance' }
+    { id: 'PH4_CERTIFICATION', label: 'Phase 4: Certification', icon: ShieldCheck, description: 'Final/Conditional Certificate Issuance' }
 ];
 
 const FindingBadge = ({ status }: { status: AssessmentObjective['status'] }) => {
@@ -101,97 +105,165 @@ export const AssessorPortal: React.FC<AssessorPortalProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-8 space-y-8 h-full flex flex-col">
+    <div className="max-w-7xl mx-auto p-8 space-y-10 h-full flex flex-col bg-slate-50/30">
       
-      {/* Official Audit Header - CAP v2.0 Redesign */}
-      <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-6">
-              <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center text-white shadow-2xl rotate-3">
-                  <ClipboardCheck size={40} className="text-blue-500" />
+      {/* Official Audit Header */}
+      <div className="bg-white rounded-3xl p-10 border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center gap-8">
+              <div className="w-24 h-24 bg-slate-900 rounded-[2rem] flex items-center justify-center text-white shadow-2xl rotate-3 shrink-0">
+                  <ClipboardCheck size={48} className="text-blue-500" />
               </div>
               <div>
-                  <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase leading-none">Assessor Gateway<br/><span className="text-blue-600 text-sm tracking-widest font-black uppercase">CMMC CAP v2.0 // Official Portal</span></h1>
-                  <p className="text-slate-500 font-medium mt-3 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    Review Environment: <span className="font-bold text-slate-700">{client.name}</span>
+                  <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">
+                    Assessor Gateway
+                    <div className="mt-2 flex items-center gap-3">
+                        <span className="bg-blue-600 text-white text-[10px] px-3 py-1 rounded-full tracking-widest font-black uppercase shadow-lg shadow-blue-200">CMMC CAP V2.0</span>
+                        <span className="text-slate-300 text-lg font-medium tracking-widest">//</span>
+                        <span className="text-blue-600 text-[10px] tracking-widest font-black uppercase">Official Portal</span>
+                    </div>
+                  </h1>
+                  <p className="text-slate-500 font-medium mt-4 flex items-center gap-2 text-lg">
+                    <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                    Review Environment: <span className="font-black text-slate-800 uppercase tracking-tight">{client.name}</span>
                   </p>
               </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-2">
-                 <button onClick={() => setShowInviteModal(true)} className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all uppercase tracking-widest">
-                    <UserPlus size={16} /> Invite Agency
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-3">
+                 <button onClick={() => setShowInviteModal(true)} className="flex items-center gap-3 bg-blue-600 text-white px-8 py-3.5 rounded-2xl font-black text-xs shadow-2xl shadow-blue-200 hover:bg-blue-700 transition-all uppercase tracking-[0.1em]">
+                    <UserPlus size={20} /> Invite Agency
                  </button>
-                 <button className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg hover:bg-black transition-all uppercase tracking-widest">
-                    <Download size={16} /> Evidence Bundle
+                 <button className="flex items-center gap-3 bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-black text-xs shadow-2xl hover:bg-black transition-all uppercase tracking-[0.1em]">
+                    <Download size={20} /> Evidence Bundle
                  </button>
             </div>
-            <div className="text-[9px] font-black text-slate-400 text-right uppercase tracking-[0.2em]">Verified: NIST 800-171A Methodology</div>
+            <div className="text-[10px] font-black text-slate-400 text-right uppercase tracking-[0.2em]">Verified: NIST 800-171A Methodology</div>
           </div>
       </div>
 
-      {/* CAP Phase Stepper */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* CAP Phase Stepper - High Impact Selection */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {CAP_PHASES.map((phase) => {
               const isActive = activeCapPhase === phase.id;
               return (
                   <button 
                     key={phase.id}
                     onClick={() => setActiveCapPhase(phase.id as CAPPhase)}
-                    className={`text-left p-5 rounded-2xl border-2 transition-all flex flex-col h-full relative group ${
-                        isActive ? 'bg-white border-blue-600 shadow-xl ring-4 ring-blue-50' : 'bg-slate-50 border-transparent hover:border-slate-200'
+                    className={`text-left p-6 rounded-[2rem] border-2 transition-all flex flex-col h-full relative group ${
+                        isActive ? 'bg-white border-blue-600 shadow-2xl ring-8 ring-blue-50' : 'bg-white border-slate-100 hover:border-slate-300 hover:shadow-lg'
                     }`}
                   >
-                      <div className={`p-3 rounded-xl w-fit mb-3 ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-slate-400 border border-slate-200'}`}>
-                          <phase.icon size={20} />
+                      <div className={`p-4 rounded-2xl w-fit mb-4 transition-all ${isActive ? 'bg-blue-600 text-white shadow-xl shadow-blue-200 scale-110' : 'bg-slate-50 text-slate-400 border border-slate-200 group-hover:bg-blue-50'}`}>
+                          <phase.icon size={24} />
                       </div>
-                      <h4 className={`text-xs font-black uppercase tracking-tight ${isActive ? 'text-slate-900' : 'text-slate-500'}`}>{phase.label}</h4>
-                      <p className="text-[10px] text-slate-400 font-medium mt-1 leading-tight">{phase.description}</p>
-                      {isActive && <div className="absolute top-4 right-4 text-blue-600 animate-pulse"><ArrowRight size={16}/></div>}
+                      <h4 className={`text-sm font-black uppercase tracking-widest ${isActive ? 'text-blue-600' : 'text-slate-500'}`}>{phase.label}</h4>
+                      <p className="text-[11px] text-slate-400 font-medium mt-2 leading-relaxed">{phase.description}</p>
+                      {isActive && <div className="absolute top-6 right-6 text-blue-600 animate-bounce"><ArrowRight size={20}/></div>}
                   </button>
               );
           })}
       </div>
 
-      {/* Main Assessment Workbench */}
-      <div className="flex-1 bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-0">
+      {/* Main Assessment Workbench - SIGNIFICANTLY ENLARGED Content Area */}
+      <div className="flex-1 min-h-[700px] bg-white rounded-[3rem] border border-slate-200 shadow-2xl overflow-hidden flex flex-col transition-all duration-500">
           {activeCapPhase === 'PH1_PRE_ASSESSMENT' && (
-              <div className="p-8 space-y-10 overflow-y-auto">
-                  <div className="max-w-3xl">
-                      <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Phase 1: Readiness Determination</h2>
-                      <p className="text-slate-500 font-medium">Verify the System Security Plan (SSP) completeness and Boundary Scope validation before proceeding to fieldwork.</p>
+              <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  {/* Phase Header Section */}
+                  <div className="p-12 pb-8 bg-slate-50/50 border-b border-slate-100 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/5 rounded-full blur-3xl -mr-48 -mt-48"></div>
+                      <div className="max-w-4xl relative z-10">
+                          <h2 className="text-5xl font-black text-slate-900 uppercase tracking-tighter mb-4 leading-none">
+                            Phase 1: Readiness Determination
+                          </h2>
+                          <p className="text-xl text-slate-500 font-medium max-w-2xl leading-relaxed">
+                            Complete the preliminary review of the System Security Plan (SSP) and validate the defined assessment boundary before moving to fieldwork.
+                          </p>
+                      </div>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4">
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><FileCheck size={16}/> SSP Completeness</h4>
-                          <div className="bg-white p-4 rounded-xl border border-slate-100 flex items-center justify-between">
-                              <span className="text-xs font-bold text-slate-700">SSP v2.4</span>
-                              <button className="text-blue-600 font-black text-[10px] uppercase hover:underline flex items-center gap-1">Review <ExternalLink size={10}/></button>
-                          </div>
-                          <p className="text-[10px] text-slate-400 leading-relaxed italic">Assessor must examine document for accuracy, consistency, and addressing all 110 controls.</p>
-                      </div>
-                      <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4">
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers size={16}/> Scope Validation</h4>
-                          <div className="grid grid-cols-2 gap-2">
-                              <div className="bg-white p-2 text-center rounded-lg border border-slate-100">
-                                  <div className="text-lg font-black text-slate-900">{assets.filter(a => a.cmmcCategory === 'CUI').length}</div>
-                                  <div className="text-[8px] font-black text-slate-400 uppercase">CUI Assets</div>
+
+                  {/* Grand Action Tiles */}
+                  <div className="flex-1 p-12 overflow-y-auto">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                          
+                          {/* Tile: SSP Review */}
+                          <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-xl transition-all p-10 flex flex-col h-full group border-b-8 border-b-blue-600">
+                              <div className="p-5 bg-blue-50 text-blue-600 rounded-3xl w-fit mb-8 group-hover:scale-110 transition-transform">
+                                  <FileCheck size={32} />
                               </div>
-                              <div className="bg-white p-2 text-center rounded-lg border border-slate-100">
-                                  <div className="text-lg font-black text-slate-900">{assets.filter(a => a.cmmcCategory === 'SPA').length}</div>
-                                  <div className="text-[8px] font-black text-slate-400 uppercase">SPA Assets</div>
+                              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-3">Compliance Core</h4>
+                              <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">SSP Completeness</h3>
+                              <p className="text-sm text-slate-500 leading-relaxed font-medium mb-8 flex-1">
+                                Verify the System Security Plan addresses all 110 controls with accurate implementation narratives.
+                              </p>
+                              
+                              <div className="space-y-4">
+                                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                          <FileText className="text-blue-600" size={20} />
+                                          <span className="text-sm font-bold text-slate-700 tracking-tight">SSP_v2.4_Production.pdf</span>
+                                      </div>
+                                      <button className="text-blue-600 font-black text-xs uppercase hover:underline flex items-center gap-1">Open <ExternalLink size={12}/></button>
+                                  </div>
+                                  <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all">Verify Document</button>
                               </div>
                           </div>
-                          <p className="text-[10px] text-slate-400 leading-relaxed">Validation of Logical and Physical separation required per 32 CFR §170.19(c).</p>
-                      </div>
-                      <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200 space-y-4">
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><HelpCircle size={16}/> Evidence Confirmation</h4>
-                          <div className="p-4 bg-white rounded-xl border border-slate-100 text-center">
-                              <div className="text-4xl font-black text-blue-600">{artifacts.length}</div>
-                              <div className="text-[10px] font-black text-slate-400 uppercase mt-1">Total Artifacts Uploaded</div>
+
+                          {/* Tile: Scope Validation */}
+                          <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-xl transition-all p-10 flex flex-col h-full group border-b-8 border-b-indigo-600">
+                              <div className="p-5 bg-indigo-50 text-indigo-600 rounded-3xl w-fit mb-8 group-hover:scale-110 transition-transform">
+                                  <Target size={32} />
+                              </div>
+                              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-3">Boundary Logic</h4>
+                              <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Scope Validation</h3>
+                              <p className="text-sm text-slate-500 leading-relaxed font-medium mb-8 flex-1">
+                                Assessor must confirm Logical and Physical separation of the CUI environment per 32 CFR §170.19.
+                              </p>
+                              
+                              <div className="grid grid-cols-2 gap-4 mb-6">
+                                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
+                                      <div className="text-3xl font-black text-slate-900 tracking-tighter">{assets.filter(a => a.cmmcCategory === 'CUI').length}</div>
+                                      <div className="text-[9px] font-black text-slate-400 uppercase mt-1 tracking-widest">CUI Assets</div>
+                                  </div>
+                                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
+                                      <div className="text-3xl font-black text-slate-900 tracking-tighter">{assets.filter(a => a.cmmcCategory === 'SPA').length}</div>
+                                      <div className="text-[9px] font-black text-slate-400 uppercase mt-1 tracking-widest">SPA Assets</div>
+                                  </div>
+                              </div>
+                              <button className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-700 transition-all">Confirm Boundary</button>
                           </div>
-                          <button className="w-full py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg">Confirm Readiness</button>
+
+                          {/* Tile: Evidence Check */}
+                          <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-xl transition-all p-10 flex flex-col h-full group border-b-8 border-b-emerald-600">
+                              <div className="p-5 bg-emerald-50 text-emerald-600 rounded-3xl w-fit mb-8 group-hover:scale-110 transition-transform">
+                                  <Box size={32} />
+                              </div>
+                              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-3">Artifact Density</h4>
+                              <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-4">Evidence Vault</h3>
+                              <p className="text-sm text-slate-500 leading-relaxed font-medium mb-8 flex-1">
+                                Check for minimum evidence thresholds. 110/110 practice points should have technical proof.
+                              </p>
+                              
+                              <div className="p-6 bg-emerald-50 rounded-2xl border border-emerald-100 text-center mb-6">
+                                  <div className="text-5xl font-black text-emerald-700 tracking-tighter">{artifacts.length}</div>
+                                  <div className="text-[10px] font-black text-emerald-600 uppercase mt-2 tracking-widest">Total Proof Objects</div>
+                              </div>
+                              <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-emerald-700 transition-all">Confirm Artifact Readiness</button>
+                          </div>
+
+                      </div>
+
+                      {/* Global Readiness CTA */}
+                      <div className="mt-16 bg-slate-900 rounded-[2.5rem] p-12 text-center relative overflow-hidden shadow-2xl">
+                          <div className="absolute top-0 left-0 w-full h-full bg-blue-600/10"></div>
+                          <div className="relative z-10 max-w-2xl mx-auto">
+                              <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Final Readiness Determination</h3>
+                              <p className="text-blue-100 font-medium mb-8 text-lg">
+                                If all Pre-Assessment criteria are MET, the Lead Assessor may issue a "Go" decision to move to active Fieldwork (Phase 2).
+                              </p>
+                              <button className="bg-blue-600 hover:bg-blue-500 text-white px-12 py-5 rounded-[2rem] font-black text-sm uppercase tracking-[0.3em] shadow-2xl shadow-blue-900/50 transition-all flex items-center gap-4 mx-auto hover:scale-105 active:scale-95">
+                                 Commit Readiness Decision <ChevronRight size={24} />
+                              </button>
+                          </div>
                       </div>
                   </div>
               </div>
@@ -199,25 +271,25 @@ export const AssessorPortal: React.FC<AssessorPortalProps> = ({
 
           {activeCapPhase === 'PH2_ASSESSMENT' && (
               <>
-                  <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0">
-                      <div className="flex-1 relative max-w-xl">
-                          <Search className="absolute left-4 top-3 text-slate-400" size={20} />
+                  <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-center gap-6 shrink-0">
+                      <div className="flex-1 relative max-w-2xl">
+                          <Search className="absolute left-6 top-4 text-slate-400" size={24} />
                           <input 
-                            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-inner font-bold"
+                            className="w-full pl-16 pr-6 py-5 bg-white border border-slate-200 rounded-3xl text-lg focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none shadow-inner font-bold"
                             placeholder="Audit Requirement ID, Objective, or Domain..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                           />
                       </div>
-                      <div className="flex gap-2">
-                           <div className="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-indigo-100">
-                               <Info size={14} /> Methodology: Focused Sampling
+                      <div className="flex gap-4">
+                           <div className="bg-indigo-50 text-indigo-700 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-3 border border-indigo-100">
+                               <Info size={18} /> Methodology: Focused Sampling
                            </div>
-                           <button className="bg-slate-900 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg">In-Brief Checklist</button>
+                           <button className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all">In-Brief Checklist</button>
                       </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto min-h-0">
+                  <div className="flex-1 overflow-y-auto min-0 custom-scrollbar">
                       <div className="divide-y divide-slate-100">
                           {filteredReqs.map(req => {
                               const reqArtifacts = artifacts.filter(a => a.requirementId === req.id);
@@ -226,57 +298,57 @@ export const AssessorPortal: React.FC<AssessorPortalProps> = ({
 
                               return (
                                   <div key={req.id} className="group">
-                                      <div onClick={() => setExpandedReqId(isExpanded ? null : req.id)} className={`p-6 flex items-center justify-between cursor-pointer transition-colors ${isExpanded ? 'bg-blue-50/30' : 'hover:bg-slate-50'}`}>
-                                          <div className="flex items-center gap-6">
-                                              <div className={`w-16 font-mono text-[11px] font-black transition-colors ${isExpanded ? 'text-blue-600' : 'text-slate-400'}`}>{req.id}</div>
+                                      <div onClick={() => setExpandedReqId(isExpanded ? null : req.id)} className={`p-8 flex items-center justify-between cursor-pointer transition-colors ${isExpanded ? 'bg-blue-50/30' : 'hover:bg-slate-50'}`}>
+                                          <div className="flex items-center gap-8">
+                                              <div className={`w-20 font-mono text-sm font-black transition-colors ${isExpanded ? 'text-blue-600' : 'text-slate-400'}`}>{req.id}</div>
                                               <div>
-                                                  <div className="font-black text-slate-900 text-sm uppercase tracking-tight">{req.title}</div>
-                                                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{req.family} Domain</div>
+                                                  <div className="font-black text-slate-900 text-lg uppercase tracking-tight leading-none">{req.title}</div>
+                                                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">{req.family} Domain</div>
                                               </div>
                                           </div>
-                                          <div className="flex items-center gap-6">
-                                              <span className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 border ${isMet ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                                          <div className="flex items-center gap-8">
+                                              <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border ${isMet ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
                                                    {isMet ? 'VERIFIED MET' : 'OPEN GAP'}
                                               </span>
-                                              <ChevronRight size={20} className={`text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-blue-600' : ''}`} />
+                                              <ChevronRight size={24} className={`text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-blue-600' : ''}`} />
                                           </div>
                                       </div>
                                       
                                       {isExpanded && (
-                                          <div className="bg-slate-50/50 px-8 pb-10 pt-4 animate-in fade-in duration-300">
-                                              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                                                  <div className="lg:col-span-8 space-y-6">
-                                                      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                                                          <div className="bg-slate-900 px-6 py-3 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                                                              <SearchCode size={14} className="text-blue-400" /> Potential Assessment Methodology
+                                          <div className="bg-slate-50/50 px-12 pb-12 pt-6 animate-in fade-in duration-300">
+                                              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                                                  <div className="lg:col-span-8 space-y-8">
+                                                      <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
+                                                          <div className="bg-slate-900 px-8 py-4 text-white text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-3">
+                                                              <SearchCode size={18} className="text-blue-400" /> Assessment Methodology Guide
                                                           </div>
-                                                          <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                                                              <div className="space-y-3">
-                                                                  <h5 className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5"><FileText size={12}/> Examine</h5>
-                                                                  <ul className="space-y-1">
+                                                          <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                              <div className="space-y-4">
+                                                                  <h5 className="text-[11px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2"><FileText size={16}/> Examine</h5>
+                                                                  <ul className="space-y-2">
                                                                       {(req.examineOptions || ['Policies', 'Configuration Settings', 'Audit Logs']).map((opt, i) => (
-                                                                          <li key={i} className="text-[10px] text-slate-600 font-medium leading-relaxed flex gap-2">
-                                                                              <span className="text-blue-300">•</span> {opt}
+                                                                          <li key={i} className="text-xs text-slate-600 font-medium leading-relaxed flex gap-2">
+                                                                              <span className="text-blue-400 font-black">•</span> {opt}
                                                                           </li>
                                                                       ))}
                                                                   </ul>
                                                               </div>
-                                                              <div className="space-y-3">
-                                                                  <h5 className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-1.5"><Users size={12}/> Interview</h5>
-                                                                  <ul className="space-y-1">
+                                                              <div className="space-y-4">
+                                                                  <h5 className="text-[11px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2"><Users size={16}/> Interview</h5>
+                                                                  <ul className="space-y-2">
                                                                       {(req.interviewOptions || ['System Administrators', 'Security Officers']).map((opt, i) => (
-                                                                          <li key={i} className="text-[10px] text-slate-600 font-medium leading-relaxed flex gap-2">
-                                                                              <span className="text-amber-300">•</span> {opt}
+                                                                          <li key={i} className="text-xs text-slate-600 font-medium leading-relaxed flex gap-2">
+                                                                              <span className="text-amber-400 font-black">•</span> {opt}
                                                                           </li>
                                                                       ))}
                                                                   </ul>
                                                               </div>
-                                                              <div className="space-y-3">
-                                                                  <h5 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1.5"><ShieldCheck size={12}/> Test</h5>
-                                                                  <ul className="space-y-1">
+                                                              <div className="space-y-4">
+                                                                  <h5 className="text-[11px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2"><ShieldCheck size={16}/> Test</h5>
+                                                                  <ul className="space-y-2">
                                                                       {(req.testOptions || ['System configurations', 'Process execution']).map((opt, i) => (
-                                                                          <li key={i} className="text-[10px] text-slate-600 font-medium leading-relaxed flex gap-2">
-                                                                              <span className="text-indigo-300">•</span> {opt}
+                                                                          <li key={i} className="text-xs text-slate-600 font-medium leading-relaxed flex gap-2">
+                                                                              <span className="text-indigo-400 font-black">•</span> {opt}
                                                                           </li>
                                                                       ))}
                                                                   </ul>
@@ -284,19 +356,19 @@ export const AssessorPortal: React.FC<AssessorPortalProps> = ({
                                                           </div>
                                                       </div>
 
-                                                      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm">
-                                                          <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                                                              <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Assessment Objectives (NIST 800-171A)</h4>
-                                                              <span className="text-[10px] font-bold text-slate-400">Review required for all determination statements</span>
+                                                      <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm">
+                                                          <div className="bg-slate-50 px-8 py-5 border-b border-slate-100 flex justify-between items-center">
+                                                              <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">Determination Statements (800-171A)</h4>
+                                                              <span className="text-[10px] font-bold text-slate-400 italic">Review required for all assessment objectives</span>
                                                           </div>
                                                           <div className="divide-y divide-slate-50">
                                                               {req.objectives.map(obj => (
-                                                                  <div key={obj.id} className="p-4 flex items-start gap-4">
-                                                                      <div className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center font-black text-[10px] shadow-sm ${obj.status === 'met' ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                                                  <div key={obj.id} className="p-6 flex items-start gap-6">
+                                                                      <div className={`mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shadow-md transition-all ${obj.status === 'met' ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
                                                                           {obj.id.toUpperCase()}
                                                                       </div>
                                                                       <div className="flex-1">
-                                                                          <div className="text-xs text-slate-700 font-bold leading-relaxed">{obj.description}</div>
+                                                                          <div className="text-sm text-slate-700 font-bold leading-relaxed">{obj.description}</div>
                                                                       </div>
                                                                       <FindingBadge status={obj.status} />
                                                                   </div>
@@ -304,46 +376,50 @@ export const AssessorPortal: React.FC<AssessorPortalProps> = ({
                                                           </div>
                                                       </div>
 
-                                                      <div className="bg-indigo-900 rounded-3xl p-6 text-white shadow-xl">
-                                                          <h4 className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-3 flex items-center gap-2"><BookOpen size={14}/> Implementation Narrative</h4>
-                                                          <p className="text-sm font-medium leading-relaxed text-blue-50">
-                                                              {req.response || 'Warning: No implementation narrative provided. Assessor must solicit verbal confirmation during interview phase.'}
+                                                      <div className="bg-indigo-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden">
+                                                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16"></div>
+                                                          <h4 className="text-[11px] font-black text-indigo-300 uppercase tracking-[0.3em] mb-6 flex items-center gap-3"><BookOpen size={20}/> Organization implementation statement</h4>
+                                                          <p className="text-lg font-medium leading-relaxed text-blue-50 italic">
+                                                              "{req.response || 'Warning: No implementation narrative provided. Assessor must solicit verbal confirmation during interview phase.'}"
                                                           </p>
                                                       </div>
                                                   </div>
                                                   
-                                                  <div className="lg:col-span-4 space-y-6">
-                                                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Eye size={14}/> Technical Evidence Vault</h4>
-                                                      {reqArtifacts.length === 0 ? (
-                                                          <div className="p-12 text-center text-slate-400 text-xs italic border-2 border-dashed rounded-[2rem] border-slate-200 bg-white">
-                                                              Awaiting artifact upload for this control.
-                                                          </div>
-                                                      ) : (
-                                                          <div className="space-y-2">
-                                                              {reqArtifacts.map(art => (
-                                                                  <button key={art.id} className="w-full bg-white p-3 rounded-2xl border border-slate-200 flex items-center justify-between group/art hover:border-blue-400 transition-all shadow-sm">
-                                                                      <div className="flex items-center gap-3 overflow-hidden">
-                                                                          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover/art:bg-blue-600 group-hover/art:text-white transition-colors"><Link2 size={16}/></div>
-                                                                          <div className="text-left truncate">
-                                                                              <div className="text-[11px] font-black text-slate-900 truncate">{art.name}</div>
-                                                                              <div className="text-[8px] text-slate-400 font-bold uppercase">{new Date(art.timestamp).toLocaleDateString()}</div>
+                                                  <div className="lg:col-span-4 space-y-10">
+                                                      <div>
+                                                          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3"><Eye size={20}/> Evidence Vault</h4>
+                                                          {reqArtifacts.length === 0 ? (
+                                                              <div className="p-16 text-center text-slate-400 text-sm italic border-4 border-dashed rounded-[2.5rem] border-slate-100 bg-white">
+                                                                  <Box size={40} className="mx-auto mb-4 opacity-10" />
+                                                                  Awaiting technical artifacts.
+                                                              </div>
+                                                          ) : (
+                                                              <div className="space-y-3">
+                                                                  {reqArtifacts.map(art => (
+                                                                      <button key={art.id} className="w-full bg-white p-4 rounded-2xl border border-slate-200 flex items-center justify-between group/art hover:border-blue-400 hover:shadow-xl transition-all shadow-sm">
+                                                                          <div className="flex items-center gap-4 overflow-hidden">
+                                                                              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover/art:bg-blue-600 group-hover/art:text-white transition-colors"><Link2 size={20}/></div>
+                                                                              <div className="text-left truncate">
+                                                                                  <div className="text-xs font-black text-slate-900 truncate uppercase tracking-tight">{art.name}</div>
+                                                                                  <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">{new Date(art.timestamp).toLocaleDateString()}</div>
+                                                                              </div>
                                                                           </div>
-                                                                      </div>
-                                                                      <Download size={14} className="text-slate-300 group-hover/art:text-blue-600 shrink-0" />
-                                                                  </button>
-                                                              ))}
-                                                          </div>
-                                                      )}
+                                                                          <Download size={18} className="text-slate-300 group-hover/art:text-blue-600 shrink-0" />
+                                                                      </button>
+                                                                  ))}
+                                                              </div>
+                                                          )}
+                                                      </div>
 
-                                                      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-                                                          <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Assessor Finding</h5>
-                                                          <div className="grid grid-cols-1 gap-2">
-                                                              <button className="w-full py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black">Set as MET</button>
-                                                              <button className="w-full py-3 bg-white border border-red-200 text-red-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-50">Set as NOT MET</button>
+                                                      <div className="bg-white p-10 rounded-[2.5rem] border-2 border-slate-100 shadow-xl space-y-6">
+                                                          <h5 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">Official Assessor Finding</h5>
+                                                          <div className="grid grid-cols-1 gap-3">
+                                                              <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all">Commit Finding: MET</button>
+                                                              <button className="w-full py-4 bg-white border-2 border-red-100 text-red-600 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-red-50 transition-all">Commit Finding: NOT MET</button>
                                                           </div>
                                                           <textarea 
-                                                            className="w-full h-24 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                                                            placeholder="Auditor rationale / observations..."
+                                                            className="w-full h-32 bg-slate-50 border border-slate-200 rounded-2xl p-5 text-sm font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all resize-none shadow-inner"
+                                                            placeholder="Final auditor rationale or field observations..."
                                                           />
                                                       </div>
                                                   </div>
@@ -359,69 +435,80 @@ export const AssessorPortal: React.FC<AssessorPortalProps> = ({
           )}
 
           {activeCapPhase === 'PH3_REPORTING' && (
-              <div className="p-20 text-center space-y-10">
-                  <div className="w-24 h-24 bg-slate-100 rounded-[2.5rem] flex items-center justify-center mx-auto text-slate-300">
-                      <ClipboardCheck size={48} />
+              <div className="flex-1 flex flex-col items-center justify-center p-20 text-center space-y-12 animate-in fade-in duration-500">
+                  <div className="w-32 h-32 bg-slate-100 rounded-[3rem] flex items-center justify-center mx-auto text-slate-300 shadow-inner">
+                      <ClipboardCheck size={64} />
                   </div>
-                  <div className="max-w-xl mx-auto">
-                      <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Phase 3: reporting & eMASS</h2>
-                      <p className="text-slate-500 font-medium leading-relaxed mt-4">Generate the Assessment Results Briefing and upload hashed artifacts to CMMC eMASS. Ensure all POA&M statuses are clearly documented for Conditional Certification paths.</p>
+                  <div className="max-w-2xl mx-auto">
+                      <h2 className="text-5xl font-black text-slate-900 uppercase tracking-tighter mb-6">Phase 3: reporting & eMASS</h2>
+                      <p className="text-xl text-slate-500 font-medium leading-relaxed">
+                        Synthesize the Assessment Results Briefing (ARB) and finalize artifact hashing for CMMC eMASS submission. 
+                        Document all Conditional Certification POA&M paths.
+                      </p>
                   </div>
-                  <div className="flex justify-center gap-4">
-                      <button className="bg-blue-600 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700">Generate Out-Brief Report</button>
-                      <button className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-black flex items-center gap-2">
-                        <ArrowRight size={18} className="text-blue-50" /> Initiate eMASS Upload
+                  <div className="flex justify-center gap-6">
+                      <button className="bg-blue-600 text-white px-12 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-100 hover:bg-blue-700 transition-all hover:scale-105 active:scale-95">Generate Out-Brief Report</button>
+                      <button className="bg-slate-900 text-white px-12 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/50 hover:bg-black flex items-center gap-3 transition-all hover:scale-105 active:scale-95">
+                        <ArrowRight size={20} className="text-blue-400" /> Initiate eMASS Data Transfer
                       </button>
                   </div>
               </div>
           )}
 
           {activeCapPhase === 'PH4_CERTIFICATION' && (
-              <div className="p-20 text-center space-y-8 animate-in fade-in duration-700">
-                   <div className="w-24 h-24 bg-green-50 rounded-[2.5rem] flex items-center justify-center mx-auto text-green-500 shadow-xl shadow-green-100 ring-1 ring-green-200">
-                      <Award size={48} />
+              <div className="flex-1 flex flex-col items-center justify-center p-20 text-center space-y-12 animate-in fade-in zoom-in-95 duration-700">
+                   <div className="w-32 h-32 bg-green-50 rounded-[3rem] flex items-center justify-center mx-auto text-green-500 shadow-2xl shadow-green-100 ring-4 ring-green-100 animate-bounce-slow">
+                      {/* Using the newly imported Award icon */}
+                      <Award size={64} />
                   </div>
-                  <div className="max-w-xl mx-auto">
-                      <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Phase 4: Certification Issuance</h2>
-                      <p className="text-slate-500 font-medium leading-relaxed mt-4">The final step of the CAP process. If the Lead CCA and QA Individual concur on MET findings, a Certificate of CMMC Status is generated.</p>
+                  <div className="max-w-2xl mx-auto">
+                      <h2 className="text-5xl font-black text-slate-900 uppercase tracking-tighter mb-6 leading-none">Certification<br/>Finalization</h2>
+                      <p className="text-xl text-slate-500 font-medium leading-relaxed">
+                        Formal verification of findings. Upon concurrence from the Lead CCA and QA Individual, 
+                        the final Certificate of CMMC Status is ready for issuance.
+                      </p>
                   </div>
-                  <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-200 inline-block max-w-lg">
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Draft Certificate Confirmation</div>
-                      <div className="text-left space-y-2">
-                          <div className="flex justify-between text-sm"><span className="text-slate-500">Status:</span> <span className="font-bold text-green-600 uppercase">Final Recommendation</span></div>
-                          <div className="flex justify-between text-sm"><span className="text-slate-500">UID:</span> <span className="font-mono font-bold text-slate-900">CMMC-2025-AX-9921</span></div>
+                  <div className="bg-slate-900 p-12 rounded-[3.5rem] border border-slate-800 inline-block max-w-xl text-white shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                      <div className="text-[11px] font-black text-blue-400 uppercase tracking-[0.4em] mb-8">Certificate Preparation Engine</div>
+                      <div className="text-left space-y-4 mb-10">
+                          <div className="flex justify-between text-sm border-b border-white/5 pb-2"><span className="text-white/40 uppercase font-black tracking-widest text-[9px]">Finding Concensus:</span> <span className="font-bold text-green-400 uppercase tracking-tight">VERIFIED MET</span></div>
+                          <div className="flex justify-between text-sm border-b border-white/5 pb-2"><span className="text-white/40 uppercase font-black tracking-widest text-[9px]">Global Unique ID:</span> <span className="font-mono font-bold text-blue-200">CMMC-2026-AX-PR-9921-X5</span></div>
                       </div>
-                      <button className="w-full mt-8 py-4 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-green-100 transition-all hover:scale-[1.02]">Sign & Issue Certificate</button>
+                      <button className="w-full py-5 bg-green-600 hover:bg-green-500 text-white rounded-[2rem] font-black text-sm uppercase tracking-[0.3em] shadow-2xl shadow-green-900/50 transition-all hover:scale-[1.02] active:scale-[0.98]">Sign & Issue Official Certificate</button>
                   </div>
               </div>
           )}
       </div>
 
       {/* Footer Audit Meta */}
-      <div className="flex justify-between items-center px-4 pt-4 border-t border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
-          <div>Document Integrity Verified // CAP v2.0 Standard // Sig: {Math.random().toString(36).substring(7).toUpperCase()}</div>
-          <div>Cuallee Cyber Compliance Architecture v2.4.1</div>
+      <div className="flex justify-between items-center px-6 pt-6 border-t-2 border-slate-200 text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] shrink-0">
+          <div>Document Integrity Verified // CAP V2.0 Standard // SIG: {Math.random().toString(36).substring(7).toUpperCase()}</div>
+          <div className="text-blue-600">Cuallee Cyber Compliance Architecture V2.4.1</div>
       </div>
 
       {/* Invite Modal */}
       {showInviteModal && (
-          <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border-t-8 border-blue-600">
-                  <div className="bg-slate-900 px-6 py-4 flex justify-between items-center text-white">
-                      <h3 className="font-black uppercase tracking-widest text-sm flex items-center gap-2">
-                          <UserPlus size={18} /> Grant Agency Access
+          <div className="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center p-6 backdrop-blur-sm">
+              <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-300 border-t-[12px] border-blue-600">
+                  <div className="bg-slate-900 p-10 flex justify-between items-center text-white">
+                      <h3 className="font-black uppercase tracking-[0.2em] text-xl flex items-center gap-4">
+                          <UserPlus size={28} className="text-blue-400" /> Grant Agency Access
                       </h3>
-                      <button onClick={() => setShowInviteModal(false)} className="text-white/70 hover:text-white"><X size={24} /></button>
+                      <button onClick={() => setShowInviteModal(false)} className="text-white/50 hover:text-white transition-colors"><X size={32} /></button>
                   </div>
-                  <form onSubmit={handleInviteAuditor} className="p-8 space-y-6">
-                      <p className="text-xs text-slate-500 leading-relaxed">Inviting an agency email will grant 72-hour read-only access to this assessment environment following the CAP v2.0 confidentiality guidelines.</p>
-                      <div>
-                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Official Agency Email</label>
+                  <form onSubmit={handleInviteAuditor} className="p-12 space-y-10">
+                      <div className="bg-blue-50 border border-blue-100 p-6 rounded-3xl flex items-start gap-4">
+                          <Info className="text-blue-600 shrink-0" size={24} />
+                          <p className="text-sm text-blue-900 leading-relaxed font-medium">Inviting an agency email will grant a 72-hour **Read-Only** assessment token. This action is logged for audit integrity.</p>
+                      </div>
+                      <div className="space-y-4">
+                          <label className="block text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1.5 px-2">Official Agency Email Address</label>
                           <div className="relative">
-                              <Mail className="absolute left-4 top-3 text-slate-400" size={18} />
+                              <Mail className="absolute left-6 top-5 text-slate-300" size={24} />
                               <input 
                                 type="email" 
-                                className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold" 
+                                className="w-full pl-16 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-[2rem] focus:ring-8 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all font-bold text-lg text-slate-900" 
                                 placeholder="assessor@dcma.mil"
                                 value={auditorEmail}
                                 onChange={e => setAuditorEmail(e.target.value)}
@@ -429,7 +516,7 @@ export const AssessorPortal: React.FC<AssessorPortalProps> = ({
                               />
                           </div>
                       </div>
-                      <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-lg shadow-blue-100 transition-all">Send Session Token</button>
+                      <button type="submit" className="w-full py-6 bg-blue-600 hover:bg-blue-700 text-white rounded-[2rem] font-black uppercase tracking-[0.3em] text-sm shadow-2xl shadow-blue-200 transition-all hover:scale-105 active:scale-95">Deploy Session Token</button>
                   </form>
               </div>
           </div>
