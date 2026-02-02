@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Requirement } from '../types';
 import { NIST_CMMC_FAMILIES, REQUIREMENTS_DATA } from '../data/standards';
-import { Info, Filter, Database, Plus } from 'lucide-react';
+import { Info, Filter, Database, Plus, RefreshCw } from 'lucide-react';
 
 interface RequirementsListProps {
   requirements: Requirement[];
@@ -10,6 +10,7 @@ interface RequirementsListProps {
   activeFrameworkId: string;
   targetLevel: 1 | 2 | 3;
   onUpdateRequirement?: (req: Requirement) => void;
+  onBatchUpdate?: (reqs: Requirement[]) => void;
 }
 
 export const RequirementsList: React.FC<RequirementsListProps> = ({
@@ -18,7 +19,8 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
   onSelectReq,
   activeFrameworkId,
   targetLevel,
-  onUpdateRequirement
+  onUpdateRequirement,
+  onBatchUpdate
 }) => {
   const [filterFamily, setFilterFamily] = useState<string>('ALL');
 
@@ -39,38 +41,34 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
       families = Array.from(new Set(frameworkReqs.map(r => r.family))).map(f => ({ id: f as string, name: f as string }));
   }
 
-  // Fallback for empty state (Fix for "Controls are gone" issue)
-  if (requirements.length === 0) {
-      return (
-          <div className="flex flex-col h-full bg-white border-r border-slate-200 w-80 md:w-96 shrink-0 items-center justify-center p-12 text-center">
-              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300 mb-4 border border-slate-200 shadow-inner">
-                  <Database size={32} />
-              </div>
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Library Offline</h3>
-              <p className="text-xs text-slate-500 font-medium mt-2 leading-relaxed">
-                  No compliance requirements are mapped to this organization. Please seed the library to begin your assessment.
-              </p>
-              <button 
-                onClick={() => {
-                    if (onUpdateRequirement) {
-                        REQUIREMENTS_DATA.forEach(r => onUpdateRequirement(r));
-                        window.location.reload(); // Refresh to rebuild state
-                    }
-                }}
-                className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
-              >
-                  <Plus size={14}/> Seed Compliance Library
-              </button>
-          </div>
-      );
-  }
+  const handleSeedLibrary = () => {
+    if (onBatchUpdate) {
+        // Find requirements in REQUIREMENTS_DATA that are missing from current list
+        const currentIds = new Set(requirements.map(r => r.id));
+        const missingReqs = REQUIREMENTS_DATA.filter(r => !currentIds.has(r.id));
+        
+        if (missingReqs.length > 0) {
+            onBatchUpdate(missingReqs);
+            alert(`Added ${missingReqs.length} missing controls to your environment.`);
+        } else {
+            alert("Library is already fully synchronized.");
+        }
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-white border-r border-slate-200 w-80 md:w-96 shrink-0">
       <div className="p-4 border-b border-slate-200 bg-slate-50">
         <div className="flex items-center justify-between mb-3">
              <h2 className="font-bold text-slate-800">Requirements</h2>
-             <div className="flex gap-1">
+             <div className="flex gap-2">
+                <button 
+                    onClick={handleSeedLibrary}
+                    className="p-1.5 bg-white border border-slate-200 rounded text-slate-400 hover:text-blue-600 transition-colors"
+                    title="Sync Library Standards"
+                >
+                    <RefreshCw size={12} />
+                </button>
                 <span className="text-[9px] bg-blue-100 border border-blue-200 px-1.5 py-0.5 rounded text-blue-700 font-mono font-black uppercase">
                     Level {targetLevel}
                 </span>
@@ -117,9 +115,18 @@ export const RequirementsList: React.FC<RequirementsListProps> = ({
         ))}
         
         {filteredReqs.length === 0 && (
-            <div className="p-8 text-center text-slate-400 text-sm flex flex-col items-center">
-                <Info size={32} className="mb-2 opacity-50" />
-                No requirements found for this level.
+            <div className="p-12 text-center flex flex-col items-center justify-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-200 mb-4 border border-dashed border-slate-300">
+                    <Database size={32} />
+                </div>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Library Offline</h3>
+                <p className="text-xs text-slate-500 mt-2">No controls found for Level {targetLevel}.</p>
+                <button 
+                    onClick={handleSeedLibrary}
+                    className="mt-6 w-full bg-blue-600 text-white font-black py-2.5 rounded-xl text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
+                >
+                    <Plus size={14}/> Seed Standard Library
+                </button>
             </div>
         )}
       </div>

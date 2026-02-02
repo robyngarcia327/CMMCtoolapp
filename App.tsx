@@ -189,6 +189,28 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleBatchUpdateRequirements = (newReqs: Requirement[]) => {
+      if (!activeClientId) return;
+      setClientDataStore(prev => {
+          const currentReqs = prev[activeClientId].requirements;
+          const merged = [...currentReqs];
+          
+          newReqs.forEach(nr => {
+              const idx = merged.findIndex(r => r.id === nr.id);
+              if (idx !== -1) merged[idx] = nr;
+              else merged.push(nr);
+          });
+
+          return {
+              ...prev,
+              [activeClientId]: {
+                  ...prev[activeClientId],
+                  requirements: merged
+              }
+          };
+      });
+  };
+
   const handleUpdateFinancials = (fin: OrganizationFinancials) => {
       if (!activeClientId) return;
       setClientDataStore(prev => ({
@@ -417,7 +439,6 @@ const App: React.FC = () => {
         <main className="flex-1 overflow-hidden relative bg-slate-50/50">
           <div className="h-full w-full overflow-y-auto">
             {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} targetLevel={targetLevel} onUpdateLevel={handleUpdateLevel} onNavigate={setCurrentView} onToggleChat={() => setIsChatOpen(!isChatOpen)} />}
-            {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} assets={activeData.assets} wizardProgress={activeData.wizardProgress} onUpdateRequirement={handleUpdateRequirement} onAddArtifact={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: [...prev[activeClientId].artifacts, a] }}))} onRemoveArtifact={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id) }}))} onUpdateProgress={(p) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], wizardProgress: p }}))} onUpdateLevel={handleUpdateLevel} targetLevel={targetLevel} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
             {currentView === AppView.CONTROLS && (
                 <div className="flex h-full">
                     <RequirementsList 
@@ -428,6 +449,7 @@ const App: React.FC = () => {
                             localStorage.setItem(KEY_REQ, r.id);
                         }}
                         onUpdateRequirement={handleUpdateRequirement}
+                        onBatchUpdate={handleBatchUpdateRequirements}
                         activeFrameworkId={activeFramework.id} 
                         targetLevel={targetLevel} 
                     />
