@@ -48,13 +48,9 @@ import { Login } from './components/Login';
 import { Onboarding } from './components/Onboarding'; 
 import { Dashboard } from './components/Dashboard'; 
 import { AssessorPortal } from './components/AssessorPortal';
-import { OrganizationManager } from './components/OrganizationManager';
-import { GlobalAdminPortal } from './components/GlobalAdminPortal';
 import { RiskRegister } from './components/RiskRegister';
 import { FairRiskAnalyzer } from './components/FairRiskAnalyzer';
 import { CmmcAcademy } from './components/CmmcAcademy';
-import { NetworkAnalyzer } from './components/NetworkAnalyzer';
-import { BudgetCalculator } from './components/BudgetCalculator';
 import { RmfLifecycle } from './components/RmfLifecycle';
 import { api } from './services/api';
 
@@ -126,7 +122,6 @@ const App: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [activeFramework, setActiveFramework] = useState<Framework>(FRAMEWORKS[0]);
   
-  // Initialize data store from localStorage
   const [clientDataStore, setClientDataStore] = useState<Record<string, ClientData>>(() => {
     const saved = localStorage.getItem(KEY_DATASTORE);
     return saved ? JSON.parse(saved) : {};
@@ -134,7 +129,6 @@ const App: React.FC = () => {
 
   const fetchAttempted = useRef(false);
 
-  // Persistence effects
   useEffect(() => {
     localStorage.setItem(KEY_VIEW, currentView);
   }, [currentView]);
@@ -143,14 +137,12 @@ const App: React.FC = () => {
     if (activeClientId) localStorage.setItem(KEY_CLIENT, activeClientId);
   }, [activeClientId]);
 
-  // Synchronize store to disk on every change
   useEffect(() => {
     if (Object.keys(clientDataStore).length > 0) {
       localStorage.setItem(KEY_DATASTORE, JSON.stringify(clientDataStore));
     }
   }, [clientDataStore]);
 
-  // Identity logic
   const userDisplayName = useMemo(() => {
     const profile = auth.user?.profile;
     if (!profile) return 'Guest User';
@@ -165,7 +157,6 @@ const App: React.FC = () => {
     return (Array.isArray(groups) ? groups : []) as CognitoGroup[];
   }, [auth.user]);
 
-  // DERIVED ACTIVE CLIENT
   const activeClient = useMemo(() => {
     const client = clients.find(c => c.id === activeClientId);
     if (client) return client;
@@ -185,7 +176,6 @@ const App: React.FC = () => {
     };
   }, [clients, activeClientId]);
 
-  // Data Handlers
   const handleUpdateRequirement = (updatedReq: Requirement) => {
     if (!activeClientId) return;
     setClientDataStore(prev => ({
@@ -208,7 +198,6 @@ const App: React.FC = () => {
           newReqs.forEach(nr => {
               const idx = merged.findIndex(r => r.id === nr.id);
               if (idx !== -1) {
-                // Preserving objectives structure but updating status/narrative
                 merged[idx] = { 
                   ...merged[idx], 
                   response: nr.response,
@@ -325,44 +314,23 @@ const App: React.FC = () => {
   
   if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-500" size={48} /></div>;
   if (!auth.isAuthenticated) return <Login />;
-  
   if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
 
   if (hasCheckedOrgs && (clients.length === 0 || !activeClientId)) {
     return (
       <Onboarding 
-        user={{ 
-          id: auth.user?.profile.sub || '', 
-          name: userDisplayName, 
-          email: auth.user?.profile.email || '', 
-          role: 'Admin_Created_Users', 
-          domain: (auth.user?.profile.email || '').split('@')[1], 
-          organizationId: '', 
-          department: '', 
-          lastLogin: 0, 
-          mfaEnabled: false, 
-          hasPasskey: false, 
-          isCuiAuthorized: false 
-        }} 
+        user={{ id: auth.user?.profile.sub || '', name: userDisplayName, email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }} 
         onCreateOrganization={async (name, domain, financials) => {
           if (!auth.user?.id_token) return;
           setIsDataLoading(true);
           try { 
             const newOrg = await api.createOrg(auth.user.id_token, name, domain); 
-            setClientDataStore(prev => ({
-              ...prev,
-              [newOrg.orgId]: {
-                ...createInitialClientData(false),
-                financials: financials || createInitialClientData(false).financials
-              }
-            }));
+            setClientDataStore(prev => ({ ...prev, [newOrg.orgId]: { ...createInitialClientData(false), financials: financials || createInitialClientData(false).financials } }));
             fetchAttempted.current = false; 
             await loadOrganizations(); 
           } catch (e) { 
             console.error("Onboarding failed", e);
-          } finally {
-            setIsDataLoading(false); 
-          }
+          } finally { setIsDataLoading(false); }
         }} 
         onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }}
         debugTokens={{ idToken: auth.user?.id_token }}
@@ -373,9 +341,6 @@ const App: React.FC = () => {
   const activeData = clientDataStore[activeClientId];
   if (!activeData) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 size={48} className="animate-spin" /></div>;
 
-  const targetLevel = (activeData as ClientData).targetCmmcLevel;
-  const currentUser = (activeData as ClientData).users[0];
-
   const getViewLabel = (view: AppView) => {
     switch(view) {
       case AppView.DASHBOARD: return "Posture Insights";
@@ -383,6 +348,14 @@ const App: React.FC = () => {
       case AppView.CONTROLS: return "NIST Control Audit";
       case AppView.SPRS_SCORECARD: return "DoD Scorecard";
       case AppView.ASSESSOR_PORTAL: return "Assessor View";
+      case AppView.RISK_MANAGEMENT: return "Quantitative Risk Registry";
+      case AppView.FAIR_ANALYZER: return "FAIR Risk Modeler";
+      case AppView.RMF_LIFECYCLE: return "RMF Operations Center";
+      case AppView.TRAINING: return "CMMC Academy";
+      case AppView.REPORT_EXECUTIVE: return "Executive Report";
+      case AppView.REPORT_SSP: return "System Security Plan";
+      case AppView.ASSETS: return "Asset Inventory";
+      case AppView.USERS: return "Identity Pool";
       default: return "Cuallee Cyber";
     }
   };
@@ -405,17 +378,22 @@ const App: React.FC = () => {
           <SidebarSection title="Compliance">
             <SidebarItem icon={ListChecks} label="Controls" isActive={currentView === AppView.CONTROLS} onClick={() => setCurrentView(AppView.CONTROLS)} />
             <SidebarItem icon={TrendingUp} label="SPRS Scorecard" isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
-            <SidebarItem icon={ClipboardCheck} label="Assessor Portal" isActive={currentView === AppView.ASSESSOR_PORTAL} onClick={() => setCurrentView(AppView.ASSESSOR_PORTAL)} />
+            <SidebarItem icon={ClipboardCheck} label="Assessor View" isActive={currentView === AppView.ASSESSOR_PORTAL} onClick={() => setCurrentView(AppView.ASSESSOR_PORTAL)} badge="Official" />
             <SidebarItem icon={Package} label="Assets" isActive={currentView === AppView.ASSETS} onClick={() => setCurrentView(AppView.ASSETS)} />
             <SidebarItem icon={Users} label="Users" isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
           </SidebarSection>
           <SidebarSection title="Governance">
             <SidebarItem icon={AlertTriangle} label="Risk Registry" isActive={currentView === AppView.RISK_MANAGEMENT} onClick={() => setCurrentView(AppView.RISK_MANAGEMENT)} />
             <SidebarItem icon={Calculator} label="FAIR Analyzer" isActive={currentView === AppView.FAIR_ANALYZER} onClick={() => setCurrentView(AppView.FAIR_ANALYZER)} />
+            <SidebarItem icon={ShieldAlert} label="RMF Lifecycle" isActive={currentView === AppView.RMF_LIFECYCLE} onClick={() => setCurrentView(AppView.RMF_LIFECYCLE)} />
+          </SidebarSection>
+          <SidebarSection title="Documentation">
+            <SidebarItem icon={FileCheck} label="Executive Summary" isActive={currentView === AppView.REPORT_EXECUTIVE} onClick={() => setCurrentView(AppView.REPORT_EXECUTIVE)} />
+            <SidebarItem icon={FileText} label="System Security Plan" isActive={currentView === AppView.REPORT_SSP} onClick={() => setCurrentView(AppView.REPORT_SSP)} />
           </SidebarSection>
         </nav>
         <div className="p-4 mt-auto border-t border-slate-900 bg-slate-950/50">
-          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Organization Context</div>
+          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Active Context</div>
           <div className="text-xs font-bold text-white truncate uppercase">{activeClient.name}</div>
           <button onClick={handleLogout} className="mt-4 w-full flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 hover:text-red-400 transition-colors">
             <LogOut size={14} /> Log Out Securely
@@ -434,23 +412,31 @@ const App: React.FC = () => {
 
         <main className="flex-1 overflow-hidden relative bg-slate-50/50">
           <div className="h-full w-full overflow-y-auto">
-            {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} targetLevel={targetLevel} onUpdateLevel={handleUpdateLevel} onNavigate={setCurrentView} onToggleChat={() => setIsChatOpen(!isChatOpen)} />}
-            {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} assets={activeData.assets} wizardProgress={activeData.wizardProgress} onUpdateRequirement={handleUpdateRequirement} onBatchUpdate={handleBatchUpdateRequirements} onAddArtifact={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: [...prev[activeClientId].artifacts, a] }}))} onRemoveArtifact={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id) }}))} onUpdateProgress={(p) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], wizardProgress: p }}))} onUpdateLevel={handleUpdateLevel} targetLevel={targetLevel} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
+            {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} targetLevel={activeData.targetCmmcLevel} onUpdateLevel={handleUpdateLevel} onNavigate={setCurrentView} onToggleChat={() => setIsChatOpen(!isChatOpen)} />}
+            {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} assets={activeData.assets} wizardProgress={activeData.wizardProgress} onUpdateRequirement={handleUpdateRequirement} onBatchUpdate={handleBatchUpdateRequirements} onAddArtifact={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: [...prev[activeClientId].artifacts, a] }}))} onRemoveArtifact={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id) }}))} onUpdateProgress={(p) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], wizardProgress: p }}))} onUpdateLevel={handleUpdateLevel} targetLevel={activeData.targetCmmcLevel} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
             {currentView === AppView.CONTROLS && (
                 <div className="flex h-full">
-                    <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => { setSelectedRequirementId(r.id); localStorage.setItem(KEY_REQ, r.id); }} onUpdateRequirement={handleUpdateRequirement} onBatchUpdate={handleBatchUpdateRequirements} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} />
+                    <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => { setSelectedRequirementId(r.id); localStorage.setItem(KEY_REQ, r.id); }} onUpdateRequirement={handleUpdateRequirement} onBatchUpdate={handleBatchUpdateRequirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} />
                     {selectedRequirementId ? (
-                        <RequirementDetail requirement={activeData.requirements.find(r => r.id === selectedRequirementId)!} onUpdateRequirement={handleUpdateRequirement} allArtifacts={activeData.artifacts} onAddArtifact={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: [...prev[activeClientId].artifacts, a] }}))} onRemoveArtifact={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id) }}))} tickets={activeData.tickets} onAddTicket={(t) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], tickets: [...prev[activeClientId].tickets, t] }}))} cwConfig={activeData.cwConfig} jiraConfig={activeData.jiraConfig} currentUser={currentUser} activeClientId={activeClientId} />
+                        <RequirementDetail requirement={activeData.requirements.find(r => r.id === selectedRequirementId)!} onUpdateRequirement={handleUpdateRequirement} allArtifacts={activeData.artifacts} onAddArtifact={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: [...prev[activeClientId].artifacts, a] }}))} onRemoveArtifact={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id) }}))} tickets={activeData.tickets} onAddTicket={(t) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], tickets: [...prev[activeClientId].tickets, t] }}))} cwConfig={activeData.cwConfig} jiraConfig={activeData.jiraConfig} currentUser={activeData.users[0]} activeClientId={activeClientId} />
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
                             <div className="bg-slate-100 p-8 rounded-full mb-4"><ListChecks size={64} className="opacity-10" /></div>
-                            <p className="font-bold uppercase tracking-widest text-sm">Select a practice to review implementation details</p>
+                            <p className="font-bold uppercase tracking-widest text-sm">Select a practice to review details</p>
                         </div>
                     )}
                 </div>
             )}
-            {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={targetLevel} />}
+            {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} />}
+            {currentView === AppView.TRAINING && <CmmcAcademy />}
             {currentView === AppView.ASSESSOR_PORTAL && <AssessorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} assets={activeData.assets} risks={activeData.risks} />}
+            {currentView === AppView.RISK_MANAGEMENT && <RiskRegister risks={activeData.risks} financials={activeData.financials} onAddRisk={handleAddRisk} onUpdateRisk={handleUpdateRisk} onDeleteRisk={(id) => {}} onUpdateFinancials={handleUpdateFinancials} />}
+            {currentView === AppView.FAIR_ANALYZER && <FairRiskAnalyzer risks={activeData.risks} financials={activeData.financials} onUpdateRisk={handleUpdateRisk} />}
+            {currentView === AppView.RMF_LIFECYCLE && <RmfLifecycle />}
+            {currentView === AppView.ASSETS && <Inventory assets={activeData.assets} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
+            {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: [...prev[activeClientId].users, u] }}))} onUpdateUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.map(usr => usr.id === u.id ? u : usr) }}))} onDeleteUser={(id) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.filter(u => u.id !== id) }}))} />}
+            {currentView === AppView.REPORT_EXECUTIVE && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} defaultTab="EXECUTIVE" />}
+            {currentView === AppView.REPORT_SSP && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} defaultTab="SSP" />}
           </div>
         </main>
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
