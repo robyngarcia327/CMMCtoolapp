@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Requirement, Artifact, WizardProgress, Asset, CmmcAssetCategory } from '../types';
-import { ArrowLeft, ArrowRight, CheckCircle2, Shield, AlertTriangle, PlayCircle, FileCheck, Check, Info, Monitor, Network, ListChecks, Target, Lock, Zap, Box, Cloud, Users, FileSearch } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Shield, AlertTriangle, PlayCircle, FileCheck, Check, Info, Monitor, Network, ListChecks, Target, Lock, Zap, Box, Cloud, Users, FileSearch, ClipboardList } from 'lucide-react';
 import { ArtifactUploader } from './ArtifactUploader';
 import { Inventory } from './Inventory';
 import { NetworkAnalyzer } from './NetworkAnalyzer';
@@ -297,7 +297,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   }
 
   const WizardWrapper = ({ children, nextLabel, onNext, onPrev }: any) => (
-      <div className="max-w-5xl mx-auto p-6 h-full flex flex-col">
+      <div className="max-w-7xl mx-auto p-6 h-full flex flex-col">
           {renderStepper()}
           <div className="flex-1 bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
@@ -393,83 +393,147 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
             onNext={handleAssessmentNext}
             onPrev={handleAssessmentPrev}
           >
-             <div className="flex flex-col h-full">
-                <div className="px-10 pt-8">
-                    <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
-                        <span>Control {wizardProgress.currentQuestionIndex + 1} of {activeReqs.length}</span>
-                        <span>{progress}% Mastery</span>
+             <div className="flex h-full min-h-0">
+                {/* Main Content Area */}
+                <div className="flex-1 flex flex-col h-full overflow-y-auto">
+                    <div className="px-10 pt-8">
+                        <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
+                            <span>Control {wizardProgress.currentQuestionIndex + 1} of {activeReqs.length}</span>
+                            <span>{progress}% Mastery</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+                            <div className="bg-blue-500 h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                        </div>
                     </div>
-                    <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
-                        <div className="bg-blue-500 h-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+
+                    <div className="p-10 space-y-10">
+                        {currentReq ? (
+                            <>
+                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="flex justify-between items-start mb-3">
+                                    <span className="font-mono text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 uppercase tracking-widest">{currentReq.id}</span>
+                                    <div className="flex gap-2">
+                                        {isMet && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1 border border-green-200 shadow-sm"><Check size={12}/> Met</span>}
+                                        {isNotMet && <span className="bg-red-100 text-red-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1 border border-red-200 shadow-sm"><AlertTriangle size={12}/> Gap</span>}
+                                    </div>
+                                </div>
+                                <h2 className="text-2xl font-black text-slate-900 mb-3 tracking-tight uppercase leading-tight">
+                                    {currentReq.interviewQuestion || currentReq.title}
+                                </h2>
+                                <p className="text-slate-500 text-sm leading-relaxed font-medium bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                                    {currentReq.description}
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Implementation Evidence</label>
+                                <textarea 
+                                    className="w-full h-48 p-5 border border-slate-200 bg-white rounded-[2rem] focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all shadow-inner resize-none text-slate-700 font-medium"
+                                    placeholder="Describe the technical solution or administrative procedure in place..."
+                                    value={currentReq.response || ''}
+                                    onChange={(e) => handleResponseChange(e.target.value)}
+                                />
+                                <div className="flex gap-4">
+                                    <button 
+                                        onClick={toggleNotMet}
+                                        className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm ${
+                                            isNotMet 
+                                            ? 'bg-red-50 text-red-700 border-red-600' 
+                                            : 'bg-white text-slate-400 border-slate-100 hover:border-red-600 hover:text-red-600'
+                                        }`}
+                                    >
+                                        <AlertTriangle size={16} /> {isNotMet ? 'Confirmed Gap' : 'Mark as Gap'}
+                                    </button>
+
+                                    <button 
+                                        onClick={toggleMet}
+                                        className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm ${
+                                            isMet 
+                                            ? 'bg-green-50 text-green-700 border-green-600' 
+                                            : 'bg-white text-slate-400 border-slate-100 hover:border-green-600 hover:text-green-600'
+                                        }`}
+                                    >
+                                        <CheckCircle2 size={16} /> {isMet ? 'Verified Met' : 'Mark as Met'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-200 shadow-inner">
+                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                                    <FileCheck size={18} className="text-blue-500" /> Technical Proof Repository
+                                </h3>
+                                <ArtifactUploader 
+                                    requirementId={currentReq.id}
+                                    artifacts={artifacts.filter(a => a.requirementId === currentReq.id)}
+                                    onAddArtifact={onAddArtifact}
+                                    onRemoveArtifact={onRemoveArtifact}
+                                />
+                            </div>
+                            </>
+                        ) : (
+                            <div className="p-20 text-center text-slate-300">
+                                <CheckCircle2 size={64} className="mx-auto mb-4 opacity-10" />
+                                <p className="font-black uppercase tracking-widest text-sm">Audit Complete for Level {targetLevel}</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <div className="p-10 space-y-10">
-                    {currentReq ? (
-                        <>
-                        <div>
-                            <div className="flex justify-between items-start mb-3">
-                                <span className="font-mono text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 uppercase tracking-widest">{currentReq.id}</span>
-                                <div className="flex gap-2">
-                                    {isMet && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1 border border-green-200 shadow-sm"><Check size={12}/> Met</span>}
-                                    {isNotMet && <span className="bg-red-100 text-red-700 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1 border border-red-200 shadow-sm"><AlertTriangle size={12}/> Gap</span>}
+                {/* Audit Context Sidebar (Guided Evidence Checklist) */}
+                <div className="w-80 bg-slate-50 border-l border-slate-200 flex flex-col shrink-0 overflow-y-auto hidden lg:flex">
+                    <div className="p-6 border-b border-slate-200 bg-white">
+                        <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <ClipboardList size={14} /> Guided Audit Checklist
+                        </h3>
+                        <p className="text-xs text-slate-500 leading-relaxed font-medium">Use these criteria to verify your implementation meets NIST 800-171A standards.</p>
+                    </div>
+                    
+                    <div className="p-6 space-y-8">
+                        {currentReq?.examineOptions && currentReq.examineOptions.length > 0 && (
+                            <div>
+                                <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 px-1">Examine: Wizard Inputs</h4>
+                                <div className="space-y-2">
+                                    {currentReq.examineOptions.map((opt, i) => (
+                                        <div key={i} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
+                                            <div className="mt-0.5 w-4 h-4 rounded border-2 border-slate-200 flex-shrink-0"></div>
+                                            <span className="text-[11px] font-bold text-slate-700 leading-tight">{opt}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                            <h2 className="text-2xl font-black text-slate-900 mb-3 tracking-tight uppercase">{currentReq.interviewQuestion || currentReq.title}</h2>
-                            <p className="text-slate-500 text-sm leading-relaxed font-medium">{currentReq.description}</p>
-                        </div>
+                        )}
 
-                        <div className="space-y-4">
-                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Implementation Evidence</label>
-                            <textarea 
-                                className="w-full h-40 p-5 border border-slate-200 bg-slate-50 rounded-[2rem] focus:ring-4 focus:ring-blue-50 focus:border-blue-500 focus:bg-white outline-none transition-all resize-none text-slate-700 font-medium"
-                                placeholder="Describe the technical solution or administrative procedure in place..."
-                                value={currentReq.response || ''}
-                                onChange={(e) => handleResponseChange(e.target.value)}
-                            />
-                            <div className="flex gap-4">
-                                <button 
-                                    onClick={toggleNotMet}
-                                    className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm ${
-                                        isNotMet 
-                                        ? 'bg-red-50 text-red-700 border-red-600' 
-                                        : 'bg-white text-slate-400 border-slate-100 hover:border-red-600 hover:text-red-600'
-                                    }`}
-                                >
-                                    <AlertTriangle size={16} /> {isNotMet ? 'Confirmed Gap' : 'Mark as Gap'}
-                                </button>
-
-                                <button 
-                                    onClick={toggleMet}
-                                    className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border shadow-sm ${
-                                        isMet 
-                                        ? 'bg-green-50 text-green-700 border-green-600' 
-                                        : 'bg-white text-slate-400 border-slate-100 hover:border-green-600 hover:text-green-600'
-                                    }`}
-                                >
-                                    <CheckCircle2 size={16} /> {isMet ? 'Verified Met' : 'Mark as Met'}
-                                </button>
+                        {currentReq?.interviewOptions && currentReq.interviewOptions.length > 0 && (
+                            <div>
+                                <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 px-1">Interview: Prep Points</h4>
+                                <div className="space-y-2">
+                                    {currentReq.interviewOptions.map((opt, i) => (
+                                        <div key={i} className="flex items-start gap-3 px-1">
+                                            <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0"></div>
+                                            <span className="text-[11px] font-medium text-slate-500 leading-relaxed">{opt}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
-                        <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-200 shadow-inner">
-                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                                <FileCheck size={18} className="text-blue-500" /> Technical Proof Repository
-                            </h3>
-                            <ArtifactUploader 
-                                requirementId={currentReq.id}
-                                artifacts={artifacts.filter(a => a.requirementId === currentReq.id)}
-                                onAddArtifact={onAddArtifact}
-                                onRemoveArtifact={onRemoveArtifact}
-                            />
+                        <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-xl shadow-blue-900/20">
+                             <div className="flex items-center gap-2 mb-3">
+                                 <Monitor size={16} className="text-blue-200" />
+                                 <h5 className="text-[10px] font-black uppercase tracking-widest">Environment Scoping</h5>
+                             </div>
+                             <div className="space-y-2">
+                                 {Object.keys(scopingAnswers).filter(k => scopingAnswers[k]).map(key => (
+                                     <div key={key} className="flex items-center gap-2 text-[10px] font-bold bg-white/10 px-2 py-1 rounded-lg border border-white/10 uppercase tracking-widest">
+                                         <Check size={10} className="text-blue-300" /> {key}
+                                     </div>
+                                 ))}
+                                 {Object.keys(scopingAnswers).filter(k => scopingAnswers[k]).length === 0 && (
+                                     <p className="text-[10px] text-blue-200 font-bold italic">No specific environment types selected.</p>
+                                 )}
+                             </div>
                         </div>
-                        </>
-                    ) : (
-                        <div className="p-20 text-center text-slate-300">
-                            <CheckCircle2 size={64} className="mx-auto mb-4 opacity-10" />
-                            <p className="font-black uppercase tracking-widest text-sm">Audit Complete for Level {targetLevel}</p>
-                        </div>
-                    )}
+                    </div>
                 </div>
              </div>
           </WizardWrapper>
