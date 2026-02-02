@@ -1,5 +1,9 @@
+
 import React, { useState, useMemo } from 'react';
-import { TRAINING_MODULES, ACADEMY_PHASES, SimulationModule, SimulationInject } from '../data/standards';
+// Fixed: Corrected imports from standards data
+import { TRAINING_MODULES, ACADEMY_PHASES } from '../data/standards';
+// Added: Import simulation interfaces from types.ts
+import { SimulationModule, SimulationInject } from '../types';
 import { 
   BookOpen, 
   Clock, 

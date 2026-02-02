@@ -1,3 +1,4 @@
+
 export type CognitoGroup = 'Admin_Created_Users' | 'Application_Administrator' | 'Tenant_Admin' | 'Auditor';
 
 export interface TrainingModule {
@@ -8,6 +9,21 @@ export interface TrainingModule {
   content: string;
   durationMinutes: number;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+}
+
+// Added missing SimulationInject interface
+export interface SimulationInject {
+  id: string;
+  title: string;
+  scenario: string;
+  regulatoryHint: string;
+}
+
+// Added missing SimulationModule interface extending TrainingModule
+export interface SimulationModule extends TrainingModule {
+  isSimulation: boolean;
+  executiveFocus: string;
+  injects: SimulationInject[];
 }
 
 export interface AssessmentObjective {
@@ -42,7 +58,6 @@ export interface Requirement {
   examineOptions?: string[];
   interviewOptions?: string[];
   testOptions?: string[];
-  // RMF Specific Interview Questions for Roles
   roleQuestions?: {
     authorizingOfficial?: string[];
     systemOwner?: string[];
@@ -77,6 +92,17 @@ export interface Asset {
   externalId?: string;
 }
 
+// Added missing AuvikDevice interface for network topology
+export interface AuvikDevice {
+  id: string;
+  name: string;
+  type: string;
+  ipAddress: string;
+  vlan?: string;
+  firmware?: string;
+  isOnline: boolean;
+}
+
 export type UserRole = 'CLIENT_USER' | 'CLIENT_ADMIN' | 'MSP_TECH' | 'MSP_ADMIN';
 
 export interface User {
@@ -95,27 +121,12 @@ export interface User {
   lastSynced?: number;
 }
 
-export interface IntegrationConfig {
-    enabled: boolean;
-    connectedAt?: number;
-    accountName?: string;
-    tenantId?: string;
-    apiKey?: string;
-}
-
-export interface Client {
-  id: string;
-  name: string;
-  domain: string; 
-  industry: string;
-  contactName: string;
-  logoInitial: string;
-  primaryFramework: string;
-  targetCmmcLevel: 1 | 2 | 3;
-  nextAuditDate: number;
-  accountManager: string;
-  isParent: boolean;
-  branding?: BrandingConfig;
+export interface OrganizationFinancials {
+  annualRevenue: number;
+  employeeCount: number;
+  avgHourlyLaborRate: number;
+  brandValueEstimate: number;
+  legalRetentionAnnual: number;
 }
 
 export interface ClientData {
@@ -131,6 +142,7 @@ export interface ClientData {
   budgetItems: BudgetLineItem[];
   wizardProgress: WizardProgress;
   sspMetadata: SspMetadata;
+  financials: OrganizationFinancials;
   m365Config: IntegrationConfig;
   intuneConfig: IntegrationConfig;
   adConfig: IntegrationConfig;
@@ -146,34 +158,23 @@ export interface ClientData {
 }
 
 export enum AppView {
-  // General
   DASHBOARD = 'DASHBOARD',
   WIZARD = 'WIZARD',
-  
-  // Compliance
   CONTROLS = 'CONTROLS',
   SPRS_SCORECARD = 'SPRS_SCORECARD',
   TRAINING = 'TRAINING',
   ASSETS = 'ASSETS',
   USERS = 'USERS',
   NETWORK_DIAGRAM = 'NETWORK_DIAGRAM',
-  
-  // Governance
   RISK_MANAGEMENT = 'RISK_MANAGEMENT',
   RMF_LIFECYCLE = 'RMF_LIFECYCLE',
   FAIR_ANALYZER = 'FAIR_ANALYZER',
   POAM = 'POAM',
   COST_TO_COMPLIANCE = 'COST_TO_COMPLIANCE',
-  
-  // Assessor
   ASSESSOR_PORTAL = 'ASSESSOR_PORTAL',
-  
-  // Reports
   REPORT_EXECUTIVE = 'REPORT_EXECUTIVE',
   REPORT_SSP = 'REPORT_SSP',
   REPORT_POLICY_CENTER = 'REPORT_POLICY_CENTER',
-  
-  // Admin
   ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
   GLOBAL_ADMIN = 'GLOBAL_ADMIN'
 }
@@ -212,6 +213,22 @@ export interface BrandingConfig {
   logoUrl: string;
 }
 
+// Added missing Client interface
+export interface Client {
+  id: string;
+  name: string;
+  domain: string;
+  industry: string;
+  contactName: string;
+  logoInitial: string;
+  primaryFramework: string;
+  targetCmmcLevel: 1 | 2 | 3;
+  nextAuditDate: number;
+  accountManager: string;
+  isParent: boolean;
+  branding?: BrandingConfig;
+}
+
 export interface ConnectWiseConfig extends IntegrationConfig {
   companyId: string;
   publicKey: string;
@@ -246,16 +263,6 @@ export interface AuvikConfig extends IntegrationConfig {
   region: 'US' | 'EU';
 }
 
-export interface AuvikDevice {
-  id: string;
-  name: string;
-  type: string;
-  ipAddress: string;
-  vlan: string;
-  firmware?: string;
-  isOnline: boolean;
-}
-
 export interface Ticket {
   id: string;
   requirementId: string;
@@ -271,12 +278,10 @@ export interface Ticket {
 }
 
 export interface FairFactors {
-  // Loss Event Frequency
-  threatEventFrequency: string; // Contact Frequency + Prob of Action
-  vulnerability: string; // Threat Capability + Resistance Strength
-  // Loss Magnitude
-  primaryLoss: number;
-  secondaryLoss: number;
+  tef: number; // Threat Event Frequency (per year)
+  vulnerability: number; // Probability of Loss (0-1)
+  primaryLossPerEvent: number; // Financial impact
+  secondaryLossPerEvent: number; // Long term
   ale: number; // Annualized Loss Expectancy
 }
 
