@@ -99,7 +99,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
         </div>
 
         <div className="flex border-b border-slate-200 mb-8 bg-white rounded-2xl px-4 pt-2 shadow-sm mx-1">
-            <button onClick={() => setActiveTab('DETAILS')} className={`px-8 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 ${activeTab === 'DETAILS' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}><Check size={16} /> Audit Criteria</button>
+            <button onClick={() => setActiveTab('DETAILS')} className={`px-8 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 ${activeTab === 'DETAILS' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}><Check size={16} /> Discovery & Criteria</button>
             <button onClick={() => setActiveTab('EVIDENCE')} className={`px-8 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 ${activeTab === 'EVIDENCE' ? 'border-purple-600 text-purple-600' : 'border-transparent text-slate-400'}`}><Layers size={16} /> Evidence ({relevantArtifacts.length})</button>
             <button onClick={() => setActiveTab('DISCUSSION')} className={`px-8 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 ${activeTab === 'DISCUSSION' ? 'border-green-600 text-green-600' : 'border-transparent text-slate-400'}`}><MessageSquare size={16} /> Discussions</button>
         </div>
@@ -125,10 +125,9 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                             )}
                         </div>
 
-                        {/* Assessment Objectives Workbench - REFINED FOR CLARITY */}
                         <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
                             <div className="bg-slate-900 px-10 py-6 border-b border-slate-800 flex justify-between items-center text-white">
-                                <h3 className="font-black text-[10px] uppercase tracking-[0.3em]">Assessment Objectives (800-171A)</h3>
+                                <h3 className="font-black text-[10px] uppercase tracking-[0.3em]">Practitioner Verification Objectives</h3>
                                 <div className="flex items-center gap-2">
                                     <div className="h-1.5 w-32 bg-white/10 rounded-full overflow-hidden">
                                         <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${(metCount / (totalCount || 1)) * 100}%` }} />
@@ -150,31 +149,30 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                                                 <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${obj.status === 'met' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
                                                     Objective [{obj.id.toUpperCase()}]
                                                 </span>
-                                                {obj.status === 'met' && <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest flex items-center gap-1"><Check size={12}/> Verified</span>}
+                                                {obj.status === 'met' && <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest flex items-center gap-1"><Check size={12}/> Gathered</span>}
                                             </div>
-                                            {/* Renders ACTUAL NIST description from requirements data */}
                                             <p className="text-base text-slate-800 font-bold leading-relaxed">{obj.description}</p>
                                         </div>
                                     </div>
                                 ))}
                                 {(!requirement.objectives || requirement.objectives.length === 0) && (
                                     <div className="p-12 text-center text-slate-400 italic font-medium">
-                                        No specific assessment objectives mapped for this practice.
+                                        No specific discovery objectives mapped for this practice.
                                     </div>
                                 )}
                             </div>
                         </div>
 
                         <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-10">
-                            <h3 className="font-black text-slate-900 uppercase tracking-widest text-[10px] mb-6">Implementation Narrative (SSP)</h3>
+                            <h3 className="font-black text-slate-900 uppercase tracking-widest text-[10px] mb-6">Client Implementation Narrative (SSP)</h3>
                             <textarea 
                                 className="w-full h-64 p-8 border-2 border-slate-100 rounded-[2.5rem] focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none resize-none text-slate-700 bg-slate-50/50 font-medium text-lg leading-relaxed shadow-inner"
-                                placeholder="Detail the technical and administrative controls used to satisfy this requirement for the System Security Plan..."
+                                placeholder="Detail the client's technical and administrative controls used to satisfy this requirement..."
                                 value={requirement.response || ''}
                                 onChange={(e) => onUpdateRequirement({ ...requirement, response: e.target.value })}
                             />
                             <div className="mt-4 flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-widest justify-end">
-                                <History size={14}/> Secure Vault Autosave Enabled
+                                <History size={14}/> Autosave Enabled
                             </div>
                         </div>
                     </>
@@ -182,6 +180,20 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
             </div>
 
             <div className="lg:col-span-4 space-y-8">
+                <div className="bg-indigo-50/50 border border-indigo-100 rounded-[2.5rem] p-8 space-y-6">
+                    <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                        <MessageSquare size={16}/> Practitioner Prep Guide
+                    </h3>
+                    <div className="space-y-4">
+                        {requirement.interviewOptions?.map((q, i) => (
+                            <div key={i} className="flex gap-3 bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm">
+                                <div className="text-indigo-600 font-black text-sm">Q.</div>
+                                <p className="text-sm font-bold text-slate-700 leading-relaxed">{q}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
                 <PolicyAnalyzer requirement={requirement} />
                 
                 <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
@@ -200,20 +212,20 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                 </div>
 
                 <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Verification Methods</h4>
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Discovery Methods</h4>
                     <div className="space-y-4">
                         <div className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                              <div className="p-2 bg-white rounded-lg shadow-sm h-fit"><Eye size={16} className="text-blue-500"/></div>
                              <div>
                                 <span className="text-[9px] font-black uppercase text-slate-400">Examine</span>
-                                <p className="text-xs font-bold text-slate-700 leading-relaxed mt-1">Review policies, system configs, and access logs.</p>
+                                <p className="text-xs font-bold text-slate-700 leading-relaxed mt-1">Review policies, system configs, and access logs with client.</p>
                              </div>
                         </div>
                         <div className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                              <div className="p-2 bg-white rounded-lg shadow-sm h-fit"><MessageSquare size={16} className="text-amber-500"/></div>
                              <div>
-                                <span className="text-[9px] font-black uppercase text-slate-400">Interview</span>
-                                <p className="text-xs font-bold text-slate-700 leading-relaxed mt-1">Personnel responsible for control execution.</p>
+                                <span className="text-[9px] font-black uppercase text-slate-400">Collaborate</span>
+                                <p className="text-xs font-bold text-slate-700 leading-relaxed mt-1">Discovery sessions with personnel responsible for control execution.</p>
                              </div>
                         </div>
                     </div>

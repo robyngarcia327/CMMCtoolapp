@@ -35,7 +35,7 @@ const STEPS = [
     { id: 'SCOPING', label: 'Environment Scoping' },
     { id: 'INVENTORY', label: 'Asset Inventory' },
     { id: 'NETWORK', label: 'Network Scope' },
-    { id: 'ASSESSMENT', label: 'Compliance Audit' },
+    { id: 'ASSESSMENT', label: 'Discovery & Narrative' },
     { id: 'VALIDATION', label: 'Review' }
 ] as const;
 
@@ -98,7 +98,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
 
   const handleDownloadTemplate = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Control ID,Title,Domain,Auditor Interview Guide,Implementation Narrative,Status (met/not_met/pending)\n";
+    csvContent += "Control ID,Title,Domain,Practitioner Discovery Questions,Implementation Narrative,Status (met/not_met/pending)\n";
 
     activeReqs.forEach(req => {
       const interviewQuestions = `"${(req.interviewOptions || []).join(' | ').replace(/"/g, '""')}"`;
@@ -120,7 +120,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `CMMC_Level_${targetLevel}_Audit_Template.csv`);
+    link.setAttribute("download", `CMMC_Level_${targetLevel}_Discovery_Template.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -213,16 +213,16 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
             <div className="w-20 h-20 bg-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner rotate-3">
             <PlayCircle size={40} className="text-blue-600 ml-1" />
             </div>
-            <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter uppercase leading-none">Compliance Lifecycle</h1>
+            <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter uppercase leading-none">Practitioner Discovery</h1>
             <p className="text-lg text-slate-500 mb-10 max-w-lg mx-auto font-medium">
-            Step through scoping, discovery, and audit verification. Your progress is automatically saved.
+            Guide your client through scoping, information gathering, and implementation narrative drafting.
             </p>
             
             <button 
             onClick={() => goToStep('LEVEL_SELECT')}
             className="bg-blue-600 hover:bg-blue-700 text-white font-black py-5 px-12 rounded-[2rem] shadow-2xl shadow-blue-200 transition-all hover:scale-105 uppercase tracking-widest text-sm"
             >
-            Initialize Assessment
+            Initialize Discovery
             </button>
         </div>
 
@@ -234,7 +234,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                         <Download size={24} className="text-indigo-400" /> Bulk Workbench
                     </h3>
                     <p className="text-indigo-100 text-xs font-medium leading-relaxed mb-8 opacity-80">
-                        Work offline. Download the official audit template, fill in your narratives, and sync back when ready.
+                        Work offline. Download the practitioner discovery template, fill in client narratives, and sync back.
                     </p>
                 </div>
                 <button 
@@ -248,10 +248,10 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
             <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm flex flex-col justify-between">
                 <div>
                     <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2 mb-4">
-                        <Upload size={24} className="text-blue-600" /> Import Progress
+                        <Upload size={24} className="text-blue-600" /> Import Narratives
                     </h3>
                     <p className="text-slate-500 text-xs font-medium leading-relaxed mb-8">
-                        Upload your completed spreadsheet to synchronize implementations and statuses instantly.
+                        Upload your completed discovery spreadsheet to synchronize client implementations instantly.
                     </p>
                 </div>
                 <label className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 cursor-pointer border-2 border-dashed ${isImporting ? 'bg-slate-50 border-slate-200 text-slate-400 pointer-events-none' : 'bg-blue-50 border-blue-100 text-blue-600 hover:bg-blue-100'}`}>
@@ -267,7 +267,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
 
   return (
     <WizardWrapper 
-        nextLabel={wizardProgress.currentStep === 'ASSESSMENT' ? (wizardProgress.currentQuestionIndex === activeReqs.length - 1 ? "Final Review" : "Next Control") : "Next Step"} 
+        nextLabel={wizardProgress.currentStep === 'ASSESSMENT' ? (wizardProgress.currentQuestionIndex === activeReqs.length - 1 ? "Final Review" : "Next Practice") : "Next Step"} 
         onNext={handleNext} 
         onPrev={handlePrev} 
         targetLevel={targetLevel} 
@@ -364,7 +364,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
 
                 <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
                     <div className="bg-slate-900 px-8 py-4 text-white text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                        <ShieldCheck size={16} className="text-blue-400" /> Assessment Objectives (NIST 800-171A)
+                        <ShieldCheck size={16} className="text-blue-400" /> Practitioner Objective Checklist
                     </div>
                     <div className="divide-y divide-slate-100">
                         {currentReq.objectives.map(obj => (
@@ -373,7 +373,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                                     {obj.status === 'met' && <Check size={14} />}
                                 </button>
                                 <div className="flex-1">
-                                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Objective [{obj.id}]</div>
+                                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Assessment Criterion [{obj.id}]</div>
                                     <p className="text-xs text-slate-800 font-bold leading-relaxed">{obj.description}</p>
                                 </div>
                             </div>
@@ -383,7 +383,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
 
                 <div className="bg-indigo-50/50 border border-indigo-100 rounded-[2rem] p-8 space-y-6">
                     <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                        <MessageSquare size={16}/> Auditor Interview Guide
+                        <MessageSquare size={16}/> Practitioner Prep Guide (Ask the Client)
                     </h3>
                     <div className="space-y-4">
                         {currentReq.interviewOptions?.map((q, i) => (
@@ -396,10 +396,10 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                 </div>
 
                 <div className="space-y-4">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Implementation Response (SSP Narrative)</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Implementation Narrative (SSP Content)</label>
                     <textarea 
                         className="w-full h-48 p-5 border border-slate-200 bg-white rounded-[2rem] focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all shadow-inner resize-none text-slate-700 font-medium"
-                        placeholder="Describe your organization's implementation..."
+                        placeholder="Document the client's implementation details here..."
                         value={currentReq.response || ''}
                         onChange={(e) => handleResponseChange(e.target.value)}
                     />
@@ -421,17 +421,17 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                 <div className="w-20 h-20 bg-green-50 rounded-3xl flex items-center justify-center text-green-600 shadow-lg ring-4 ring-green-50">
                     <CheckCircle2 size={40} />
                 </div>
-                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Assessment Ready</h2>
+                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Discovery Complete</h2>
                 <p className="text-slate-500 max-w-lg font-medium leading-relaxed">
-                    You have reviewed the core scoping and implementation for Level {targetLevel}. Your draft System Security Plan and POA&M are ready for generation.
+                    You have finished the core discovery phase for Level {targetLevel}. Your implementation narratives are now ready to be synthesized into the draft System Security Plan.
                 </p>
                 <div className="grid grid-cols-2 gap-4 w-full max-w-md">
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Satisfied</div>
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Items Gathered</div>
                         <div className="text-2xl font-black text-slate-900">{activeReqs.filter(r => r.objectives.every(o => o.status === 'met')).length}</div>
                     </div>
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Gap Items</div>
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Gaps Identified</div>
                         <div className="text-2xl font-black text-red-600">{activeReqs.filter(r => r.objectives.some(o => o.status === 'not_met')).length}</div>
                     </div>
                 </div>
@@ -471,7 +471,7 @@ const WizardWrapper = ({ children, nextLabel, onNext, onPrev, targetLevel, wizar
                         {STEPS.find(s => s.id === wizardProgress.currentStep)?.label}
                     </h2>
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white border border-slate-200 px-3 py-1 rounded-full">
-                        CMMC Level {targetLevel}
+                        Level {targetLevel} Preparation
                     </span>
                </div>
                <div className="flex-1 overflow-hidden">
