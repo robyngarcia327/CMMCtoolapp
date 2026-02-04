@@ -34,7 +34,7 @@ export const ACADEMY_PHASES = [
 ];
 
 export const REQUIREMENTS_DATA: Requirement[] = [
-    // --- ACCESS CONTROL (AC) DOMAIN - FULL NIST 800-171A POPULATION ---
+    // --- ACCESS CONTROL (AC) DOMAIN ---
     
     { id: '3.1.1', framework: 'NIST-CMMC', family: 'AC', title: 'Authorized Access Control', description: 'Limit system access to authorized users, processes acting on behalf of authorized users, and devices (including other systems).', cmmcLevel: 1, sprsWeight: 1,
       objectives: [
@@ -215,6 +215,83 @@ export const REQUIREMENTS_DATA: Requirement[] = [
         { id: 'e', description: 'mechanisms are in place to remove and address improper posting of CUI.', status: 'pending' }
       ],
       mappings: { nist800_53: ['AC-22'] }
+    },
+
+    // --- AUDIT AND ACCOUNTABILITY (AU) DOMAIN - FULL NIST 800-171A POPULATION ---
+
+    { id: '3.3.1', framework: 'NIST-CMMC', family: 'AU', title: 'System Auditing', description: 'Create and retain system audit logs and records to the extent needed to enable the monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'audit logs needed (i.e., event types to be logged) to enable the monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity are specified;', status: 'pending' },
+        { id: 'b', description: 'the content of audit records needed to support monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity is defined;', status: 'pending' },
+        { id: 'c', description: 'audit records are created (generated);', status: 'pending' },
+        { id: 'd', description: 'audit records, once created, contain the defined content;', status: 'pending' },
+        { id: 'e', description: 'retention requirements for audit records are defined; and', status: 'pending' },
+        { id: 'f', description: 'audit records are retained as defined.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['AU-2', 'AU-3', 'AU-11', 'AU-12'] }
+    },
+    { id: '3.3.2', framework: 'NIST-CMMC', family: 'AU', title: 'User Accountability', description: 'Ensure that the actions of individual system users can be uniquely traced to those users so they can be held accountable for their actions.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'the content of the audit records needed to support the ability to uniquely trace users to their actions is defined; and', status: 'pending' },
+        { id: 'b', description: 'audit records, once created, contain the defined content.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['AU-2', 'AU-3'] }
+    },
+    { id: '3.3.3', framework: 'NIST-CMMC', family: 'AU', title: 'Event Review', description: 'Review and update logged events.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'a process for determining when to review logged events is defined;', status: 'pending' },
+        { id: 'b', description: 'event types being logged are reviewed in accordance with the defined review process; and', status: 'pending' },
+        { id: 'c', description: 'event types being logged are updated based on the review.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['AU-2', 'AU-3'] }
+    },
+    { id: '3.3.4', framework: 'NIST-CMMC', family: 'AU', title: 'Audit Failure Alerting', description: 'Alert in the event of an audit logging process failure.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'personnel or roles to be alerted in the event of an audit logging process failure are identified;', status: 'pending' },
+        { id: 'b', description: 'types of audit logging process failures for which alert will be generated are defined; and', status: 'pending' },
+        { id: 'c', description: 'identified personnel or roles are alerted in the event of an audit logging process failure.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['AU-5'] }
+    },
+    { id: '3.3.5', framework: 'NIST-CMMC', family: 'AU', title: 'Audit Correlation', description: 'Correlate audit record review, analysis, and reporting processes for investigation and response to indications of unlawful, unauthorized, suspicious, or unusual activity.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'audit record review, analysis, and reporting processes for investigation and response to indications of unlawful, unauthorized, suspicious, or unusual activity are defined; and', status: 'pending' },
+        { id: 'b', description: 'defined audit record review, analysis, and reporting processes are correlated.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['AU-6'] }
+    },
+    { id: '3.3.6', framework: 'NIST-CMMC', family: 'AU', title: 'Reduction & Reporting', description: 'Provide audit record reduction and report generation to support on-demand analysis and reporting.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'an audit record reduction capability that supports on-demand analysis is provided; and', status: 'pending' },
+        { id: 'b', description: 'a report generation capability that supports on-demand reporting is provided.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['AU-7'] }
+    },
+    { id: '3.3.7', framework: 'NIST-CMMC', family: 'AU', title: 'Authoritative Time Source', description: 'Provide a system capability that compares and synchronizes internal system clocks with an authoritative source to generate time stamps for audit records.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'internal system clocks are used to generate time stamps for audit records;', status: 'pending' },
+        { id: 'b', description: 'an authoritative source with which to compare and synchronize internal system clocks is specified; and', status: 'pending' },
+        { id: 'c', description: 'internal system clocks used to generate time stamps for audit records are compared to and synchronized with the specified authoritative time source.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['AU-8'] }
+    },
+    { id: '3.3.8', framework: 'NIST-CMMC', family: 'AU', title: 'Audit Protection', description: 'Protect audit information and audit logging tools from unauthorized access, modification, and deletion.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'audit information is protected from unauthorized access;', status: 'pending' },
+        { id: 'b', description: 'audit information is protected from unauthorized modification;', status: 'pending' },
+        { id: 'c', description: 'audit information is protected from unauthorized deletion;', status: 'pending' },
+        { id: 'd', description: 'audit logging tools are protected from unauthorized access;', status: 'pending' },
+        { id: 'e', description: 'audit logging tools are protected from unauthorized modification; and', status: 'pending' },
+        { id: 'f', description: 'audit logging tools are protected from unauthorized deletion.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['AU-9'] }
+    },
+    { id: '3.3.9', framework: 'NIST-CMMC', family: 'AU', title: 'Audit Management', description: 'Limit management of audit logging functionality to a subset of privileged users.', cmmcLevel: 2, sprsWeight: 3,
+      objectives: [
+        { id: 'a', description: 'a subset of privileged users granted access to manage audit logging functionality is defined; and', status: 'pending' },
+        { id: 'b', description: 'management of audit logging functionality is limited to the defined subset of privileged users.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['AU-9'] }
     }
 ];
 
