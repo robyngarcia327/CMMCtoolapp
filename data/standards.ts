@@ -217,6 +217,33 @@ export const REQUIREMENTS_DATA: Requirement[] = [
       mappings: { nist800_53: ['AC-22'] }
     },
 
+    // --- AWARENESS AND TRAINING (AT) DOMAIN - FULL NIST 800-171A POPULATION ---
+
+    { id: '3.2.1', framework: 'NIST-CMMC', family: 'AT', title: 'Role-Based Risk Awareness', description: 'Ensure that managers, systems administrators, and users of organizational systems are made aware of the security risks associated with their activities and of the applicable policies, standards, and procedures related to the security of those systems.', cmmcLevel: 2, sprsWeight: 1,
+      objectives: [
+        { id: 'a', description: 'security risks associated with organizational activities involving CUI are identified;', status: 'pending' },
+        { id: 'b', description: 'policies, standards, and procedures related to the security of the system are identified;', status: 'pending' },
+        { id: 'c', description: 'managers, systems administrators, and users of the system are made aware of the security risks associated with their activities; and', status: 'pending' },
+        { id: 'd', description: 'managers, systems administrators, and users of the system are made aware of the applicable policies, standards, and procedures related to the security of the system.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['AT-2'] }
+    },
+    { id: '3.2.2', framework: 'NIST-CMMC', family: 'AT', title: 'Role-Based Training', description: 'Ensure that personnel are trained to carry out their assigned information security-related duties and responsibilities.', cmmcLevel: 2, sprsWeight: 1,
+      objectives: [
+        { id: 'a', description: 'information security-related duties, roles, and responsibilities are defined;', status: 'pending' },
+        { id: 'b', description: 'information security-related duties, roles, and responsibilities are assigned to designated personnel; and', status: 'pending' },
+        { id: 'c', description: 'personnel are adequately trained to carry out their assigned information security-related duties, roles, and responsibilities.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['AT-3'] }
+    },
+    { id: '3.2.3', framework: 'NIST-CMMC', family: 'AT', title: 'Insider Threat Awareness', description: 'Provide security awareness training on recognizing and reporting potential indicators of insider threat.', cmmcLevel: 2, sprsWeight: 1,
+      objectives: [
+        { id: 'a', description: 'potential indicators associated with insider threats are identified; and', status: 'pending' },
+        { id: 'b', description: 'security awareness training on recognizing and reporting potential indicators of insider threat is provided to managers and employees.', status: 'pending' }
+      ],
+      mappings: { nist800_53: ['AT-2', 'PM-12'] }
+    },
+
     // --- AUDIT AND ACCOUNTABILITY (AU) DOMAIN - FULL NIST 800-171A POPULATION ---
 
     { id: '3.3.1', framework: 'NIST-CMMC', family: 'AU', title: 'System Auditing', description: 'Create and retain system audit logs and records to the extent needed to enable the monitoring, analysis, investigation, and reporting of unlawful or unauthorized system activity.', cmmcLevel: 2, sprsWeight: 3,
