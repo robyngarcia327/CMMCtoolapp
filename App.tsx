@@ -130,7 +130,6 @@ const App: React.FC = () => {
   const fetchAttempted = useRef(false);
 
   // --- DEEP DATA INTEGRITY SYNC ---
-  // Overwrites placeholders with NIST text and injects missing controls
   useEffect(() => {
     if (activeClientId && clientDataStore[activeClientId]) {
         const clientData = clientDataStore[activeClientId];
@@ -140,7 +139,6 @@ const App: React.FC = () => {
         const syncedReqs = clientReqs.map(existing => {
             const official = REQUIREMENTS_DATA.find(o => o.id === existing.id);
             if (official) {
-                // Check if descriptions mismatch or placeholders exist
                 const isPlaceholder = existing.objectives?.some(eo => eo.description.includes('is satisfied') || eo.description.includes('objective ['));
                 const needsDescriptionSync = isPlaceholder || official.objectives.some(o => {
                     const matched = existing.objectives?.find(eo => eo.id === o.id);
@@ -153,7 +151,6 @@ const App: React.FC = () => {
                         ...existing,
                         objectives: official.objectives.map(o => {
                             const existingObj = existing.objectives?.find(eo => eo.id === o.id);
-                            // Keep 'met'/'gap' status, but update the actual objective text
                             return existingObj ? { ...o, status: existingObj.status } : o;
                         })
                     };
@@ -162,13 +159,11 @@ const App: React.FC = () => {
             return existing;
         });
 
-        // Also check if entire controls are missing (e.g. only 9 of 22 AC controls show)
         const currentIds = new Set(clientReqs.map(r => r.id));
         const missingFromClient = REQUIREMENTS_DATA.filter(r => r.framework === 'NIST-CMMC' && !currentIds.has(r.id));
         
         if (needsSync || missingFromClient.length > 0) {
             const finalReqs = [...syncedReqs, ...missingFromClient];
-            // Sort numerically (3.1.1, 3.1.2, etc.)
             finalReqs.sort((a, b) => {
                 const aParts = a.id.split('.').map(Number);
                 const bParts = b.id.split('.').map(Number);
@@ -183,10 +178,9 @@ const App: React.FC = () => {
                 ...prev,
                 [activeClientId]: { ...prev[activeClientId], requirements: finalReqs }
             }));
-            console.info("Standards integrity check: Synced official NIST descriptions and added missing controls.");
         }
     }
-  }, [activeClientId]); // Critical: Depend ONLY on activeClientId to prevent recursive loops
+  }, [activeClientId]);
 
   useEffect(() => {
     localStorage.setItem(KEY_VIEW, currentView);
@@ -237,6 +231,14 @@ const App: React.FC = () => {
           });
           return { ...prev, [activeClientId]: { ...prev[activeClientId], requirements: merged } };
       });
+  };
+
+  const handleUpdateClientData = (updates: Partial<ClientData>) => {
+      if (!activeClientId) return;
+      setClientDataStore(prev => ({
+          ...prev,
+          [activeClientId]: { ...prev[activeClientId], ...updates }
+      }));
   };
 
   const handleUpdateFinancials = (fin: OrganizationFinancials) => {
@@ -377,7 +379,28 @@ const App: React.FC = () => {
         <main className="flex-1 overflow-hidden relative bg-slate-50/50">
           <div className="h-full w-full overflow-y-auto">
             {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} targetLevel={activeData.targetCmmcLevel} onUpdateLevel={handleUpdateLevel} onNavigate={setCurrentView} onToggleChat={() => setIsChatOpen(!isChatOpen)} />}
-            {currentView === AppView.WIZARD && <ComplianceWizard requirements={activeData.requirements} artifacts={activeData.artifacts} assets={activeData.assets} wizardProgress={activeData.wizardProgress} onUpdateRequirement={handleUpdateRequirement} onBatchUpdate={handleBatchUpdateRequirements} onAddArtifact={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: [...prev[activeClientId].artifacts, a] }}))} onRemoveArtifact={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id) }}))} onUpdateProgress={(p) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], wizardProgress: p }}))} onUpdateLevel={handleUpdateLevel} targetLevel={activeData.targetCmmcLevel} activeFrameworkId={activeFramework.id} onComplete={() => setCurrentView(AppView.DASHBOARD)} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
+            {currentView === AppView.WIZARD && (
+                <ComplianceWizard 
+                    requirements={activeData.requirements} 
+                    artifacts={activeData.artifacts} 
+                    assets={activeData.assets} 
+                    wizardProgress={activeData.wizardProgress} 
+                    activeClientData={activeData}
+                    onUpdateRequirement={handleUpdateRequirement} 
+                    onBatchUpdate={handleBatchUpdateRequirements} 
+                    onAddArtifact={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: [...prev[activeClientId].artifacts, a] }}))} 
+                    onRemoveArtifact={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], artifacts: prev[activeClientId].artifacts.filter(art => art.id !== id) }}))} 
+                    onUpdateProgress={(p) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], wizardProgress: p }}))} 
+                    onUpdateLevel={handleUpdateLevel} 
+                    onUpdateClientData={handleUpdateClientData}
+                    targetLevel={activeData.targetCmmcLevel} 
+                    activeFrameworkId={activeFramework.id} 
+                    activeClientId={activeClientId}
+                    onComplete={() => setCurrentView(AppView.DASHBOARD)} 
+                    onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} 
+                    onDeleteAsset={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} 
+                />
+            )}
             {currentView === AppView.CONTROLS && (
                 <div className="flex h-full">
                     <RequirementsList requirements={activeData.requirements} selectedReqId={selectedRequirementId} onSelectReq={(r) => { setSelectedRequirementId(r.id); localStorage.setItem(KEY_REQ, r.id); }} onUpdateRequirement={handleUpdateRequirement} onBatchUpdate={handleBatchUpdateRequirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} />
@@ -398,7 +421,6 @@ const App: React.FC = () => {
             {currentView === AppView.FAIR_ANALYZER && <FairRiskAnalyzer risks={activeData.risks} financials={activeData.financials} onUpdateRisk={handleUpdateRisk} />}
             {currentView === AppView.RMF_LIFECYCLE && <RmfLifecycle />}
             {currentView === AppView.COST_TO_COMPLIANCE && <BudgetCalculator requirements={activeData.requirements} budgetItems={activeData.budgetItems} onAddItem={(i) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], budgetItems: [...prev[activeClientId].budgetItems, i] }}))} onRemoveItem={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], budgetItems: prev[activeClientId].budgetItems.filter(i => i.id !== id) }}))} />}
-            {/* Added fix: spreading assets instead of artifacts to fix type error */}
             {currentView === AppView.ASSETS && <Inventory assets={activeData.assets} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: [...prev[activeClientId].users, u] }}))} onUpdateUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.map(usr => usr.id === u.id ? u : usr) }}))} onDeleteUser={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.filter(u => u.id !== id) }}))} />}
             {currentView === AppView.REPORT_EXECUTIVE && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} defaultTab="EXECUTIVE" />}

@@ -143,6 +143,8 @@ export interface ClientData {
   wizardProgress: WizardProgress;
   sspMetadata: SspMetadata;
   financials: OrganizationFinancials;
+  networkAnalysisResult?: string;
+  networkDiagramArtifactId?: string;
   m365Config: IntegrationConfig;
   intuneConfig: IntegrationConfig;
   adConfig: IntegrationConfig;

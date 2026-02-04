@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Requirement, Artifact, WizardProgress, Asset, AssessmentObjective } from '../types';
+import { Requirement, Artifact, WizardProgress, Asset, AssessmentObjective, ClientData } from '../types';
 import { 
   ArrowLeft, ArrowRight, CheckCircle2, Shield, AlertTriangle, 
   PlayCircle, FileCheck, Check, Info, Monitor, Network, 
@@ -16,6 +16,7 @@ interface ComplianceWizardProps {
   artifacts: Artifact[];
   assets?: Asset[];
   wizardProgress: WizardProgress;
+  activeClientData: ClientData;
   onUpdateRequirement: (req: Requirement) => void;
   onBatchUpdate?: (reqs: Requirement[]) => void;
   onAddArtifact: (artifact: Artifact) => void;
@@ -24,8 +25,10 @@ interface ComplianceWizardProps {
   onDeleteAsset?: (id: string) => void;
   onUpdateProgress: (progress: WizardProgress) => void;
   onUpdateLevel: (level: 1 | 2 | 3) => void;
+  onUpdateClientData: (updates: Partial<ClientData>) => void;
   targetLevel: 1 | 2 | 3;
   activeFrameworkId: string;
+  activeClientId?: string;
   onComplete: () => void;
 }
 
@@ -44,6 +47,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   artifacts,
   assets = [],
   wizardProgress,
+  activeClientData,
   onUpdateRequirement,
   onBatchUpdate,
   onAddArtifact,
@@ -52,8 +56,10 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   onDeleteAsset,
   onUpdateProgress,
   onUpdateLevel,
+  onUpdateClientData,
   targetLevel,
   activeFrameworkId,
+  activeClientId,
   onComplete
 }) => {
   
@@ -344,7 +350,16 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
 
         {wizardProgress.currentStep === 'NETWORK' && (
             <div className="p-10 h-full overflow-y-auto">
-                <NetworkAnalyzer variant="wizard" />
+                <NetworkAnalyzer 
+                  variant="wizard" 
+                  activeClientId={activeClientId}
+                  existingAnalysis={activeClientData.networkAnalysisResult}
+                  existingDiagramId={activeClientData.networkDiagramArtifactId}
+                  artifacts={artifacts}
+                  onUpdateAnalysis={(res) => onUpdateClientData({ networkAnalysisResult: res })}
+                  onUpdateDiagramId={(id) => onUpdateClientData({ networkDiagramArtifactId: id })}
+                  onAddArtifact={onAddArtifact}
+                />
             </div>
         )}
 
