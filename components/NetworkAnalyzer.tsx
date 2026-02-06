@@ -68,12 +68,12 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
     if (!file) return;
 
     if (!activeClientId) {
-        setError("Missing Organization context. Please ensure you are logged into a valid tenant.");
+        setError("Tenant context lost. Please refresh or select an organization.");
         return;
     }
 
     if (!auth.user?.id_token) {
-        setError("Session expired. Please re-authenticate.");
+        setError("Identity token missing. Please sign out and sign back in.");
         return;
     }
 
@@ -114,7 +114,6 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
                     onUpdateAnalysis(result);
                 } catch (aiErr) {
                     console.error("AI Analysis failed", aiErr);
-                    // We don't clear the error here as the upload itself was successful
                 } finally {
                     setIsAnalyzing(false);
                 }
@@ -125,7 +124,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
         }
     } catch (err: any) {
         console.error("Secure upload error:", err);
-        setError(err.message || "Secure vault upload failed. Check network permissions.");
+        setError(err.message || "Access Denied: Verify browser connectivity and tenant permissions.");
         setIsAnalyzing(false);
     }
   };
@@ -198,7 +197,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
                             <p className="text-sm text-slate-500 mb-4 mt-1">Network maps are stored in your private S3 bucket.</p>
                             <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileChange} />
                             <span className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium shadow-sm hover:bg-slate-50 transition-colors">
-                                {isAnalyzing ? 'Processing...' : 'Select Map File'}
+                                {isAnalyzing ? 'Handshaking...' : 'Select Map File'}
                             </span>
                         </label>
                     ) : (
@@ -271,7 +270,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
                 <div className="bg-red-50 text-red-700 p-4 rounded-lg flex items-center gap-3 text-sm border border-red-100 animate-in shake duration-300">
                     <ShieldAlert size={20} className="shrink-0" />
                     <div className="flex-1">
-                        <p className="font-bold">Access Error</p>
+                        <p className="font-bold">Protocol Conflict</p>
                         <p className="opacity-80">{error}</p>
                     </div>
                 </div>
@@ -288,7 +287,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
                     </li>
                     <li className="flex items-start gap-2">
                         <span className="font-bold">•</span>
-                        <span><strong>Storage:</strong> All diagrams are encrypted at rest in your tenant's S3 vault.</span>
+                        <span><strong>Integrity:</strong> All diagrams are hashed and stored in your tenant's S3 vault.</span>
                     </li>
                 </ul>
             </div>

@@ -152,42 +152,49 @@ export const api = {
   },
 
   uploadEvidence: async (token: string, orgId: string, file: File, requirementId: string): Promise<Artifact> => {
-    if (!orgId) throw new Error("Organization ID is required for secure storage");
+    // SECURITY GUARD: Prevent malformed URL paths that trigger 403 in API Gateway
+    const cleanOrgId = (orgId || "").trim();
+    if (!cleanOrgId) throw new Error("Organization context is required for secure storage");
+    
+    const sanitizedRequirementId = (requirementId || "GENERAL").trim();
     
     // 1. Request presigned URL from Lambda
-    const initResponse = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/upload-request`, {
+    // Use lower-case standard headers for best compatibility with preflight checks
+    const initResponse = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence/upload-request`, {
       method: 'POST',
       mode: 'cors',
       headers: {
-        'Authorization': `Bearer ${token.trim()}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'authorization': `Bearer ${token.trim()}`,
+        'content-type': 'application/json',
+        'accept': 'application/json'
       },
       body: JSON.stringify({
         filename: file.name,
         contentType: file.type || 'application/octet-stream',
-        requirementId: requirementId
+        requirementId: sanitizedRequirementId
       })
     });
 
     if (!initResponse.ok) {
         const errorData = await parseResponseData(initResponse);
+        console.error("Upload Request Init Failed:", initResponse.status, errorData);
         throw new Error(errorData?.message || `Failed to initiate secure upload: ${initResponse.status}`);
     }
     
     const { uploadUrl, evidenceId, requiredHeaders } = await parseResponseData(initResponse);
 
-    // 2. DEFENSIVE HEADER FILTERING: S3 signatures fail if Host or Content-Length are manually passed
-    const forbiddenHeaders = new Set(["host", "content-length", "connection", "user-agent", "expect"]);
+    // 2. DEFENSIVE HEADER FILTERING (As recommended to fix S3 signature mismatches)
+    // S3 signatures fail if Host, Content-Length, or certain browser-injected headers are passed
+    const forbidden = new Set(["host", "content-length", "connection", "user-agent", "expect"]);
     const safeHeaders: Record<string, string> = {};
     
-    for (const [key, value] of Object.entries(requiredHeaders || {})) {
-      if (!forbiddenHeaders.has(key.toLowerCase())) {
-        safeHeaders[key] = value as string;
+    for (const [k, v] of Object.entries(requiredHeaders || {})) {
+      if (!forbidden.has(k.toLowerCase())) {
+        safeHeaders[k] = v as string;
       }
     }
 
-    // Ensure Content-Type is set and matches what was signed
+    // Ensure Content-Type is consistent with what the backend signed
     if (!safeHeaders['Content-Type'] && !safeHeaders['content-type']) {
         safeHeaders['Content-Type'] = file.type || 'application/octet-stream';
     }
@@ -201,28 +208,28 @@ export const api = {
 
     if (!s3Response.ok) {
         const errorText = await s3Response.text().catch(() => "Unknown S3 error");
-        console.error("S3 Transfer Failure:", errorText);
+        console.error("Binary transfer failed. S3 Response:", errorText);
         throw new Error(`Binary transfer to S3 vault failed: ${s3Response.status}`);
     }
 
     // 4. Confirm completion to finalize DynamoDB record
-    const completeResponse = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/upload-complete`, {
+    const completeResponse = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence/${evidenceId}/upload-complete`, {
       method: 'POST',
       mode: 'cors',
       headers: {
-        'Authorization': `Bearer ${token.trim()}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'authorization': `Bearer ${token.trim()}`,
+        'content-type': 'application/json',
+        'accept': 'application/json'
       }
     });
 
     if (!completeResponse.ok) {
-        console.warn("Evidence linked to S3 but metadata confirmation failed.");
+        console.warn("Evidence binary accepted by S3 but metadata confirmation failed in DynamoDB.");
     }
 
     return {
       id: evidenceId,
-      requirementId: requirementId,
+      requirementId: sanitizedRequirementId,
       name: file.name,
       type: file.type.startsWith('image/') ? 'image' : 'document',
       url: '', 
@@ -232,13 +239,14 @@ export const api = {
   },
 
   getDownloadUrl: async (token: string, orgId: string, evidenceId: string): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/download-request`, {
+    const cleanOrgId = (orgId || "").trim();
+    const response = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence/${evidenceId}/download-request`, {
       method: 'POST',
       mode: 'cors',
       headers: {
-        'Authorization': `Bearer ${token.trim()}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'authorization': `Bearer ${token.trim()}`,
+        'content-type': 'application/json',
+        'accept': 'application/json'
       }
     });
     if (!response.ok) throw new Error('Access denied to artifact');
@@ -247,13 +255,16 @@ export const api = {
   },
 
   getEvidenceList: async (token: string, orgId: string): Promise<Artifact[]> => {
+    const cleanOrgId = (orgId || "").trim();
+    if (!cleanOrgId) return [];
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence`, {
+        const response = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence`, {
           mode: 'cors',
           headers: {
-            'Authorization': `Bearer ${token.trim()}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'authorization': `Bearer ${token.trim()}`,
+            'content-type': 'application/json',
+            'accept': 'application/json'
           }
         });
         if (!response.ok) return [];
