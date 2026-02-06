@@ -71,9 +71,11 @@ export const api = {
   createOrg: async (token: string, name: string, domain?: string): Promise<{ orgId: string, name: string }> => {
     const response = await fetch(`${API_BASE_URL}/orgs`, {
       method: 'POST',
+      mode: 'cors',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${token.trim()}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({ name, domain, initialRole: 'Tenant_Admin' })
     });
@@ -84,7 +86,11 @@ export const api = {
   getSuggestedOrgs: async (token: string, domain: string): Promise<any[]> => {
       try {
         const response = await fetch(`${API_BASE_URL}/orgs/discover?domain=${domain}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            mode: 'cors',
+            headers: { 
+                'Authorization': `Bearer ${token.trim()}`,
+                'Accept': 'application/json'
+            }
         });
         if (!response.ok) return [];
         const rawData = await parseResponseData(response);
@@ -97,23 +103,24 @@ export const api = {
   joinOrg: async (token: string, orgId: string): Promise<void> => {
       const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/join`, {
           method: 'POST',
+          mode: 'cors',
           headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              'Authorization': `Bearer ${token.trim()}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
           }
       });
       if (!response.ok) throw new Error("Failed to join organization");
   },
 
-  /**
-   * Admin Global Methods - Targets your administrative Lambda backend
-   */
   promoteUser: async (token: string, userId: string, group: CognitoGroup): Promise<void> => {
       const response = await fetch(`${API_BASE_URL}/admin/users/promote`, {
           method: 'POST',
+          mode: 'cors',
           headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              'Authorization': `Bearer ${token.trim()}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
           },
           body: JSON.stringify({ userId, targetGroup: group })
       });
@@ -123,7 +130,11 @@ export const api = {
   deleteUser: async (token: string, userId: string): Promise<void> => {
       const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
           method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
+          mode: 'cors',
+          headers: { 
+              'Authorization': `Bearer ${token.trim()}`,
+              'Accept': 'application/json'
+          }
       });
       if (!response.ok) throw new Error("Backend Admin Service failed to delete identity");
   },
@@ -131,47 +142,83 @@ export const api = {
   deleteTenant: async (token: string, orgId: string): Promise<void> => {
       const response = await fetch(`${API_BASE_URL}/admin/orgs/${orgId}`, {
           method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
+          mode: 'cors',
+          headers: { 
+              'Authorization': `Bearer ${token.trim()}`,
+              'Accept': 'application/json'
+          }
       });
       if (!response.ok) throw new Error("Backend Admin Service failed to purge tenant");
   },
 
   uploadEvidence: async (token: string, orgId: string, file: File, requirementId: string): Promise<Artifact> => {
+    if (!orgId) throw new Error("Organization ID is required for secure storage");
+    
     // 1. Request presigned URL from Lambda
     const initResponse = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/upload-request`, {
       method: 'POST',
+      mode: 'cors',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${token.trim()}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
         filename: file.name,
-        contentType: file.type,
+        contentType: file.type || 'application/octet-stream',
         requirementId: requirementId
       })
     });
 
-    if (!initResponse.ok) throw new Error(`Failed to initiate secure upload`);
+    if (!initResponse.ok) {
+        const errorData = await parseResponseData(initResponse);
+        throw new Error(errorData?.message || `Failed to initiate secure upload: ${initResponse.status}`);
+    }
     
     const { uploadUrl, evidenceId, requiredHeaders } = await parseResponseData(initResponse);
 
-    // 2. Direct upload to S3 using the presigned URL
+    // 2. DEFENSIVE HEADER FILTERING: S3 signatures fail if Host or Content-Length are manually passed
+    const forbiddenHeaders = new Set(["host", "content-length", "connection", "user-agent", "expect"]);
+    const safeHeaders: Record<string, string> = {};
+    
+    for (const [key, value] of Object.entries(requiredHeaders || {})) {
+      if (!forbiddenHeaders.has(key.toLowerCase())) {
+        safeHeaders[key] = value as string;
+      }
+    }
+
+    // Ensure Content-Type is set and matches what was signed
+    if (!safeHeaders['Content-Type'] && !safeHeaders['content-type']) {
+        safeHeaders['Content-Type'] = file.type || 'application/octet-stream';
+    }
+
+    // 3. Direct upload to S3 using the presigned URL
     const s3Response = await fetch(uploadUrl, {
       method: 'PUT',
-      headers: requiredHeaders, 
+      headers: safeHeaders, 
       body: file
     });
 
-    if (!s3Response.ok) throw new Error('Binary transfer to S3 failed');
+    if (!s3Response.ok) {
+        const errorText = await s3Response.text().catch(() => "Unknown S3 error");
+        console.error("S3 Transfer Failure:", errorText);
+        throw new Error(`Binary transfer to S3 vault failed: ${s3Response.status}`);
+    }
 
-    // 3. Confirm completion to finalize DynamoDB record
-    await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/upload-complete`, {
+    // 4. Confirm completion to finalize DynamoDB record
+    const completeResponse = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/upload-complete`, {
       method: 'POST',
+      mode: 'cors',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${token.trim()}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       }
     });
+
+    if (!completeResponse.ok) {
+        console.warn("Evidence linked to S3 but metadata confirmation failed.");
+    }
 
     return {
       id: evidenceId,
@@ -187,9 +234,11 @@ export const api = {
   getDownloadUrl: async (token: string, orgId: string, evidenceId: string): Promise<string> => {
     const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/download-request`, {
       method: 'POST',
+      mode: 'cors',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${token.trim()}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       }
     });
     if (!response.ok) throw new Error('Access denied to artifact');
@@ -200,9 +249,11 @@ export const api = {
   getEvidenceList: async (token: string, orgId: string): Promise<Artifact[]> => {
     try {
         const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence`, {
+          mode: 'cors',
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Authorization': `Bearer ${token.trim()}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           }
         });
         if (!response.ok) return [];

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { analyzeNetworkDiagram, analyzeAuvikTopology } from '../services/gemini';
 import { fetchAuvikNetworkTopology } from '../services/auvik';
@@ -64,7 +65,17 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !activeClientId || !auth.user?.id_token) return;
+    if (!file) return;
+
+    if (!activeClientId) {
+        setError("Missing Organization context. Please ensure you are logged into a valid tenant.");
+        return;
+    }
+
+    if (!auth.user?.id_token) {
+        setError("Session expired. Please re-authenticate.");
+        return;
+    }
 
     if (file.type === 'application/pdf') {
         setIsPdf(true);
@@ -98,16 +109,23 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
             const reader = new FileReader();
             reader.onload = async (event) => {
                 const base64 = event.target?.result as string;
-                const result = await analyzeNetworkDiagram(base64);
-                onUpdateAnalysis(result);
-                setIsAnalyzing(false);
+                try {
+                    const result = await analyzeNetworkDiagram(base64);
+                    onUpdateAnalysis(result);
+                } catch (aiErr) {
+                    console.error("AI Analysis failed", aiErr);
+                    // We don't clear the error here as the upload itself was successful
+                } finally {
+                    setIsAnalyzing(false);
+                }
             };
             reader.readAsDataURL(file);
         } else {
             setIsAnalyzing(false);
         }
-    } catch (err) {
-        setError("Secure upload failed. Please try again.");
+    } catch (err: any) {
+        console.error("Secure upload error:", err);
+        setError(err.message || "Secure vault upload failed. Check network permissions.");
         setIsAnalyzing(false);
     }
   };
@@ -180,7 +198,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
                             <p className="text-sm text-slate-500 mb-4 mt-1">Network maps are stored in your private S3 bucket.</p>
                             <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileChange} />
                             <span className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium shadow-sm hover:bg-slate-50 transition-colors">
-                                Select Map File
+                                {isAnalyzing ? 'Processing...' : 'Select Map File'}
                             </span>
                         </label>
                     ) : (
@@ -198,8 +216,8 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
                                 />
                             )}
                             <label className="absolute -top-2 -right-2 bg-white text-slate-500 rounded-full p-2 shadow border border-slate-200 hover:text-blue-600 cursor-pointer">
-                                <RefreshCw size={16} /> 
-                                <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileChange} />
+                                {isAnalyzing ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
+                                <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileChange} disabled={isAnalyzing} />
                             </label>
                         </div>
                     )}
@@ -250,9 +268,12 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
             )}
 
             {error && (
-                <div className="bg-red-50 text-red-700 p-4 rounded-lg flex items-center gap-3 text-sm border border-red-100">
-                    <ShieldAlert size={20} />
-                    {error}
+                <div className="bg-red-50 text-red-700 p-4 rounded-lg flex items-center gap-3 text-sm border border-red-100 animate-in shake duration-300">
+                    <ShieldAlert size={20} className="shrink-0" />
+                    <div className="flex-1">
+                        <p className="font-bold">Access Error</p>
+                        <p className="opacity-80">{error}</p>
+                    </div>
                 </div>
             )}
             
