@@ -151,11 +151,11 @@ export const api = {
     const cleanToken = (token || "").trim();
     const sanitizedReqId = (requirementId || "GENERAL").trim();
 
-    // 1. Handshake with API Gateway
+    // 1. Handshake with API Gateway (Updated path to match screenshot: /orgs/{orgID}/evidence)
     let initResponse;
     try {
         console.log(`Initiating upload handshake for org: ${cleanOrgId}, req: ${sanitizedReqId}`);
-        initResponse = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence/upload-request`, {
+        initResponse = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence`, {
           method: 'POST',
           mode: 'cors',
           headers: {
@@ -170,14 +170,14 @@ export const api = {
         });
     } catch (fetchErr) {
         console.error("Critical Network Error during handshake:", fetchErr);
-        throw new Error("Protocol Conflict: The browser blocked the handshake. This usually means API Gateway CORS is rejected or the resource path /orgs/{id}/... doesn't exist. Check AWS API Gateway Deployment.");
+        throw new Error("Protocol Conflict: The browser blocked the handshake. Verify that the 'POST' method on the /evidence resource allows 'Authorization' in its CORS settings.");
     }
 
     if (!initResponse.ok) {
         const errorData = await parseResponseData(initResponse);
         console.error("API Handshake Rejected:", initResponse.status, errorData);
         if (initResponse.status === 403) {
-            throw new Error("Access Denied (403): Your Identity Token may be expired or the API Gateway Stage is not deployed. Please sign out and back in.");
+            throw new Error("Access Denied (403): Ensure your API Gateway stage is deployed and Cognito authorization is valid.");
         }
         throw new Error(errorData?.message || `Vault Handshake Failed (Status: ${initResponse.status}).`);
     }
@@ -209,13 +209,11 @@ export const api = {
         const forbidden = new Set(["host", "content-length", "connection", "user-agent", "expect"]);
         const cleanHeaders: Record<string, string> = {};
         
-        // Characterize headers from backend
         const headersToProcess = requiredHeaders || {};
         Object.entries(headersToProcess).forEach(([k, v]) => {
             if (!forbidden.has(k.toLowerCase())) cleanHeaders[k] = v as string;
         });
         
-        // Force correct content-type if missing
         if (!cleanHeaders['content-type'] && !cleanHeaders['Content-Type']) {
             cleanHeaders['content-type'] = file.type || 'application/octet-stream';
         }
@@ -233,7 +231,7 @@ export const api = {
         throw new Error(`S3 Vault Transfer Failed: ${s3Response.status}. Verify S3 Bucket CORS policy permits your origin.`);
     }
 
-    // 3. Metadata Confirmation (Index in DynamoDB)
+    // 3. Metadata Confirmation (Updated path to match screenshot)
     try {
         await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence/${evidenceId}/upload-complete`, {
           method: 'POST',
@@ -260,6 +258,7 @@ export const api = {
 
   getDownloadUrl: async (token: string, orgId: string, evidenceId: string): Promise<string> => {
     const cleanOrgId = (orgId || "").trim();
+    // Updated path to match screenshot: /evidence/{evidenceID}/download-request
     const response = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence/${evidenceId}/download-request`, {
       method: 'POST',
       mode: 'cors',
@@ -278,6 +277,7 @@ export const api = {
     if (!cleanOrgId) return [];
     
     try {
+        // Updated path to match screenshot: GET /orgs/{orgID}/evidence
         const response = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence`, {
           mode: 'cors',
           headers: {
