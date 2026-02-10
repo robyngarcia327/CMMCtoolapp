@@ -146,15 +146,27 @@ export const api = {
 
   uploadEvidence: async (token: string, orgId: string, file: File, requirementId: string): Promise<Artifact> => {
     const cleanOrgId = (orgId || "").trim();
-    if (!cleanOrgId) throw new Error("Organization Identity is missing. Please ensure you are logged into a valid organization context.");
+    if (!cleanOrgId) throw new Error("Organization Identity is missing.");
     
     const cleanToken = (token || "").trim();
     const sanitizedReqId = (requirementId || "GENERAL").trim();
 
-    // 1. Handshake with API Gateway (Updated path to match screenshot: /orgs/{orgID}/evidence)
+    // 1. Handshake with API Gateway
     let initResponse;
+    const payload = {
+        // Redundant keys to handle varied Lambda expectations (snake_case vs camelCase)
+        filename: file.name,
+        file_name: file.name,
+        contentType: file.type || 'application/octet-stream',
+        content_type: file.type || 'application/octet-stream',
+        requirementId: sanitizedReqId,
+        requirement_id: sanitizedReqId
+    };
+
+    console.log("--- UPLOAD HANDSHAKE PAYLOAD ---");
+    console.table(payload);
+
     try {
-        console.log(`Initiating upload handshake for org: ${cleanOrgId}, req: ${sanitizedReqId}`);
         initResponse = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence`, {
           method: 'POST',
           mode: 'cors',
@@ -162,38 +174,35 @@ export const api = {
             'authorization': `Bearer ${cleanToken}`,
             'content-type': 'application/json'
           },
-          body: JSON.stringify({
-            filename: file.name,
-            contentType: file.type || 'application/octet-stream',
-            requirementId: sanitizedReqId
-          })
+          body: JSON.stringify(payload)
         });
     } catch (fetchErr) {
-        console.error("Critical Network Error during handshake:", fetchErr);
-        throw new Error("Protocol Conflict: The browser blocked the handshake. Verify that the 'POST' method on the /evidence resource allows 'Authorization' in its CORS settings.");
+        console.error("Critical Network Error:", fetchErr);
+        throw new Error("Protocol Conflict: Browser blocked the request. Check CORS.");
     }
 
     if (!initResponse.ok) {
-        const errorData = await parseResponseData(initResponse);
-        console.error("API Handshake Rejected:", initResponse.status, errorData);
-        if (initResponse.status === 403) {
-            throw new Error("Access Denied (403): Ensure your API Gateway stage is deployed and Cognito authorization is valid.");
-        }
-        throw new Error(errorData?.message || `Vault Handshake Failed (Status: ${initResponse.status}).`);
+        // 400 Bad Request Diagnostics
+        const errorBody = await parseResponseData(initResponse);
+        console.error("--- SERVER REJECTION DETAILS (400) ---", {
+            status: initResponse.status,
+            data: errorBody
+        });
+        
+        const msg = typeof errorBody === 'string' ? errorBody : (errorBody?.message || errorBody?.errorMessage || "Unknown validation error");
+        throw new Error(`Vault Handshake Failed (400): ${msg}. See Browser Console for full details.`);
     }
     
     const data = await parseResponseData(initResponse);
     const { uploadUrl, evidenceId, fields, requiredHeaders } = data;
 
     if (!uploadUrl || !evidenceId) {
-        throw new Error("Malformed handshake response: Missing upload target or evidence ID.");
+        throw new Error("Malformed handshake response: Missing uploadUrl or evidenceId.");
     }
 
-    // 2. Binary Transfer to S3 (Automatic Method Detection)
+    // 2. Binary Transfer to S3
     let s3Response;
     if (fields) {
-        // S3 POST (Signature V4 Browser Upload)
-        console.log("Using S3 POST (FormData) transfer strategy...");
         const formData = new FormData();
         Object.entries(fields).forEach(([k, v]) => formData.append(k, v as string));
         formData.append('file', file);
@@ -204,12 +213,10 @@ export const api = {
             body: formData
         });
     } else {
-        // S3 PUT (Pre-signed URL)
-        console.log("Using S3 PUT (Binary) transfer strategy...");
         const forbidden = new Set(["host", "content-length", "connection", "user-agent", "expect"]);
         const cleanHeaders: Record<string, string> = {};
-        
         const headersToProcess = requiredHeaders || {};
+        
         Object.entries(headersToProcess).forEach(([k, v]) => {
             if (!forbidden.has(k.toLowerCase())) cleanHeaders[k] = v as string;
         });
@@ -228,10 +235,10 @@ export const api = {
     if (!s3Response.ok) {
         const errorText = await s3Response.text().catch(() => "Unknown transfer error");
         console.error("S3 Transfer Failure:", s3Response.status, errorText);
-        throw new Error(`S3 Vault Transfer Failed: ${s3Response.status}. Verify S3 Bucket CORS policy permits your origin.`);
+        throw new Error(`S3 Vault Transfer Failed: ${s3Response.status}.`);
     }
 
-    // 3. Metadata Confirmation (Updated path to match screenshot)
+    // 3. Metadata Confirmation
     try {
         await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence/${evidenceId}/upload-complete`, {
           method: 'POST',
@@ -242,7 +249,7 @@ export const api = {
           }
         });
     } catch (e) {
-        console.warn("Evidence landed in S3 but indexing may have timed out. The file is secure.");
+        console.warn("Evidence landed in S3 but indexing timed out.");
     }
 
     return {
@@ -258,7 +265,6 @@ export const api = {
 
   getDownloadUrl: async (token: string, orgId: string, evidenceId: string): Promise<string> => {
     const cleanOrgId = (orgId || "").trim();
-    // Updated path to match screenshot: /evidence/{evidenceID}/download-request
     const response = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence/${evidenceId}/download-request`, {
       method: 'POST',
       mode: 'cors',
@@ -267,7 +273,7 @@ export const api = {
         'content-type': 'application/json'
       }
     });
-    if (!response.ok) throw new Error('Secure download request rejected by gateway.');
+    if (!response.ok) throw new Error('Secure download request rejected.');
     const data = await parseResponseData(response);
     return data.downloadUrl; 
   },
@@ -277,7 +283,6 @@ export const api = {
     if (!cleanOrgId) return [];
     
     try {
-        // Updated path to match screenshot: GET /orgs/{orgID}/evidence
         const response = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence`, {
           mode: 'cors',
           headers: {
