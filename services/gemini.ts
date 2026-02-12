@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { Requirement, AuvikDevice, Risk } from '../types';
 
@@ -158,6 +159,50 @@ export const analyzePolicyGap = async (
     return response.text || "Analysis failed.";
   } catch (e) {
     return "Error analyzing policy text.";
+  }
+};
+
+export const auditPolicyAgainstFramework = async (
+  domainName: string,
+  policyText: string,
+  relevantRequirements: Requirement[]
+): Promise<string> => {
+  const prompt = `
+    Act as a Lead CMMC Assessor. Perform a detailed GAP ANALYSIS on the provided policy document.
+    
+    TARGET DOMAIN: ${domainName}
+    
+    EXPECTED CONTROLS TO AUDIT AGAINST:
+    ${relevantRequirements.map(r => `- ${r.id}: ${r.title} (${r.description})`).join('\n')}
+    
+    POLICY TEXT TO REVIEW:
+    """
+    ${policyText}
+    """
+    
+    OUTPUT FORMAT (Markdown):
+    1. **Policy Maturity Score**: (0-100)
+    2. **Executive Summary**: 2-3 sentences on overall document quality.
+    3. **Requirement Mapping Table**:
+       | Control ID | Alignment Status | Missing Components |
+       |------------|------------------|--------------------|
+       | [ID]       | [High/Partial/None] | [Details]       |
+    4. **Critical Gaps**: List specific regulatory elements missing from the text.
+    5. **Assessor Recommendations**: Professional advice for remediation.
+  `;
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: { 
+        systemInstruction: "You are a specialized CMMC/NIST 800-171 Policy Auditor. You provide high-fidelity, actionable feedback to help organizations reach Level 2 certification." 
+      }
+    });
+    return response.text || "Policy audit failed to generate.";
+  } catch (e) {
+    return "Critical error during AI Policy Audit. Please check document size and API connectivity.";
   }
 };
 
