@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from "react-oidc-context";
 import { 
@@ -171,7 +170,6 @@ const App: React.FC = () => {
                 const aParts = a.id.split('.').map(Number);
                 const bParts = b.id.split('.').map(Number);
                 for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
-                    // Fix: Changed bP to bParts on lines 173 and 174 to resolve "Cannot find name 'bP'" error
                     if ((aParts[i] || 0) < (bParts[i] || 0)) return -1;
                     if ((aParts[i] || 0) > (bParts[i] || 0)) return 1;
                 }
@@ -433,7 +431,7 @@ const App: React.FC = () => {
             {currentView === AppView.REPORT_SSP && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} defaultTab="SSP" />}
             {currentView === AppView.POLICY_AUDIT && <PolicyReviewCenter 
               requirements={activeData.requirements} 
-              activeFrameworkId={activeFrameworkId.id} 
+              activeFrameworkId={activeFramework.id} 
               policyText={activeData.policyText} 
               policyFileBase64={activeData.policyFileBase64}
               policyFileMimeType={activeData.policyFileMimeType}
