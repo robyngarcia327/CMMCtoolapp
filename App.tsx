@@ -324,7 +324,7 @@ const App: React.FC = () => {
       case AppView.COST_TO_COMPLIANCE: return "Financial Strategy";
       case AppView.REPORT_EXECUTIVE: return "Executive Report";
       case AppView.REPORT_SSP: return "System Security Plan";
-      case AppView.POLICY_AUDIT: return "Policy Auditor";
+      case AppView.POLICY_AUDIT: return "Policy Review";
       default: return "Cuallee Cyber";
     }
   };
@@ -358,7 +358,7 @@ const App: React.FC = () => {
             <SidebarItem icon={BarChart3} label="Budgeting" isActive={currentView === AppView.COST_TO_COMPLIANCE} onClick={() => setCurrentView(AppView.COST_TO_COMPLIANCE)} />
           </SidebarSection>
           <SidebarSection title="Reports">
-            <SidebarItem icon={FileCheck2} label="Policy Auditor" isActive={currentView === AppView.POLICY_AUDIT} onClick={() => setCurrentView(AppView.POLICY_AUDIT)} badge="AI" />
+            <SidebarItem icon={FileCheck2} label="Policy Review" isActive={currentView === AppView.POLICY_AUDIT} onClick={() => setCurrentView(AppView.POLICY_AUDIT)} badge="AI" />
             <SidebarItem icon={FileCheck} label="Executive Summary" isActive={currentView === AppView.REPORT_EXECUTIVE} onClick={() => setCurrentView(AppView.REPORT_EXECUTIVE)} />
             <SidebarItem icon={FileText} label="System Security Plan" isActive={currentView === AppView.REPORT_SSP} onClick={() => setCurrentView(AppView.REPORT_SSP)} />
           </SidebarSection>
@@ -403,7 +403,7 @@ const App: React.FC = () => {
                     activeClientId={activeClientId}
                     onComplete={() => setCurrentView(AppView.DASHBOARD)} 
                     onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} 
-                    onDeleteAsset={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].artifacts.filter(a => a.id !== id) }}))} 
+                    onDeleteAsset={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} 
                 />
             )}
             {currentView === AppView.CONTROLS && (
@@ -430,7 +430,6 @@ const App: React.FC = () => {
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: [...prev[activeClientId].users, u] }}))} onUpdateUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.map(usr => usr.id === u.id ? u : usr) }}))} onDeleteUser={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.filter(u => u.id !== id) }}))} />}
             {currentView === AppView.REPORT_EXECUTIVE && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} defaultTab="EXECUTIVE" />}
             {currentView === AppView.REPORT_SSP && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} defaultTab="SSP" />}
-            {/* Added activeFrameworkId prop to fix compilation error in PolicyReviewCenter */}
             {currentView === AppView.POLICY_AUDIT && <PolicyReviewCenter requirements={activeData.requirements} activeFrameworkId={activeFramework.id} />}
           </div>
         </main>
