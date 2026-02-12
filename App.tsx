@@ -430,7 +430,13 @@ const App: React.FC = () => {
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: [...prev[activeClientId].users, u] }}))} onUpdateUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.map(usr => usr.id === u.id ? u : usr) }}))} onDeleteUser={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.filter(u => u.id !== id) }}))} />}
             {currentView === AppView.REPORT_EXECUTIVE && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} defaultTab="EXECUTIVE" />}
             {currentView === AppView.REPORT_SSP && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} defaultTab="SSP" />}
-            {currentView === AppView.POLICY_AUDIT && <PolicyReviewCenter requirements={activeData.requirements} activeFrameworkId={activeFramework.id} />}
+            {currentView === AppView.POLICY_AUDIT && <PolicyReviewCenter 
+              requirements={activeData.requirements} 
+              activeFrameworkId={activeFramework.id} 
+              policyText={activeData.policyText} 
+              auditResult={activeData.policyAnalysisResult} 
+              onUpdate={handleUpdateClientData}
+            />}
           </div>
         </main>
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />

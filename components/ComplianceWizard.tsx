@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Requirement, Artifact, WizardProgress, Asset, AssessmentObjective, ClientData } from '../types';
 import { 
@@ -6,7 +7,6 @@ import {
   ListChecks, Target, Lock, Zap, Box, Cloud, Users, 
   FileSearch, ClipboardList, MessageSquare, Download, Upload, 
   FileSpreadsheet, Loader2, ShieldCheck, Sparkles, RefreshCw, BookOpen,
-  // Added missing Search icon import
   Search
 } from 'lucide-react';
 import { ArtifactUploader } from './ArtifactUploader';
@@ -73,9 +73,6 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   const [isImporting, setIsImporting] = useState(false);
 
   // Policy Step State
-  const [selectedFamilyId, setSelectedFamilyId] = useState<string>('AC');
-  const [policyText, setPolicyText] = useState('');
-  const [auditResult, setAuditResult] = useState<string | null>(null);
   const [isAuditing, setIsAuditing] = useState(false);
 
   const activeReqs = requirements.filter(r => 
@@ -115,18 +112,20 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   };
 
   const handleAudit = async () => {
-    if (!policyText.trim()) return;
+    if (!activeClientData.policyText?.trim()) return;
     setIsAuditing(true);
-    setAuditResult(null);
+    
+    // Clear previous analysis
+    onUpdateClientData({ policyAnalysisResult: undefined });
+    
     try {
-      const selectedFamily = NIST_CMMC_FAMILIES.find(f => f.id === selectedFamilyId);
-      const familyRequirements = requirements.filter(r => r.family === selectedFamilyId);
+      // Audit against framework requirements
       const result = await auditPolicyAgainstFramework(
-        selectedFamily?.name || selectedFamilyId,
-        policyText,
-        familyRequirements
+        "Standard Onboarding Review",
+        activeClientData.policyText,
+        activeReqs
       );
-      setAuditResult(result);
+      onUpdateClientData({ policyAnalysisResult: result });
     } catch (e) {
       alert("AI Audit engine encountered an error.");
     } finally {
@@ -138,7 +137,9 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (ev) => setPolicyText(ev.target?.result as string);
+      reader.onload = (ev) => {
+          onUpdateClientData({ policyText: ev.target?.result as string });
+      };
       reader.readAsText(file);
     }
   };
@@ -416,21 +417,17 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                         <div className="flex justify-between items-center mb-2">
                              <div className="flex items-center gap-2">
                                 <BookOpen size={18} className="text-blue-600" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Policy Document</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Policy Document Workspace</span>
                              </div>
-                             <select 
-                                className="bg-slate-100 border-none text-[10px] font-black uppercase rounded-lg px-3 py-1 outline-none"
-                                value={selectedFamilyId}
-                                onChange={e => setSelectedFamilyId(e.target.value)}
-                             >
-                                 {NIST_CMMC_FAMILIES.map(f => <option key={f.id} value={f.id}>{f.id}: {f.name}</option>)}
-                             </select>
+                             <div className="bg-slate-100 text-[9px] font-black uppercase rounded-lg px-3 py-1 outline-none">
+                                Full Framework Audit
+                             </div>
                         </div>
                         <textarea 
                            className="flex-1 min-h-[250px] w-full border border-slate-100 bg-slate-50/50 rounded-2xl p-6 focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all font-medium text-slate-700 resize-none"
                            placeholder="Paste policy text here or use upload..."
-                           value={policyText}
-                           onChange={e => setPolicyText(e.target.value)}
+                           value={activeClientData.policyText || ''}
+                           onChange={e => onUpdateClientData({ policyText: e.target.value })}
                         />
                         <div className="flex justify-between items-center pt-4 border-t border-slate-50">
                             <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 cursor-pointer transition-all shadow-sm">
@@ -439,7 +436,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                             </label>
                             <button 
                                 onClick={handleAudit}
-                                disabled={isAuditing || !policyText.trim()}
+                                disabled={isAuditing || !activeClientData.policyText?.trim()}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-200 transition-all flex items-center gap-3 disabled:opacity-30"
                             >
                                 {isAuditing ? <Loader2 className="animate-spin" size={14}/> : <Sparkles size={14}/>}
@@ -449,7 +446,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                     </div>
 
                     <div className="bg-slate-900 rounded-[2rem] p-8 flex flex-col overflow-hidden relative min-h-[300px]">
-                        {!auditResult && !isAuditing ? (
+                        {!activeClientData.policyAnalysisResult && !isAuditing ? (
                             <div className="flex-1 flex flex-col items-center justify-center text-slate-600 text-center">
                                 <div className="p-4 bg-white/5 rounded-2xl mb-4"><Search size={32}/></div>
                                 <p className="text-[10px] font-black uppercase tracking-widest">Awaiting Analysis</p>
@@ -458,11 +455,11 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                             <div className="flex-1 flex flex-col items-center justify-center text-center">
                                 <RefreshCw className="animate-spin text-blue-400 mb-4" size={48} />
                                 <h3 className="text-white font-black uppercase tracking-widest text-sm">Reviewing Alignment...</h3>
-                                <p className="text-blue-300/50 text-[10px] mt-2 max-w-xs">Mapping content to NIST 800-171 {selectedFamilyId} family controls.</p>
+                                <p className="text-blue-300/50 text-[10px] mt-2 max-w-xs">Mapping content to {activeFrameworkId} requirements.</p>
                             </div>
                         ) : (
                             <div className="flex-1 overflow-y-auto custom-scrollbar prose prose-invert prose-sm max-w-none prose-p:text-blue-100/80 prose-headings:text-white prose-headings:font-black prose-headings:uppercase prose-li:text-blue-100/70">
-                                <ReactMarkdown>{auditResult || ''}</ReactMarkdown>
+                                <ReactMarkdown>{activeClientData.policyAnalysisResult || ''}</ReactMarkdown>
                             </div>
                         )}
                     </div>

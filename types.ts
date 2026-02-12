@@ -145,6 +145,8 @@ export interface ClientData {
   financials: OrganizationFinancials;
   networkAnalysisResult?: string;
   networkDiagramArtifactId?: string;
+  policyAnalysisResult?: string;
+  policyText?: string;
   m365Config: IntegrationConfig;
   intuneConfig: IntegrationConfig;
   adConfig: IntegrationConfig;
@@ -254,6 +256,18 @@ export interface IntegrationConfig {
   accountName?: string;
   tenantId?: string;
   apiKey?: string;
+}
+
+export interface UserIntegrationConfig extends IntegrationConfig {
+  enabled: boolean;
+}
+
+export interface ConnectWiseConfig extends IntegrationConfig {
+  companyId: string;
+  publicKey: string;
+  privateKey: string;
+  siteUrl: string;
+  serviceBoard: string;
 }
 
 export interface ConfluenceConfig extends IntegrationConfig {

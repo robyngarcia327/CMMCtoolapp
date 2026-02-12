@@ -18,37 +18,46 @@ import {
   Zap,
   BookOpen
 } from 'lucide-react';
-import { Requirement } from '../types';
+import { Requirement, ClientData } from '../types';
 import { NIST_CMMC_FAMILIES } from '../data/standards';
 import { auditPolicyAgainstFramework } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
 
 interface PolicyReviewCenterProps {
   requirements: Requirement[];
-  // Added missing activeFrameworkId prop to fix compilation error
   activeFrameworkId: string;
+  policyText?: string;
+  auditResult?: string;
+  onUpdate: (updates: Partial<ClientData>) => void;
 }
 
-export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({ requirements, activeFrameworkId }) => {
-  const [selectedFamilyId, setSelectedFamilyId] = useState<string>('AC');
-  const [policyText, setPolicyText] = useState('');
-  const [auditResult, setAuditResult] = useState<string | null>(null);
+export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({ 
+    requirements, 
+    activeFrameworkId,
+    policyText = '',
+    auditResult = null,
+    onUpdate
+}) => {
   const [isAuditing, setIsAuditing] = useState(false);
 
-  const selectedFamily = NIST_CMMC_FAMILIES.find(f => f.id === selectedFamilyId);
-  const familyRequirements = requirements.filter(r => r.family === selectedFamilyId);
+  // Filter requirements for the active framework to use as the audit baseline
+  const activeReqs = requirements.filter(r => r.framework === activeFrameworkId);
 
   const handleAudit = async () => {
     if (!policyText.trim()) return;
     setIsAuditing(true);
-    setAuditResult(null);
+    
+    // Clear previous result while auditing
+    onUpdate({ policyAnalysisResult: undefined });
+    
     try {
+      // Audit against all requirements in scope since the domain dropdown was removed
       const result = await auditPolicyAgainstFramework(
-        selectedFamily?.name || selectedFamilyId,
+        "Full Organization Framework",
         policyText,
-        familyRequirements
+        activeReqs
       );
-      setAuditResult(result);
+      onUpdate({ policyAnalysisResult: result });
     } catch (e) {
       alert("AI Audit engine encountered an error.");
     } finally {
@@ -60,7 +69,10 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({ requirem
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (ev) => setPolicyText(ev.target?.result as string);
+      reader.onload = (ev) => {
+          const text = ev.target?.result as string;
+          onUpdate({ policyText: text });
+      };
       reader.readAsText(file);
     }
   };
@@ -75,19 +87,13 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({ requirem
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Policy Auditor</h1>
             <p className="text-slate-500 font-medium mt-3 max-w-xl">
-                Upload existing organizational policies for a deep-dive AI gap analysis against specific NIST 800-171 domains.
+                Upload organizational policies for a deep-dive AI gap analysis against the complete {activeFrameworkId} framework.
             </p>
          </div>
-         <div className="flex gap-4">
-            <select 
-                className="bg-slate-900 text-white rounded-2xl px-6 py-4 font-black text-xs uppercase tracking-widest shadow-2xl focus:ring-4 focus:ring-blue-500/20 outline-none border-none"
-                value={selectedFamilyId}
-                onChange={e => setSelectedFamilyId(e.target.value)}
-            >
-                {NIST_CMMC_FAMILIES.map(f => (
-                    <option key={f.id} value={f.id}>{f.id}: {f.name}</option>
-                ))}
-            </select>
+         <div className="flex items-center gap-3">
+             <div className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-xl">
+                <Shield size={14} className="text-blue-400" /> Framework: {activeFrameworkId}
+             </div>
          </div>
       </div>
 
@@ -108,9 +114,9 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({ requirem
                   </div>
                   <textarea 
                     className="flex-1 p-10 outline-none resize-none text-slate-700 font-medium leading-relaxed bg-transparent scrollbar-hide text-lg"
-                    placeholder={`Paste your ${selectedFamily?.name || ''} Policy here for review...`}
+                    placeholder="Paste your organization's policy here for automated review..."
                     value={policyText}
-                    onChange={e => setPolicyText(e.target.value)}
+                    onChange={e => onUpdate({ policyText: e.target.value })}
                   />
                   <div className="p-8 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
                       <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -150,7 +156,7 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({ requirem
                              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                  <div className="h-full bg-blue-600 animate-loading-bar" />
                              </div>
-                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Mapping to {familyRequirements.length} Domain Requirements</p>
+                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Mapping to Framework Requirements</p>
                         </div>
                     </div>
                   ) : (
@@ -160,10 +166,10 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({ requirem
                                 <div className="p-3 bg-blue-600 rounded-2xl shadow-lg"><CheckCircle2 size={24}/></div>
                                 <div>
                                     <h3 className="text-xl font-black uppercase tracking-tight">Audit Findings</h3>
-                                    <p className="text-blue-300 text-[9px] font-black uppercase tracking-widest">{selectedFamily?.name} Analysis Complete</p>
+                                    <p className="text-blue-300 text-[9px] font-black uppercase tracking-widest">Full Framework Analysis Complete</p>
                                 </div>
                             </div>
-                            <button onClick={() => setAuditResult(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><RefreshCw size={18} /></button>
+                            <button onClick={() => onUpdate({ policyAnalysisResult: undefined })} className="p-2 hover:bg-white/10 rounded-full transition-colors"><RefreshCw size={18} /></button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
                             <div className="prose prose-slate max-w-none prose-headings:text-slate-900 prose-headings:font-black prose-headings:uppercase prose-h1:text-3xl prose-h2:text-xl prose-h2:mt-10 prose-h2:border-b-2 prose-h2:pb-3 prose-p:text-slate-600 prose-p:leading-relaxed prose-table:border prose-table:rounded-xl prose-th:bg-slate-50 prose-th:px-4 prose-th:py-2 prose-td:px-4 prose-td:py-2 prose-li:text-slate-600">
@@ -187,7 +193,6 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({ requirem
       {/* Footer Info */}
       <div className="flex justify-center pb-8 shrink-0">
            <div className="inline-flex items-center gap-3 px-6 py-2 bg-slate-900 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-white/50 border border-slate-800">
-                {/* Fixed "Cannot find name 'activeFrameworkId'" error by adding it to props */}
                 <Shield size={14} className="text-blue-500" /> Professional Grade Auditor // {activeFrameworkId} ALIGNED
            </div>
       </div>
