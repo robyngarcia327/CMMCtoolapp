@@ -16,10 +16,10 @@ import {
   Trash2,
   RefreshCw,
   Zap,
-  BookOpen
+  BookOpen,
+  X
 } from 'lucide-react';
 import { Requirement, ClientData } from '../types';
-import { NIST_CMMC_FAMILIES } from '../data/standards';
 import { auditPolicyAgainstFramework } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
 
@@ -27,6 +27,9 @@ interface PolicyReviewCenterProps {
   requirements: Requirement[];
   activeFrameworkId: string;
   policyText?: string;
+  policyFileBase64?: string;
+  policyFileMimeType?: string;
+  policyFileName?: string;
   auditResult?: string;
   onUpdate: (updates: Partial<ClientData>) => void;
 }
@@ -35,6 +38,9 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
     requirements, 
     activeFrameworkId,
     policyText = '',
+    policyFileBase64 = '',
+    policyFileMimeType = '',
+    policyFileName = '',
     auditResult = null,
     onUpdate
 }) => {
@@ -44,18 +50,20 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
   const activeReqs = requirements.filter(r => r.framework === activeFrameworkId);
 
   const handleAudit = async () => {
-    if (!policyText.trim()) return;
+    if (!policyText.trim() && !policyFileBase64) return;
     setIsAuditing(true);
     
     // Clear previous result while auditing
     onUpdate({ policyAnalysisResult: undefined });
     
     try {
-      // Audit against all requirements in scope since the domain dropdown was removed
+      const fileData = policyFileBase64 ? { base64: policyFileBase64, mimeType: policyFileMimeType } : undefined;
+      
       const result = await auditPolicyAgainstFramework(
         "Full Organization Framework",
         policyText,
-        activeReqs
+        activeReqs,
+        fileData
       );
       onUpdate({ policyAnalysisResult: result });
     } catch (e) {
@@ -69,12 +77,28 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-          const text = ev.target?.result as string;
-          onUpdate({ policyText: text });
-      };
-      reader.readAsText(file);
+      const isBinary = file.type === 'application/pdf' || file.name.endsWith('.docx') || file.name.endsWith('.doc');
+
+      if (isBinary) {
+        reader.onload = (ev) => {
+            onUpdate({ 
+                policyFileBase64: ev.target?.result as string,
+                policyFileMimeType: file.type || 'application/pdf',
+                policyFileName: file.name
+            });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        reader.onload = (ev) => {
+            onUpdate({ policyText: ev.target?.result as string });
+        };
+        reader.readAsText(file);
+      }
     }
+  };
+
+  const removeFile = () => {
+      onUpdate({ policyFileBase64: undefined, policyFileMimeType: undefined, policyFileName: undefined });
   };
 
   return (
@@ -87,7 +111,7 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Policy Auditor</h1>
             <p className="text-slate-500 font-medium mt-3 max-w-xl">
-                Upload organizational policies for a deep-dive AI gap analysis against the complete {activeFrameworkId} framework.
+                Upload organizational policies (PDF, Word, or Text) for a deep-dive AI gap analysis against the {activeFrameworkId} framework.
             </p>
          </div>
          <div className="flex items-center gap-3">
@@ -108,27 +132,48 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                           <h3 className="font-black text-slate-900 uppercase tracking-tight text-sm">Policy Workspace</h3>
                       </div>
                       <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 cursor-pointer transition-all shadow-sm">
-                          <Upload size={14}/> Upload Document
-                          <input type="file" className="hidden" accept=".txt,.md" onChange={handleFileUpload} />
+                          <Upload size={14}/> Attach Document
+                          <input type="file" className="hidden" accept=".txt,.md,.pdf,.doc,.docx" onChange={handleFileUpload} />
                       </label>
                   </div>
-                  <textarea 
-                    className="flex-1 p-10 outline-none resize-none text-slate-700 font-medium leading-relaxed bg-transparent scrollbar-hide text-lg"
-                    placeholder="Paste your organization's policy here for automated review..."
-                    value={policyText}
-                    onChange={e => onUpdate({ policyText: e.target.value })}
-                  />
+                  
+                  <div className="flex-1 flex flex-col overflow-hidden relative">
+                      {policyFileBase64 ? (
+                          <div className="flex-1 flex flex-col items-center justify-center p-10 bg-blue-50/30">
+                              <div className="bg-white p-10 rounded-[2.5rem] border border-blue-100 shadow-xl flex flex-col items-center gap-4 text-center max-w-sm animate-in zoom-in duration-300">
+                                  <div className="p-4 bg-blue-600 text-white rounded-2xl shadow-lg">
+                                      <FileText size={32} />
+                                  </div>
+                                  <div>
+                                      <h4 className="font-black text-slate-900 uppercase tracking-tight truncate max-w-[200px]">{policyFileName}</h4>
+                                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Binary Object Attached</p>
+                                  </div>
+                                  <button onClick={removeFile} className="mt-2 text-red-500 hover:text-red-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                                      <X size={14}/> Remove Attachment
+                                  </button>
+                              </div>
+                          </div>
+                      ) : (
+                          <textarea 
+                            className="flex-1 p-10 outline-none resize-none text-slate-700 font-medium leading-relaxed bg-transparent scrollbar-hide text-lg"
+                            placeholder="Paste your organization's policy text here, or attach a PDF/Word document using the button above..."
+                            value={policyText}
+                            onChange={e => onUpdate({ policyText: e.target.value })}
+                          />
+                      )}
+                  </div>
+
                   <div className="p-8 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
                       <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                          Word Count: {policyText.split(/\s+/).filter(Boolean).length}
+                          {policyFileBase64 ? 'Document Modal' : `Word Count: ${policyText.split(/\s+/).filter(Boolean).length}`}
                       </div>
                       <button 
                         onClick={handleAudit}
-                        disabled={isAuditing || !policyText.trim()}
+                        disabled={isAuditing || (!policyText.trim() && !policyFileBase64)}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-200 transition-all flex items-center gap-3 disabled:opacity-30"
                       >
                         {isAuditing ? <Loader2 className="animate-spin" size={18}/> : <Zap size={18} className="text-blue-200"/>}
-                        {isAuditing ? 'Auditing Artifact...' : 'Start Audit Analysis'}
+                        {isAuditing ? 'Auditing Document...' : 'Start Audit Analysis'}
                       </button>
                   </div>
               </div>
@@ -141,7 +186,7 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                     <div className="flex-1 flex flex-col items-center justify-center p-20 text-center text-slate-300">
                         <div className="w-24 h-24 bg-slate-50 rounded-[2rem] flex items-center justify-center mb-8 shadow-inner"><Search size={48} className="opacity-10" /></div>
                         <h3 className="text-xl font-black uppercase tracking-widest text-slate-400">Awaiting Input</h3>
-                        <p className="max-w-xs mt-3 text-sm font-medium leading-relaxed">Provide policy text in the workspace to begin the automated compliance review.</p>
+                        <p className="max-w-xs mt-3 text-sm font-medium leading-relaxed">Provide policy text or attach a document to begin the automated compliance review.</p>
                     </div>
                   ) : isAuditing ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-20 text-center">
@@ -151,12 +196,12 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                                 <Sparkles size={48} className="text-white animate-pulse" />
                             </div>
                         </div>
-                        <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mt-12 mb-4">AI Analyzing Artifact...</h3>
+                        <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mt-12 mb-4">AI Analyzing Document...</h3>
                         <div className="space-y-3 w-full max-w-xs">
                              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                  <div className="h-full bg-blue-600 animate-loading-bar" />
                              </div>
-                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Mapping to Framework Requirements</p>
+                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Mapping content to Framework</p>
                         </div>
                     </div>
                   ) : (
@@ -166,7 +211,7 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                                 <div className="p-3 bg-blue-600 rounded-2xl shadow-lg"><CheckCircle2 size={24}/></div>
                                 <div>
                                     <h3 className="text-xl font-black uppercase tracking-tight">Audit Findings</h3>
-                                    <p className="text-blue-300 text-[9px] font-black uppercase tracking-widest">Full Framework Analysis Complete</p>
+                                    <p className="text-blue-300 text-[9px] font-black uppercase tracking-widest">Multimodal Analysis Complete</p>
                                 </div>
                             </div>
                             <button onClick={() => onUpdate({ policyAnalysisResult: undefined })} className="p-2 hover:bg-white/10 rounded-full transition-colors"><RefreshCw size={18} /></button>

@@ -147,6 +147,9 @@ export interface ClientData {
   networkDiagramArtifactId?: string;
   policyAnalysisResult?: string;
   policyText?: string;
+  policyFileBase64?: string;
+  policyFileMimeType?: string;
+  policyFileName?: string;
   m365Config: IntegrationConfig;
   intuneConfig: IntegrationConfig;
   adConfig: IntegrationConfig;

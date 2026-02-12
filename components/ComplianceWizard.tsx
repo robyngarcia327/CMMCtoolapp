@@ -7,12 +7,13 @@ import {
   ListChecks, Target, Lock, Zap, Box, Cloud, Users, 
   FileSearch, ClipboardList, MessageSquare, Download, Upload, 
   FileSpreadsheet, Loader2, ShieldCheck, Sparkles, RefreshCw, BookOpen,
-  Search
+  Search,
+  X,
+  FileText
 } from 'lucide-react';
 import { ArtifactUploader } from './ArtifactUploader';
 import { Inventory } from './Inventory';
 import { NetworkAnalyzer } from './NetworkAnalyzer';
-import { NIST_CMMC_FAMILIES } from '../data/standards';
 import { auditPolicyAgainstFramework } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
 
@@ -112,18 +113,23 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   };
 
   const handleAudit = async () => {
-    if (!activeClientData.policyText?.trim()) return;
+    if (!activeClientData.policyText?.trim() && !activeClientData.policyFileBase64) return;
     setIsAuditing(true);
     
     // Clear previous analysis
     onUpdateClientData({ policyAnalysisResult: undefined });
     
     try {
-      // Audit against framework requirements
+      const fileData = activeClientData.policyFileBase64 ? { 
+          base64: activeClientData.policyFileBase64, 
+          mimeType: activeClientData.policyFileMimeType || 'application/pdf' 
+      } : undefined;
+
       const result = await auditPolicyAgainstFramework(
         "Standard Onboarding Review",
-        activeClientData.policyText,
-        activeReqs
+        activeClientData.policyText || '',
+        activeReqs,
+        fileData
       );
       onUpdateClientData({ policyAnalysisResult: result });
     } catch (e) {
@@ -137,11 +143,28 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-          onUpdateClientData({ policyText: ev.target?.result as string });
-      };
-      reader.readAsText(file);
+      const isBinary = file.type === 'application/pdf' || file.name.endsWith('.docx') || file.name.endsWith('.doc');
+
+      if (isBinary) {
+          reader.onload = (ev) => {
+              onUpdateClientData({ 
+                  policyFileBase64: ev.target?.result as string,
+                  policyFileMimeType: file.type || 'application/pdf',
+                  policyFileName: file.name
+              });
+          };
+          reader.readAsDataURL(file);
+      } else {
+          reader.onload = (ev) => {
+              onUpdateClientData({ policyText: ev.target?.result as string });
+          };
+          reader.readAsText(file);
+      }
     }
+  };
+
+  const removePolicyFile = () => {
+      onUpdateClientData({ policyFileBase64: undefined, policyFileMimeType: undefined, policyFileName: undefined });
   };
 
   const handleDownloadTemplate = () => {
@@ -409,7 +432,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
             <div className="p-10 h-full overflow-y-auto flex flex-col space-y-8 animate-in fade-in duration-500">
                 <div className="max-w-2xl">
                     <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Policy Intake & Audit</h3>
-                    <p className="text-slate-500 text-sm font-medium">Upload your existing security policies for an immediate AI gap analysis against standard domains.</p>
+                    <p className="text-slate-500 text-sm font-medium">Upload existing policies (PDF/Word/Text) for an immediate AI gap analysis.</p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1">
@@ -423,20 +446,39 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                                 Full Framework Audit
                              </div>
                         </div>
-                        <textarea 
-                           className="flex-1 min-h-[250px] w-full border border-slate-100 bg-slate-50/50 rounded-2xl p-6 focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all font-medium text-slate-700 resize-none"
-                           placeholder="Paste policy text here or use upload..."
-                           value={activeClientData.policyText || ''}
-                           onChange={e => onUpdateClientData({ policyText: e.target.value })}
-                        />
+                        
+                        <div className="flex-1 relative flex flex-col">
+                            {activeClientData.policyFileBase64 ? (
+                                <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 rounded-2xl border border-slate-100 p-6">
+                                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center gap-3 text-center">
+                                         <FileText size={40} className="text-blue-600" />
+                                         <div>
+                                            <div className="text-sm font-black text-slate-900 uppercase truncate max-w-[150px]">{activeClientData.policyFileName}</div>
+                                            <div className="text-[9px] font-bold text-slate-400 uppercase mt-1">Binary Attached</div>
+                                         </div>
+                                         <button onClick={removePolicyFile} className="text-red-500 hover:text-red-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 mt-2">
+                                             <X size={12}/> Remove
+                                         </button>
+                                     </div>
+                                </div>
+                            ) : (
+                                <textarea 
+                                   className="flex-1 min-h-[250px] w-full border border-slate-100 bg-slate-50/50 rounded-2xl p-6 focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all font-medium text-slate-700 resize-none"
+                                   placeholder="Paste policy text here or attach a document..."
+                                   value={activeClientData.policyText || ''}
+                                   onChange={e => onUpdateClientData({ policyText: e.target.value })}
+                                />
+                            )}
+                        </div>
+
                         <div className="flex justify-between items-center pt-4 border-t border-slate-50">
                             <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 cursor-pointer transition-all shadow-sm">
-                                <Upload size={14}/> Upload .txt/.md
-                                <input type="file" className="hidden" accept=".txt,.md" onChange={handlePolicyFileUpload} />
+                                <Upload size={14}/> Attach Document
+                                <input type="file" className="hidden" accept=".txt,.md,.pdf,.doc,.docx" onChange={handlePolicyFileUpload} />
                             </label>
                             <button 
                                 onClick={handleAudit}
-                                disabled={isAuditing || !activeClientData.policyText?.trim()}
+                                disabled={isAuditing || (!activeClientData.policyText?.trim() && !activeClientData.policyFileBase64)}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-200 transition-all flex items-center gap-3 disabled:opacity-30"
                             >
                                 {isAuditing ? <Loader2 className="animate-spin" size={14}/> : <Sparkles size={14}/>}
@@ -455,7 +497,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                             <div className="flex-1 flex flex-col items-center justify-center text-center">
                                 <RefreshCw className="animate-spin text-blue-400 mb-4" size={48} />
                                 <h3 className="text-white font-black uppercase tracking-widest text-sm">Reviewing Alignment...</h3>
-                                <p className="text-blue-300/50 text-[10px] mt-2 max-w-xs">Mapping content to {activeFrameworkId} requirements.</p>
+                                <p className="text-blue-300/50 text-[10px] mt-2 max-w-xs">AI analyzing {activeClientData.policyFileBase64 ? 'multimodal document' : 'text source'} against {activeFrameworkId} requirements.</p>
                             </div>
                         ) : (
                             <div className="flex-1 overflow-y-auto custom-scrollbar prose prose-invert prose-sm max-w-none prose-p:text-blue-100/80 prose-headings:text-white prose-headings:font-black prose-headings:uppercase prose-li:text-blue-100/70">

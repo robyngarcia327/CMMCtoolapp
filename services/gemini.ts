@@ -165,20 +165,18 @@ export const analyzePolicyGap = async (
 export const auditPolicyAgainstFramework = async (
   domainName: string,
   policyText: string,
-  relevantRequirements: Requirement[]
+  relevantRequirements: Requirement[],
+  fileData?: { base64: string; mimeType: string }
 ): Promise<string> => {
-  const prompt = `
+  const textPrompt = `
     Act as a Lead CMMC Assessor. Perform a detailed GAP ANALYSIS on the provided policy document.
     
     TARGET DOMAIN: ${domainName}
     
     EXPECTED CONTROLS TO AUDIT AGAINST:
-    ${relevantRequirements.map(r => `- ${r.id}: ${r.title} (${r.description})`).join('\n')}
+    ${relevantRequirements.slice(0, 110).map(r => `- ${r.id}: ${r.title} (${r.description})`).join('\n')}
     
-    POLICY TEXT TO REVIEW:
-    """
-    ${policyText}
-    """
+    ${policyText ? `POLICY TEXT TO REVIEW:\n"""\n${policyText}\n"""` : 'Please review the attached document for compliance analysis.'}
     
     OUTPUT FORMAT (Markdown):
     1. **Policy Maturity Score**: (0-100)
@@ -191,18 +189,32 @@ export const auditPolicyAgainstFramework = async (
     5. **Assessor Recommendations**: Professional advice for remediation.
   `;
 
+  const contents: any[] = [{ text: textPrompt }];
+
+  if (fileData) {
+    // Correct format for Gemini inlineData
+    const base64Data = fileData.base64.split(',')[1] || fileData.base64;
+    contents.push({
+      inlineData: {
+        data: base64Data,
+        mimeType: fileData.mimeType
+      }
+    });
+  }
+
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: prompt,
+      contents: { parts: contents },
       config: { 
         systemInstruction: "You are a specialized CMMC/NIST 800-171 Policy Auditor. You provide high-fidelity, actionable feedback to help organizations reach Level 2 certification." 
       }
     });
     return response.text || "Policy audit failed to generate.";
-  } catch (e) {
-    return "Critical error during AI Policy Audit. Please check document size and API connectivity.";
+  } catch (e: any) {
+    console.error("Policy Audit Error:", e);
+    return "Critical error during AI Policy Audit. " + (e.message || "Please check document size and API connectivity.");
   }
 };
 
