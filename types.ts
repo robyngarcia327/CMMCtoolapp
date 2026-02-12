@@ -183,7 +183,7 @@ export enum AppView {
 }
 
 export interface WizardProgress {
-  currentStep: 'INTRO' | 'LEVEL_SELECT' | 'SCOPING' | 'INVENTORY' | 'NETWORK' | 'ASSESSMENT' | 'VALIDATION';
+  currentStep: 'INTRO' | 'LEVEL_SELECT' | 'SCOPING' | 'INVENTORY' | 'NETWORK' | 'POLICIES' | 'ASSESSMENT' | 'VALIDATION';
   currentQuestionIndex: number;
 }
 

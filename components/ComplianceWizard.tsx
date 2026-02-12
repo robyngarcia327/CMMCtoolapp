@@ -5,11 +5,16 @@ import {
   PlayCircle, FileCheck, Check, Info, Monitor, Network, 
   ListChecks, Target, Lock, Zap, Box, Cloud, Users, 
   FileSearch, ClipboardList, MessageSquare, Download, Upload, 
-  FileSpreadsheet, Loader2, ShieldCheck 
+  FileSpreadsheet, Loader2, ShieldCheck, Sparkles, RefreshCw, BookOpen,
+  // Added missing Search icon import
+  Search
 } from 'lucide-react';
 import { ArtifactUploader } from './ArtifactUploader';
 import { Inventory } from './Inventory';
 import { NetworkAnalyzer } from './NetworkAnalyzer';
+import { NIST_CMMC_FAMILIES } from '../data/standards';
+import { auditPolicyAgainstFramework } from '../services/gemini';
+import ReactMarkdown from 'react-markdown';
 
 interface ComplianceWizardProps {
   requirements: Requirement[];
@@ -38,6 +43,7 @@ const STEPS = [
     { id: 'SCOPING', label: 'Environment Scoping' },
     { id: 'INVENTORY', label: 'Asset Inventory' },
     { id: 'NETWORK', label: 'Network Scope' },
+    { id: 'POLICIES', label: 'Policy Intake' },
     { id: 'ASSESSMENT', label: 'Discovery & Narrative' },
     { id: 'VALIDATION', label: 'Review' }
 ] as const;
@@ -65,6 +71,12 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
   
   const [scopingAnswers, setScopingAnswers] = useState<Record<string, boolean>>({});
   const [isImporting, setIsImporting] = useState(false);
+
+  // Policy Step State
+  const [selectedFamilyId, setSelectedFamilyId] = useState<string>('AC');
+  const [policyText, setPolicyText] = useState('');
+  const [auditResult, setAuditResult] = useState<string | null>(null);
+  const [isAuditing, setIsAuditing] = useState(false);
 
   const activeReqs = requirements.filter(r => 
     r.framework === activeFrameworkId && r.cmmcLevel <= targetLevel
@@ -95,10 +107,39 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
         if (wizardProgress.currentQuestionIndex > 0) {
             onUpdateProgress({ ...wizardProgress, currentQuestionIndex: wizardProgress.currentQuestionIndex - 1 });
         } else {
-            goToStep('NETWORK');
+            goToStep('POLICIES');
         }
     } else if (currentIndex > 0) {
         goToStep(STEPS[currentIndex - 1].id as WizardProgress['currentStep']);
+    }
+  };
+
+  const handleAudit = async () => {
+    if (!policyText.trim()) return;
+    setIsAuditing(true);
+    setAuditResult(null);
+    try {
+      const selectedFamily = NIST_CMMC_FAMILIES.find(f => f.id === selectedFamilyId);
+      const familyRequirements = requirements.filter(r => r.family === selectedFamilyId);
+      const result = await auditPolicyAgainstFramework(
+        selectedFamily?.name || selectedFamilyId,
+        policyText,
+        familyRequirements
+      );
+      setAuditResult(result);
+    } catch (e) {
+      alert("AI Audit engine encountered an error.");
+    } finally {
+      setIsAuditing(false);
+    }
+  };
+
+  const handlePolicyFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setPolicyText(ev.target?.result as string);
+      reader.readAsText(file);
     }
   };
 
@@ -360,6 +401,72 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                   onUpdateDiagramId={(id) => onUpdateClientData({ networkDiagramArtifactId: id })}
                   onAddArtifact={onAddArtifact}
                 />
+            </div>
+        )}
+
+        {wizardProgress.currentStep === 'POLICIES' && (
+            <div className="p-10 h-full overflow-y-auto flex flex-col space-y-8 animate-in fade-in duration-500">
+                <div className="max-w-2xl">
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Policy Intake & Audit</h3>
+                    <p className="text-slate-500 text-sm font-medium">Upload your existing security policies for an immediate AI gap analysis against standard domains.</p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1">
+                    <div className="bg-white border-2 border-slate-100 rounded-[2rem] p-8 flex flex-col space-y-4">
+                        <div className="flex justify-between items-center mb-2">
+                             <div className="flex items-center gap-2">
+                                <BookOpen size={18} className="text-blue-600" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Policy Document</span>
+                             </div>
+                             <select 
+                                className="bg-slate-100 border-none text-[10px] font-black uppercase rounded-lg px-3 py-1 outline-none"
+                                value={selectedFamilyId}
+                                onChange={e => setSelectedFamilyId(e.target.value)}
+                             >
+                                 {NIST_CMMC_FAMILIES.map(f => <option key={f.id} value={f.id}>{f.id}: {f.name}</option>)}
+                             </select>
+                        </div>
+                        <textarea 
+                           className="flex-1 min-h-[250px] w-full border border-slate-100 bg-slate-50/50 rounded-2xl p-6 focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all font-medium text-slate-700 resize-none"
+                           placeholder="Paste policy text here or use upload..."
+                           value={policyText}
+                           onChange={e => setPolicyText(e.target.value)}
+                        />
+                        <div className="flex justify-between items-center pt-4 border-t border-slate-50">
+                            <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 cursor-pointer transition-all shadow-sm">
+                                <Upload size={14}/> Upload .txt/.md
+                                <input type="file" className="hidden" accept=".txt,.md" onChange={handlePolicyFileUpload} />
+                            </label>
+                            <button 
+                                onClick={handleAudit}
+                                disabled={isAuditing || !policyText.trim()}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-200 transition-all flex items-center gap-3 disabled:opacity-30"
+                            >
+                                {isAuditing ? <Loader2 className="animate-spin" size={14}/> : <Sparkles size={14}/>}
+                                {isAuditing ? 'Auditing...' : 'AI Audit'}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-900 rounded-[2rem] p-8 flex flex-col overflow-hidden relative min-h-[300px]">
+                        {!auditResult && !isAuditing ? (
+                            <div className="flex-1 flex flex-col items-center justify-center text-slate-600 text-center">
+                                <div className="p-4 bg-white/5 rounded-2xl mb-4"><Search size={32}/></div>
+                                <p className="text-[10px] font-black uppercase tracking-widest">Awaiting Analysis</p>
+                            </div>
+                        ) : isAuditing ? (
+                            <div className="flex-1 flex flex-col items-center justify-center text-center">
+                                <RefreshCw className="animate-spin text-blue-400 mb-4" size={48} />
+                                <h3 className="text-white font-black uppercase tracking-widest text-sm">Reviewing Alignment...</h3>
+                                <p className="text-blue-300/50 text-[10px] mt-2 max-w-xs">Mapping content to NIST 800-171 {selectedFamilyId} family controls.</p>
+                            </div>
+                        ) : (
+                            <div className="flex-1 overflow-y-auto custom-scrollbar prose prose-invert prose-sm max-w-none prose-p:text-blue-100/80 prose-headings:text-white prose-headings:font-black prose-headings:uppercase prose-li:text-blue-100/70">
+                                <ReactMarkdown>{auditResult || ''}</ReactMarkdown>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         )}
 
