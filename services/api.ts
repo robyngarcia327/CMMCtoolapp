@@ -17,7 +17,7 @@ const parseResponseData = async (response: Response) => {
         return text;
     }
     
-    // If the backend is using Lambda Proxy Integration, the actual data is in the 'body'
+    // Handle standard AWS Lambda Proxy Integration response format
     if (data && data.body !== undefined) {
         if (typeof data.body === 'string') {
             try {
@@ -33,26 +33,12 @@ const parseResponseData = async (response: Response) => {
     return data;
 };
 
-const ensureArray = (data: any): any[] => {
-    if (!data) return [];
-    if (Array.isArray(data)) return data;
-    if (data && typeof data === 'object') {
-        if (Array.isArray(data.items)) return data.items;
-        if (Array.isArray(data.organizations)) return data.organizations;
-        if (Array.isArray(data.orgs)) return data.orgs;
-        if (Array.isArray(data.data)) return data.data;
-        if (Array.isArray(data.evidence)) return data.evidence;
-    }
-    return [];
-};
-
 export const api = {
   
   /**
    * GET /orgs - Primary bootstrap method.
-   * Backend must return ONLY orgs the current user belongs to.
-   * If GET /orgs returns 200 and list is empty [] -> trigger Discovery UI.
-   * If non-200 -> throw error to show Connection Failure UI.
+   * Matches 'list_orgs' Lambda: returns { "orgs": [...] }
+   * Items use: orgId, orgName, role, memberStatus, createdAt
    */
   getOrgs: async (token: string): Promise<{ orgId: string, name: string, role: string, industry?: string, domain?: string }[]> => {
     const response = await fetch(`${API_BASE_URL}/orgs`, {
@@ -64,13 +50,25 @@ export const api = {
     });
     
     if (!response.ok) {
-        throw new Error(`Connection rejected by vault (${response.status}). Verify permissions and network status.`);
+        throw new Error(`Connection rejected by vault (${response.status}). Verify permissions.`);
     }
     
-    const rawData = await parseResponseData(response);
-    return ensureArray(rawData);
+    const data = await parseResponseData(response);
+    const rawOrgs = Array.isArray(data) ? data : (data.orgs || []);
+    
+    return rawOrgs.map((o: any) => ({
+        orgId: o.orgId,
+        name: o.orgName || o.name || 'Unnamed Organization', // Map orgName from Lambda
+        role: o.role,
+        createdAt: o.createdAt,
+        memberStatus: o.memberStatus
+    }));
   },
 
+  /**
+   * POST /orgs - Create new organization.
+   * Matches 'create_org' Lambda: returns { orgId, name, storagePrefix, createdAt }
+   */
   createOrg: async (token: string, name: string, domain?: string): Promise<{ orgId: string, name: string }> => {
     const response = await fetch(`${API_BASE_URL}/orgs`, {
       method: 'POST',
@@ -82,7 +80,11 @@ export const api = {
       body: JSON.stringify({ name, domain, initialRole: 'Tenant_Admin' })
     });
     if (!response.ok) throw new Error('Failed to create organization');
-    return await parseResponseData(response);
+    const data = await parseResponseData(response);
+    return {
+        orgId: data.orgId,
+        name: data.name
+    };
   },
 
   getSuggestedOrgs: async (token: string, domain: string): Promise<any[]> => {
@@ -94,8 +96,8 @@ export const api = {
             }
         });
         if (!response.ok) return [];
-        const rawData = await parseResponseData(response);
-        return ensureArray(rawData);
+        const data = await parseResponseData(response);
+        return Array.isArray(data) ? data : (data.items || data.orgs || []);
       } catch (e) {
         return [];
       }
@@ -113,49 +115,16 @@ export const api = {
       if (!response.ok) throw new Error("Failed to join organization");
   },
 
-  promoteUser: async (token: string, userId: string, group: CognitoGroup): Promise<void> => {
-      const response = await fetch(`${API_BASE_URL}/admin/users/promote`, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-              'Authorization': `Bearer ${token.trim()}`,
-              'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ userId, targetGroup: group })
-      });
-      if (!response.ok) throw new Error("Backend Admin Service failed to promote user");
-  },
-
-  deleteUser: async (token: string, userId: string): Promise<void> => {
-      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
-          method: 'DELETE',
-          mode: 'cors',
-          headers: { 
-              'Authorization': `Bearer ${token.trim()}`
-          }
-      });
-      if (!response.ok) throw new Error("Backend Admin Service failed to delete identity");
-  },
-
-  deleteTenant: async (token: string, orgId: string): Promise<void> => {
-      const response = await fetch(`${API_BASE_URL}/admin/orgs/${orgId}`, {
-          method: 'DELETE',
-          mode: 'cors',
-          headers: { 
-              'Authorization': `Bearer ${token.trim()}`
-          }
-      });
-      if (!response.ok) throw new Error("Backend Admin Service failed to purge tenant");
-  },
-
+  /**
+   * 3-Step Upload Flow
+   * Matches 'upload_request' and 'upload_complete' Lambdas.
+   */
   uploadEvidence: async (token: string, orgId: string, file: File, requirementId: string): Promise<Artifact> => {
     const cleanOrgId = (orgId || "").trim();
-    if (!cleanOrgId) throw new Error("Organization Identity is missing.");
-    
     const cleanToken = (token || "").trim();
     const sanitizedReqId = (requirementId || "GENERAL").trim();
 
-    // 1. Handshake with API Gateway for a presigned PUT URL
+    // 1. Handshake: POST /orgs/{id}/evidence
     const payload = {
         filename: file.name,
         contentType: file.type || 'application/octet-stream',
@@ -175,43 +144,29 @@ export const api = {
 
     if (!initResponse.ok) {
         const errorBody = await parseResponseData(initResponse);
-        const msg = typeof errorBody === 'string' ? errorBody : (errorBody?.message || errorBody?.errorMessage || "Handshake rejected by validator");
-        throw new Error(`Vault Handshake Failed (${initResponse.status}): ${msg}`);
+        const msg = errorBody?.error || errorBody?.message || "Handshake failed";
+        throw new Error(`Vault Handshake Failed: ${msg}`);
     }
     
     const data = await parseResponseData(initResponse);
     const { uploadUrl, evidenceId, requiredHeaders } = data;
 
-    if (!uploadUrl || !evidenceId) {
-        throw new Error("Handshake failed: Missing uploadUrl or evidenceId in response.");
-    }
-
-    // 2. Binary Transfer to S3 via PUT (Raw File Body)
-    const cleanHeaders: Record<string, string> = {};
-    const headersToProcess = requiredHeaders || {};
-    const restricted = new Set(["host", "content-length", "connection", "user-agent", "expect"]);
-    
-    Object.entries(headersToProcess).forEach(([k, v]) => {
-        if (!restricted.has(k.toLowerCase())) cleanHeaders[k] = v as string;
-    });
-    
-    if (!cleanHeaders['Content-Type'] && !cleanHeaders['content-type']) {
-        cleanHeaders['Content-Type'] = file.type || 'application/octet-stream';
-    }
+    // 2. Binary Transfer to S3 via PUT
+    // Use headers required by the presigned URL signature
+    const s3Headers: Record<string, string> = { ...requiredHeaders };
+    if (!s3Headers['Content-Type']) s3Headers['Content-Type'] = file.type || 'application/octet-stream';
 
     const s3Response = await fetch(uploadUrl, {
         method: 'PUT',
-        headers: cleanHeaders,
+        headers: s3Headers,
         body: file 
     });
 
     if (!s3Response.ok) {
-        const errorText = await s3Response.text().catch(() => "Unknown transfer error");
-        console.error("S3 PUT Failure:", s3Response.status, errorText);
-        throw new Error(`S3 Vault Transfer Failed: ${s3Response.status}. Verify CORS and Content-Type alignment.`);
+        throw new Error(`S3 Transfer Failed: ${s3Response.status}`);
     }
 
-    // 3. Metadata Confirmation
+    // 3. Confirmation: POST /orgs/{id}/evidence/{evidenceId}/upload-complete
     try {
         await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence/${evidenceId}/upload-complete`, {
           method: 'POST',
@@ -222,7 +177,7 @@ export const api = {
           }
         });
     } catch (e) {
-        console.warn("Evidence transferred to S3 but completion indexing response timed out.");
+        console.warn("Completion signal timed out, but file was transferred.");
     }
 
     return {
@@ -236,9 +191,12 @@ export const api = {
     };
   },
 
+  /**
+   * POST /orgs/{id}/evidence/{evId}/download-request
+   * Matches 'download_request' Lambda.
+   */
   getDownloadUrl: async (token: string, orgId: string, evidenceId: string): Promise<string> => {
-    const cleanOrgId = (orgId || "").trim();
-    const response = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence/${evidenceId}/download-request`, {
+    const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/download-request`, {
       method: 'POST',
       mode: 'cors',
       headers: {
@@ -251,27 +209,30 @@ export const api = {
     return data.downloadUrl; 
   },
 
+  /**
+   * GET /orgs/{id}/evidence
+   * Matches 'list_evidence' Lambda: returns { "evidence": [...] }
+   * Items use: evidenceId, filename, contentType, sizeBytes, status, etc.
+   */
   getEvidenceList: async (token: string, orgId: string): Promise<Artifact[]> => {
-    const cleanOrgId = (orgId || "").trim();
-    if (!cleanOrgId) return [];
-    
     try {
-        const response = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence`, {
+        const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence`, {
           mode: 'cors',
           headers: {
             'Authorization': `Bearer ${token.trim()}`
           }
         });
         if (!response.ok) return [];
-        const rawData = await parseResponseData(response);
-        const items = ensureArray(rawData);
+        const data = await parseResponseData(response);
+        const items = data.evidence || [];
+        
         return items.map((item: any) => ({
-          id: item.evidenceId || item.id,
+          id: item.evidenceId,
           requirementId: item.requirementId,
-          name: item.filename || item.name,
+          name: item.filename, // Lambda maps filenameOriginal to 'filename'
           type: (item.contentType || '').startsWith('image/') ? 'image' : 'document',
           url: '', 
-          timestamp: item.createdAt ? new Date(item.createdAt).getTime() : Date.now(),
+          timestamp: item.uploadedAt ? new Date(item.uploadedAt).getTime() : Date.now(),
           source: 'USER_UPLOAD'
         }));
     } catch (e) {

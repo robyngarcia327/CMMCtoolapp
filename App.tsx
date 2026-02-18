@@ -272,21 +272,20 @@ const App: React.FC = () => {
     setIsDataLoading(true);
     setApiError(null);
     try {
-      // getOrgs returns 200 [] if user has no memberships.
       const apiOrgs = await api.getOrgs(idToken);
       
       const mappedClients: Client[] = apiOrgs.map((o: any) => ({
-        id: o.orgId || o.id, 
+        id: o.orgId, 
         name: o.name || 'Organization', 
-        domain: o.domain || 'domain.com', 
-        industry: o.industry || 'Defense Industrial Base', 
+        domain: (auth.user?.profile.email || '').split('@')[1], 
+        industry: 'Defense Industrial Base', 
         contactName: auth.user?.profile.email || 'Admin', 
         logoInitial: (o.name || 'O').charAt(0).toUpperCase(), 
         primaryFramework: 'NIST-CMMC', 
         targetCmmcLevel: 2, 
         nextAuditDate: Date.now() + 31536000000, 
         accountManager: 'Self-Managed', 
-        isParent: !!o.isParent
+        isParent: false
       }));
       
       setClients(mappedClients);
@@ -308,7 +307,7 @@ const App: React.FC = () => {
       }
     } catch (error: any) { 
       console.error("Discovery error:", error); 
-      setApiError(error.message || "A network error occurred while connecting to the vault.");
+      setApiError(error.message || "Vault connection rejected.");
     } finally { 
       setIsDataLoading(false); 
       setHasCheckedOrgs(true); 
@@ -327,7 +326,6 @@ const App: React.FC = () => {
   if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-500" size={48} /></div>;
   if (!auth.isAuthenticated) return <Login />;
 
-  // Error State: If non-200 occurs during bootstrap
   if (apiError) {
       return (
           <div className="flex h-screen flex-col items-center justify-center bg-slate-950 p-8 text-center">
@@ -348,7 +346,6 @@ const App: React.FC = () => {
 
   if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
 
-  // Onboarding Trigger: If bootstrap returned 200 [] (No Orgs)
   if (hasCheckedOrgs && (clients.length === 0 || !activeClientId)) {
     return <Onboarding user={{ id: auth.user?.profile.sub || '', name: userDisplayName, email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }} onCreateOrganization={async (name, domain, financials) => { if (!auth.user?.id_token) return; setIsDataLoading(true); try { const newOrg = await api.createOrg(auth.user.id_token, name, domain); setClientDataStore(prev => ({ ...prev, [newOrg.orgId]: { ...createInitialClientData(false), financials } })); fetchAttempted.current = false; await loadOrganizations(); } finally { setIsDataLoading(false); } }} onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }} debugTokens={{ idToken: auth.user?.id_token }} />;
   }
