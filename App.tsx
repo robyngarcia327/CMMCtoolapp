@@ -272,7 +272,7 @@ const App: React.FC = () => {
     setIsDataLoading(true);
     setApiError(null);
     try {
-      // getOrgs is the bootstrap. It returns 200 [] if user has no memberships.
+      // getOrgs returns 200 [] if user has no memberships.
       const apiOrgs = await api.getOrgs(idToken);
       
       const mappedClients: Client[] = apiOrgs.map((o: any) => ({

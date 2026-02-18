@@ -17,6 +17,7 @@ const parseResponseData = async (response: Response) => {
         return text;
     }
     
+    // If the backend is using Lambda Proxy Integration, the actual data is in the 'body'
     if (data && data.body !== undefined) {
         if (typeof data.body === 'string') {
             try {
@@ -48,9 +49,10 @@ const ensureArray = (data: any): any[] => {
 export const api = {
   
   /**
-   * GET /orgs - Bootstraps the application.
-   * Returns only organizations where the current user (from token sub) is a member.
-   * If the list is empty [], the user is not yet associated with a tenant.
+   * GET /orgs - Primary bootstrap method.
+   * Backend must return ONLY orgs the current user belongs to.
+   * If GET /orgs returns 200 and list is empty [] -> trigger Discovery UI.
+   * If non-200 -> throw error to show Connection Failure UI.
    */
   getOrgs: async (token: string): Promise<{ orgId: string, name: string, role: string, industry?: string, domain?: string }[]> => {
     const response = await fetch(`${API_BASE_URL}/orgs`, {
@@ -62,8 +64,7 @@ export const api = {
     });
     
     if (!response.ok) {
-        // Explicitly throw so the UI can distinguish between "No Orgs" (200 []) and "Network Error"
-        throw new Error(`Bootstrap failed: Server returned ${response.status}`);
+        throw new Error(`Connection rejected by vault (${response.status}). Verify permissions and network status.`);
     }
     
     const rawData = await parseResponseData(response);
