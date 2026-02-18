@@ -47,6 +47,30 @@ const ensureArray = (data: any): any[] => {
 };
 
 export const api = {
+
+  /**
+   * GET /me - Standardized login flow to retrieve user memberships and profile.
+   * Expects backend to return { orgs: [], defaultOrgId: string }
+   */
+  getMe: async (token: string): Promise<{ orgs: any[], defaultOrgId?: string }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/me`, {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+          'Authorization': `Bearer ${token.trim()}`
+        }
+      });
+      if (!response.ok) {
+          if (response.status === 404) return { orgs: [] }; // Potential bootstrap case
+          throw new Error(`User profile fetch failed: ${response.status}`);
+      }
+      return await parseResponseData(response);
+    } catch (error) {
+      console.error("Profile API failure:", error);
+      throw error;
+    }
+  },
   
   getOrgs: async (token: string): Promise<{ orgId: string, name: string, role: string, industry?: string, domain?: string }[]> => {
     try {
@@ -151,7 +175,6 @@ export const api = {
     const sanitizedReqId = (requirementId || "GENERAL").trim();
 
     // 1. Handshake with API Gateway for a presigned PUT URL
-    // Updated payload to match exactly what the backend upload_request Lambda expects
     const payload = {
         filename: file.name,
         contentType: file.type || 'application/octet-stream',
@@ -159,14 +182,11 @@ export const api = {
         requirementId: sanitizedReqId
     };
 
-    console.log("--- VAULT UPLOAD HANDSHAKE ---");
-    console.table(payload);
-
     const initResponse = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence`, {
       method: 'POST',
       mode: 'cors',
       headers: {
-        'Authorization': `Bearer ${cleanToken}`, // Capital A
+        'Authorization': `Bearer ${cleanToken}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
@@ -174,10 +194,6 @@ export const api = {
 
     if (!initResponse.ok) {
         const errorBody = await parseResponseData(initResponse);
-        console.error("--- VAULT HANDSHAKE REJECTION ---", {
-            status: initResponse.status,
-            data: errorBody
-        });
         const msg = typeof errorBody === 'string' ? errorBody : (errorBody?.message || errorBody?.errorMessage || "Handshake rejected by validator");
         throw new Error(`Vault Handshake Failed (${initResponse.status}): ${msg}`);
     }
@@ -189,26 +205,23 @@ export const api = {
         throw new Error("Handshake failed: Missing uploadUrl or evidenceId in response.");
     }
 
-    // 2. Binary Transfer to S3 via PUT
+    // 2. Binary Transfer to S3 via PUT (Raw File Body)
     const cleanHeaders: Record<string, string> = {};
     const headersToProcess = requiredHeaders || {};
-    
-    // Filter restricted browser headers
     const restricted = new Set(["host", "content-length", "connection", "user-agent", "expect"]);
+    
     Object.entries(headersToProcess).forEach(([k, v]) => {
         if (!restricted.has(k.toLowerCase())) cleanHeaders[k] = v as string;
     });
     
-    // Ensure Content-Type matches the signed request
     if (!cleanHeaders['Content-Type'] && !cleanHeaders['content-type']) {
         cleanHeaders['Content-Type'] = file.type || 'application/octet-stream';
     }
 
-    console.log("--- S3 BINARY TRANSFER (PUT) ---");
     const s3Response = await fetch(uploadUrl, {
         method: 'PUT',
         headers: cleanHeaders,
-        body: file // Raw file body
+        body: file 
     });
 
     if (!s3Response.ok) {

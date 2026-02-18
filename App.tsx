@@ -268,13 +268,33 @@ const App: React.FC = () => {
     if (!auth.isAuthenticated || !idToken) return;
     setIsDataLoading(true);
     try {
-      const apiOrgs = await api.getOrgs(idToken);
+      // Use standardized getMe endpoint to fetch profile and memberships
+      const userProfile = await api.getMe(idToken);
+      const apiOrgs = userProfile.orgs || [];
+      
       const mappedClients: Client[] = apiOrgs.map((o: any) => ({
-        id: o.orgId || o.id, name: o.name || 'Organization', domain: o.domain || 'domain.com', industry: o.industry || 'Defense Industrial Base', contactName: auth.user?.profile.email || 'Admin', logoInitial: (o.name || 'O').charAt(0).toUpperCase(), primaryFramework: 'NIST-CMMC', targetCmmcLevel: 2, nextAuditDate: Date.now() + 31536000000, accountManager: 'Self-Managed', isParent: !!o.isParent
+        id: o.orgId || o.id, 
+        name: o.name || 'Organization', 
+        domain: o.domain || 'domain.com', 
+        industry: o.industry || 'Defense Industrial Base', 
+        contactName: auth.user?.profile.email || 'Admin', 
+        logoInitial: (o.name || 'O').charAt(0).toUpperCase(), 
+        primaryFramework: 'NIST-CMMC', 
+        targetCmmcLevel: 2, 
+        nextAuditDate: Date.now() + 31536000000, 
+        accountManager: 'Self-Managed', 
+        isParent: !!o.isParent
       }));
+      
       setClients(mappedClients);
+      
       if (mappedClients.length > 0) {
-        const selId = mappedClients[0].id;
+        // Respect defaultOrgId from profile if provided
+        const defaultId = userProfile.defaultOrgId;
+        const selId = (defaultId && mappedClients.some(c => c.id === defaultId)) 
+          ? defaultId 
+          : mappedClients[0].id;
+          
         setActiveClientId(selId);
         setClientDataStore(prev => {
           const nextStore = { ...prev };
@@ -284,7 +304,12 @@ const App: React.FC = () => {
           return nextStore;
         });
       }
-    } catch (error) { console.error(error); } finally { setIsDataLoading(false); setHasCheckedOrgs(true); }
+    } catch (error) { 
+      console.error("Discovery error:", error); 
+    } finally { 
+      setIsDataLoading(false); 
+      setHasCheckedOrgs(true); 
+    }
   }, [auth.isAuthenticated, auth.user]);
 
   useEffect(() => {
