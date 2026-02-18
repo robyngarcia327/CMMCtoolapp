@@ -32,7 +32,9 @@ import {
   ShieldAlert,
   BookOpen,
   ArrowRight,
-  FileCheck2
+  FileCheck2,
+  AlertCircle,
+  RefreshCcw
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData, REQUIREMENTS_DATA } from './data/standards';
@@ -120,6 +122,7 @@ const App: React.FC = () => {
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false); 
+  const [apiError, setApiError] = useState<string | null>(null);
   const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [activeFramework, setActiveFramework] = useState<Framework>(FRAMEWORKS[0]);
@@ -267,10 +270,10 @@ const App: React.FC = () => {
     const idToken = auth.user?.id_token;
     if (!auth.isAuthenticated || !idToken) return;
     setIsDataLoading(true);
+    setApiError(null);
     try {
-      // Use standardized getMe endpoint to fetch profile and memberships
-      const userProfile = await api.getMe(idToken);
-      const apiOrgs = userProfile.orgs || [];
+      // getOrgs is the bootstrap. It returns 200 [] if user has no memberships.
+      const apiOrgs = await api.getOrgs(idToken);
       
       const mappedClients: Client[] = apiOrgs.map((o: any) => ({
         id: o.orgId || o.id, 
@@ -289,10 +292,9 @@ const App: React.FC = () => {
       setClients(mappedClients);
       
       if (mappedClients.length > 0) {
-        // Respect defaultOrgId from profile if provided
-        const defaultId = userProfile.defaultOrgId;
-        const selId = (defaultId && mappedClients.some(c => c.id === defaultId)) 
-          ? defaultId 
+        const savedId = localStorage.getItem(KEY_CLIENT);
+        const selId = (savedId && mappedClients.some(c => c.id === savedId)) 
+          ? savedId 
           : mappedClients[0].id;
           
         setActiveClientId(selId);
@@ -304,8 +306,9 @@ const App: React.FC = () => {
           return nextStore;
         });
       }
-    } catch (error) { 
+    } catch (error: any) { 
       console.error("Discovery error:", error); 
+      setApiError(error.message || "A network error occurred while connecting to the vault.");
     } finally { 
       setIsDataLoading(false); 
       setHasCheckedOrgs(true); 
@@ -323,8 +326,29 @@ const App: React.FC = () => {
   
   if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-500" size={48} /></div>;
   if (!auth.isAuthenticated) return <Login />;
+
+  // Error State: If non-200 occurs during bootstrap
+  if (apiError) {
+      return (
+          <div className="flex h-screen flex-col items-center justify-center bg-slate-950 p-8 text-center">
+              <div className="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-[2.5rem] flex items-center justify-center mb-6">
+                  <AlertCircle size={40} className="text-red-500" />
+              </div>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Vault Connection Failure</h2>
+              <p className="text-slate-400 max-w-md mb-8">{apiError}</p>
+              <button 
+                  onClick={() => { fetchAttempted.current = false; loadOrganizations(); }}
+                  className="bg-white text-slate-950 px-8 py-3 rounded-full font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-blue-50 transition-all"
+              >
+                  <RefreshCcw size={16} /> Retry Connection
+              </button>
+          </div>
+      );
+  }
+
   if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
 
+  // Onboarding Trigger: If bootstrap returned 200 [] (No Orgs)
   if (hasCheckedOrgs && (clients.length === 0 || !activeClientId)) {
     return <Onboarding user={{ id: auth.user?.profile.sub || '', name: userDisplayName, email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }} onCreateOrganization={async (name, domain, financials) => { if (!auth.user?.id_token) return; setIsDataLoading(true); try { const newOrg = await api.createOrg(auth.user.id_token, name, domain); setClientDataStore(prev => ({ ...prev, [newOrg.orgId]: { ...createInitialClientData(false), financials } })); fetchAttempted.current = false; await loadOrganizations(); } finally { setIsDataLoading(false); } }} onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }} debugTokens={{ idToken: auth.user?.id_token }} />;
   }
@@ -450,7 +474,7 @@ const App: React.FC = () => {
             {currentView === AppView.FAIR_ANALYZER && <FairRiskAnalyzer risks={activeData.risks} financials={activeData.financials} onUpdateRisk={handleUpdateRisk} />}
             {currentView === AppView.RMF_LIFECYCLE && <RmfLifecycle />}
             {currentView === AppView.COST_TO_COMPLIANCE && <BudgetCalculator requirements={activeData.requirements} budgetItems={activeData.budgetItems} onAddItem={(i) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], budgetItems: [...prev[activeClientId].budgetItems, i] }}))} onRemoveItem={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], budgetItems: prev[activeClientId].budgetItems.filter(i => i.id !== id) }}))} />}
-            {currentView === AppView.ASSETS && <Inventory assets={activeData.assets} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].assets, a] }}))} onDeleteAsset={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
+            {currentView === AppView.ASSETS && <Inventory assets={activeData.assets} onAddAsset={(a) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: [...prev[activeClientId].artifacts, a] }}))} onDeleteAsset={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], assets: prev[activeClientId].assets.filter(a => a.id !== id) }}))} />}
             {currentView === AppView.USERS && <UserManagement users={activeData.users} onAddUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: [...prev[activeClientId].users, u] }}))} onUpdateUser={(u) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.map(usr => usr.id === u.id ? u : usr) }}))} onDeleteUser={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], users: prev[activeClientId].users.filter(u => u.id !== id) }}))} />}
             {currentView === AppView.REPORT_EXECUTIVE && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} defaultTab="EXECUTIVE" />}
             {currentView === AppView.REPORT_SSP && <Reports requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} defaultTab="SSP" />}

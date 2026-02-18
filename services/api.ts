@@ -1,5 +1,4 @@
 import { Artifact, Client, CognitoGroup } from '../types';
-import { authConfig } from '../authConfig';
 
 // Configuration - Your deployed API Gateway endpoint
 const API_BASE_URL = 'https://irwrdtn81b.execute-api.us-east-1.amazonaws.com/CualleeCyberEvidence'; 
@@ -47,47 +46,28 @@ const ensureArray = (data: any): any[] => {
 };
 
 export const api = {
-
-  /**
-   * GET /me - Standardized login flow to retrieve user memberships and profile.
-   * Expects backend to return { orgs: [], defaultOrgId: string }
-   */
-  getMe: async (token: string): Promise<{ orgs: any[], defaultOrgId?: string }> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/me`, {
-        method: 'GET',
-        mode: 'cors',
-        headers: {
-          'Authorization': `Bearer ${token.trim()}`
-        }
-      });
-      if (!response.ok) {
-          if (response.status === 404) return { orgs: [] }; // Potential bootstrap case
-          throw new Error(`User profile fetch failed: ${response.status}`);
-      }
-      return await parseResponseData(response);
-    } catch (error) {
-      console.error("Profile API failure:", error);
-      throw error;
-    }
-  },
   
+  /**
+   * GET /orgs - Bootstraps the application.
+   * Returns only organizations where the current user (from token sub) is a member.
+   * If the list is empty [], the user is not yet associated with a tenant.
+   */
   getOrgs: async (token: string): Promise<{ orgId: string, name: string, role: string, industry?: string, domain?: string }[]> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/orgs`, {
-        method: 'GET',
-        mode: 'cors',
-        headers: {
-          'Authorization': `Bearer ${token.trim()}`
-        }
-      });
-      if (!response.ok) throw new Error(`Server returned ${response.status}`);
-      const rawData = await parseResponseData(response);
-      return ensureArray(rawData);
-    } catch (error) {
-      console.error("API failure:", error);
-      throw error;
+    const response = await fetch(`${API_BASE_URL}/orgs`, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Authorization': `Bearer ${token.trim()}`
+      }
+    });
+    
+    if (!response.ok) {
+        // Explicitly throw so the UI can distinguish between "No Orgs" (200 []) and "Network Error"
+        throw new Error(`Bootstrap failed: Server returned ${response.status}`);
     }
+    
+    const rawData = await parseResponseData(response);
+    return ensureArray(rawData);
   },
 
   createOrg: async (token: string, name: string, domain?: string): Promise<{ orgId: string, name: string }> => {
