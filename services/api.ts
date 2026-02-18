@@ -1,4 +1,3 @@
-
 import { Artifact, Client, CognitoGroup } from '../types';
 import { authConfig } from '../authConfig';
 
@@ -152,20 +151,22 @@ export const api = {
     const sanitizedReqId = (requirementId || "GENERAL").trim();
 
     // 1. Handshake with API Gateway for a presigned PUT URL
+    // Updated payload to match exactly what the backend upload_request Lambda expects
     const payload = {
         filename: file.name,
-        content_type: file.type || 'application/octet-stream',
-        requirement_id: sanitizedReqId
+        contentType: file.type || 'application/octet-stream',
+        sizeBytes: file.size,
+        requirementId: sanitizedReqId
     };
 
-    console.log("--- UPLOAD HANDSHAKE (Presigned PUT) ---");
+    console.log("--- VAULT UPLOAD HANDSHAKE ---");
     console.table(payload);
 
     const initResponse = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence`, {
       method: 'POST',
       mode: 'cors',
       headers: {
-        'Authorization': `Bearer ${cleanToken}`,
+        'Authorization': `Bearer ${cleanToken}`, // Capital A
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(payload)
@@ -177,7 +178,7 @@ export const api = {
             status: initResponse.status,
             data: errorBody
         });
-        const msg = typeof errorBody === 'string' ? errorBody : (errorBody?.message || errorBody?.errorMessage || "Unknown validation error");
+        const msg = typeof errorBody === 'string' ? errorBody : (errorBody?.message || errorBody?.errorMessage || "Handshake rejected by validator");
         throw new Error(`Vault Handshake Failed (${initResponse.status}): ${msg}`);
     }
     
@@ -185,21 +186,21 @@ export const api = {
     const { uploadUrl, evidenceId, requiredHeaders } = data;
 
     if (!uploadUrl || !evidenceId) {
-        throw new Error("Malformed handshake response: Missing uploadUrl or evidenceId.");
+        throw new Error("Handshake failed: Missing uploadUrl or evidenceId in response.");
     }
 
     // 2. Binary Transfer to S3 via PUT
-    // Filter out restricted headers that the browser manages
-    const forbidden = new Set(["host", "content-length", "connection", "user-agent", "expect"]);
     const cleanHeaders: Record<string, string> = {};
     const headersToProcess = requiredHeaders || {};
     
+    // Filter restricted browser headers
+    const restricted = new Set(["host", "content-length", "connection", "user-agent", "expect"]);
     Object.entries(headersToProcess).forEach(([k, v]) => {
-        if (!forbidden.has(k.toLowerCase())) cleanHeaders[k] = v as string;
+        if (!restricted.has(k.toLowerCase())) cleanHeaders[k] = v as string;
     });
     
-    // Ensure Content-Type matches what was signed
-    if (!cleanHeaders['content-type'] && !cleanHeaders['Content-Type']) {
+    // Ensure Content-Type matches the signed request
+    if (!cleanHeaders['Content-Type'] && !cleanHeaders['content-type']) {
         cleanHeaders['Content-Type'] = file.type || 'application/octet-stream';
     }
 
@@ -207,13 +208,13 @@ export const api = {
     const s3Response = await fetch(uploadUrl, {
         method: 'PUT',
         headers: cleanHeaders,
-        body: file
+        body: file // Raw file body
     });
 
     if (!s3Response.ok) {
         const errorText = await s3Response.text().catch(() => "Unknown transfer error");
         console.error("S3 PUT Failure:", s3Response.status, errorText);
-        throw new Error(`S3 Vault Transfer Failed: ${s3Response.status}. Ensure the file type matches metadata.`);
+        throw new Error(`S3 Vault Transfer Failed: ${s3Response.status}. Verify CORS and Content-Type alignment.`);
     }
 
     // 3. Metadata Confirmation
@@ -227,7 +228,7 @@ export const api = {
           }
         });
     } catch (e) {
-        console.warn("Evidence landed in S3 but indexing response timed out.");
+        console.warn("Evidence transferred to S3 but completion indexing response timed out.");
     }
 
     return {
