@@ -55,7 +55,7 @@ export const api = {
         method: 'GET',
         mode: 'cors',
         headers: {
-          'authorization': `Bearer ${token.trim()}`
+          'Authorization': `Bearer ${token.trim()}`
         }
       });
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
@@ -72,8 +72,8 @@ export const api = {
       method: 'POST',
       mode: 'cors',
       headers: {
-        'authorization': `Bearer ${token.trim()}`,
-        'content-type': 'application/json'
+        'Authorization': `Bearer ${token.trim()}`,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ name, domain, initialRole: 'Tenant_Admin' })
     });
@@ -86,7 +86,7 @@ export const api = {
         const response = await fetch(`${API_BASE_URL}/orgs/discover?domain=${domain}`, {
             mode: 'cors',
             headers: { 
-                'authorization': `Bearer ${token.trim()}`
+                'Authorization': `Bearer ${token.trim()}`
             }
         });
         if (!response.ok) return [];
@@ -102,8 +102,8 @@ export const api = {
           method: 'POST',
           mode: 'cors',
           headers: {
-              'authorization': `Bearer ${token.trim()}`,
-              'content-type': 'application/json'
+              'Authorization': `Bearer ${token.trim()}`,
+              'Content-Type': 'application/json'
           }
       });
       if (!response.ok) throw new Error("Failed to join organization");
@@ -114,8 +114,8 @@ export const api = {
           method: 'POST',
           mode: 'cors',
           headers: {
-              'authorization': `Bearer ${token.trim()}`,
-              'content-type': 'application/json'
+              'Authorization': `Bearer ${token.trim()}`,
+              'Content-Type': 'application/json'
           },
           body: JSON.stringify({ userId, targetGroup: group })
       });
@@ -127,7 +127,7 @@ export const api = {
           method: 'DELETE',
           mode: 'cors',
           headers: { 
-              'authorization': `Bearer ${token.trim()}`
+              'Authorization': `Bearer ${token.trim()}`
           }
       });
       if (!response.ok) throw new Error("Backend Admin Service failed to delete identity");
@@ -138,7 +138,7 @@ export const api = {
           method: 'DELETE',
           mode: 'cors',
           headers: { 
-              'authorization': `Bearer ${token.trim()}`
+              'Authorization': `Bearer ${token.trim()}`
           }
       });
       if (!response.ok) throw new Error("Backend Admin Service failed to purge tenant");
@@ -151,91 +151,69 @@ export const api = {
     const cleanToken = (token || "").trim();
     const sanitizedReqId = (requirementId || "GENERAL").trim();
 
-    // 1. Handshake with API Gateway
-    let initResponse;
+    // 1. Handshake with API Gateway for a presigned PUT URL
     const payload = {
-        // Redundant keys to handle varied Lambda expectations (snake_case vs camelCase)
         filename: file.name,
-        file_name: file.name,
-        contentType: file.type || 'application/octet-stream',
         content_type: file.type || 'application/octet-stream',
-        requirementId: sanitizedReqId,
         requirement_id: sanitizedReqId
     };
 
-    console.log("--- UPLOAD HANDSHAKE PAYLOAD ---");
+    console.log("--- UPLOAD HANDSHAKE (Presigned PUT) ---");
     console.table(payload);
 
-    try {
-        initResponse = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence`, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'authorization': `Bearer ${cleanToken}`,
-            'content-type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-    } catch (fetchErr) {
-        console.error("Critical Network Error:", fetchErr);
-        throw new Error("Protocol Conflict: Browser blocked the request. Check CORS.");
-    }
+    const initResponse = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence`, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        'Authorization': `Bearer ${cleanToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
 
     if (!initResponse.ok) {
-        // 400 Bad Request Diagnostics
         const errorBody = await parseResponseData(initResponse);
-        console.error("--- SERVER REJECTION DETAILS (400) ---", {
+        console.error("--- VAULT HANDSHAKE REJECTION ---", {
             status: initResponse.status,
             data: errorBody
         });
-        
         const msg = typeof errorBody === 'string' ? errorBody : (errorBody?.message || errorBody?.errorMessage || "Unknown validation error");
-        throw new Error(`Vault Handshake Failed (400): ${msg}. See Browser Console for full details.`);
+        throw new Error(`Vault Handshake Failed (${initResponse.status}): ${msg}`);
     }
     
     const data = await parseResponseData(initResponse);
-    const { uploadUrl, evidenceId, fields, requiredHeaders } = data;
+    const { uploadUrl, evidenceId, requiredHeaders } = data;
 
     if (!uploadUrl || !evidenceId) {
         throw new Error("Malformed handshake response: Missing uploadUrl or evidenceId.");
     }
 
-    // 2. Binary Transfer to S3
-    let s3Response;
-    if (fields) {
-        const formData = new FormData();
-        Object.entries(fields).forEach(([k, v]) => formData.append(k, v as string));
-        formData.append('file', file);
-        
-        s3Response = await fetch(uploadUrl, {
-            method: 'POST',
-            mode: 'cors',
-            body: formData
-        });
-    } else {
-        const forbidden = new Set(["host", "content-length", "connection", "user-agent", "expect"]);
-        const cleanHeaders: Record<string, string> = {};
-        const headersToProcess = requiredHeaders || {};
-        
-        Object.entries(headersToProcess).forEach(([k, v]) => {
-            if (!forbidden.has(k.toLowerCase())) cleanHeaders[k] = v as string;
-        });
-        
-        if (!cleanHeaders['content-type'] && !cleanHeaders['Content-Type']) {
-            cleanHeaders['content-type'] = file.type || 'application/octet-stream';
-        }
-
-        s3Response = await fetch(uploadUrl, {
-            method: 'PUT',
-            headers: cleanHeaders,
-            body: file
-        });
+    // 2. Binary Transfer to S3 via PUT
+    // Filter out restricted headers that the browser manages
+    const forbidden = new Set(["host", "content-length", "connection", "user-agent", "expect"]);
+    const cleanHeaders: Record<string, string> = {};
+    const headersToProcess = requiredHeaders || {};
+    
+    Object.entries(headersToProcess).forEach(([k, v]) => {
+        if (!forbidden.has(k.toLowerCase())) cleanHeaders[k] = v as string;
+    });
+    
+    // Ensure Content-Type matches what was signed
+    if (!cleanHeaders['content-type'] && !cleanHeaders['Content-Type']) {
+        cleanHeaders['Content-Type'] = file.type || 'application/octet-stream';
     }
+
+    console.log("--- S3 BINARY TRANSFER (PUT) ---");
+    const s3Response = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: cleanHeaders,
+        body: file
+    });
 
     if (!s3Response.ok) {
         const errorText = await s3Response.text().catch(() => "Unknown transfer error");
-        console.error("S3 Transfer Failure:", s3Response.status, errorText);
-        throw new Error(`S3 Vault Transfer Failed: ${s3Response.status}.`);
+        console.error("S3 PUT Failure:", s3Response.status, errorText);
+        throw new Error(`S3 Vault Transfer Failed: ${s3Response.status}. Ensure the file type matches metadata.`);
     }
 
     // 3. Metadata Confirmation
@@ -244,12 +222,12 @@ export const api = {
           method: 'POST',
           mode: 'cors',
           headers: {
-            'authorization': `Bearer ${cleanToken}`,
-            'content-type': 'application/json'
+            'Authorization': `Bearer ${cleanToken}`,
+            'Content-Type': 'application/json'
           }
         });
     } catch (e) {
-        console.warn("Evidence landed in S3 but indexing timed out.");
+        console.warn("Evidence landed in S3 but indexing response timed out.");
     }
 
     return {
@@ -269,8 +247,8 @@ export const api = {
       method: 'POST',
       mode: 'cors',
       headers: {
-        'authorization': `Bearer ${token.trim()}`,
-        'content-type': 'application/json'
+        'Authorization': `Bearer ${token.trim()}`,
+        'Content-Type': 'application/json'
       }
     });
     if (!response.ok) throw new Error('Secure download request rejected.');
@@ -286,7 +264,7 @@ export const api = {
         const response = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence`, {
           mode: 'cors',
           headers: {
-            'authorization': `Bearer ${token.trim()}`
+            'Authorization': `Bearer ${token.trim()}`
           }
         });
         if (!response.ok) return [];
