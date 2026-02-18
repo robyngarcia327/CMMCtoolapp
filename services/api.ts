@@ -33,12 +33,28 @@ const parseResponseData = async (response: Response) => {
     return data;
 };
 
+/**
+ * Implementation of the 'ga' function from the provided snippet.
+ * Normalizes different backend list response formats.
+ */
+const normalizeList = (data: any): any[] => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object") {
+        if (Array.isArray(data.items)) return data.items;
+        if (Array.isArray(data.organizations)) return data.organizations;
+        if (Array.isArray(data.orgs)) return data.orgs;
+        if (Array.isArray(data.data)) return data.data;
+        if (Array.isArray(data.evidence)) return data.evidence;
+    }
+    return [];
+};
+
 export const api = {
   
   /**
    * GET /orgs - Primary bootstrap method.
-   * Matches 'list_orgs' Lambda: returns { "orgs": [...] }
-   * Items use: orgId, orgName, role, memberStatus, createdAt
+   * Matches your snippet's getOrgs logic exactly.
    */
   getOrgs: async (token: string): Promise<{ orgId: string, name: string, role: string, industry?: string, domain?: string }[]> => {
     const response = await fetch(`${API_BASE_URL}/orgs`, {
@@ -50,15 +66,15 @@ export const api = {
     });
     
     if (!response.ok) {
-        throw new Error(`Connection rejected by vault (${response.status}). Verify permissions.`);
+        throw new Error(`Bootstrap failed: Server returned ${response.status}`);
     }
     
-    const data = await parseResponseData(response);
-    const rawOrgs = Array.isArray(data) ? data : (data.orgs || []);
+    const rawData = await parseResponseData(response);
+    const rawOrgs = normalizeList(rawData);
     
     return rawOrgs.map((o: any) => ({
-        orgId: o.orgId,
-        name: o.orgName || o.name || 'Unnamed Organization', // Map orgName from Lambda
+        orgId: o.orgId || o.id,
+        name: o.orgName || o.name || 'Unnamed Organization',
         role: o.role,
         createdAt: o.createdAt,
         memberStatus: o.memberStatus
@@ -67,7 +83,6 @@ export const api = {
 
   /**
    * POST /orgs - Create new organization.
-   * Matches 'create_org' Lambda: returns { orgId, name, storagePrefix, createdAt }
    */
   createOrg: async (token: string, name: string, domain?: string): Promise<{ orgId: string, name: string }> => {
     const response = await fetch(`${API_BASE_URL}/orgs`, {
@@ -87,6 +102,9 @@ export const api = {
     };
   },
 
+  /**
+   * GET /orgs/discover - Tenant discovery.
+   */
   getSuggestedOrgs: async (token: string, domain: string): Promise<any[]> => {
       try {
         const response = await fetch(`${API_BASE_URL}/orgs/discover?domain=${domain}`, {
@@ -97,7 +115,7 @@ export const api = {
         });
         if (!response.ok) return [];
         const data = await parseResponseData(response);
-        return Array.isArray(data) ? data : (data.items || data.orgs || []);
+        return normalizeList(data);
       } catch (e) {
         return [];
       }
@@ -116,15 +134,13 @@ export const api = {
   },
 
   /**
-   * 3-Step Upload Flow
-   * Matches 'upload_request' and 'upload_complete' Lambdas.
+   * Multi-step upload process matching your upload_request and upload_complete Lambdas.
    */
   uploadEvidence: async (token: string, orgId: string, file: File, requirementId: string): Promise<Artifact> => {
     const cleanOrgId = (orgId || "").trim();
     const cleanToken = (token || "").trim();
     const sanitizedReqId = (requirementId || "GENERAL").trim();
 
-    // 1. Handshake: POST /orgs/{id}/evidence
     const payload = {
         filename: file.name,
         contentType: file.type || 'application/octet-stream',
@@ -151,8 +167,6 @@ export const api = {
     const data = await parseResponseData(initResponse);
     const { uploadUrl, evidenceId, requiredHeaders } = data;
 
-    // 2. Binary Transfer to S3 via PUT
-    // Use headers required by the presigned URL signature
     const s3Headers: Record<string, string> = { ...requiredHeaders };
     if (!s3Headers['Content-Type']) s3Headers['Content-Type'] = file.type || 'application/octet-stream';
 
@@ -166,7 +180,6 @@ export const api = {
         throw new Error(`S3 Transfer Failed: ${s3Response.status}`);
     }
 
-    // 3. Confirmation: POST /orgs/{id}/evidence/{evidenceId}/upload-complete
     try {
         await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence/${evidenceId}/upload-complete`, {
           method: 'POST',
@@ -177,7 +190,7 @@ export const api = {
           }
         });
     } catch (e) {
-        console.warn("Completion signal timed out, but file was transferred.");
+        console.warn("Completion signal timed out.");
     }
 
     return {
@@ -191,10 +204,6 @@ export const api = {
     };
   },
 
-  /**
-   * POST /orgs/{id}/evidence/{evId}/download-request
-   * Matches 'download_request' Lambda.
-   */
   getDownloadUrl: async (token: string, orgId: string, evidenceId: string): Promise<string> => {
     const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/download-request`, {
       method: 'POST',
@@ -209,11 +218,6 @@ export const api = {
     return data.downloadUrl; 
   },
 
-  /**
-   * GET /orgs/{id}/evidence
-   * Matches 'list_evidence' Lambda: returns { "evidence": [...] }
-   * Items use: evidenceId, filename, contentType, sizeBytes, status, etc.
-   */
   getEvidenceList: async (token: string, orgId: string): Promise<Artifact[]> => {
     try {
         const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence`, {
@@ -224,12 +228,12 @@ export const api = {
         });
         if (!response.ok) return [];
         const data = await parseResponseData(response);
-        const items = data.evidence || [];
+        const items = normalizeList(data);
         
         return items.map((item: any) => ({
           id: item.evidenceId,
           requirementId: item.requirementId,
-          name: item.filename, // Lambda maps filenameOriginal to 'filename'
+          name: item.filename || item.name || item.filenameOriginal,
           type: (item.contentType || '').startsWith('image/') ? 'image' : 'document',
           url: '', 
           timestamp: item.uploadedAt ? new Date(item.uploadedAt).getTime() : Date.now(),
