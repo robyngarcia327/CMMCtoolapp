@@ -267,12 +267,13 @@ const App: React.FC = () => {
   };
 
   const loadOrganizations = useCallback(async () => {
+    // FIX: Strictly using ACCESS TOKEN for all API calls
     const accessToken = auth.user?.access_token;
     if (!auth.isAuthenticated || !accessToken) return;
+    
     setIsDataLoading(true);
     setApiError(null);
     try {
-      // USE ACCESS_TOKEN FOR API CALLS
       const apiOrgs = await api.getOrgs(accessToken);
       
       const mappedClients: Client[] = apiOrgs.map((o: any) => ({
@@ -308,7 +309,8 @@ const App: React.FC = () => {
       }
     } catch (error: any) { 
       console.error("Discovery error:", error); 
-      setApiError(error.message || "Vault connection rejected.");
+      //Surfaces the detailed error from fetchJson
+      setApiError(error.message);
     } finally { 
       setIsDataLoading(false); 
       setHasCheckedOrgs(true); 

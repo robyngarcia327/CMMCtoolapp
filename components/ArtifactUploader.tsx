@@ -26,30 +26,32 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !activeClientId || !auth.user?.id_token) return;
+    const accessToken = auth.user?.access_token;
+    
+    if (!file || !activeClientId || !accessToken) return;
 
     setIsUploading(true);
     try {
-        // Implement 3-Step Upload Flow using ID TOKEN
+        // FIX: Strictly using Access Token for all API calls
         const newArtifact = await api.uploadEvidence(
-            auth.user.id_token,
+            accessToken,
             activeClientId,
             file,
             requirementId
         );
         onAddArtifact(newArtifact);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Upload failed", error);
-        alert("Failed to upload file to secure storage. Please try again.");
+        alert(error.message || "Failed to upload file to secure storage. Please try again.");
     } finally {
         setIsUploading(false);
         e.target.value = ''; // reset input
     }
   };
 
-  // Note: Snipping tool logic would also need to convert base64 to File object to use the API
   const handleSnipCapture = async (dataUrl: string) => {
-    if (!activeClientId || !auth.user?.id_token) return;
+    const accessToken = auth.user?.access_token;
+    if (!activeClientId || !accessToken) return;
 
     // Convert Data URL to File
     const res = await fetch(dataUrl);
@@ -59,28 +61,29 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
     setIsUploading(true);
     try {
         const newArtifact = await api.uploadEvidence(
-            auth.user.id_token,
+            accessToken,
             activeClientId,
             file,
             requirementId
         );
         onAddArtifact(newArtifact);
         setShowSnipper(false);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Upload failed", error);
-        alert("Failed to upload screenshot.");
+        alert(error.message || "Failed to upload screenshot.");
     } finally {
         setIsUploading(false);
     }
   };
 
   const handleDownload = async (artifact: Artifact) => {
-      if (!activeClientId || !auth.user?.id_token) return;
+      const accessToken = auth.user?.access_token;
+      if (!activeClientId || !accessToken) return;
       try {
-          const downloadUrl = await api.getDownloadUrl(auth.user.id_token, activeClientId, artifact.id);
+          const downloadUrl = await api.getDownloadUrl(accessToken, activeClientId, artifact.id);
           window.open(downloadUrl, '_blank');
-      } catch (e) {
-          alert("Failed to retrieve secure download link.");
+      } catch (e: any) {
+          alert(e.message || "Failed to retrieve secure download link.");
       }
   };
 

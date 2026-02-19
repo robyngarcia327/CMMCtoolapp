@@ -84,11 +84,9 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
   };
 
   const handleBatchUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    // FIX: Add explicit type cast to File[] to fix inference issues for 'name' property and function arguments
     const files = Array.from(e.target.files || []) as File[];
     if (files.length === 0) return;
 
-    // FIX: Property 'name' now exists on 'f' because it is typed as File
     const csvFile = files.find(f => f.name.endsWith('.csv'));
     const evidenceFiles = files.filter(f => !f.name.endsWith('.csv'));
 
@@ -103,10 +101,8 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
     const reader = new FileReader();
     reader.onload = async (event) => {
       const text = event.target?.result as string;
-      // FIX: evidenceFiles is now correctly typed as File[]
       await processCsvBatch(text, evidenceFiles);
     };
-    // FIX: csvFile is now correctly typed as File (which extends Blob)
     reader.readAsText(csvFile);
     e.target.value = '';
   };
@@ -114,7 +110,8 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
   const processCsvBatch = async (csvText: string, providedFiles: File[]) => {
     const lines = csvText.split(/\r?\n/);
     const updatedGrid = [...gridData];
-    const idToken = auth.user?.id_token;
+    // FIX: Using ACCESS TOKEN
+    const accessToken = auth.user?.access_token;
     
     let textUpdates = 0;
     let filesLinked = 0;
@@ -146,7 +143,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
             textUpdates++;
 
             // 2. Handle file linking if filenames provided in CSV
-            if (evidenceFilesStr && providedFiles.length > 0 && idToken && activeClientId) {
+            if (evidenceFilesStr && providedFiles.length > 0 && accessToken && activeClientId) {
                 const targets = evidenceFilesStr.split(',').map(f => f.trim());
                 for (const targetName of targets) {
                     const matchedFile = providedFiles.find(f => f.name === targetName);
@@ -156,7 +153,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
                             updatedGrid[idx].isUploading = true;
                             setGridData([...updatedGrid]);
 
-                            await api.uploadEvidence(idToken, activeClientId, matchedFile, id);
+                            await api.uploadEvidence(accessToken, activeClientId, matchedFile, id);
                             filesLinked++;
                             updatedGrid[idx].isUploading = false;
                         } catch (err) {
@@ -187,12 +184,11 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
       setSyncSummary(null);
   };
 
-  // Grid Pasting Logic (Stays as secondary convenience)
   const handlePaste = useCallback(async (e: React.ClipboardEvent, reqId: string) => {
     const items = e.clipboardData.items;
-    const idToken = auth.user?.id_token;
+    const accessToken = auth.user?.access_token;
 
-    if (!activeClientId || !idToken) return;
+    if (!activeClientId || !accessToken) return;
 
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.indexOf("image") !== -1) {
@@ -203,7 +199,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
 
         try {
           const file = new File([blob], `Screenshot_${new Date().getTime()}.png`, { type: blob.type });
-          await api.uploadEvidence(idToken, activeClientId, file, reqId);
+          await api.uploadEvidence(accessToken, activeClientId, file, reqId);
           setGridData(prev => prev.map(r => r.id === reqId ? { ...r, isUploading: false } : r));
         } catch (err) {
           setGridData(prev => prev.map(r => r.id === reqId ? { ...r, isUploading: false, uploadError: 'Upload Failed' } : r));
@@ -219,7 +215,6 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
 
   return (
     <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
-      {/* Enhanced Header with Sync Feedback */}
       <div className="bg-white border-b border-slate-200 px-8 py-4 shrink-0 flex justify-between items-center shadow-sm z-20">
         <div className="flex items-center gap-4">
             <div className="bg-green-100 p-2 rounded-lg text-green-700">
@@ -281,7 +276,6 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
       </div>
 
       <div className="flex-1 overflow-auto p-8 pt-4">
-        {/* Help Banner for CSV workflow */}
         <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl mb-4 flex items-center gap-4 text-sm text-indigo-900">
              <div className="bg-indigo-600 text-white p-2 rounded-lg shadow-md"><Info size={18}/></div>
              <div className="flex-1">
@@ -374,13 +368,6 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
                                                 </span>
                                             </div>
                                         )}
-                                        
-                                        {/* Row Evidence Presence */}
-                                        <div className="absolute top-2 right-2 flex gap-1">
-                                             {requirements.find(req => req.id === row.id)?.evidenceEmail && (
-                                                 <div className="w-2 h-2 rounded-full bg-green-500 shadow-sm" title="Evidence Linked"></div>
-                                             )}
-                                        </div>
                                     </div>
                                 </td>
                             </tr>

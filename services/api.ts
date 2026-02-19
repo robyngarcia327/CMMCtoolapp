@@ -5,6 +5,7 @@ const API_BASE_URL = 'https://irwrdtn81b.execute-api.us-east-1.amazonaws.com/Cua
 
 /**
  * Ensures the token is formatted correctly for the Authorization header.
+ * Fixes "developer error": Strictly using Access Token format.
  */
 function normalizeBearer(token: string) {
   const t = (token || "").trim();
@@ -46,14 +47,13 @@ async function fetchJson(url: string, opts: any = {}) {
 
     if (!response.ok) {
         const msg = body?.message || body?.error || body?.errorMessage || body?.raw || `HTTP ${response.status}`;
-        throw new Error(`${fetchOpts.method || "GET"} failed (${response.status}): ${msg}`);
+        throw new Error(`${fetchOpts.method || "GET"} ${url} failed (${response.status}): ${msg}`);
     }
 
     return body;
 }
 
 /**
- * Implementation of the 'ga' function from the provided snippet.
  * Normalizes different backend list response formats.
  */
 const normalizeList = (data: any): any[] => {
