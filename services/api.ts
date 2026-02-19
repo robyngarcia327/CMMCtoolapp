@@ -4,34 +4,53 @@ import { Artifact, Client, CognitoGroup } from '../types';
 const API_BASE_URL = 'https://irwrdtn81b.execute-api.us-east-1.amazonaws.com/CualleeCyberEvidence'; 
 
 /**
- * Robustly parses API response bodies which might be double-encoded or wrapped 
- * in standard AWS Lambda Proxy Integration formats.
+ * Ensures the token is formatted correctly for the Authorization header.
  */
-const parseResponseData = async (response: Response) => {
-    const text = await response.text();
-    let data;
+function normalizeBearer(token: string) {
+  const t = (token || "").trim();
+  if (!t) throw new Error("Missing auth token. Please sign in again.");
+  return t.toLowerCase().startsWith("bearer ") ? t : `Bearer ${t}`;
+}
+
+/**
+ * Robust fetch utility that parses JSON and surfaces backend error messages 
+ * even for non-200 responses.
+ */
+async function fetchJson(url: string, opts: any = {}) {
+    const { token, ...fetchOpts } = opts;
+    const headers = new Headers(fetchOpts.headers || {});
     
-    try {
-        data = JSON.parse(text);
-    } catch (e) {
-        return text;
+    if (token) {
+        headers.set("Authorization", normalizeBearer(token));
     }
     
-    // Handle standard AWS Lambda Proxy Integration response format
-    if (data && data.body !== undefined) {
-        if (typeof data.body === 'string') {
-            try {
-                data = JSON.parse(data.body);
-            } catch(e) {
-                data = data.body;
-            }
-        } else {
-            data = data.body;
-        }
+    if (!headers.has("Content-Type") && fetchOpts.body) {
+        headers.set("Content-Type", "application/json");
     }
 
-    return data;
-};
+    const response = await fetch(url, { ...fetchOpts, headers, mode: "cors" });
+    const text = await response.text();
+
+    let body;
+    try {
+        body = text ? JSON.parse(text) : null;
+        // Handle standard AWS Lambda Proxy Integration response format
+        if (body && body.body !== undefined) {
+            if (typeof body.body === 'string') {
+                try { body = JSON.parse(body.body); } catch(e) { body = body.body; }
+            } else { body = body.body; }
+        }
+    } catch (e) {
+        body = { raw: text };
+    }
+
+    if (!response.ok) {
+        const msg = body?.message || body?.error || body?.errorMessage || body?.raw || `HTTP ${response.status}`;
+        throw new Error(`${fetchOpts.method || "GET"} failed (${response.status}): ${msg}`);
+    }
+
+    return body;
+}
 
 /**
  * Implementation of the 'ga' function from the provided snippet.
@@ -54,22 +73,14 @@ export const api = {
   
   /**
    * GET /orgs - Primary bootstrap method.
-   * Matches your snippet's getOrgs logic exactly.
+   * Expects ACCESS_TOKEN.
    */
-  getOrgs: async (token: string): Promise<{ orgId: string, name: string, role: string, industry?: string, domain?: string }[]> => {
-    const response = await fetch(`${API_BASE_URL}/orgs`, {
+  getOrgs: async (accessToken: string): Promise<{ orgId: string, name: string, role: string, industry?: string, domain?: string }[]> => {
+    const rawData = await fetchJson(`${API_BASE_URL}/orgs`, {
       method: 'GET',
-      mode: 'cors',
-      headers: {
-        'Authorization': `Bearer ${token.trim()}`
-      }
+      token: accessToken
     });
     
-    if (!response.ok) {
-        throw new Error(`Bootstrap failed: Server returned ${response.status}`);
-    }
-    
-    const rawData = await parseResponseData(response);
     const rawOrgs = normalizeList(rawData);
     
     return rawOrgs.map((o: any) => ({
@@ -84,18 +95,12 @@ export const api = {
   /**
    * POST /orgs - Create new organization.
    */
-  createOrg: async (token: string, name: string, domain?: string): Promise<{ orgId: string, name: string }> => {
-    const response = await fetch(`${API_BASE_URL}/orgs`, {
+  createOrg: async (accessToken: string, name: string, domain?: string): Promise<{ orgId: string, name: string }> => {
+    const data = await fetchJson(`${API_BASE_URL}/orgs`, {
       method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Authorization': `Bearer ${token.trim()}`,
-        'Content-Type': 'application/json'
-      },
+      token: accessToken,
       body: JSON.stringify({ name, domain, initialRole: 'Tenant_Admin' })
     });
-    if (!response.ok) throw new Error('Failed to create organization');
-    const data = await parseResponseData(response);
     return {
         orgId: data.orgId,
         name: data.name
@@ -105,40 +110,31 @@ export const api = {
   /**
    * GET /orgs/discover - Tenant discovery.
    */
-  getSuggestedOrgs: async (token: string, domain: string): Promise<any[]> => {
+  getSuggestedOrgs: async (accessToken: string, domain: string): Promise<any[]> => {
       try {
-        const response = await fetch(`${API_BASE_URL}/orgs/discover?domain=${domain}`, {
-            mode: 'cors',
-            headers: { 
-                'Authorization': `Bearer ${token.trim()}`
-            }
+        const data = await fetchJson(`${API_BASE_URL}/orgs/discover?domain=${domain}`, {
+            method: 'GET',
+            token: accessToken
         });
-        if (!response.ok) return [];
-        const data = await parseResponseData(response);
         return normalizeList(data);
       } catch (e) {
+        console.error("Discovery error:", e);
         return [];
       }
   },
 
-  joinOrg: async (token: string, orgId: string): Promise<void> => {
-      const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/join`, {
+  joinOrg: async (accessToken: string, orgId: string): Promise<void> => {
+      await fetchJson(`${API_BASE_URL}/orgs/${orgId}/join`, {
           method: 'POST',
-          mode: 'cors',
-          headers: {
-              'Authorization': `Bearer ${token.trim()}`,
-              'Content-Type': 'application/json'
-          }
+          token: accessToken
       });
-      if (!response.ok) throw new Error("Failed to join organization");
   },
 
   /**
    * Multi-step upload process matching your upload_request and upload_complete Lambdas.
    */
-  uploadEvidence: async (token: string, orgId: string, file: File, requirementId: string): Promise<Artifact> => {
+  uploadEvidence: async (accessToken: string, orgId: string, file: File, requirementId: string): Promise<Artifact> => {
     const cleanOrgId = (orgId || "").trim();
-    const cleanToken = (token || "").trim();
     const sanitizedReqId = (requirementId || "GENERAL").trim();
 
     const payload = {
@@ -148,23 +144,12 @@ export const api = {
         requirementId: sanitizedReqId
     };
 
-    const initResponse = await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence`, {
+    const data = await fetchJson(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence`, {
       method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Authorization': `Bearer ${cleanToken}`,
-        'Content-Type': 'application/json'
-      },
+      token: accessToken,
       body: JSON.stringify(payload)
     });
-
-    if (!initResponse.ok) {
-        const errorBody = await parseResponseData(initResponse);
-        const msg = errorBody?.error || errorBody?.message || "Handshake failed";
-        throw new Error(`Vault Handshake Failed: ${msg}`);
-    }
     
-    const data = await parseResponseData(initResponse);
     const { uploadUrl, evidenceId, requiredHeaders } = data;
 
     const s3Headers: Record<string, string> = { ...requiredHeaders };
@@ -181,13 +166,9 @@ export const api = {
     }
 
     try {
-        await fetch(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence/${evidenceId}/upload-complete`, {
+        await fetchJson(`${API_BASE_URL}/orgs/${cleanOrgId}/evidence/${evidenceId}/upload-complete`, {
           method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Authorization': `Bearer ${cleanToken}`,
-            'Content-Type': 'application/json'
-          }
+          token: accessToken
         });
     } catch (e) {
         console.warn("Completion signal timed out.");
@@ -204,30 +185,20 @@ export const api = {
     };
   },
 
-  getDownloadUrl: async (token: string, orgId: string, evidenceId: string): Promise<string> => {
-    const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/download-request`, {
+  getDownloadUrl: async (accessToken: string, orgId: string, evidenceId: string): Promise<string> => {
+    const data = await fetchJson(`${API_BASE_URL}/orgs/${orgId}/evidence/${evidenceId}/download-request`, {
       method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Authorization': `Bearer ${token.trim()}`,
-        'Content-Type': 'application/json'
-      }
+      token: accessToken
     });
-    if (!response.ok) throw new Error('Secure download request rejected.');
-    const data = await parseResponseData(response);
     return data.downloadUrl; 
   },
 
-  getEvidenceList: async (token: string, orgId: string): Promise<Artifact[]> => {
+  getEvidenceList: async (accessToken: string, orgId: string): Promise<Artifact[]> => {
     try {
-        const response = await fetch(`${API_BASE_URL}/orgs/${orgId}/evidence`, {
-          mode: 'cors',
-          headers: {
-            'Authorization': `Bearer ${token.trim()}`
-          }
+        const data = await fetchJson(`${API_BASE_URL}/orgs/${orgId}/evidence`, {
+          method: 'GET',
+          token: accessToken
         });
-        if (!response.ok) return [];
-        const data = await parseResponseData(response);
         const items = normalizeList(data);
         
         return items.map((item: any) => ({

@@ -267,12 +267,13 @@ const App: React.FC = () => {
   };
 
   const loadOrganizations = useCallback(async () => {
-    const idToken = auth.user?.id_token;
-    if (!auth.isAuthenticated || !idToken) return;
+    const accessToken = auth.user?.access_token;
+    if (!auth.isAuthenticated || !accessToken) return;
     setIsDataLoading(true);
     setApiError(null);
     try {
-      const apiOrgs = await api.getOrgs(idToken);
+      // USE ACCESS_TOKEN FOR API CALLS
+      const apiOrgs = await api.getOrgs(accessToken);
       
       const mappedClients: Client[] = apiOrgs.map((o: any) => ({
         id: o.orgId, 
@@ -315,7 +316,7 @@ const App: React.FC = () => {
   }, [auth.isAuthenticated, auth.user]);
 
   useEffect(() => {
-    if (auth.isAuthenticated && auth.user?.id_token && !fetchAttempted.current) {
+    if (auth.isAuthenticated && auth.user?.access_token && !fetchAttempted.current) {
       fetchAttempted.current = true;
       loadOrganizations();
     }
@@ -347,7 +348,7 @@ const App: React.FC = () => {
   if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
 
   if (hasCheckedOrgs && (clients.length === 0 || !activeClientId)) {
-    return <Onboarding user={{ id: auth.user?.profile.sub || '', name: userDisplayName, email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }} onCreateOrganization={async (name, domain, financials) => { if (!auth.user?.id_token) return; setIsDataLoading(true); try { const newOrg = await api.createOrg(auth.user.id_token, name, domain); setClientDataStore(prev => ({ ...prev, [newOrg.orgId]: { ...createInitialClientData(false), financials } })); fetchAttempted.current = false; await loadOrganizations(); } finally { setIsDataLoading(false); } }} onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }} debugTokens={{ idToken: auth.user?.id_token }} />;
+    return <Onboarding user={{ id: auth.user?.profile.sub || '', name: userDisplayName, email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }} onCreateOrganization={async (name, domain, financials) => { if (!auth.user?.access_token) return; setIsDataLoading(true); try { const newOrg = await api.createOrg(auth.user.access_token, name, domain); setClientDataStore(prev => ({ ...prev, [newOrg.orgId]: { ...createInitialClientData(false), financials } })); fetchAttempted.current = false; await loadOrganizations(); } finally { setIsDataLoading(false); } }} onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }} debugTokens={{ accessToken: auth.user?.access_token }} />;
   }
 
   const activeData = clientDataStore[activeClientId];
