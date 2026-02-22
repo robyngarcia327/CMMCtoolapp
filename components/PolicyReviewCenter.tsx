@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileText, 
   Upload, 
@@ -17,55 +17,118 @@ import {
   RefreshCw,
   Zap,
   BookOpen,
-  X
+  X,
+  Plus,
+  Edit3,
+  Layout,
+  History,
+  FilePlus2,
+  Download
 } from 'lucide-react';
-import { Requirement, ClientData } from '../types';
+import { Requirement, ClientData, PolicyDocument, PolicySection } from '../types';
 import { auditPolicyAgainstFramework } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
 
 interface PolicyReviewCenterProps {
   requirements: Requirement[];
   activeFrameworkId: string;
-  policyText?: string;
-  policyFileBase64?: string;
-  policyFileMimeType?: string;
-  policyFileName?: string;
-  auditResult?: string;
+  policies?: PolicyDocument[];
   onUpdate: (updates: Partial<ClientData>) => void;
 }
 
 export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({ 
     requirements, 
     activeFrameworkId,
-    policyText = '',
-    policyFileBase64 = '',
-    policyFileMimeType = '',
-    policyFileName = '',
-    auditResult = null,
+    policies = [],
     onUpdate
 }) => {
+  const [activePolicyId, setActivePolicyId] = useState<string | null>(policies.length > 0 ? policies[0].id : null);
   const [isAuditing, setIsAuditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+
+  const activePolicy = policies.find(p => p.id === activePolicyId);
 
   // Filter requirements for the active framework to use as the audit baseline
   const activeReqs = requirements.filter(r => r.framework === activeFrameworkId);
 
+  const handleCreatePolicy = () => {
+    const newPolicy: PolicyDocument = {
+      id: `pol-${Date.now()}`,
+      title: 'New Organizational Policy',
+      description: 'Draft policy document',
+      sections: [
+        { id: `sec-${Date.now()}`, title: 'Introduction', content: 'Define the scope and purpose of this policy.' }
+      ],
+      lastModified: Date.now(),
+      status: 'Draft'
+    };
+    onUpdate({ policies: [...policies, newPolicy] });
+    setActivePolicyId(newPolicy.id);
+    setIsEditing(true);
+  };
+
+  const handleDeletePolicy = (id: string) => {
+    if (confirm('Are you sure you want to delete this policy?')) {
+      const updated = policies.filter(p => p.id !== id);
+      onUpdate({ policies: updated });
+      if (activePolicyId === id) {
+        setActivePolicyId(updated.length > 0 ? updated[0].id : null);
+      }
+    }
+  };
+
+  const handleUpdatePolicy = (updates: Partial<PolicyDocument>) => {
+    if (!activePolicyId) return;
+    const updated = policies.map(p => 
+      p.id === activePolicyId ? { ...p, ...updates, lastModified: Date.now() } : p
+    );
+    onUpdate({ policies: updated });
+  };
+
+  const handleAddSection = () => {
+    if (!activePolicy) return;
+    const newSection: PolicySection = {
+      id: `sec-${Date.now()}`,
+      title: 'New Section',
+      content: ''
+    };
+    handleUpdatePolicy({ sections: [...activePolicy.sections, newSection] });
+    setActiveSectionId(newSection.id);
+  };
+
+  const handleUpdateSection = (sectionId: string, updates: Partial<PolicySection>) => {
+    if (!activePolicy) return;
+    const updatedSections = activePolicy.sections.map(s => 
+      s.id === sectionId ? { ...s, ...updates } : s
+    );
+    handleUpdatePolicy({ sections: updatedSections });
+  };
+
+  const handleDeleteSection = (sectionId: string) => {
+    if (!activePolicy) return;
+    const updatedSections = activePolicy.sections.filter(s => s.id !== sectionId);
+    handleUpdatePolicy({ sections: updatedSections });
+    if (activeSectionId === sectionId) setActiveSectionId(null);
+  };
+
   const handleAudit = async () => {
-    if (!policyText.trim() && !policyFileBase64) return;
+    if (!activePolicy) return;
     setIsAuditing(true);
     
-    // Clear previous result while auditing
-    onUpdate({ policyAnalysisResult: undefined });
-    
     try {
-      const fileData = policyFileBase64 ? { base64: policyFileBase64, mimeType: policyFileMimeType } : undefined;
+      const fullText = activePolicy.sections.map(s => `## ${s.title}\n${s.content}`).join('\n\n');
+      const fileData = (activePolicy.fileBase64 && activePolicy.fileMimeType) 
+        ? { base64: activePolicy.fileBase64, mimeType: activePolicy.fileMimeType } 
+        : undefined;
       
       const result = await auditPolicyAgainstFramework(
-        "Full Organization Framework",
-        policyText,
+        activePolicy.title,
+        fullText,
         activeReqs,
         fileData
       );
-      onUpdate({ policyAnalysisResult: result });
+      handleUpdatePolicy({ analysisResult: result });
     } catch (e) {
       alert("AI Audit engine encountered an error.");
     } finally {
@@ -75,172 +138,296 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && activePolicyId) {
       const reader = new FileReader();
       const isBinary = file.type === 'application/pdf' || file.name.endsWith('.docx') || file.name.endsWith('.doc');
 
-      if (isBinary) {
-        reader.onload = (ev) => {
-            onUpdate({ 
-                policyFileBase64: ev.target?.result as string,
-                policyFileMimeType: file.type || 'application/pdf',
-                policyFileName: file.name
+      reader.onload = (ev) => {
+        const content = ev.target?.result as string;
+        
+        if (!isBinary) {
+          // If it's a text file, offer to import as sections or just attach
+          if (confirm('Would you like to import this text file as a new section?')) {
+            const newSection: PolicySection = {
+              id: `sec-${Date.now()}`,
+              title: file.name.split('.')[0],
+              content: content
+            };
+            handleUpdatePolicy({ 
+              sections: [...(activePolicy?.sections || []), newSection],
+              lastModified: Date.now()
             });
-        };
+            return;
+          }
+        }
+
+        handleUpdatePolicy({
+          fileBase64: isBinary ? content : undefined,
+          fileMimeType: file.type || 'application/octet-stream',
+          fileName: file.name,
+          lastModified: Date.now()
+        });
+      };
+      
+      if (isBinary) {
         reader.readAsDataURL(file);
       } else {
-        reader.onload = (ev) => {
-            onUpdate({ policyText: ev.target?.result as string });
-        };
         reader.readAsText(file);
       }
     }
   };
 
-  const removeFile = () => {
-      onUpdate({ policyFileBase64: undefined, policyFileMimeType: undefined, policyFileName: undefined });
-  };
-
   return (
-    <div className="max-w-7xl mx-auto p-8 h-full flex flex-col space-y-8 bg-slate-50/50 overflow-y-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
-         <div>
-            <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mb-3">
-                <Sparkles size={14}/> Artifact Validation Lab
+    <div className="h-full flex bg-slate-50 overflow-hidden">
+      {/* Sidebar: Policy List */}
+      <div className="w-80 bg-white border-r border-slate-200 flex flex-col shrink-0">
+        <div className="p-6 border-b border-slate-100">
+          <button 
+            onClick={handleCreatePolicy}
+            className="w-full bg-slate-900 text-white py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-black transition-all font-black text-[10px] uppercase tracking-widest shadow-xl shadow-slate-200"
+          >
+            <FilePlus2 size={16} /> New Policy Document
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 mb-4">Saved Documents</h4>
+          {policies.length === 0 ? (
+            <div className="p-8 text-center">
+              <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <BookOpen size={20} className="text-slate-300" />
+              </div>
+              <p className="text-xs text-slate-400 font-medium">No policies created yet.</p>
             </div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">Policy Auditor</h1>
-            <p className="text-slate-500 font-medium mt-3 max-w-xl">
-                Upload organizational policies (PDF, Word, or Text) for a deep-dive AI gap analysis against the {activeFrameworkId} framework.
-            </p>
-         </div>
-         <div className="flex items-center gap-3">
-             <div className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-xl">
-                <Shield size={14} className="text-blue-400" /> Framework: {activeFrameworkId}
-             </div>
-         </div>
+          ) : (
+            policies.map(pol => (
+              <div 
+                key={pol.id}
+                onClick={() => setActivePolicyId(pol.id)}
+                className={`group p-4 rounded-2xl cursor-pointer transition-all border ${
+                  activePolicyId === pol.id 
+                    ? 'bg-blue-50 border-blue-200 shadow-sm' 
+                    : 'bg-white border-transparent hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-1">
+                  <h5 className={`font-black text-xs uppercase tracking-tight truncate ${activePolicyId === pol.id ? 'text-blue-900' : 'text-slate-700'}`}>
+                    {pol.title}
+                  </h5>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleDeletePolicy(pol.id); }}
+                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-600 transition-all"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
+                    pol.status === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    {pol.status}
+                  </span>
+                  <span className="text-[9px] text-slate-400 font-medium">
+                    {new Date(pol.lastModified).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 flex-1 min-h-0">
-          
-          {/* Editor Area */}
-          <div className="lg:col-span-6 flex flex-col space-y-6">
-              <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col flex-1 overflow-hidden">
-                  <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                      <div className="flex items-center gap-3">
-                          <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-200"><BookOpen size={18} className="text-blue-600"/></div>
-                          <h3 className="font-black text-slate-900 uppercase tracking-tight text-sm">Policy Workspace</h3>
-                      </div>
-                      <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 cursor-pointer transition-all shadow-sm">
-                          <Upload size={14}/> Attach Document
-                          <input type="file" className="hidden" accept=".txt,.md,.pdf,.doc,.docx" onChange={handleFileUpload} />
-                      </label>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {activePolicy ? (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="bg-white p-8 border-b border-slate-200 flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-6">
+                <div className="p-4 bg-blue-600 text-white rounded-[1.5rem] shadow-xl shadow-blue-100">
+                  <FileText size={24} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-3">
+                    {isEditing ? (
+                      <input 
+                        className="text-2xl font-black text-slate-900 uppercase tracking-tighter outline-none border-b-2 border-blue-500 bg-blue-50/50 px-2"
+                        value={activePolicy.title}
+                        onChange={e => handleUpdatePolicy({ title: e.target.value })}
+                        autoFocus
+                      />
+                    ) : (
+                      <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{activePolicy.title}</h2>
+                    )}
+                    <button onClick={() => setIsEditing(!isEditing)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
+                      <Edit3 size={18} />
+                    </button>
                   </div>
-                  
-                  <div className="flex-1 flex flex-col overflow-hidden relative">
-                      {policyFileBase64 ? (
-                          <div className="flex-1 flex flex-col items-center justify-center p-10 bg-blue-50/30">
-                              <div className="bg-white p-10 rounded-[2.5rem] border border-blue-100 shadow-xl flex flex-col items-center gap-4 text-center max-w-sm animate-in zoom-in duration-300">
-                                  <div className="p-4 bg-blue-600 text-white rounded-2xl shadow-lg">
-                                      <FileText size={32} />
-                                  </div>
-                                  <div>
-                                      <h4 className="font-black text-slate-900 uppercase tracking-tight truncate max-w-[200px]">{policyFileName}</h4>
-                                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Binary Object Attached</p>
-                                  </div>
-                                  <button onClick={removeFile} className="mt-2 text-red-500 hover:text-red-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                                      <X size={14}/> Remove Attachment
-                                  </button>
-                              </div>
-                          </div>
-                      ) : (
-                          <textarea 
-                            className="flex-1 p-10 outline-none resize-none text-slate-700 font-medium leading-relaxed bg-transparent scrollbar-hide text-lg"
-                            placeholder="Paste your organization's policy text here, or attach a PDF/Word document using the button above..."
-                            value={policyText}
-                            onChange={e => onUpdate({ policyText: e.target.value })}
-                          />
-                      )}
-                  </div>
+                  <p className="text-slate-500 text-xs font-medium mt-1">
+                    Last modified: {new Date(activePolicy.lastModified).toLocaleString()} • {activePolicy.sections.length} Sections
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 cursor-pointer transition-all shadow-sm">
+                  <Upload size={14}/> {activePolicy.fileName ? 'Change File' : 'Attach File'}
+                  <input type="file" className="hidden" accept=".txt,.md,.pdf,.doc,.docx" onChange={handleFileUpload} />
+                </label>
+                <button 
+                  onClick={handleAudit}
+                  disabled={isAuditing}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-100 transition-all flex items-center gap-2 disabled:opacity-30"
+                >
+                  {isAuditing ? <Loader2 className="animate-spin" size={14}/> : <Zap size={14} className="text-blue-200"/>}
+                  {isAuditing ? 'Auditing...' : 'AI Audit'}
+                </button>
+              </div>
+            </div>
 
-                  <div className="p-8 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
-                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                          {policyFileBase64 ? 'Document Modal' : `Word Count: ${policyText.split(/\s+/).filter(Boolean).length}`}
+            {/* Workspace Grid */}
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+              {/* Left: Editor */}
+              <div className="lg:col-span-7 border-r border-slate-200 flex flex-col bg-white overflow-hidden">
+                <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                  <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <Layout size={14} /> Document Structure
+                  </div>
+                  <button 
+                    onClick={handleAddSection}
+                    className="flex items-center gap-1 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700"
+                  >
+                    <Plus size={14} /> Add Section
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+                  {activePolicy.sections.map((section, idx) => (
+                    <div key={section.id} className="group relative">
+                      <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-3">
+                          <span className="w-6 h-6 bg-slate-900 text-white rounded-lg flex items-center justify-center text-[10px] font-black">{idx + 1}</span>
+                          <input 
+                            className="font-black text-slate-900 uppercase tracking-tight outline-none border-b border-transparent focus:border-blue-400 bg-transparent"
+                            value={section.title}
+                            onChange={e => handleUpdateSection(section.id, { title: e.target.value })}
+                            placeholder="Section Title"
+                          />
+                        </div>
+                        <button 
+                          onClick={() => handleDeleteSection(section.id)}
+                          className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-red-500 transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      <textarea 
+                        className="w-full min-h-[150px] p-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-400 focus:bg-white transition-all text-slate-700 leading-relaxed font-medium resize-none"
+                        placeholder="Enter section content..."
+                        value={section.content}
+                        onChange={e => handleUpdateSection(section.id, { content: e.target.value })}
+                      />
+                    </div>
+                  ))}
+                  
+                  {activePolicy.fileName && (
+                    <div className="mt-10 p-6 bg-blue-50 rounded-3xl border border-blue-100 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-white rounded-xl shadow-sm border border-blue-100">
+                          <FileText size={20} className="text-blue-600" />
+                        </div>
+                        <div>
+                          <h6 className="font-black text-slate-900 text-xs uppercase tracking-tight">{activePolicy.fileName}</h6>
+                          <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest">Attached for context</p>
+                        </div>
                       </div>
                       <button 
-                        onClick={handleAudit}
-                        disabled={isAuditing || (!policyText.trim() && !policyFileBase64)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-200 transition-all flex items-center gap-3 disabled:opacity-30"
+                        onClick={() => handleUpdatePolicy({ fileName: undefined, fileBase64: undefined, fileMimeType: undefined })}
+                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
                       >
-                        {isAuditing ? <Loader2 className="animate-spin" size={18}/> : <Zap size={18} className="text-blue-200"/>}
-                        {isAuditing ? 'Auditing Document...' : 'Start Audit Analysis'}
+                        <X size={18} />
                       </button>
-                  </div>
-              </div>
-          </div>
-
-          {/* Analysis Area */}
-          <div className="lg:col-span-6 flex flex-col space-y-6">
-              <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col flex-1 overflow-hidden relative">
-                  {!auditResult && !isAuditing ? (
-                    <div className="flex-1 flex flex-col items-center justify-center p-20 text-center text-slate-300">
-                        <div className="w-24 h-24 bg-slate-50 rounded-[2rem] flex items-center justify-center mb-8 shadow-inner"><Search size={48} className="opacity-10" /></div>
-                        <h3 className="text-xl font-black uppercase tracking-widest text-slate-400">Awaiting Input</h3>
-                        <p className="max-w-xs mt-3 text-sm font-medium leading-relaxed">Provide policy text or attach a document to begin the automated compliance review.</p>
-                    </div>
-                  ) : isAuditing ? (
-                    <div className="flex-1 flex flex-col items-center justify-center p-20 text-center">
-                        <div className="relative">
-                            <div className="w-32 h-32 border-4 border-blue-50 rounded-full animate-ping absolute inset-0"></div>
-                            <div className="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center shadow-2xl relative z-10">
-                                <Sparkles size={48} className="text-white animate-pulse" />
-                            </div>
-                        </div>
-                        <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter mt-12 mb-4">AI Analyzing Document...</h3>
-                        <div className="space-y-3 w-full max-w-xs">
-                             <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                 <div className="h-full bg-blue-600 animate-loading-bar" />
-                             </div>
-                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Mapping content to Framework</p>
-                        </div>
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-right-6 duration-700">
-                        <div className="p-8 border-b border-slate-100 bg-slate-900 text-white flex justify-between items-center shrink-0">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-blue-600 rounded-2xl shadow-lg"><CheckCircle2 size={24}/></div>
-                                <div>
-                                    <h3 className="text-xl font-black uppercase tracking-tight">Audit Findings</h3>
-                                    <p className="text-blue-300 text-[9px] font-black uppercase tracking-widest">Multimodal Analysis Complete</p>
-                                </div>
-                            </div>
-                            <button onClick={() => onUpdate({ policyAnalysisResult: undefined })} className="p-2 hover:bg-white/10 rounded-full transition-colors"><RefreshCw size={18} /></button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
-                            <div className="prose prose-slate max-w-none prose-headings:text-slate-900 prose-headings:font-black prose-headings:uppercase prose-h1:text-3xl prose-h2:text-xl prose-h2:mt-10 prose-h2:border-b-2 prose-h2:pb-3 prose-p:text-slate-600 prose-p:leading-relaxed prose-table:border prose-table:rounded-xl prose-th:bg-slate-50 prose-th:px-4 prose-th:py-2 prose-td:px-4 prose-td:py-2 prose-li:text-slate-600">
-                                <ReactMarkdown>{auditResult || ''}</ReactMarkdown>
-                            </div>
-                        </div>
-                        <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 shrink-0">
-                            <button className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center gap-2">
-                                <ClipboardList size={14}/> Sync to POAM
-                            </button>
-                            <button className="px-8 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-black transition-all flex items-center gap-2">
-                                <Save size={14}/> Save Analysis Report
-                            </button>
-                        </div>
                     </div>
                   )}
+                </div>
               </div>
-          </div>
-      </div>
 
-      {/* Footer Info */}
-      <div className="flex justify-center pb-8 shrink-0">
-           <div className="inline-flex items-center gap-3 px-6 py-2 bg-slate-900 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-white/50 border border-slate-800">
-                <Shield size={14} className="text-blue-500" /> Professional Grade Auditor // {activeFrameworkId} ALIGNED
-           </div>
+              {/* Right: AI Analysis */}
+              <div className="lg:col-span-5 flex flex-col bg-slate-50/50 overflow-hidden">
+                <div className="p-4 bg-white border-b border-slate-200 flex justify-between items-center">
+                  <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    <Sparkles size={14} className="text-blue-600" /> AI Compliance Audit
+                  </div>
+                  {activePolicy.analysisResult && (
+                    <button 
+                      onClick={() => handleUpdatePolicy({ analysisResult: undefined })}
+                      className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                  {!activePolicy.analysisResult && !isAuditing ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-10">
+                      <div className="w-20 h-20 bg-white rounded-[2rem] border border-slate-200 flex items-center justify-center mb-6 shadow-sm">
+                        <Search size={32} className="text-slate-200" />
+                      </div>
+                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest">Awaiting Analysis</h4>
+                      <p className="text-xs text-slate-400 mt-2 max-w-[200px] font-medium leading-relaxed">
+                        Click "AI Audit" to analyze this document against {activeFrameworkId} controls.
+                      </p>
+                    </div>
+                  ) : isAuditing ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-10">
+                      <div className="relative mb-8">
+                        <div className="w-24 h-24 border-4 border-blue-100 rounded-full animate-ping absolute inset-0"></div>
+                        <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center shadow-2xl relative z-10">
+                          <Sparkles size={32} className="text-white animate-pulse" />
+                        </div>
+                      </div>
+                      <h4 className="text-lg font-black text-slate-900 uppercase tracking-tighter">AI Auditor Working...</h4>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-4">Mapping controls to content</p>
+                    </div>
+                  ) : (
+                    <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                      <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm prose prose-slate max-w-none prose-headings:text-slate-900 prose-headings:font-black prose-headings:uppercase prose-h2:text-sm prose-h2:mt-8 prose-h2:border-b prose-h2:pb-2 prose-p:text-xs prose-p:leading-relaxed prose-li:text-xs">
+                        <ReactMarkdown>{activePolicy.analysisResult || ''}</ReactMarkdown>
+                      </div>
+                      
+                      <div className="mt-6 flex gap-3">
+                        <button className="flex-1 bg-slate-900 text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all flex items-center justify-center gap-2">
+                          <ClipboardList size={14}/> Sync to POAM
+                        </button>
+                        <button className="p-3 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-all">
+                          <Download size={18}/>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center p-20 text-center">
+            <div className="w-32 h-32 bg-white rounded-[3rem] border border-slate-200 flex items-center justify-center mb-10 shadow-xl shadow-slate-200/50">
+              <BookOpen size={48} className="text-slate-200" />
+            </div>
+            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-4">Policy Repository</h2>
+            <p className="max-w-md text-slate-500 font-medium leading-relaxed mb-10">
+              Select a document from the sidebar to view or edit, or create a new policy to begin building your compliance documentation.
+            </p>
+            <button 
+              onClick={handleCreatePolicy}
+              className="bg-blue-600 text-white px-10 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-3"
+            >
+              <Plus size={20} /> Create First Policy
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 };
+

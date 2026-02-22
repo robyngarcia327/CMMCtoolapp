@@ -129,6 +129,25 @@ export interface OrganizationFinancials {
   legalRetentionAnnual: number;
 }
 
+export interface PolicySection {
+  id: string;
+  title: string;
+  content: string;
+}
+
+export interface PolicyDocument {
+  id: string;
+  title: string;
+  description?: string;
+  sections: PolicySection[];
+  lastModified: number;
+  status: 'Draft' | 'Review' | 'Approved';
+  fileBase64?: string;
+  fileMimeType?: string;
+  fileName?: string;
+  analysisResult?: string;
+}
+
 export interface ClientData {
   targetCmmcLevel: 1 | 2 | 3;
   requirements: Requirement[];
@@ -150,6 +169,7 @@ export interface ClientData {
   policyFileBase64?: string;
   policyFileMimeType?: string;
   policyFileName?: string;
+  policies?: PolicyDocument[];
   m365Config: IntegrationConfig;
   intuneConfig: IntegrationConfig;
   adConfig: IntegrationConfig;

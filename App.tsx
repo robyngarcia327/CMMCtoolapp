@@ -481,11 +481,7 @@ const App: React.FC = () => {
             {currentView === AppView.POLICY_AUDIT && <PolicyReviewCenter 
               requirements={activeData.requirements} 
               activeFrameworkId={activeFramework.id} 
-              policyText={activeData.policyText} 
-              policyFileBase64={activeData.policyFileBase64}
-              policyFileMimeType={activeData.policyFileMimeType}
-              policyFileName={activeData.policyFileName}
-              auditResult={activeData.policyAnalysisResult} 
+              policies={activeData.policies}
               onUpdate={handleUpdateClientData}
             />}
           </div>
