@@ -19,8 +19,8 @@ export const authConfig = {
   redirect_uri: REDIRECT_URI,
   post_logout_redirect_uri: REDIRECT_URI,
   response_type: "code",
-  // FIX: Added 'profile' and custom API scope to ensure Access Token has required permissions
-  scope: "openid email profile compliance-api/access",
+  // Absolute minimum scope. If this fails, the App Client 'Allowed OAuth Scopes' are likely empty in AWS.
+  scope: "openid",
   
   monitorSession: false,
   automaticSilentRenew: true,

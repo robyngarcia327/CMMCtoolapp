@@ -65,9 +65,12 @@ export const Login: React.FC = () => {
                 </p>
               </div>
               <p className="text-slate-400 text-[10px] italic leading-relaxed">
-                {auth.error.message.includes("invalid_scope") 
-                  ? "Cognito Error: The 'profile' scope might be disabled in your App Client settings. We've updated the app to only request email access."
-                  : auth.error.message}
+                {auth.error.message}
+                {window.location.search.includes('error_description') && (
+                  <div className="mt-1 text-red-300/80">
+                    Details: {new URLSearchParams(window.location.search).get('error_description')}
+                  </div>
+                )}
               </p>
             </div>
           )}
