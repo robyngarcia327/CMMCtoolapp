@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { analyzeNetworkDiagram, analyzeAuvikTopology } from '../services/gemini';
 import { fetchAuvikNetworkTopology } from '../services/auvik';
@@ -51,9 +50,11 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
   // Effect to load existing diagram preview if artifact ID exists
   useEffect(() => {
     const loadExistingPreview = async () => {
-        if (existingDiagramId && activeClientId && auth.user?.id_token) {
+        // FIX: Using access_token instead of id_token
+        const accessToken = auth.user?.access_token;
+        if (existingDiagramId && activeClientId && accessToken) {
             try {
-                const url = await api.getDownloadUrl(auth.user.id_token, activeClientId, existingDiagramId);
+                const url = await api.getDownloadUrl(accessToken, activeClientId, existingDiagramId);
                 setPreviewUrl(url);
             } catch (e) {
                 console.error("Failed to load existing network diagram", e);
@@ -61,7 +62,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
         }
     };
     loadExistingPreview();
-  }, [existingDiagramId, activeClientId, auth.user?.id_token]);
+  }, [existingDiagramId, activeClientId, auth.user?.access_token]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -72,8 +73,10 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
         return;
     }
 
-    if (!auth.user?.id_token) {
-        setError("Identity token missing. Please sign out and sign back in.");
+    // FIX: Using access_token instead of id_token
+    const accessToken = auth.user?.access_token;
+    if (!accessToken) {
+        setError("Access token missing. Please sign out and sign back in.");
         return;
     }
 
@@ -96,7 +99,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
     setIsAnalyzing(true);
     try {
         const newArtifact = await api.uploadEvidence(
-            auth.user.id_token,
+            accessToken,
             activeClientId,
             file,
             'NETWORK-SCOPE'

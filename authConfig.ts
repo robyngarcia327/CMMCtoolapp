@@ -1,4 +1,3 @@
-
 import { WebStorageStateStore } from "oidc-client-ts";
 
 // --- AWS COGNITO CONFIGURATION ---
@@ -12,7 +11,7 @@ const REGION = "us-east-1";
  * to include https://app.cualleecyber.com in "Allowed Callback URLs".
  */
 const COGNITO_DOMAIN = "us-east-1ky47rcgyh.auth.us-east-1.amazoncognito.com";
-const REDIRECT_URI = "https://app.cualleecyber.com";
+const REDIRECT_URI = typeof window !== 'undefined' ? window.location.origin : "https://app.cualleecyber.com";
 
 export const authConfig = {
   authority: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
@@ -20,7 +19,8 @@ export const authConfig = {
   redirect_uri: REDIRECT_URI,
   post_logout_redirect_uri: REDIRECT_URI,
   response_type: "code",
-  scope: "openid email",
+  // FIX: Added 'profile' and custom API scope to ensure Access Token has required permissions
+  scope: "openid email profile compliance-api/access",
   
   monitorSession: false,
   automaticSilentRenew: true,
