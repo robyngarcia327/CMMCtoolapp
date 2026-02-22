@@ -26,15 +26,14 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    const accessToken = auth.user?.access_token;
+    const idToken = auth.user?.id_token;
     
-    if (!file || !activeClientId || !accessToken) return;
+    if (!file || !activeClientId || !idToken) return;
 
     setIsUploading(true);
     try {
-        // FIX: Strictly using Access Token for all API calls
         const newArtifact = await api.uploadEvidence(
-            accessToken,
+            idToken,
             activeClientId,
             file,
             requirementId
@@ -50,8 +49,8 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
   };
 
   const handleSnipCapture = async (dataUrl: string) => {
-    const accessToken = auth.user?.access_token;
-    if (!activeClientId || !accessToken) return;
+    const idToken = auth.user?.id_token;
+    if (!activeClientId || !idToken) return;
 
     // Convert Data URL to File
     const res = await fetch(dataUrl);
@@ -61,7 +60,7 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
     setIsUploading(true);
     try {
         const newArtifact = await api.uploadEvidence(
-            accessToken,
+            idToken,
             activeClientId,
             file,
             requirementId
@@ -77,10 +76,10 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
   };
 
   const handleDownload = async (artifact: Artifact) => {
-      const accessToken = auth.user?.access_token;
-      if (!activeClientId || !accessToken) return;
+      const idToken = auth.user?.id_token;
+      if (!activeClientId || !idToken) return;
       try {
-          const downloadUrl = await api.getDownloadUrl(accessToken, activeClientId, artifact.id);
+          const downloadUrl = await api.getDownloadUrl(idToken, activeClientId, artifact.id);
           window.open(downloadUrl, '_blank');
       } catch (e: any) {
           alert(e.message || "Failed to retrieve secure download link.");

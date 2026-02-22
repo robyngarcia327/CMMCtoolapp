@@ -9,7 +9,7 @@ interface OnboardingProps {
   onRefresh?: () => void;
   creationStatus?: 'idle' | 'creating' | 'verifying' | 'failed_verification';
   debugTokens?: {
-      accessToken?: string;
+      idToken?: string;
   };
 }
 
@@ -33,18 +33,18 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
   const isPublicDomain = ['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com'].includes(userDomain.toLowerCase());
 
   useEffect(() => {
-      if (userDomain && !isPublicDomain && debugTokens?.accessToken) {
+      if (userDomain && !isPublicDomain && debugTokens?.idToken) {
           discoverOrgs();
       } else {
           setStep('PROFILE'); // Skip discovery for public domains
       }
-  }, [userDomain, isPublicDomain, debugTokens?.accessToken]);
+  }, [userDomain, isPublicDomain, debugTokens?.idToken]);
 
   const discoverOrgs = async () => {
-      if (!debugTokens?.accessToken) return;
+      if (!debugTokens?.idToken) return;
       setIsSearchingOrgs(true);
       try {
-          const matched = await api.getSuggestedOrgs(debugTokens.accessToken, userDomain);
+          const matched = await api.getSuggestedOrgs(debugTokens.idToken, userDomain);
           setSuggestedOrgs(matched);
       } catch (e) {
           console.error("Discovery failed", e);
@@ -54,10 +54,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
   };
 
   const handleJoin = async (orgId: string) => {
-      if (!debugTokens?.accessToken) return;
+      if (!debugTokens?.idToken) return;
       setIsJoining(orgId);
       try {
-          await api.joinOrg(debugTokens.accessToken, orgId);
+          await api.joinOrg(debugTokens.idToken, orgId);
           if (onRefresh) onRefresh();
       } catch (e: any) {
           alert("Failed to join organization: " + e.message);

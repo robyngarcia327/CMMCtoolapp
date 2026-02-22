@@ -7,10 +7,11 @@ const API_BASE_URL = 'https://irwrdtn81b.execute-api.us-east-1.amazonaws.com/Cua
  * Ensures the token is formatted correctly for the Authorization header.
  * Fixes "developer error": Strictly using Access Token format.
  */
-function normalizeBearer(token: string) {
+function normalizeToken(token: string) {
   const t = (token || "").trim();
   if (!t) throw new Error("Missing auth token. Please sign in again.");
-  return t.toLowerCase().startsWith("bearer ") ? t : `Bearer ${t}`;
+  // AWS Cognito Authorizers often expect the raw JWT without "Bearer " prefix
+  return t;
 }
 
 /**
@@ -22,7 +23,7 @@ async function fetchJson(url: string, opts: any = {}) {
     const headers = new Headers(fetchOpts.headers || {});
     
     if (token) {
-        headers.set("Authorization", normalizeBearer(token));
+        headers.set("Authorization", normalizeToken(token));
     }
     
     if (!headers.has("Content-Type") && fetchOpts.body) {

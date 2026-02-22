@@ -110,8 +110,8 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
   const processCsvBatch = async (csvText: string, providedFiles: File[]) => {
     const lines = csvText.split(/\r?\n/);
     const updatedGrid = [...gridData];
-    // FIX: Using ACCESS TOKEN
-    const accessToken = auth.user?.access_token;
+    // FIX: Using ID TOKEN
+    const idToken = auth.user?.id_token;
     
     let textUpdates = 0;
     let filesLinked = 0;
@@ -143,7 +143,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
             textUpdates++;
 
             // 2. Handle file linking if filenames provided in CSV
-            if (evidenceFilesStr && providedFiles.length > 0 && accessToken && activeClientId) {
+            if (evidenceFilesStr && providedFiles.length > 0 && idToken && activeClientId) {
                 const targets = evidenceFilesStr.split(',').map(f => f.trim());
                 for (const targetName of targets) {
                     const matchedFile = providedFiles.find(f => f.name === targetName);
@@ -153,7 +153,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
                             updatedGrid[idx].isUploading = true;
                             setGridData([...updatedGrid]);
 
-                            await api.uploadEvidence(accessToken, activeClientId, matchedFile, id);
+                            await api.uploadEvidence(idToken, activeClientId, matchedFile, id);
                             filesLinked++;
                             updatedGrid[idx].isUploading = false;
                         } catch (err) {
@@ -186,9 +186,9 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
 
   const handlePaste = useCallback(async (e: React.ClipboardEvent, reqId: string) => {
     const items = e.clipboardData.items;
-    const accessToken = auth.user?.access_token;
+    const idToken = auth.user?.id_token;
 
-    if (!activeClientId || !accessToken) return;
+    if (!activeClientId || !idToken) return;
 
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.indexOf("image") !== -1) {
@@ -199,7 +199,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
 
         try {
           const file = new File([blob], `Screenshot_${new Date().getTime()}.png`, { type: blob.type });
-          await api.uploadEvidence(accessToken, activeClientId, file, reqId);
+          await api.uploadEvidence(idToken, activeClientId, file, reqId);
           setGridData(prev => prev.map(r => r.id === reqId ? { ...r, isUploading: false } : r));
         } catch (err) {
           setGridData(prev => prev.map(r => r.id === reqId ? { ...r, isUploading: false, uploadError: 'Upload Failed' } : r));

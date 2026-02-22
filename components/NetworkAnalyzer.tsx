@@ -50,11 +50,10 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
   // Effect to load existing diagram preview if artifact ID exists
   useEffect(() => {
     const loadExistingPreview = async () => {
-        // FIX: Using access_token instead of id_token
-        const accessToken = auth.user?.access_token;
-        if (existingDiagramId && activeClientId && accessToken) {
+        const idToken = auth.user?.id_token;
+        if (existingDiagramId && activeClientId && idToken) {
             try {
-                const url = await api.getDownloadUrl(accessToken, activeClientId, existingDiagramId);
+                const url = await api.getDownloadUrl(idToken, activeClientId, existingDiagramId);
                 setPreviewUrl(url);
             } catch (e) {
                 console.error("Failed to load existing network diagram", e);
@@ -62,7 +61,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
         }
     };
     loadExistingPreview();
-  }, [existingDiagramId, activeClientId, auth.user?.access_token]);
+  }, [existingDiagramId, activeClientId, auth.user?.id_token]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -73,10 +72,10 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
         return;
     }
 
-    // FIX: Using access_token instead of id_token
-    const accessToken = auth.user?.access_token;
-    if (!accessToken) {
-        setError("Access token missing. Please sign out and sign back in.");
+    // FIX: Using id_token instead of access_token
+    const idToken = auth.user?.id_token;
+    if (!idToken) {
+        setError("Identity token missing. Please sign out and sign back in.");
         return;
     }
 
@@ -99,7 +98,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
     setIsAnalyzing(true);
     try {
         const newArtifact = await api.uploadEvidence(
-            accessToken,
+            idToken,
             activeClientId,
             file,
             'NETWORK-SCOPE'
