@@ -1284,6 +1284,7 @@ export const createInitialClientData = (isParent: boolean): ClientData => ({
   sspMetadata: { systemName: '', systemIdentifier: '', categorization: 'LOW', systemOwner: '', authorizingOfficial: '', otherDesignatedContacts: '', assignmentOfSecurityResponsibility: '', operationalStatus: 'Operational', systemType: 'General Support System', generalDescription: '', systemEnvironment: '', interconnections: '', lawsAndPolicies: '', completionDate: '', approvalDate: '' },
   financials: { annualRevenue: 5000000, employeeCount: 25, avgHourlyLaborRate: 125, brandValueEstimate: 1000000, legalRetentionAnnual: 50000 },
   policies: [],
+  packageAnalyses: [],
   m365Config: { enabled: false },
   intuneConfig: { enabled: false },
   adConfig: { enabled: false },

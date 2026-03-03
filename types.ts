@@ -164,6 +164,33 @@ export interface PolicyDocument {
   analysisResult?: string;
 }
 
+export interface PackageFile {
+  id: string;
+  name: string;
+  type: string;
+  base64: string;
+  size: number;
+}
+
+export interface GapItem {
+  id: string;
+  requirementId?: string;
+  title: string;
+  description: string;
+  recommendation: string;
+  severity: 'High' | 'Medium' | 'Low';
+  selected: boolean;
+}
+
+export interface PackageAnalysis {
+  id: string;
+  timestamp: number;
+  files: PackageFile[];
+  gaps: GapItem[];
+  summary: string;
+  projectPlan?: ProjectTask[];
+}
+
 export interface ClientData {
   targetCmmcLevel: 1 | 2 | 3;
   requirements: Requirement[];
@@ -187,6 +214,7 @@ export interface ClientData {
   policyFileMimeType?: string;
   policyFileName?: string;
   policies?: PolicyDocument[];
+  packageAnalyses?: PackageAnalysis[];
   m365Config: IntegrationConfig;
   intuneConfig: IntegrationConfig;
   adConfig: IntegrationConfig;
@@ -220,6 +248,7 @@ export enum AppView {
   REPORT_SSP = 'REPORT_SSP',
   REPORT_POLICY_CENTER = 'REPORT_POLICY_CENTER',
   POLICY_AUDIT = 'POLICY_AUDIT',
+  PACKAGE_REVIEW = 'PACKAGE_REVIEW',
   ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
   GLOBAL_ADMIN = 'GLOBAL_ADMIN'
 }

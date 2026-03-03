@@ -1,6 +1,6 @@
 
-import { GoogleGenAI } from "@google/genai";
-import { Requirement, AuvikDevice, Risk } from '../types';
+import { GoogleGenAI, Type } from "@google/genai";
+import { Requirement, AuvikDevice, Risk, ProjectTask } from '../types';
 
 const SYSTEM_INSTRUCTION_CHAT = `
 You are an expert cybersecurity compliance consultant specialized in CMMC 2.0 and NIST SP 800-171A.
@@ -308,5 +308,115 @@ export const analyzeAuvikTopology = async (
     return response.text || "Analysis failed.";
   } catch (e) {
     return "Error analyzing topology.";
+  }
+};
+
+export const analyzeCmmcPackage = async (
+  files: { name: string; base64: string; mimeType: string }[],
+  requirements: Requirement[]
+): Promise<{ summary: string; gaps: any[] }> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  const textPrompt = `
+    Act as a CMMC 3PAO Assessor. Analyze the provided CMMC package (multiple documents and images) against NIST 800-171 / CMMC Level 2 requirements.
+    Identify specific gaps where evidence is missing or insufficient.
+    
+    BASELINE REQUIREMENTS (NIST 800-171):
+    ${requirements.slice(0, 110).map(r => `- ${r.id}: ${r.title}`).join('\n')}
+    
+    Analyze the attached files for compliance.
+  `;
+
+  const parts: any[] = [{ text: textPrompt }];
+  
+  files.forEach(file => {
+    const base64Data = file.base64.split(',')[1] || file.base64;
+    parts.push({
+      inlineData: {
+        data: base64Data,
+        mimeType: file.mimeType
+      }
+    });
+  });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: { parts },
+      config: {
+        systemInstruction: "You are a specialized CMMC/NIST 800-171 Package Auditor. You provide high-fidelity, actionable feedback to help organizations reach Level 2 certification.",
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            summary: { type: Type.STRING },
+            gaps: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  requirementId: { type: Type.STRING },
+                  title: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  recommendation: { type: Type.STRING },
+                  severity: { type: Type.STRING, description: "High, Medium, or Low" }
+                },
+                required: ["id", "title", "description", "recommendation", "severity"]
+              }
+            }
+          },
+          required: ["summary", "gaps"]
+        }
+      }
+    });
+
+    return JSON.parse(response.text || '{"summary": "Failed to parse", "gaps": []}');
+  } catch (e: any) {
+    console.error("Package Analysis Error:", e);
+    throw e;
+  }
+};
+
+export const generateProjectPlanFromGaps = async (
+  gaps: any[]
+): Promise<ProjectTask[]> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const prompt = `
+    Generate a project plan (list of tasks) to remediate the following CMMC gaps.
+    Gaps:
+    ${gaps.map(g => `- ${g.title}: ${g.description}`).join('\n')}
+    
+    Return a list of tasks with title, description, priority, and status.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING },
+              title: { type: Type.STRING },
+              description: { type: Type.STRING },
+              status: { type: Type.STRING, description: "backlog" },
+              priority: { type: Type.STRING, description: "Low, Medium, or High" },
+              linkedRequirementId: { type: Type.STRING }
+            },
+            required: ["id", "title", "description", "status", "priority"]
+          }
+        }
+      }
+    });
+
+    return JSON.parse(response.text || '[]');
+  } catch (e) {
+    console.error("Project Plan Generation Error:", e);
+    return [];
   }
 };

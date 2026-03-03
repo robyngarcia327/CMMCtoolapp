@@ -38,7 +38,7 @@ import {
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData, REQUIREMENTS_DATA } from './data/standards';
-import { Requirement, Artifact, AppView, Ticket, User, Framework, Client, ClientData, CognitoGroup, Risk, WizardProgress, Asset, BudgetLineItem, OrganizationFinancials } from './types';
+import { Requirement, Artifact, AppView, Ticket, User, Framework, Client, ClientData, CognitoGroup, Risk, WizardProgress, Asset, BudgetLineItem, OrganizationFinancials, ControlMastery, ProjectTask } from './types';
 import { RequirementsList } from './components/RequirementsList';
 import { RequirementDetail } from './components/RequirementDetail';
 import { AIChat } from './components/AIChat';
@@ -57,6 +57,8 @@ import { CmmcAcademy } from './components/CmmcAcademy';
 import { RmfLifecycle } from './components/RmfLifecycle';
 import { BudgetCalculator } from './components/BudgetCalculator';
 import { PolicyReviewCenter } from './components/PolicyReviewCenter';
+import { PackageReviewCenter } from './components/PackageReviewCenter';
+import { PoamRegistry } from './components/PoamRegistry';
 import { api } from './services/api';
 
 const SidebarItem = ({ 
@@ -277,6 +279,17 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleAddTasks = (tasks: ProjectTask[]) => {
+      if (!activeClientId) return;
+      setClientDataStore(prev => ({
+          ...prev,
+          [activeClientId]: {
+              ...prev[activeClientId],
+              tasks: [...prev[activeClientId].tasks, ...tasks]
+          }
+      }));
+  };
+
   const loadOrganizations = useCallback(async () => {
     // FIX: Using ID TOKEN for API calls as required by Cognito Authorizers
     const idToken = auth.user?.id_token;
@@ -384,6 +397,8 @@ const App: React.FC = () => {
       case AppView.REPORT_EXECUTIVE: return "Executive Report";
       case AppView.REPORT_SSP: return "System Security Plan";
       case AppView.POLICY_AUDIT: return "Policy Review";
+      case AppView.PACKAGE_REVIEW: return "Package Auditor";
+      case AppView.POAM: return "POA&M Registry";
       default: return "Cuallee Cyber";
     }
   };
@@ -405,6 +420,7 @@ const App: React.FC = () => {
           </SidebarSection>
           <SidebarSection title="Compliance">
             <SidebarItem icon={ListChecks} label="Controls" isActive={currentView === AppView.CONTROLS} onClick={() => setCurrentView(AppView.CONTROLS)} />
+            <SidebarItem icon={ClipboardList} label="POA&M" isActive={currentView === AppView.POAM} onClick={() => setCurrentView(AppView.POAM)} />
             <SidebarItem icon={TrendingUp} label="SPRS Scorecard" isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
             <SidebarItem icon={ClipboardCheck} label="Assessor View" isActive={currentView === AppView.ASSESSOR_PORTAL} onClick={() => setCurrentView(AppView.ASSESSOR_PORTAL)} badge="CAP 2.0" />
             <SidebarItem icon={Package} label="Assets" isActive={currentView === AppView.ASSETS} onClick={() => setCurrentView(AppView.ASSETS)} />
@@ -417,7 +433,8 @@ const App: React.FC = () => {
             <SidebarItem icon={BarChart3} label="Budgeting" isActive={currentView === AppView.COST_TO_COMPLIANCE} onClick={() => setCurrentView(AppView.COST_TO_COMPLIANCE)} />
           </SidebarSection>
           <SidebarSection title="Reports">
-            <SidebarItem icon={FileCheck2} label="Policy Review" isActive={currentView === AppView.POLICY_AUDIT} onClick={() => setCurrentView(AppView.POLICY_AUDIT)} badge="AI" />
+            <SidebarItem icon={FileSearch} label="Package Auditor" isActive={currentView === AppView.PACKAGE_REVIEW} onClick={() => setCurrentView(AppView.PACKAGE_REVIEW)} badge="AI" />
+            <SidebarItem icon={FileCheck2} label="Policy Review" isActive={currentView === AppView.POLICY_AUDIT} onClick={() => setCurrentView(AppView.POLICY_AUDIT)} />
             <SidebarItem icon={FileCheck} label="Executive Summary" isActive={currentView === AppView.REPORT_EXECUTIVE} onClick={() => setCurrentView(AppView.REPORT_EXECUTIVE)} />
             <SidebarItem icon={FileText} label="System Security Plan" isActive={currentView === AppView.REPORT_SSP} onClick={() => setCurrentView(AppView.REPORT_SSP)} />
           </SidebarSection>
@@ -500,6 +517,15 @@ const App: React.FC = () => {
               policies={activeData.policies}
               onUpdate={handleUpdateClientData}
             />}
+            {currentView === AppView.PACKAGE_REVIEW && (
+              <PackageReviewCenter 
+                requirements={activeData.requirements}
+                analyses={activeData.packageAnalyses}
+                onUpdate={handleUpdateClientData}
+                onAddTasks={handleAddTasks}
+              />
+            )}
+            {currentView === AppView.POAM && <PoamRegistry requirements={activeData.requirements} />}
           </div>
         </main>
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
