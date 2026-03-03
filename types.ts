@@ -1,6 +1,14 @@
 
 export type CognitoGroup = 'Admin_Created_Users' | 'Application_Administrator' | 'Tenant_Admin' | 'Auditor';
 
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswerIndex: number;
+  explanation: string;
+}
+
 export interface TrainingModule {
   id: string;
   familyId: string;
@@ -9,6 +17,14 @@ export interface TrainingModule {
   content: string;
   durationMinutes: number;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  questions?: QuizQuestion[];
+}
+
+export interface ControlMastery {
+  requirementId: string;
+  score: number; // 0-100
+  status: 'Not Started' | 'In Progress' | 'Mastered';
+  lastAttempt: number;
 }
 
 // Added missing SimulationInject interface
@@ -159,6 +175,7 @@ export interface ClientData {
   tickets: Ticket[];
   tasks: ProjectTask[];
   budgetItems: BudgetLineItem[];
+  mastery: Record<string, ControlMastery>;
   wizardProgress: WizardProgress;
   sspMetadata: SspMetadata;
   financials: OrganizationFinancials;

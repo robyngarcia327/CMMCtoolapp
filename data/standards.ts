@@ -519,42 +519,42 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     },
     { id: '3.5.2', framework: 'NIST-CMMC', family: 'IA', title: 'Authentication Mechanisms', description: 'Authenticate (or verify) the identities of those users, processes, or devices, as a prerequisite to allowing access to organizational systems.', cmmcLevel: 1, sprsWeight: 1,
       objectives: [
-        { id: 'a', description: 'identities of users are verified;', status: 'pending' },
-        { id: 'b', description: 'identities of processes are verified; and', status: 'pending' },
-        { id: 'c', description: 'identities of devices are verified.', status: 'pending' }
+        { id: 'a', description: 'the identities of system users are authenticated;', status: 'pending' },
+        { id: 'b', description: 'the identities of processes acting on behalf of users are authenticated; and', status: 'pending' },
+        { id: 'c', description: 'the identities of devices are authenticated.', status: 'pending' }
       ],
       mappings: { nist800_53: ['IA-2'] },
       interviewOptions: ["What do users use to log in (e.g., password, smart card)?"]
     },
     { id: '3.5.3', framework: 'NIST-CMMC', family: 'IA', title: 'Multi-Factor Authentication', description: 'Use multi-factor authentication (MFA) for local and network access to privileged accounts and for network access to non-privileged accounts.', cmmcLevel: 2, sprsWeight: 3,
       objectives: [
-        { id: 'a', description: 'MFA is used for local access to privileged accounts;', status: 'pending' },
-        { id: 'b', description: 'MFA is used for network access to privileged accounts; and', status: 'pending' },
-        { id: 'c', description: 'MFA is used for network access to non-privileged accounts.', status: 'pending' }
+        { id: 'a', description: 'multifactor authentication is used for local access to privileged accounts;', status: 'pending' },
+        { id: 'b', description: 'multifactor authentication is used for network access to privileged accounts; and', status: 'pending' },
+        { id: 'c', description: 'multifactor authentication is used for network access to non-privileged accounts.', status: 'pending' }
       ],
       mappings: { nist800_53: ['IA-2'] },
       interviewOptions: ["Is MFA required for all users logging in from outside the office?", "Is MFA required for administrators logging in locally?"]
     },
     { id: '3.5.4', framework: 'NIST-CMMC', family: 'IA', title: 'Replay-Resistant Authentication', description: 'Employ replay-resistant authentication mechanisms for network access to privileged and non-privileged accounts.', cmmcLevel: 2, sprsWeight: 3,
       objectives: [
-        { id: 'a', description: 'replay-resistant authentication is defined; and', status: 'pending' },
-        { id: 'b', description: 'replay-resistant authentication is used for network access.', status: 'pending' }
+        { id: 'a', description: 'replay-resistant authentication mechanisms are employed for network access to privileged accounts; and', status: 'pending' },
+        { id: 'b', description: 'replay-resistant authentication mechanisms are employed for network access to non-privileged accounts.', status: 'pending' }
       ],
       mappings: { nist800_53: ['IA-2'] },
       interviewOptions: ["Does your MFA tool use one-time codes or push notifications that can't be reused?"]
     },
     { id: '3.5.5', framework: 'NIST-CMMC', family: 'IA', title: 'Identifier Management', description: 'Prevent reuse of identifiers for a defined period.', cmmcLevel: 2, sprsWeight: 3,
       objectives: [
-        { id: 'a', description: 'period for identifier reuse is defined; and', status: 'pending' },
-        { id: 'b', description: 'reuse of identifiers is prevented.', status: 'pending' }
+        { id: 'a', description: 'the period of time to prevent reuse of identifiers is defined; and', status: 'pending' },
+        { id: 'b', description: 'reuse of identifiers is prevented for the defined period of time.', status: 'pending' }
       ],
       mappings: { nist800_53: ['IA-4'] },
       interviewOptions: ["If an employee leaves, how long do you wait before their username can be given to someone else?"]
     },
     { id: '3.5.6', framework: 'NIST-CMMC', family: 'IA', title: 'Identifier Management', description: 'Disable identifiers after a defined period of inactivity.', cmmcLevel: 2, sprsWeight: 3,
       objectives: [
-        { id: 'a', description: 'period of inactivity is defined; and', status: 'pending' },
-        { id: 'b', description: 'identifiers are disabled.', status: 'pending' }
+        { id: 'a', description: 'the period of inactivity is defined; and', status: 'pending' },
+        { id: 'b', description: 'identifiers are disabled after the defined period of inactivity.', status: 'pending' }
       ],
       mappings: { nist800_53: ['IA-4'] },
       interviewOptions: ["Are accounts automatically disabled if they haven't been used for 90 days?"]
@@ -562,7 +562,7 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     { id: '3.5.7', framework: 'NIST-CMMC', family: 'IA', title: 'Authenticator Management', description: 'Enforce a minimum password complexity and change of characters when new passwords are created.', cmmcLevel: 2, sprsWeight: 3,
       objectives: [
         { id: 'a', description: 'minimum password complexity is defined;', status: 'pending' },
-        { id: 'b', description: 'change of characters is defined; and', status: 'pending' },
+        { id: 'b', description: 'the number of characters that must be changed when new passwords are created is defined; and', status: 'pending' },
         { id: 'c', description: 'password requirements are enforced.', status: 'pending' }
       ],
       mappings: { nist800_53: ['IA-5'] },
@@ -570,31 +570,31 @@ export const REQUIREMENTS_DATA: Requirement[] = [
     },
     { id: '3.5.8', framework: 'NIST-CMMC', family: 'IA', title: 'Authenticator Management', description: 'Prohibit password reuse for a defined number of generations.', cmmcLevel: 2, sprsWeight: 3,
       objectives: [
-        { id: 'a', description: 'number of generations is defined; and', status: 'pending' },
-        { id: 'b', description: 'password reuse is prohibited.', status: 'pending' }
+        { id: 'a', description: 'the number of generations for which password reuse is prohibited is defined; and', status: 'pending' },
+        { id: 'b', description: 'password reuse is prohibited for the defined number of generations.', status: 'pending' }
       ],
       mappings: { nist800_53: ['IA-5'] },
       interviewOptions: ["Does the system prevent users from reusing their last 5 or 10 passwords?"]
     },
     { id: '3.5.9', framework: 'NIST-CMMC', family: 'IA', title: 'Authenticator Management', description: 'Allow temporary password usage for logon with an immediate change to a permanent password.', cmmcLevel: 2, sprsWeight: 3,
       objectives: [
-        { id: 'a', description: 'temporary password usage is defined; and', status: 'pending' },
-        { id: 'b', description: 'immediate change to permanent password is required.', status: 'pending' }
+        { id: 'a', description: 'temporary password usage for logon is allowed; and', status: 'pending' },
+        { id: 'b', description: 'an immediate change to a permanent password is required after logon with a temporary password.', status: 'pending' }
       ],
       mappings: { nist800_53: ['IA-5'] },
       interviewOptions: ["When you reset a password, does the user have to change it the first time they log in?"]
     },
     { id: '3.5.10', framework: 'NIST-CMMC', family: 'IA', title: 'Authenticator Management', description: 'Store and transmit only cryptographically-protected passwords.', cmmcLevel: 2, sprsWeight: 3,
       objectives: [
-        { id: 'a', description: 'cryptographic protection for passwords is defined; and', status: 'pending' },
-        { id: 'b', description: 'passwords are cryptographically protected.', status: 'pending' }
+        { id: 'a', description: 'passwords are cryptographically protected during storage; and', status: 'pending' },
+        { id: 'b', description: 'passwords are cryptographically protected during transmission.', status: 'pending' }
       ],
       mappings: { nist800_53: ['IA-5'] },
       interviewOptions: ["Are passwords hashed and salted in the database?"]
     },
     { id: '3.5.11', framework: 'NIST-CMMC', family: 'IA', title: 'Authenticator Management', description: 'Obscure feedback of authentication information.', cmmcLevel: 2, sprsWeight: 3,
       objectives: [
-        { id: 'a', description: 'authentication information feedback is obscured.', status: 'pending' }
+        { id: 'a', description: 'feedback of authentication information is obscured during the authentication process.', status: 'pending' }
       ],
       mappings: { nist800_53: ['IA-6'] },
       interviewOptions: ["When typing a password, are the characters hidden by dots or asterisks?"]
@@ -1201,7 +1201,67 @@ export const REQUIREMENTS_DATA: Requirement[] = [
 ];
 
 export const TRAINING_MODULES: (TrainingModule | SimulationModule)[] = [
-  { id: 'intro-1', familyId: 'PH1', title: 'CMMC 2.0 Framework Architecture', description: 'Overview of the transition from NIST 800-171 to CMMC 2.0.', content: '# CMMC 2.0 Structural Overview\n\nCMMC 2.0 streamlines requirements into three levels.', durationMinutes: 20, difficulty: 'Beginner' }
+  { 
+    id: 'intro-1', 
+    familyId: 'PH1', 
+    title: 'CMMC 2.0 Framework Architecture', 
+    description: 'Overview of the transition from NIST 800-171 to CMMC 2.0.', 
+    content: '# CMMC 2.0 Structural Overview\n\nCMMC 2.0 streamlines requirements into three levels.\n\n## Level 1: Foundational\nFocuses on basic cyber hygiene and protection of Federal Contract Information (FCI).\n\n## Level 2: Advanced\nAligned with NIST SP 800-171, protecting Controlled Unclassified Information (CUI).\n\n## Level 3: Expert\nProtects CUI against Advanced Persistent Threats (APTs).', 
+    durationMinutes: 20, 
+    difficulty: 'Beginner',
+    questions: [
+      {
+        id: 'q1',
+        question: 'Which CMMC level is aligned with NIST SP 800-171?',
+        options: ['Level 1', 'Level 2', 'Level 3', 'Level 4'],
+        correctAnswerIndex: 1,
+        explanation: 'CMMC Level 2 (Advanced) is directly aligned with the 110 controls of NIST SP 800-171.'
+      },
+      {
+        id: 'q2',
+        question: 'What type of information does CMMC Level 1 protect?',
+        options: ['CUI', 'FCI', 'ITAR', 'Classified'],
+        correctAnswerIndex: 1,
+        explanation: 'CMMC Level 1 focuses on the protection of Federal Contract Information (FCI).'
+      }
+    ]
+  },
+  {
+    id: 'cap-1',
+    familyId: 'PH5',
+    title: 'The CMMC Assessment Process (CAP)',
+    description: 'Deep dive into the formal assessment phases and requirements.',
+    content: '# The CAP Process\n\nThe CMMC Assessment Process (CAP) defines how assessments are conducted by C3PAOs.\n\n## Phase 1: Planning and Prep\nScoping, asset categorization, and self-assessment.\n\n## Phase 2: Conduct Assessment\nEvidence review, interviews, and testing.\n\n## Phase 3: Reporting\nFinal findings and SPRS entry.',
+    durationMinutes: 45,
+    difficulty: 'Intermediate',
+    questions: [
+      {
+        id: 'cap-q1',
+        question: 'Who is authorized to conduct a formal CMMC Level 2 assessment?',
+        options: ['Any IT Auditor', 'A C3PAO', 'The Organization itself', 'The DoD'],
+        correctAnswerIndex: 1,
+        explanation: 'Only Certified Third-Party Assessment Organizations (C3PAOs) can conduct formal CMMC Level 2 assessments.'
+      }
+    ]
+  },
+  {
+    id: 'rm-1',
+    familyId: 'PH7',
+    title: 'Risk Management Framework (RMF)',
+    description: 'Integrating NIST RMF with CMMC compliance.',
+    content: '# Risk Management in CMMC\n\nRisk management is a continuous process of identifying, assessing, and responding to risk.\n\n## Step 1: Prepare\n## Step 2: Categorize\n## Step 3: Select\n## Step 4: Implement\n## Step 5: Assess\n## Step 6: Authorize\n## Step 7: Monitor',
+    durationMinutes: 30,
+    difficulty: 'Advanced',
+    questions: [
+      {
+        id: 'rm-q1',
+        question: 'What is the first step of the NIST Risk Management Framework?',
+        options: ['Categorize', 'Select', 'Prepare', 'Assess'],
+        correctAnswerIndex: 2,
+        explanation: 'The RMF begins with the Prepare step to establish context and priorities.'
+      }
+    ]
+  }
 ];
 
 export const RMF_TASKS = [
@@ -1219,6 +1279,7 @@ export const createInitialClientData = (isParent: boolean): ClientData => ({
   tickets: [],
   tasks: [],
   budgetItems: [],
+  mastery: {},
   wizardProgress: { currentStep: 'INTRO', currentQuestionIndex: 0 },
   sspMetadata: { systemName: '', systemIdentifier: '', categorization: 'LOW', systemOwner: '', authorizingOfficial: '', otherDesignatedContacts: '', assignmentOfSecurityResponsibility: '', operationalStatus: 'Operational', systemType: 'General Support System', generalDescription: '', systemEnvironment: '', interconnections: '', lawsAndPolicies: '', completionDate: '', approvalDate: '' },
   financials: { annualRevenue: 5000000, employeeCount: 25, avgHourlyLaborRate: 125, brandValueEstimate: 1000000, legalRetentionAnnual: 50000 },

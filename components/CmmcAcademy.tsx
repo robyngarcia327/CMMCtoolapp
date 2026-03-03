@@ -33,9 +33,203 @@ import {
   FileBadge,
   Save,
   PenTool,
-  History
+  History,
+  HelpCircle,
+  AlertTriangle,
+  BarChart3
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { QuizQuestion, ControlMastery } from '../types';
+
+// --- SUBCOMPONENT: QUIZ RUNNER ---
+const QuizRunner: React.FC<{
+    questions: QuizQuestion[],
+    onComplete: (score: number) => void,
+    onCancel: () => void
+}> = ({ questions, onComplete, onCancel }) => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [selectedOption, setSelectedOption] = useState<number | null>(null);
+    const [showExplanation, setShowExplanation] = useState(false);
+    const [score, setScore] = useState(0);
+    const [isFinished, setIsFinished] = useState(false);
+
+    const currentQuestion = questions[currentIndex];
+
+    const handleNext = () => {
+        if (selectedOption === currentQuestion.correctAnswerIndex) {
+            setScore(prev => prev + 1);
+        }
+
+        if (currentIndex < questions.length - 1) {
+            setCurrentIndex(prev => prev + 1);
+            setSelectedOption(null);
+            setShowExplanation(false);
+        } else {
+            setIsFinished(true);
+        }
+    };
+
+    if (isFinished) {
+        const finalScore = Math.round((score / questions.length) * 100);
+        return (
+            <div className="bg-white rounded-[2.5rem] p-12 text-center border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-500">
+                <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-8">
+                    <Trophy size={48} className="text-blue-600" />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-2">Quiz Complete!</h2>
+                <p className="text-slate-500 font-medium mb-8">You've completed the knowledge check for this module.</p>
+                
+                <div className="bg-slate-50 rounded-3xl p-8 mb-8">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Your Mastery Score</div>
+                    <div className="text-6xl font-black text-blue-600">{finalScore}%</div>
+                </div>
+
+                <div className="flex gap-4">
+                    <button 
+                        onClick={() => onComplete(finalScore)}
+                        className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-blue-700 transition-all"
+                    >
+                        Save & Continue
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-xl animate-in fade-in duration-500">
+            <div className="flex justify-between items-center mb-8">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Question {currentIndex + 1} of {questions.length}</span>
+                <button onClick={onCancel} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-600 transition-colors">Exit Quiz</button>
+            </div>
+
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-8 leading-tight">{currentQuestion.question}</h3>
+
+            <div className="space-y-4 mb-8">
+                {currentQuestion.options.map((option, idx) => (
+                    <button
+                        key={idx}
+                        onClick={() => !showExplanation && setSelectedOption(idx)}
+                        disabled={showExplanation}
+                        className={`w-full text-left p-6 rounded-2xl border-2 transition-all flex items-center justify-between group ${
+                            selectedOption === idx 
+                                ? 'border-blue-600 bg-blue-50/50' 
+                                : 'border-slate-100 hover:border-blue-200 bg-slate-50/30'
+                        } ${showExplanation && idx === currentQuestion.correctAnswerIndex ? 'border-green-500 bg-green-50/50' : ''}
+                          ${showExplanation && selectedOption === idx && idx !== currentQuestion.correctAnswerIndex ? 'border-red-500 bg-red-50/50' : ''}`}
+                    >
+                        <span className={`font-bold text-sm ${selectedOption === idx ? 'text-blue-700' : 'text-slate-600'}`}>
+                            {option}
+                        </span>
+                        {showExplanation && idx === currentQuestion.correctAnswerIndex && <CheckCircle2 size={18} className="text-green-600" />}
+                        {showExplanation && selectedOption === idx && idx !== currentQuestion.correctAnswerIndex && <AlertTriangle size={18} className="text-red-600" />}
+                    </button>
+                ))}
+            </div>
+
+            {showExplanation && (
+                <div className="bg-blue-50 rounded-2xl p-6 mb-8 border border-blue-100 animate-in slide-in-from-top-2">
+                    <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <Info size={14} /> Explanation
+                    </h4>
+                    <p className="text-sm text-blue-800 font-medium leading-relaxed">{currentQuestion.explanation}</p>
+                </div>
+            )}
+
+            <button
+                onClick={() => showExplanation ? handleNext() : setShowExplanation(true)}
+                disabled={selectedOption === null}
+                className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all disabled:opacity-30"
+            >
+                {showExplanation ? (currentIndex === questions.length - 1 ? 'Finish' : 'Next Question') : 'Check Answer'}
+            </button>
+        </div>
+    );
+};
+
+// --- SUBCOMPONENT: MASTERY DASHBOARD ---
+const MasteryDashboard: React.FC<{ mastery: Record<string, ControlMastery> }> = ({ mastery }) => {
+    const masteredCount = Object.values(mastery).filter(m => m.status === 'Mastered').length;
+    const totalCount = 110; // CMMC Level 2 total controls
+    const progress = Math.round((masteredCount / totalCount) * 100);
+
+    return (
+        <div className="p-10 space-y-10 animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-6">Overall Mastery</h4>
+                    <div className="flex items-end gap-3 mb-4">
+                        <span className="text-6xl font-black leading-none">{progress}%</span>
+                        <span className="text-blue-200 font-bold text-sm mb-2">Complete</span>
+                    </div>
+                    <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                        <div className="h-full bg-white transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Mastered Controls</h4>
+                    <div className="flex items-center gap-4">
+                        <div className="p-4 bg-green-50 text-green-600 rounded-2xl">
+                            <ShieldCheck size={32} />
+                        </div>
+                        <div>
+                            <div className="text-3xl font-black text-slate-900">{masteredCount}</div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Verified Controls</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Learning Streak</h4>
+                    <div className="flex items-center gap-4">
+                        <div className="p-4 bg-orange-50 text-orange-600 rounded-2xl">
+                            <Zap size={32} />
+                        </div>
+                        <div>
+                            <div className="text-3xl font-black text-slate-900">12 Days</div>
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Learning</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
+                <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Control Mastery Breakdown</h3>
+                    <div className="flex gap-2">
+                        <span className="flex items-center gap-1 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div> Mastered
+                        </span>
+                        <span className="flex items-center gap-1 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div> In Progress
+                        </span>
+                    </div>
+                </div>
+                <div className="p-8 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                    {Array.from({ length: 110 }).map((_, i) => {
+                        const controlId = `3.${Math.floor(i/10) + 1}.${(i % 10) + 1}`;
+                        const m = mastery[controlId];
+                        return (
+                            <div 
+                                key={i}
+                                className={`h-12 rounded-xl flex items-center justify-center text-[10px] font-black transition-all border-2 ${
+                                    m?.status === 'Mastered' ? 'bg-green-50 border-green-500 text-green-600' :
+                                    m?.status === 'In Progress' ? 'bg-blue-50 border-blue-500 text-blue-600' :
+                                    'bg-slate-50 border-slate-100 text-slate-300'
+                                }`}
+                                title={controlId}
+                            >
+                                {controlId.split('.').slice(1).join('.')}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 // --- SUBCOMPONENT: SIMULATION RUNNER ---
 const SimulationRunner: React.FC<{ 
@@ -299,12 +493,31 @@ const SimulationRunner: React.FC<{
 };
 
 
-export const CmmcAcademy: React.FC = () => {
+export const CmmcAcademy: React.FC<{
+    mastery: Record<string, ControlMastery>,
+    onUpdateMastery: (m: Record<string, ControlMastery>) => void
+}> = ({ mastery, onUpdateMastery }) => {
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   const [activePhaseId, setActivePhaseId] = useState<string>(ACADEMY_PHASES[0].id);
   const [searchTerm, setSearchTerm] = useState('');
+  const [view, setView] = useState<'CURRICULUM' | 'MASTERY'>('CURRICULUM');
+  const [isQuizActive, setIsQuizActive] = useState(false);
   
   const activeModule = TRAINING_MODULES.find((m: any) => m.id === activeModuleId);
+
+  const handleQuizComplete = (score: number) => {
+      if (activeModule) {
+          onUpdateMastery({
+              [activeModule.id]: {
+                  requirementId: activeModule.id,
+                  score,
+                  status: score >= 80 ? 'Mastered' : 'In Progress',
+                  lastAttempt: Date.now()
+              }
+          });
+      }
+      setIsQuizActive(false);
+  };
 
   // Filter modules based on search and selected phase
   const displayedModules = useMemo(() => {
@@ -359,28 +572,58 @@ export const CmmcAcademy: React.FC = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
-                <div>
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 px-2">Knowledge Domains</h3>
-                    <div className="space-y-1">
-                        {ACADEMY_PHASES.map(phase => (
-                            <button 
-                                key={phase.id}
-                                onClick={() => { setActivePhaseId(phase.id); setActiveModuleId(null); }}
-                                className={`w-full text-left px-4 py-3 rounded-xl flex items-center justify-between group transition-all ${
-                                    activePhaseId === phase.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'
-                                }`}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={`${activePhaseId === phase.id ? 'text-blue-100' : 'text-slate-400 group-hover:text-blue-600'}`}>
-                                        {getPhaseIcon(phase.icon)}
-                                    </div>
-                                    <span className="text-xs font-bold">{phase.name}</span>
-                                </div>
-                                <ChevronRight size={14} className={`${activePhaseId === phase.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-all`} />
-                            </button>
-                        ))}
-                    </div>
+                <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-4">
+                    <button 
+                        onClick={() => setView('CURRICULUM')}
+                        className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${view === 'CURRICULUM' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        Curriculum
+                    </button>
+                    <button 
+                        onClick={() => setView('MASTERY')}
+                        className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${view === 'MASTERY' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        Mastery
+                    </button>
                 </div>
+
+                {view === 'CURRICULUM' ? (
+                    <div>
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 px-2">Knowledge Domains</h3>
+                        <div className="space-y-1">
+                            {ACADEMY_PHASES.map(phase => (
+                                <button 
+                                    key={phase.id}
+                                    onClick={() => { setActivePhaseId(phase.id); setActiveModuleId(null); }}
+                                    className={`w-full text-left px-4 py-3 rounded-xl flex items-center justify-between group transition-all ${
+                                        activePhaseId === phase.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`${activePhaseId === phase.id ? 'text-blue-100' : 'text-slate-400 group-hover:text-blue-600'}`}>
+                                            {getPhaseIcon(phase.icon)}
+                                        </div>
+                                        <span className="text-xs font-bold">{phase.name}</span>
+                                    </div>
+                                    <ChevronRight size={14} className={`${activePhaseId === phase.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-all`} />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                            <div className="flex items-center gap-3 mb-2">
+                                <BarChart3 size={16} className="text-blue-600" />
+                                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Mastery Stats</span>
+                            </div>
+                            <div className="text-xs font-bold text-slate-900">12 / 110 Mastered</div>
+                            <div className="w-full h-1.5 bg-blue-200 rounded-full mt-2 overflow-hidden">
+                                <div className="h-full bg-blue-600" style={{ width: '11%' }}></div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100">
                     <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3">Resource Center</h4>
@@ -428,11 +671,13 @@ export const CmmcAcademy: React.FC = () => {
             </header>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar">
-                {activeModule ? (
+                {view === 'MASTERY' ? (
+                    <MasteryDashboard mastery={mastery} />
+                ) : activeModule ? (
                     <div className="max-w-4xl mx-auto py-12 px-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="flex items-center gap-2 mb-6">
                             <button 
-                                onClick={() => setActiveModuleId(null)}
+                                onClick={() => { setActiveModuleId(null); setIsQuizActive(false); }}
                                 className="text-blue-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-1 hover:underline"
                             >
                                 ← Curriculum View
@@ -443,38 +688,63 @@ export const CmmcAcademy: React.FC = () => {
                             </span>
                         </div>
 
-                        <div className="mb-12">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="flex-1">
-                                    <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase leading-none">{activeModule.title}</h1>
+                        {isQuizActive && activeModule.questions ? (
+                            <QuizRunner 
+                                questions={activeModule.questions} 
+                                onComplete={handleQuizComplete}
+                                onCancel={() => setIsQuizActive(false)}
+                            />
+                        ) : (
+                            <>
+                                <div className="mb-12">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="flex-1">
+                                            <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase leading-none">{activeModule.title}</h1>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <span className="bg-slate-900 text-white px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest">{activeModule.durationMinutes} min read</span>
+                                            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-200">{activeModule.difficulty}</span>
+                                        </div>
+                                    </div>
+                                    <p className="text-lg text-slate-500 font-medium leading-relaxed">{activeModule.description}</p>
                                 </div>
-                                <div className="flex gap-2">
-                                    <span className="bg-slate-900 text-white px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest">{activeModule.durationMinutes} min read</span>
-                                    <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-200">{activeModule.difficulty}</span>
-                                </div>
-                            </div>
-                            <p className="text-lg text-slate-500 font-medium leading-relaxed">{activeModule.description}</p>
-                        </div>
 
-                        <div className="prose prose-slate max-w-none prose-headings:text-slate-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-h1:text-3xl prose-h2:text-2xl prose-h2:mt-10 prose-h2:border-b-2 prose-h2:border-slate-50 prose-h2:pb-4 prose-p:text-slate-600 prose-p:leading-relaxed prose-strong:text-slate-900 prose-li:text-slate-600 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:rounded shadow-sm bg-white border border-slate-100 p-10 rounded-[2rem]">
-                            <ReactMarkdown>{activeModule.content}</ReactMarkdown>
-                        </div>
+                                <div className="prose prose-slate max-w-none prose-headings:text-slate-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-h1:text-3xl prose-h2:text-2xl prose-h2:mt-10 prose-h2:border-b-2 prose-h2:border-slate-50 prose-h2:pb-4 prose-p:text-slate-600 prose-p:leading-relaxed prose-strong:text-slate-900 prose-li:text-slate-600 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:rounded shadow-sm bg-white border border-slate-100 p-10 rounded-[2rem]">
+                                    <ReactMarkdown>{activeModule.content}</ReactMarkdown>
+                                </div>
 
-                        <div className="mt-12 pt-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-8">
-                            <div className="bg-indigo-900 rounded-3xl p-6 text-white shadow-xl flex-1 flex items-center gap-6 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16"></div>
-                                <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-md">
-                                    <Sparkles className="text-blue-400" size={32} />
+                                <div className="mt-12 pt-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-8">
+                                    {activeModule.questions && activeModule.questions.length > 0 && (
+                                        <div className="bg-white border-2 border-blue-600 rounded-3xl p-8 flex-1 flex items-center justify-between shadow-xl">
+                                            <div>
+                                                <h4 className="text-lg font-black uppercase tracking-tight text-slate-900">Ready for a Knowledge Check?</h4>
+                                                <p className="text-slate-500 text-sm font-medium mt-1">Complete the quiz to earn mastery points for this domain.</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => setIsQuizActive(true)}
+                                                className="bg-blue-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-blue-700 transition-all flex items-center gap-2"
+                                            >
+                                                Start Quiz <Zap size={14} />
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    <div className="bg-indigo-900 rounded-3xl p-6 text-white shadow-xl flex-1 flex items-center gap-6 relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16"></div>
+                                        <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-md">
+                                            <Sparkles className="text-blue-400" size={32} />
+                                        </div>
+                                        <div className="relative z-10">
+                                            <h4 className="text-lg font-black uppercase tracking-tight">Need technical help?</h4>
+                                            <p className="text-blue-200 text-sm font-medium mt-1">Ask our AI Academy Instructor for clarification or real-world implementation examples.</p>
+                                        </div>
+                                        <button className="relative z-10 bg-white text-indigo-900 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-blue-50 transition-all flex items-center gap-2">
+                                            <MessageCircle size={14} /> Instructor Chat
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="relative z-10">
-                                    <h4 className="text-lg font-black uppercase tracking-tight">Need technical help?</h4>
-                                    <p className="text-blue-200 text-sm font-medium mt-1">Ask our AI Academy Instructor for clarification or real-world implementation examples.</p>
-                                </div>
-                                <button className="relative z-10 bg-white text-indigo-900 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-blue-50 transition-all flex items-center gap-2">
-                                    <MessageCircle size={14} /> Instructor Chat
-                                </button>
-                            </div>
-                        </div>
+                            </>
+                        )}
                     </div>
                 ) : (
                     <div className="p-12 animate-in fade-in duration-500">

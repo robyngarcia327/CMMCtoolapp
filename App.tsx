@@ -266,6 +266,17 @@ const App: React.FC = () => {
     setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], targetCmmcLevel: lvl } }));
   };
 
+  const handleUpdateMastery = (updatedMastery: Record<string, ControlMastery>) => {
+    if (!activeClientId) return;
+    setClientDataStore(prev => ({
+        ...prev,
+        [activeClientId]: {
+            ...prev[activeClientId],
+            mastery: { ...prev[activeClientId].mastery, ...updatedMastery }
+        }
+    }));
+  };
+
   const loadOrganizations = useCallback(async () => {
     // FIX: Using ID TOKEN for API calls as required by Cognito Authorizers
     const idToken = auth.user?.id_token;
@@ -468,7 +479,12 @@ const App: React.FC = () => {
                 </div>
             )}
             {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} />}
-            {currentView === AppView.TRAINING && <CmmcAcademy />}
+            {currentView === AppView.TRAINING && (
+                <CmmcAcademy 
+                    mastery={activeData.mastery} 
+                    onUpdateMastery={handleUpdateMastery} 
+                />
+            )}
             {currentView === AppView.ASSESSOR_PORTAL && <AssessorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} assets={activeData.assets} risks={activeData.risks} />}
             {currentView === AppView.RISK_MANAGEMENT && <RiskRegistry risks={activeData.risks} financials={activeData.financials} onAddRisk={handleAddRisk} onUpdateRisk={handleUpdateRisk} onDeleteRisk={(id: string) => setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], risks: prev[activeClientId].risks.filter(r => r.id !== id) }}))} onUpdateFinancials={handleUpdateFinancials} />}
             {currentView === AppView.FAIR_ANALYZER && <FairRiskAnalyzer risks={activeData.risks} financials={activeData.financials} onUpdateRisk={handleUpdateRisk} />}
