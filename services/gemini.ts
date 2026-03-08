@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { Requirement, AuvikDevice, Risk, ProjectTask } from '../types';
+import { Requirement, AuvikDevice, Risk, ProjectTask, PolicySection } from '../types';
 
 const SYSTEM_INSTRUCTION_CHAT = `
 You are an expert cybersecurity compliance consultant specialized in CMMC 2.0 and NIST SP 800-171A.
@@ -284,6 +284,58 @@ export const generateComplianceDocument = async (
     return response.text || "Failed to generate document.";
   } catch (e) {
     return "Error generating document.";
+  }
+};
+
+export const parsePolicyDocument = async (
+  fileData: { base64: string; mimeType: string }
+): Promise<PolicySection[]> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  const base64Data = fileData.base64.split(',')[1] || fileData.base64;
+  
+  const prompt = `
+    Analyze this policy document and extract its main sections. 
+    For each section, provide a title and the full text content of that section.
+    Break it down logically (e.g., 'Access Control Policy', 'Password Requirements', 'Remote Access').
+    
+    Return the sections as a JSON array of objects with 'title' and 'content' properties.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: {
+        parts: [
+          { inlineData: { data: base64Data, mimeType: fileData.mimeType } },
+          { text: prompt }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              content: { type: Type.STRING }
+            },
+            required: ["title", "content"]
+          }
+        }
+      }
+    });
+
+    const sections = JSON.parse(response.text || '[]');
+    return sections.map((s: any) => ({
+      id: `sec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      title: s.title,
+      content: s.content
+    }));
+  } catch (e) {
+    console.error("Policy Parsing Error:", e);
+    throw e;
   }
 };
 

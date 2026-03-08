@@ -23,10 +23,11 @@ import {
   Layout,
   History,
   FilePlus2,
-  Download
+  Download,
+  Eye
 } from 'lucide-react';
 import { Requirement, ClientData, PolicyDocument, PolicySection } from '../types';
-import { auditPolicyAgainstFramework } from '../services/gemini';
+import { auditPolicyAgainstFramework, parsePolicyDocument } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
 
 interface PolicyReviewCenterProps {
@@ -44,7 +45,9 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
 }) => {
   const [activePolicyId, setActivePolicyId] = useState<string | null>(policies.length > 0 ? policies[0].id : null);
   const [isAuditing, setIsAuditing] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showViewer, setShowViewer] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
 
   const activePolicy = policies.find(p => p.id === activePolicyId);
@@ -133,6 +136,28 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
       alert("AI Audit engine encountered an error.");
     } finally {
       setIsAuditing(false);
+    }
+  };
+
+  const handleParseDocument = async () => {
+    if (!activePolicy || !activePolicy.fileBase64 || !activePolicy.fileMimeType) return;
+    
+    if (activePolicy.sections.length > 0 && !confirm('This will replace existing sections with AI-parsed content. Continue?')) {
+        return;
+    }
+
+    setIsParsing(true);
+    try {
+        const sections = await parsePolicyDocument({
+            base64: activePolicy.fileBase64,
+            mimeType: activePolicy.fileMimeType
+        });
+        handleUpdatePolicy({ sections });
+        alert(`Successfully parsed ${sections.length} sections from document.`);
+    } catch (e) {
+        alert("AI Parsing engine encountered an error.");
+    } finally {
+        setIsParsing(false);
     }
   };
 
@@ -337,7 +362,22 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                         </div>
                         <div>
                           <h6 className="font-black text-slate-900 text-xs uppercase tracking-tight">{activePolicy.fileName}</h6>
-                          <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest">Attached for context</p>
+                          <div className="flex items-center gap-3 mt-1">
+                            <button 
+                                onClick={() => setShowViewer(true)}
+                                className="text-[9px] text-blue-600 font-black uppercase tracking-widest hover:underline flex items-center gap-1"
+                            >
+                                <Eye size={10} /> View Document
+                            </button>
+                            <button 
+                                onClick={handleParseDocument}
+                                disabled={isParsing}
+                                className="text-[9px] text-indigo-600 font-black uppercase tracking-widest hover:underline flex items-center gap-1 disabled:opacity-50"
+                            >
+                                {isParsing ? <Loader2 size={10} className="animate-spin" /> : <Zap size={10} />}
+                                AI Parse to Sections
+                            </button>
+                          </div>
                         </div>
                       </div>
                       <button 
@@ -350,6 +390,40 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                   )}
                 </div>
               </div>
+
+              {/* Document Viewer Modal */}
+              {showViewer && activePolicy.fileBase64 && (
+                <div className="fixed inset-0 bg-black/80 z-[300] flex items-center justify-center p-10 backdrop-blur-sm">
+                    <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-5xl h-full flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+                        <div className="bg-slate-900 p-6 flex justify-between items-center text-white">
+                            <h3 className="font-black uppercase tracking-[0.2em] text-sm flex items-center gap-3">
+                                <FileText size={20} className="text-blue-400" /> {activePolicy.fileName}
+                            </h3>
+                            <button onClick={() => setShowViewer(false)} className="text-white/50 hover:text-white transition-colors"><X size={24} /></button>
+                        </div>
+                        <div className="flex-1 bg-slate-100 p-4">
+                            {activePolicy.fileMimeType === 'application/pdf' ? (
+                                <iframe 
+                                    src={activePolicy.fileBase64} 
+                                    className="w-full h-full rounded-2xl border-none"
+                                    title="Document Viewer"
+                                />
+                            ) : (
+                                <div className="h-full flex flex-col items-center justify-center text-center p-10">
+                                    <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+                                        <AlertTriangle size={32} className="text-amber-500" />
+                                    </div>
+                                    <h4 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Preview Not Available</h4>
+                                    <p className="text-sm text-slate-500 mt-2 max-w-md font-medium leading-relaxed">
+                                        This file type ({activePolicy.fileMimeType}) cannot be previewed directly. 
+                                        Use "AI Parse to Sections" to extract the content into the editor.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+              )}
 
               {/* Right: AI Analysis */}
               <div className="lg:col-span-5 flex flex-col bg-slate-50/50 overflow-hidden">
