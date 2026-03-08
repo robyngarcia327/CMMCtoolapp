@@ -22,7 +22,7 @@ import {
   LayoutDashboard,
   Trophy
 } from 'lucide-react';
-import { Requirement, PackageFile, PackageAnalysis, GapItem, ProjectTask, ClientData } from '../types';
+import { Requirement, PackageFile, PackageAnalysis, GapItem, ProjectTask, ClientData, PolicyDocument } from '../types';
 import { analyzeCmmcPackage, generateProjectPlanFromGaps } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
 
