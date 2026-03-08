@@ -154,8 +154,8 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
         });
         handleUpdatePolicy({ sections });
         alert(`Successfully parsed ${sections.length} sections from document.`);
-    } catch (e) {
-        alert("AI Parsing engine encountered an error.");
+    } catch (e: any) {
+        alert(e.message || "AI Parsing engine encountered an error.");
     } finally {
         setIsParsing(false);
     }
@@ -167,7 +167,7 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
       const reader = new FileReader();
       const isBinary = file.type === 'application/pdf' || file.name.endsWith('.docx') || file.name.endsWith('.doc');
 
-      reader.onload = (ev) => {
+      reader.onload = async (ev) => {
         const content = ev.target?.result as string;
         
         if (!isBinary) {
@@ -184,14 +184,40 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
             });
             return;
           }
+          
+          handleUpdatePolicy({
+            fileBase64: undefined,
+            fileMimeType: file.type || 'application/octet-stream',
+            fileName: file.name,
+            lastModified: Date.now()
+          });
+        } else {
+          setIsParsing(true);
+          try {
+            const sections = await parsePolicyDocument({
+              base64: content,
+              mimeType: file.type || 'application/octet-stream'
+            });
+            handleUpdatePolicy({
+              fileBase64: content,
+              fileMimeType: file.type || 'application/octet-stream',
+              fileName: file.name,
+              sections: sections,
+              lastModified: Date.now()
+            });
+          } catch (e: any) {
+            console.error("Auto-parsing failed", e);
+            alert(e.message || "Auto-parsing failed. The document was attached but sections were not identified.");
+            handleUpdatePolicy({
+              fileBase64: content,
+              fileMimeType: file.type || 'application/octet-stream',
+              fileName: file.name,
+              lastModified: Date.now()
+            });
+          } finally {
+            setIsParsing(false);
+          }
         }
-
-        handleUpdatePolicy({
-          fileBase64: isBinary ? content : undefined,
-          fileMimeType: file.type || 'application/octet-stream',
-          fileName: file.name,
-          lastModified: Date.now()
-        });
       };
       
       if (isBinary) {
@@ -214,24 +240,44 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
             <FilePlus2 size={16} /> New Policy Document
           </button>
           
-          <label className="w-full bg-white border-2 border-slate-100 text-slate-600 py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all font-black text-[10px] uppercase tracking-widest cursor-pointer">
-            <Upload size={16} /> Upload Policy File
+          <label className={`w-full bg-white border-2 border-slate-100 text-slate-600 py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all font-black text-[10px] uppercase tracking-widest cursor-pointer ${isParsing ? 'opacity-50 cursor-not-allowed' : ''}`}>
+            {isParsing ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />} 
+            {isParsing ? 'Parsing Document...' : 'Upload Policy File'}
             <input 
                 type="file" 
                 className="hidden" 
                 accept=".pdf,.doc,.docx,.txt" 
-                onChange={(e) => {
+                disabled={isParsing}
+                onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
                         const reader = new FileReader();
                         const isBinary = file.type === 'application/pdf' || file.name.endsWith('.docx') || file.name.endsWith('.doc');
-                        reader.onload = (ev) => {
+                        reader.onload = async (ev) => {
                             const content = ev.target?.result as string;
+                            const newPolicyId = `pol-${Date.now()}`;
+                            let sections: PolicySection[] = [];
+
+                            if (isBinary) {
+                                setIsParsing(true);
+                                try {
+                                    sections = await parsePolicyDocument({
+                                        base64: content,
+                                        mimeType: file.type || 'application/octet-stream'
+                                    });
+                                } catch (e: any) {
+                                    console.error("Auto-parsing failed", e);
+                                    alert(e.message || "Auto-parsing failed. The document was uploaded but sections were not identified.");
+                                } finally {
+                                    setIsParsing(false);
+                                }
+                            }
+
                             const newPolicy: PolicyDocument = {
-                                id: `pol-${Date.now()}`,
+                                id: newPolicyId,
                                 title: file.name.split('.')[0],
                                 description: `Uploaded policy: ${file.name}`,
-                                sections: [],
+                                sections: sections,
                                 lastModified: Date.now(),
                                 status: 'Draft',
                                 fileBase64: isBinary ? content : undefined,
@@ -239,7 +285,7 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                                 fileName: file.name
                             };
                             onUpdate({ policies: [...policies, newPolicy] });
-                            setActivePolicyId(newPolicy.id);
+                            setActivePolicyId(newPolicyId);
                         };
                         if (isBinary) reader.readAsDataURL(file);
                         else reader.readAsText(file);

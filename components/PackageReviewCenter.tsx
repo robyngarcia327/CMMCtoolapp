@@ -22,8 +22,8 @@ import {
   LayoutDashboard,
   Trophy
 } from 'lucide-react';
-import { Requirement, PackageFile, PackageAnalysis, GapItem, ProjectTask, ClientData, PolicyDocument } from '../types';
-import { analyzeCmmcPackage, generateProjectPlanFromGaps } from '../services/gemini';
+import { Requirement, PackageFile, PackageAnalysis, GapItem, ProjectTask, ClientData, PolicyDocument, PolicySection } from '../types';
+import { analyzeCmmcPackage, generateProjectPlanFromGaps, parsePolicyDocument } from '../services/gemini';
 import ReactMarkdown from 'react-markdown';
 
 interface PackageReviewCenterProps {
@@ -46,6 +46,7 @@ export const PackageReviewCenter: React.FC<PackageReviewCenterProps> = ({
   const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(analyses.length > 0 ? analyses[0].id : null);
   const [selectedGapIds, setSelectedGapIds] = useState<Set<string>>(new Set());
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [isSavingPolicy, setIsSavingPolicy] = useState(false);
   const [showViewer, setShowViewer] = useState(false);
   const [viewingFile, setViewingFile] = useState<PackageFile | null>(null);
 
@@ -164,12 +165,25 @@ export const PackageReviewCenter: React.FC<PackageReviewCenterProps> = ({
     }
   };
 
-  const handleSaveAsPolicy = (file: PackageFile) => {
+  const handleSaveAsPolicy = async (file: PackageFile) => {
+    setIsSavingPolicy(true);
+    let sections: PolicySection[] = [];
+    try {
+        sections = await parsePolicyDocument({
+            base64: file.base64,
+            mimeType: file.type
+        });
+    } catch (e) {
+        console.error("Auto-parsing failed", e);
+    } finally {
+        setIsSavingPolicy(false);
+    }
+
     const newPolicy: PolicyDocument = {
         id: `pol-${Date.now()}`,
         title: file.name.split('.')[0],
         description: `Imported from package audit: ${file.name}`,
-        sections: [],
+        sections: sections,
         lastModified: Date.now(),
         status: 'Draft',
         fileBase64: file.base64,
@@ -177,7 +191,7 @@ export const PackageReviewCenter: React.FC<PackageReviewCenterProps> = ({
         fileName: file.name
     };
     onUpdate({ policies: [...policies, newPolicy] });
-    alert(`Document "${file.name}" has been added to your Policy Repository. You can now link it to controls.`);
+    alert(`Document "${file.name}" has been added to your Policy Repository with ${sections.length} sections identified.`);
   };
 
   const handleViewFile = (file: PackageFile) => {
@@ -394,8 +408,10 @@ export const PackageReviewCenter: React.FC<PackageReviewCenterProps> = ({
                                     </button>
                                     <button 
                                         onClick={() => handleSaveAsPolicy(file)}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                                        disabled={isSavingPolicy}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                     >
+                                        {isSavingPolicy ? <Loader2 size={12} className="animate-spin" /> : null}
                                         Save as Policy
                                     </button>
                                 </div>

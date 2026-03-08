@@ -205,7 +205,7 @@ export const auditPolicyAgainstFramework = async (
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       contents: { parts: contents },
       config: { 
         systemInstruction: "You are a specialized CMMC/NIST 800-171 Policy Auditor. You provide high-fidelity, actionable feedback to help organizations reach Level 2 certification." 
@@ -214,6 +214,9 @@ export const auditPolicyAgainstFramework = async (
     return response.text || "Policy audit failed to generate.";
   } catch (e: any) {
     console.error("Policy Audit Error:", e);
+    if (e.message?.includes("RESOURCE_EXHAUSTED")) {
+      return "AI Quota Exceeded. The system is currently processing too many requests. Please wait 60 seconds and try again.";
+    }
     return "Critical error during AI Policy Audit. " + (e.message || "Please check document size and API connectivity.");
   }
 };
@@ -295,9 +298,9 @@ export const parsePolicyDocument = async (
   const base64Data = fileData.base64.split(',')[1] || fileData.base64;
   
   const prompt = `
-    Analyze this policy document and extract its main sections. 
-    For each section, provide a title and the full text content of that section.
-    Break it down logically (e.g., 'Access Control Policy', 'Password Requirements', 'Remote Access').
+    Analyze this policy document and extract its main sections based on headers, sub-headers, and the table of contents if present. 
+    For each section, provide a clear title and the full text content of that section.
+    Break it down logically (e.g., 'Access Control Policy', 'Password Requirements', 'Remote Access', 'Incident Response Plan').
     
     Return the sections as a JSON array of objects with 'title' and 'content' properties.
   `;
@@ -333,8 +336,11 @@ export const parsePolicyDocument = async (
       title: s.title,
       content: s.content
     }));
-  } catch (e) {
+  } catch (e: any) {
     console.error("Policy Parsing Error:", e);
+    if (e.message?.includes("RESOURCE_EXHAUSTED")) {
+      throw new Error("AI Quota Exceeded. The system is currently processing too many requests. Please wait 60 seconds and try again.");
+    }
     throw e;
   }
 };
@@ -393,7 +399,7 @@ export const analyzeCmmcPackage = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       contents: { parts },
       config: {
         systemInstruction: "You are a specialized CMMC/NIST 800-171 Package Auditor. You provide high-fidelity, actionable feedback to help organizations reach Level 2 certification.",
@@ -426,6 +432,12 @@ export const analyzeCmmcPackage = async (
     return JSON.parse(response.text || '{"summary": "Failed to parse", "gaps": []}');
   } catch (e: any) {
     console.error("Package Analysis Error:", e);
+    if (e.message?.includes("RESOURCE_EXHAUSTED")) {
+      return { 
+        summary: "AI Quota Exceeded. The system is currently processing too many requests. Please wait 60 seconds and try again.", 
+        gaps: [] 
+      };
+    }
     throw e;
   }
 };
