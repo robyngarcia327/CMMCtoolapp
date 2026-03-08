@@ -6,7 +6,7 @@ import { PolicyAnalyzer } from './PolicyAnalyzer';
 import { explainRequirement } from '../services/gemini';
 import { fetchAutomatedEvidence } from '../services/integrations';
 import ReactMarkdown from 'react-markdown';
-import { CheckCircle, Sparkles, Ticket as TicketIcon, ExternalLink, Share2, Layers, MessageSquare, Send, Mail, Copy, Clock, AlertTriangle, Cloud, Server, Shield, Loader2, PlayCircle, Lock, RefreshCw, Check, History, Eye, FileText } from 'lucide-react';
+import { CheckCircle, Sparkles, Ticket as TicketIcon, ExternalLink, Share2, Layers, MessageSquare, Send, Mail, Copy, Clock, AlertTriangle, Cloud, Server, Shield, Loader2, PlayCircle, Lock, RefreshCw, Check, History, Eye, FileText, ClipboardList, Trash2, X } from 'lucide-react';
 
 interface RequirementDetailProps {
   requirement: Requirement;
@@ -48,6 +48,13 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   const [loadingAi, setLoadingAi] = useState(false);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [isPoamModalOpen, setIsPoamModalOpen] = useState(false);
+  const [poamForm, setPoamForm] = useState({
+    weaknessName: '',
+    scheduledCompletionDate: '',
+    milestones: '',
+    status: 'Open'
+  });
   const [newComment, setNewComment] = useState('');
 
   if (!requirement) return null;
@@ -55,7 +62,22 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
   useEffect(() => {
     setAiExplanation(null);
     setActiveTab('DETAILS');
-  }, [requirement.id]);
+    if (requirement.poam) {
+        setPoamForm({
+            weaknessName: requirement.poam.weaknessName,
+            scheduledCompletionDate: requirement.poam.scheduledCompletionDate,
+            milestones: requirement.poam.milestones,
+            status: requirement.poam.status
+        });
+    } else {
+        setPoamForm({
+            weaknessName: '',
+            scheduledCompletionDate: '',
+            milestones: '',
+            status: 'Open'
+        });
+    }
+  }, [requirement.id, requirement.poam]);
 
   const handleExplain = async () => {
     if (loadingAi) return;
@@ -77,6 +99,24 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
     onUpdateRequirement({ ...requirement, objectives: updatedObjectives });
   };
 
+  const handleSavePoam = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdateRequirement({
+        ...requirement,
+        poam: { ...poamForm }
+    });
+    setIsPoamModalOpen(false);
+  };
+
+  const handleRemovePoam = () => {
+    if (confirm('Are you sure you want to remove this control from the POA&M?')) {
+        onUpdateRequirement({
+            ...requirement,
+            poam: undefined
+        });
+    }
+  };
+
   const relevantArtifacts = allArtifacts.filter(a => a.requirementId === requirement.id);
   const metCount = requirement.objectives?.filter(o => o.status === 'met').length || 0;
   const totalCount = requirement.objectives?.length || 0;
@@ -93,6 +133,13 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                 <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight leading-none">{requirement.title}</h1>
             </div>
             <div className="flex gap-3">
+                <button 
+                    onClick={() => setIsPoamModalOpen(true)}
+                    className={`px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 shadow-sm ${requirement.poam ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
+                >
+                    <ClipboardList size={16} />
+                    {requirement.poam ? 'Edit POA&M' : 'Add to POA&M'}
+                </button>
                 <div className="flex bg-white rounded-xl border border-slate-200 p-1 shadow-sm">
                     <button onClick={() => setSimpleMode(true)} className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${simpleMode ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}>Summary</button>
                     <button onClick={() => setSimpleMode(false)} className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${!simpleMode ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}>Audit View</button>
@@ -126,6 +173,34 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                                 </div>
                             )}
                         </div>
+
+                        {requirement.poam && (
+                             <div className="bg-amber-50 border border-amber-200 rounded-[2.5rem] p-10 relative overflow-hidden group">
+                                 <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                                 <div className="flex justify-between items-start mb-6">
+                                     <h3 className="text-[10px] font-black text-amber-700 uppercase tracking-[0.3em] flex items-center gap-2">
+                                         <AlertTriangle size={18} /> Active POA&M Entry
+                                     </h3>
+                                     <button onClick={handleRemovePoam} className="text-amber-400 hover:text-red-500 transition-colors">
+                                         <Trash2 size={18} />
+                                     </button>
+                                 </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                     <div>
+                                         <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest block mb-1">Weakness Description</label>
+                                         <p className="text-sm font-bold text-slate-800">{requirement.poam.weaknessName}</p>
+                                     </div>
+                                     <div>
+                                         <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest block mb-1">Scheduled Completion</label>
+                                         <p className="text-sm font-bold text-slate-800">{requirement.poam.scheduledCompletionDate}</p>
+                                     </div>
+                                     <div className="md:col-span-2">
+                                         <label className="text-[9px] font-black text-amber-600 uppercase tracking-widest block mb-1">Milestones & Remediation Plan</label>
+                                         <p className="text-sm font-bold text-slate-800 leading-relaxed">{requirement.poam.milestones}</p>
+                                     </div>
+                                 </div>
+                             </div>
+                         )}
 
                         <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
                             <div className="bg-slate-900 px-10 py-6 border-b border-slate-800 flex justify-between items-center text-white">
@@ -300,6 +375,74 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
             </div>
         </div>
       </div>
+
+      {/* POA&M Modal */}
+      {isPoamModalOpen && (
+          <div className="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center p-6 backdrop-blur-sm">
+              <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border-t-[12px] border-amber-500">
+                  <div className="bg-slate-900 p-8 flex justify-between items-center text-white">
+                      <h3 className="font-black uppercase tracking-[0.2em] text-lg flex items-center gap-3">
+                          <ClipboardList size={24} className="text-amber-400" /> POA&M Management
+                      </h3>
+                      <button onClick={() => setIsPoamModalOpen(false)} className="text-white/50 hover:text-white transition-colors"><X size={28} /></button>
+                  </div>
+                  <form onSubmit={handleSavePoam} className="p-10 space-y-8">
+                      <div className="space-y-2">
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-2">Weakness Name / Description</label>
+                          <textarea 
+                            required
+                            className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-8 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all font-bold text-slate-900 h-24 resize-none" 
+                            placeholder="Describe the identified compliance gap..."
+                            value={poamForm.weaknessName}
+                            onChange={e => setPoamForm({...poamForm, weaknessName: e.target.value})}
+                          />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-2">Scheduled Completion</label>
+                              <input 
+                                type="date"
+                                required
+                                className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-8 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all font-bold text-slate-900" 
+                                value={poamForm.scheduledCompletionDate}
+                                onChange={e => setPoamForm({...poamForm, scheduledCompletionDate: e.target.value})}
+                              />
+                          </div>
+                          <div className="space-y-2">
+                              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-2">Status</label>
+                              <select 
+                                className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-8 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all font-bold text-slate-900" 
+                                value={poamForm.status}
+                                onChange={e => setPoamForm({...poamForm, status: e.target.value})}
+                              >
+                                  <option value="Open">Open</option>
+                                  <option value="In Progress">In Progress</option>
+                                  <option value="Completed">Completed</option>
+                                  <option value="Risk Accepted">Risk Accepted</option>
+                              </select>
+                          </div>
+                      </div>
+
+                      <div className="space-y-2">
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-2">Milestones & Remediation Plan</label>
+                          <textarea 
+                            required
+                            className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-8 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all font-bold text-slate-900 h-32 resize-none" 
+                            placeholder="Outline the steps required to remediate this weakness..."
+                            value={poamForm.milestones}
+                            onChange={e => setPoamForm({...poamForm, milestones: e.target.value})}
+                          />
+                      </div>
+
+                      <div className="flex gap-4 pt-4">
+                          <button type="button" onClick={() => setIsPoamModalOpen(false)} className="flex-1 py-5 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-slate-200 transition-all">Cancel</button>
+                          <button type="submit" className="flex-[2] py-5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-amber-200 transition-all">Save POA&M Entry</button>
+                      </div>
+                  </form>
+              </div>
+          </div>
+      )}
     </div>
   );
 };
