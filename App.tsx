@@ -526,7 +526,11 @@ const App: React.FC = () => {
                 onAddTasks={handleAddTasks}
               />
             )}
-            {currentView === AppView.POAM && <PoamRegistry requirements={activeData.requirements} />}
+            {currentView === AppView.POAM && <PoamRegistry 
+              requirements={activeData.requirements} 
+              poamItems={activeData.poamItems || []}
+              onUpdate={handleUpdateClientData}
+            />}
           </div>
         </main>
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />

@@ -220,6 +220,7 @@ export interface ClientData {
   policyFileMimeType?: string;
   policyFileName?: string;
   policies?: PolicyDocument[];
+  poamItems?: PoamItem[];
   packageAnalyses?: PackageAnalysis[];
   m365Config: IntegrationConfig;
   intuneConfig: IntegrationConfig;
@@ -449,4 +450,10 @@ export interface PoamEntry {
   scheduledCompletionDate: string;
   milestones: string;
   status: string;
+}
+
+export interface PoamItem extends PoamEntry {
+  id: string;
+  linkedRequirementId?: string;
+  dateIdentified: number;
 }
