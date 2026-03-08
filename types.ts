@@ -49,6 +49,11 @@ export interface AssessmentObjective {
   method?: 'Examine' | 'Interview' | 'Test';
 }
 
+export interface PolicyMapping {
+  policyId: string;
+  sectionId: string;
+}
+
 export interface Requirement {
   id: string;
   framework: string;
@@ -80,6 +85,7 @@ export interface Requirement {
     riskExecutive?: string[];
     securityOfficer?: string[];
   };
+  policyMapping?: PolicyMapping;
 }
 
 export interface Artifact {

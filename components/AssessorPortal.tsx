@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Requirement, Artifact, Client, Risk, Asset, Framework, AssessmentObjective } from '../types';
+import { Requirement, Artifact, Client, Risk, Asset, Framework, AssessmentObjective, PolicyDocument } from '../types';
 import { NIST_CMMC_FAMILIES } from '../data/standards';
 // Added Award icon to the imports list
 import { 
@@ -44,6 +44,7 @@ interface AssessorPortalProps {
   risks: Risk[];
   assets: Asset[];
   activeFramework: Framework;
+  policies?: PolicyDocument[];
 }
 
 type CAPPhase = 'PH1_PRE_ASSESSMENT' | 'PH2_ASSESSMENT' | 'PH3_REPORTING' | 'PH4_CERTIFICATION';
@@ -70,7 +71,8 @@ export const AssessorPortal: React.FC<AssessorPortalProps> = ({
   artifacts, 
   activeFramework,
   risks,
-  assets
+  assets,
+  policies = []
 }) => {
   const [activeCapPhase, setActiveCapPhase] = useState<CAPPhase>('PH1_PRE_ASSESSMENT');
   const [searchTerm, setSearchTerm] = useState('');
@@ -383,6 +385,26 @@ export const AssessorPortal: React.FC<AssessorPortalProps> = ({
                                                               "{req.response || 'Warning: No implementation narrative provided. Assessor must solicit verbal confirmation during interview phase.'}"
                                                           </p>
                                                       </div>
+
+                                                      {req.policyMapping && (
+                                                          <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm">
+                                                              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6 flex items-center gap-3"><FileText size={20}/> Linked Policy Reference</h4>
+                                                              <div className="flex items-center gap-4 mb-4">
+                                                                  <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><BookOpen size={20}/></div>
+                                                                  <div>
+                                                                      <div className="text-xs font-black text-slate-900 uppercase tracking-tight">
+                                                                          {policies.find(p => p.id === req.policyMapping?.policyId)?.title || 'Unknown Policy'}
+                                                                      </div>
+                                                                      <div className="text-[9px] text-blue-600 font-bold uppercase tracking-widest mt-1">
+                                                                          Section: {policies.find(p => p.id === req.policyMapping?.policyId)?.sections.find(s => s.id === req.policyMapping?.sectionId)?.title || 'Unknown Section'}
+                                                                      </div>
+                                                                  </div>
+                                                              </div>
+                                                              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-sm text-slate-600 italic leading-relaxed">
+                                                                  "{policies.find(p => p.id === req.policyMapping?.policyId)?.sections.find(s => s.id === req.policyMapping?.sectionId)?.content.substring(0, 400)}..."
+                                                              </div>
+                                                          </div>
+                                                      )}
                                                   </div>
                                                   
                                                   <div className="lg:col-span-4 space-y-10">

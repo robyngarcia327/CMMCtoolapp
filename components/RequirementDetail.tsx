@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Requirement, Artifact, Ticket, ConnectWiseConfig, JiraConfig, AssessmentObjective, Comment, User, IntegrationConfig } from '../types';
+import { Requirement, Artifact, Ticket, ConnectWiseConfig, JiraConfig, AssessmentObjective, Comment, User, IntegrationConfig, PolicyDocument } from '../types';
 import { ArtifactUploader } from './ArtifactUploader';
 import { TicketCreationModal } from './TicketCreationModal';
 import { PolicyAnalyzer } from './PolicyAnalyzer';
 import { explainRequirement } from '../services/gemini';
 import { fetchAutomatedEvidence } from '../services/integrations';
 import ReactMarkdown from 'react-markdown';
-import { CheckCircle, Sparkles, Ticket as TicketIcon, ExternalLink, Share2, Layers, MessageSquare, Send, Mail, Copy, Clock, AlertTriangle, Cloud, Server, Shield, Loader2, PlayCircle, Lock, RefreshCw, Check, History, Eye } from 'lucide-react';
+import { CheckCircle, Sparkles, Ticket as TicketIcon, ExternalLink, Share2, Layers, MessageSquare, Send, Mail, Copy, Clock, AlertTriangle, Cloud, Server, Shield, Loader2, PlayCircle, Lock, RefreshCw, Check, History, Eye, FileText } from 'lucide-react';
 
 interface RequirementDetailProps {
   requirement: Requirement;
@@ -23,6 +23,7 @@ interface RequirementDetailProps {
   awsConfig?: IntegrationConfig;
   siemConfig?: IntegrationConfig;
   activeClientId?: string;
+  policies?: PolicyDocument[];
 }
 
 export const RequirementDetail: React.FC<RequirementDetailProps> = ({
@@ -39,7 +40,8 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
   m365Config,
   awsConfig,
   siemConfig,
-  activeClientId
+  activeClientId,
+  policies = []
 }) => {
   const [activeTab, setActiveTab] = useState<'DETAILS' | 'DISCUSSION' | 'EVIDENCE'>('DETAILS');
   const [simpleMode, setSimpleMode] = useState(true);
@@ -161,6 +163,71 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                                     </div>
                                 )}
                             </div>
+                        </div>
+
+                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-10">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="font-black text-slate-900 uppercase tracking-widest text-[10px]">Policy Alignment</h3>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[9px] font-black text-slate-400 uppercase">Linked Policy:</span>
+                                    <select 
+                                        className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20"
+                                        value={requirement.policyMapping?.policyId || ''}
+                                        onChange={(e) => {
+                                            const policyId = e.target.value;
+                                            onUpdateRequirement({
+                                                ...requirement,
+                                                policyMapping: policyId ? { policyId, sectionId: '' } : undefined
+                                            });
+                                        }}
+                                    >
+                                        <option value="">No Policy Linked</option>
+                                        {policies.map(p => (
+                                            <option key={p.id} value={p.id}>{p.title}</option>
+                                        ))}
+                                    </select>
+                                    
+                                    {requirement.policyMapping?.policyId && (
+                                        <>
+                                            <span className="text-[9px] font-black text-slate-400 uppercase ml-2">Section:</span>
+                                            <select 
+                                                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20"
+                                                value={requirement.policyMapping?.sectionId || ''}
+                                                onChange={(e) => {
+                                                    onUpdateRequirement({
+                                                        ...requirement,
+                                                        policyMapping: {
+                                                            ...requirement.policyMapping!,
+                                                            sectionId: e.target.value
+                                                        }
+                                                    });
+                                                }}
+                                            >
+                                                <option value="">Select Section</option>
+                                                {policies.find(p => p.id === requirement.policyMapping?.policyId)?.sections.map(s => (
+                                                    <option key={s.id} value={s.id}>{s.title}</option>
+                                                ))}
+                                            </select>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            {requirement.policyMapping?.policyId && requirement.policyMapping?.sectionId ? (
+                                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <FileText size={14} className="text-blue-600" />
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Linked Policy Content</span>
+                                    </div>
+                                    <p className="text-sm text-slate-600 font-medium leading-relaxed italic">
+                                        "{policies.find(p => p.id === requirement.policyMapping?.policyId)?.sections.find(s => s.id === requirement.policyMapping?.sectionId)?.content.substring(0, 300)}..."
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 border-2 border-dashed border-slate-100 rounded-2xl">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select a policy and section to link this control</p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-10">
