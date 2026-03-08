@@ -29,6 +29,7 @@ import ReactMarkdown from 'react-markdown';
 interface PackageReviewCenterProps {
   requirements: Requirement[];
   analyses?: PackageAnalysis[];
+  policies?: PolicyDocument[];
   onUpdate: (updates: Partial<ClientData>) => void;
   onAddTasks: (tasks: ProjectTask[]) => void;
 }
@@ -36,6 +37,7 @@ interface PackageReviewCenterProps {
 export const PackageReviewCenter: React.FC<PackageReviewCenterProps> = ({ 
   requirements, 
   analyses = [], 
+  policies = [],
   onUpdate,
   onAddTasks
 }) => {
@@ -44,6 +46,8 @@ export const PackageReviewCenter: React.FC<PackageReviewCenterProps> = ({
   const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(analyses.length > 0 ? analyses[0].id : null);
   const [selectedGapIds, setSelectedGapIds] = useState<Set<string>>(new Set());
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [showViewer, setShowViewer] = useState(false);
+  const [viewingFile, setViewingFile] = useState<PackageFile | null>(null);
 
   const activeAnalysis = analyses.find(a => a.id === activeAnalysisId);
 
@@ -158,6 +162,27 @@ export const PackageReviewCenter: React.FC<PackageReviewCenterProps> = ({
     } finally {
       setIsGeneratingPlan(false);
     }
+  };
+
+  const handleSaveAsPolicy = (file: PackageFile) => {
+    const newPolicy: PolicyDocument = {
+        id: `pol-${Date.now()}`,
+        title: file.name.split('.')[0],
+        description: `Imported from package audit: ${file.name}`,
+        sections: [],
+        lastModified: Date.now(),
+        status: 'Draft',
+        fileBase64: file.base64,
+        fileMimeType: file.type,
+        fileName: file.name
+    };
+    onUpdate({ policies: [...policies, newPolicy] });
+    alert(`Document "${file.name}" has been added to your Policy Repository. You can now link it to controls.`);
+  };
+
+  const handleViewFile = (file: PackageFile) => {
+    setViewingFile(file);
+    setShowViewer(true);
   };
 
   const getFileIcon = (type: string) => {
@@ -342,6 +367,76 @@ export const PackageReviewCenter: React.FC<PackageReviewCenterProps> = ({
                     ))}
                   </div>
                 </div>
+
+                {/* Analysis Files */}
+                <div className="space-y-6">
+                    <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter flex items-center gap-2 px-4">
+                      <FileText size={20} className="text-blue-600" /> Analysis Files ({activeAnalysis.files.length})
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {activeAnalysis.files.map(file => (
+                            <div key={file.id} className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center justify-between group">
+                                <div className="flex items-center gap-4 overflow-hidden">
+                                    <div className="p-3 bg-slate-50 rounded-xl group-hover:bg-blue-50 transition-colors">
+                                        {getFileIcon(file.type)}
+                                    </div>
+                                    <div className="truncate">
+                                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-tight truncate">{file.name}</h4>
+                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{(file.size / 1024).toFixed(1)} KB</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => handleViewFile(file)}
+                                        className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+                                    >
+                                        View
+                                    </button>
+                                    <button 
+                                        onClick={() => handleSaveAsPolicy(file)}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                                    >
+                                        Save as Policy
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Document Viewer Modal */}
+                {showViewer && viewingFile && (
+                    <div className="fixed inset-0 bg-black/80 z-[300] flex items-center justify-center p-10 backdrop-blur-sm">
+                        <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-5xl h-full flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+                            <div className="bg-slate-900 p-6 flex justify-between items-center text-white">
+                                <h3 className="font-black uppercase tracking-[0.2em] text-sm flex items-center gap-3">
+                                    <FileText size={20} className="text-blue-400" /> {viewingFile.name}
+                                </h3>
+                                <button onClick={() => { setShowViewer(false); setViewingFile(null); }} className="text-white/50 hover:text-white transition-colors"><X size={24} /></button>
+                            </div>
+                            <div className="flex-1 bg-slate-100 p-4">
+                                {viewingFile.type === 'application/pdf' ? (
+                                    <iframe 
+                                        src={viewingFile.base64} 
+                                        className="w-full h-full rounded-2xl border-none"
+                                        title="Document Viewer"
+                                    />
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-center p-10">
+                                        <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+                                            <AlertTriangle size={32} className="text-amber-500" />
+                                        </div>
+                                        <h4 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Preview Not Available</h4>
+                                        <p className="text-sm text-slate-500 mt-2 max-w-md font-medium leading-relaxed">
+                                            This file type ({viewingFile.type}) cannot be previewed directly. 
+                                            Save it as a policy to use AI parsing.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-20">

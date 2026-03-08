@@ -206,13 +206,47 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
     <div className="h-full flex bg-slate-50 overflow-hidden">
       {/* Sidebar: Policy List */}
       <div className="w-80 bg-white border-r border-slate-200 flex flex-col shrink-0">
-        <div className="p-6 border-b border-slate-100">
+        <div className="p-6 border-b border-slate-100 space-y-3">
           <button 
             onClick={handleCreatePolicy}
             className="w-full bg-slate-900 text-white py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-black transition-all font-black text-[10px] uppercase tracking-widest shadow-xl shadow-slate-200"
           >
             <FilePlus2 size={16} /> New Policy Document
           </button>
+          
+          <label className="w-full bg-white border-2 border-slate-100 text-slate-600 py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-all font-black text-[10px] uppercase tracking-widest cursor-pointer">
+            <Upload size={16} /> Upload Policy File
+            <input 
+                type="file" 
+                className="hidden" 
+                accept=".pdf,.doc,.docx,.txt" 
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        const isBinary = file.type === 'application/pdf' || file.name.endsWith('.docx') || file.name.endsWith('.doc');
+                        reader.onload = (ev) => {
+                            const content = ev.target?.result as string;
+                            const newPolicy: PolicyDocument = {
+                                id: `pol-${Date.now()}`,
+                                title: file.name.split('.')[0],
+                                description: `Uploaded policy: ${file.name}`,
+                                sections: [],
+                                lastModified: Date.now(),
+                                status: 'Draft',
+                                fileBase64: isBinary ? content : undefined,
+                                fileMimeType: file.type || 'application/octet-stream',
+                                fileName: file.name
+                            };
+                            onUpdate({ policies: [...policies, newPolicy] });
+                            setActivePolicyId(newPolicy.id);
+                        };
+                        if (isBinary) reader.readAsDataURL(file);
+                        else reader.readAsText(file);
+                    }
+                }} 
+            />
+          </label>
         </div>
         
         <div className="flex-1 overflow-y-auto p-4 space-y-2">

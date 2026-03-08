@@ -521,6 +521,7 @@ const App: React.FC = () => {
               <PackageReviewCenter 
                 requirements={activeData.requirements}
                 analyses={activeData.packageAnalyses}
+                policies={activeData.policies}
                 onUpdate={handleUpdateClientData}
                 onAddTasks={handleAddTasks}
               />
