@@ -141,6 +141,9 @@ export interface User {
   isCuiAuthorized: boolean;
   iamSource?: 'Manual' | 'Microsoft365' | 'EntraID' | 'ActiveDirectory' | 'CSV_Import';
   lastSynced?: number;
+  permissions?: string[];
+  accessLevel?: 'Low' | 'Medium' | 'High' | 'Restricted';
+  roles?: string[];
 }
 
 export interface OrganizationFinancials {
@@ -222,6 +225,7 @@ export interface ClientData {
   policies?: PolicyDocument[];
   poamItems?: PoamItem[];
   packageAnalyses?: PackageAnalysis[];
+  workflows?: Workflow[];
   m365Config: IntegrationConfig;
   intuneConfig: IntegrationConfig;
   adConfig: IntegrationConfig;
@@ -241,7 +245,7 @@ export enum AppView {
   WIZARD = 'WIZARD',
   CONTROLS = 'CONTROLS',
   SPRS_SCORECARD = 'SPRS_SCORECARD',
-  TRAINING = 'TRAINING',
+  WORKFLOWS = 'WORKFLOWS',
   ASSETS = 'ASSETS',
   USERS = 'USERS',
   NETWORK_DIAGRAM = 'NETWORK_DIAGRAM',
@@ -456,4 +460,21 @@ export interface PoamItem extends PoamEntry {
   id: string;
   linkedRequirementId?: string;
   dateIdentified: number;
+}
+
+export interface WorkflowStep {
+  id: string;
+  title: string;
+  description: string;
+  assignedRole?: string;
+  status: 'Pending' | 'In Progress' | 'Completed';
+}
+
+export interface Workflow {
+  id: string;
+  type: 'CUI_FLOW' | 'ONBOARDING' | 'OFFBOARDING' | 'ACCESS_CRITERIA' | 'CUSTOM';
+  title: string;
+  description: string;
+  steps: WorkflowStep[];
+  lastUpdated: number;
 }

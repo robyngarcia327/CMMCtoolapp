@@ -1,4 +1,4 @@
-import { Requirement, Framework, ClientData, TrainingModule, SimulationModule } from '../types';
+import { Requirement, Framework, ClientData, TrainingModule, SimulationModule, Workflow } from '../types';
 
 export const FRAMEWORKS: Framework[] = [
   { id: 'NIST-CMMC', name: 'CMMC 2.0 / NIST 800-171', description: 'Comprehensive DoD Compliance Portfolio (Levels 1-2)' },
@@ -1268,6 +1268,50 @@ export const RMF_TASKS = [
   { id: 'P-1', step: 'P', name: 'Risk Management Role Assignment', description: 'Assign key risk management roles.', role: 'Organization Lead' }
 ];
 
+export const DEFAULT_WORKFLOWS: Workflow[] = [
+  {
+    id: 'wf-cui-flow',
+    type: 'CUI_FLOW',
+    title: 'CUI Data Flow Lifecycle',
+    description: 'Tracks how CUI enters, moves through, and leaves the organization.',
+    steps: [
+      { id: 's1', title: 'Receipt of CUI', description: 'CUI is received via encrypted email or secure portal.', status: 'Pending' },
+      { id: 's2', title: 'Storage in Secure Enclave', description: 'CUI is moved to the designated secure storage area.', status: 'Pending' },
+      { id: 's3', title: 'Processing/Access', description: 'Authorized personnel access CUI for contract performance.', status: 'Pending' },
+      { id: 's4', title: 'Transmission', description: 'CUI is transmitted to authorized subcontractors or DoD.', status: 'Pending' },
+      { id: 's5', title: 'Destruction/Archiving', description: 'CUI is destroyed or archived per contract requirements.', status: 'Pending' }
+    ],
+    lastUpdated: Date.now()
+  },
+  {
+    id: 'wf-onboarding',
+    type: 'ONBOARDING',
+    title: 'Employee Onboarding & CUI Authorization',
+    description: 'Process for bringing new employees into the organization and granting CUI access.',
+    steps: [
+      { id: 's1', title: 'Background Check', description: 'Verify employee background and citizenship.', status: 'Pending' },
+      { id: 's2', title: 'Security Awareness Training', description: 'Complete initial CMMC/NIST training.', status: 'Pending' },
+      { id: 's3', title: 'NDA Signing', description: 'Employee signs non-disclosure agreement.', status: 'Pending' },
+      { id: 's4', title: 'Account Creation', description: 'Create standard user account with MFA.', status: 'Pending' },
+      { id: 's5', title: 'CUI Access Grant', description: 'Grant access to CUI enclaves based on role.', status: 'Pending' }
+    ],
+    lastUpdated: Date.now()
+  },
+  {
+    id: 'wf-access-criteria',
+    type: 'ACCESS_CRITERIA',
+    title: 'Access Control Determination Criteria',
+    description: 'Establishment of criteria for determining who gets access to what systems.',
+    steps: [
+      { id: 's1', title: 'Role Definition', description: 'Define organizational roles and their standard access needs.', status: 'Pending' },
+      { id: 's2', title: 'Need-to-Know Verification', description: 'Verify the specific business need for access to CUI.', status: 'Pending' },
+      { id: 's3', title: 'Approval Workflow', description: 'Formal approval process by System Owner or Security Officer.', status: 'Pending' },
+      { id: 's4', title: 'Access Level Assignment', description: 'Assign appropriate access level (Low, Medium, High).', status: 'Pending' }
+    ],
+    lastUpdated: Date.now()
+  }
+];
+
 export const createInitialClientData = (isParent: boolean): ClientData => ({
   targetCmmcLevel: 2, 
   requirements: JSON.parse(JSON.stringify(REQUIREMENTS_DATA)),
@@ -1286,6 +1330,7 @@ export const createInitialClientData = (isParent: boolean): ClientData => ({
   policies: [],
   poamItems: [],
   packageAnalyses: [],
+  workflows: [...DEFAULT_WORKFLOWS],
   m365Config: { enabled: false },
   intuneConfig: { enabled: false },
   adConfig: { enabled: false },

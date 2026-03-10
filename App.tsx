@@ -34,7 +34,8 @@ import {
   ArrowRight,
   FileCheck2,
   AlertCircle,
-  RefreshCcw
+  RefreshCcw,
+  GitBranch
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData, REQUIREMENTS_DATA } from './data/standards';
@@ -59,6 +60,7 @@ import { BudgetCalculator } from './components/BudgetCalculator';
 import { PolicyReviewCenter } from './components/PolicyReviewCenter';
 import { PackageReviewCenter } from './components/PackageReviewCenter';
 import { PoamRegistry } from './components/PoamRegistry';
+import { WorkflowManager } from './components/WorkflowManager';
 import { api } from './services/api';
 
 const SidebarItem = ({ 
@@ -386,7 +388,7 @@ const App: React.FC = () => {
       case AppView.WIZARD: return "Guided Wizard";
       case AppView.CONTROLS: return "Audit Criteria";
       case AppView.SPRS_SCORECARD: return "DoD Scorecard";
-      case AppView.TRAINING: return "CMMC Academy";
+      case AppView.WORKFLOWS: return "Organizational Workflows";
       case AppView.ASSESSOR_PORTAL: return "Assessor View";
       case AppView.ASSETS: return "Asset Pool";
       case AppView.USERS: return "Identity Management";
@@ -416,7 +418,7 @@ const App: React.FC = () => {
           <SidebarSection title="General">
             <SidebarItem icon={LayoutDashboard} label="Dashboard" isActive={currentView === AppView.DASHBOARD} onClick={() => setCurrentView(AppView.DASHBOARD)} />
             <SidebarItem icon={Wand2} label="Wizard" isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} badge="Guided" />
-            <SidebarItem icon={GraduationCap} label="Academy" isActive={currentView === AppView.TRAINING} onClick={() => setCurrentView(AppView.TRAINING)} />
+            <SidebarItem icon={GitBranch} label="Workflows" isActive={currentView === AppView.WORKFLOWS} onClick={() => setCurrentView(AppView.WORKFLOWS)} />
           </SidebarSection>
           <SidebarSection title="Compliance">
             <SidebarItem icon={ListChecks} label="Controls" isActive={currentView === AppView.CONTROLS} onClick={() => setCurrentView(AppView.CONTROLS)} />
@@ -496,10 +498,10 @@ const App: React.FC = () => {
                 </div>
             )}
             {currentView === AppView.SPRS_SCORECARD && <SPRSScorecard requirements={activeData.requirements} activeFrameworkId={activeFramework.id} targetLevel={activeData.targetCmmcLevel} />}
-            {currentView === AppView.TRAINING && (
-                <CmmcAcademy 
-                    mastery={activeData.mastery} 
-                    onUpdateMastery={handleUpdateMastery} 
+            {currentView === AppView.WORKFLOWS && (
+                <WorkflowManager 
+                    workflows={activeData.workflows || []} 
+                    onUpdate={handleUpdateClientData} 
                 />
             )}
             {currentView === AppView.ASSESSOR_PORTAL && <AssessorPortal client={activeClient} requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} assets={activeData.assets} risks={activeData.risks} policies={activeData.policies} />}
