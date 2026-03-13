@@ -261,6 +261,7 @@ export enum AppView {
   POLICY_AUDIT = 'POLICY_AUDIT',
   PACKAGE_REVIEW = 'PACKAGE_REVIEW',
   SECURE_VAULT = 'SECURE_VAULT',
+  VENDORS = 'VENDORS',
   ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
   GLOBAL_ADMIN = 'GLOBAL_ADMIN'
 }
@@ -431,13 +432,16 @@ export interface BudgetLineItem {
 export interface Vendor {
   id: string;
   name: string;
+  domain: string;
   serviceProvided: string;
   criticality: 'Low' | 'Medium' | 'High' | 'Critical';
   contactPerson: string;
   contactEmail: string;
+  contactPhone?: string;
   status: 'Active' | 'Under Review' | 'Rejected';
   hasNDASigned: boolean;
   hasDPA: boolean;
+  handlesCUI: boolean;
   lastAssessmentDate: number;
   nextAssessmentDate: number;
 }

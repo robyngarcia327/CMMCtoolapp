@@ -19,7 +19,61 @@ interface SharedDocument {
   content?: string; // Base64 or path to file
 }
 
+interface Vendor {
+  id: string;
+  orgId: string;
+  name: string;
+  domain: string;
+  serviceProvided: string;
+  criticality: 'Low' | 'Medium' | 'High' | 'Critical';
+  contactPerson: string;
+  contactEmail: string;
+  contactPhone?: string;
+  status: 'Active' | 'Under Review' | 'Rejected';
+  hasNDASigned: boolean;
+  hasDPA: boolean;
+  handlesCUI: boolean;
+  lastAssessmentDate: number;
+  nextAssessmentDate: number;
+}
+
 let sharedDocuments: SharedDocument[] = [];
+let vendors: Vendor[] = [
+  {
+    id: 'v1',
+    orgId: 'demo-org',
+    name: 'CyberGuard Solutions',
+    domain: 'cyberguard.com',
+    serviceProvided: 'Managed Security Services',
+    criticality: 'High',
+    contactPerson: 'Alice Johnson',
+    contactEmail: 'alice@cyberguard.com',
+    contactPhone: '555-0123',
+    status: 'Active',
+    hasNDASigned: true,
+    hasDPA: true,
+    handlesCUI: true,
+    lastAssessmentDate: Date.now() - 30 * 24 * 60 * 60 * 1000,
+    nextAssessmentDate: Date.now() + 335 * 24 * 60 * 60 * 1000
+  },
+  {
+    id: 'v2',
+    orgId: 'demo-org',
+    name: 'CloudFlow Systems',
+    domain: 'cloudflow.io',
+    serviceProvided: 'Cloud Infrastructure',
+    criticality: 'Critical',
+    contactPerson: 'Bob Smith',
+    contactEmail: 'bob@cloudflow.io',
+    contactPhone: '555-0456',
+    status: 'Active',
+    hasNDASigned: true,
+    hasDPA: true,
+    handlesCUI: false,
+    lastAssessmentDate: Date.now() - 60 * 24 * 60 * 60 * 1000,
+    nextAssessmentDate: Date.now() + 305 * 24 * 60 * 60 * 1000
+  }
+];
 
 async function startServer() {
   const app = express();
@@ -121,6 +175,45 @@ async function startServer() {
     }
 
     sharedDocuments.splice(docIndex, 1);
+    res.status(204).send();
+  });
+
+  // Vendor API Routes
+  app.get("/api/vendors", (req, res) => {
+    const orgId = req.query.orgId as string;
+    if (!orgId) return res.status(400).json({ error: "orgId required" });
+    
+    // In a real app, filter by orgId
+    res.json(vendors);
+  });
+
+  app.post("/api/vendors", (req, res) => {
+    const vendor = req.body;
+    const newVendor: Vendor = {
+      ...vendor,
+      id: Math.random().toString(36).substr(2, 9),
+      createdAt: new Date().toISOString()
+    };
+    vendors.push(newVendor);
+    res.status(201).json(newVendor);
+  });
+
+  app.patch("/api/vendors/:id", (req, res) => {
+    const { id } = req.params;
+    const updates = req.body;
+    const index = vendors.findIndex(v => v.id === id);
+    if (index === -1) return res.status(404).json({ error: "Vendor not found" });
+    
+    vendors[index] = { ...vendors[index], ...updates };
+    res.json(vendors[index]);
+  });
+
+  app.delete("/api/vendors/:id", (req, res) => {
+    const { id } = req.params;
+    const index = vendors.findIndex(v => v.id === id);
+    if (index === -1) return res.status(404).json({ error: "Vendor not found" });
+    
+    vendors.splice(index, 1);
     res.status(204).send();
   });
 

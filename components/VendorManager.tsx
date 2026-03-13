@@ -1,203 +1,426 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Users, 
+  Plus, 
+  Search, 
+  Mail, 
+  Phone, 
+  Globe, 
+  ShieldCheck, 
+  ShieldAlert, 
+  MoreVertical, 
+  Trash2, 
+  Edit2, 
+  ExternalLink,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Filter
+} from 'lucide-react';
+import { useAuth } from 'react-oidc-context';
+import { api } from '../services/api';
 import { Vendor } from '../types';
-import { Building2, Search, Plus, ShieldCheck, AlertTriangle, FileText, Calendar, Trash2, Edit2 } from 'lucide-react';
 
-interface VendorManagerProps {
-  vendors: Vendor[];
-  onAddVendor: (vendor: Vendor) => void;
-  onUpdateVendor: (vendor: Vendor) => void;
-  onDeleteVendor: (id: string) => void;
-}
-
-export const VendorManager: React.FC<VendorManagerProps> = ({ vendors, onAddVendor, onUpdateVendor, onDeleteVendor }) => {
-  const [isAdding, setIsAdding] = useState(false);
+export const VendorManager: React.FC = () => {
+  const auth = useAuth();
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [newVendor, setNewVendor] = useState<Partial<Vendor>>({
-      status: 'Active',
-      criticality: 'Medium',
-      hasNDASigned: false,
-      hasDPA: false
+  const [isAddingVendor, setIsAddingVendor] = useState(false);
+  const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
+  const [formData, setFormData] = useState<Partial<Vendor>>({
+    name: '',
+    domain: '',
+    serviceProvided: '',
+    criticality: 'Medium',
+    contactPerson: '',
+    contactEmail: '',
+    contactPhone: '',
+    status: 'Active',
+    hasNDASigned: false,
+    hasDPA: false,
+    handlesCUI: false,
+    lastAssessmentDate: Date.now(),
+    nextAssessmentDate: Date.now() + 365 * 24 * 60 * 60 * 1000
   });
 
-  const handleSave = () => {
-      if (!newVendor.name) return;
-      
-      const vendor: Vendor = {
-          id: newVendor.id || `V-${Date.now()}`,
-          name: newVendor.name,
-          serviceProvided: newVendor.serviceProvided || '',
-          criticality: newVendor.criticality as any,
-          contactPerson: newVendor.contactPerson || '',
-          contactEmail: newVendor.contactEmail || '',
-          status: newVendor.status as any,
-          hasNDASigned: newVendor.hasNDASigned || false,
-          hasDPA: newVendor.hasDPA || false,
-          lastAssessmentDate: newVendor.lastAssessmentDate || Date.now(),
-          nextAssessmentDate: newVendor.nextAssessmentDate || Date.now() + (1000 * 60 * 60 * 24 * 365) // +1 year
-      };
+  const orgId = 'demo-org'; // In a real app, get from user profile
 
-      if (newVendor.id) {
-          onUpdateVendor(vendor);
+  useEffect(() => {
+    fetchVendors();
+  }, []);
+
+  const fetchVendors = async () => {
+    if (!auth.user?.id_token) return;
+    setIsLoading(true);
+    try {
+      const data = await api.getVendors(auth.user.id_token, orgId);
+      setVendors(data);
+    } catch (error) {
+      console.error("Failed to fetch vendors", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth.user?.id_token) return;
+
+    try {
+      if (editingVendor) {
+        await api.updateVendor(auth.user.id_token, orgId, editingVendor.id, formData);
       } else {
-          onAddVendor(vendor);
+        await api.createVendor(auth.user.id_token, orgId, formData as Omit<Vendor, 'id'>);
       }
-      setIsAdding(false);
-      setNewVendor({ status: 'Active', criticality: 'Medium', hasNDASigned: false, hasDPA: false });
+      setIsAddingVendor(false);
+      setEditingVendor(null);
+      setFormData({
+        name: '',
+        domain: '',
+        serviceProvided: '',
+        criticality: 'Medium',
+        contactPerson: '',
+        contactEmail: '',
+        contactPhone: '',
+        status: 'Active',
+        hasNDASigned: false,
+        hasDPA: false,
+        handlesCUI: false,
+        lastAssessmentDate: Date.now(),
+        nextAssessmentDate: Date.now() + 365 * 24 * 60 * 60 * 1000
+      });
+      fetchVendors();
+    } catch (error) {
+      console.error("Failed to save vendor", error);
+    }
   };
 
-  const getCriticalityBadge = (level: string) => {
-      switch(level) {
-          case 'Critical': return 'bg-red-100 text-red-800 border-red-200';
-          case 'High': return 'bg-orange-100 text-orange-800 border-orange-200';
-          case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-          default: return 'bg-blue-100 text-blue-800 border-blue-200';
-      }
+  const handleDelete = async (id: string) => {
+    if (!auth.user?.id_token) return;
+    if (!confirm("Are you sure you want to delete this vendor?")) return;
+    try {
+      await api.deleteVendor(auth.user.id_token, orgId, id);
+      fetchVendors();
+    } catch (error) {
+      console.error("Failed to delete vendor", error);
+    }
   };
 
-  const filteredVendors = vendors?.filter(v => v.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
+  const filteredVendors = vendors.filter(v => 
+    v.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    v.domain.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    v.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getCriticalityColor = (criticality: string) => {
+    switch (criticality) {
+      case 'Critical': return 'bg-rose-50 text-rose-600 border-rose-100';
+      case 'High': return 'bg-orange-50 text-orange-600 border-orange-100';
+      case 'Medium': return 'bg-amber-50 text-amber-600 border-amber-100';
+      default: return 'bg-slate-50 text-slate-600 border-slate-100';
+    }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <div className="flex justify-between items-end mb-6">
+    <div className="flex-1 bg-slate-50 overflow-hidden flex flex-col">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200 px-8 py-6 flex justify-between items-center shrink-0">
         <div>
-            <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                <Building2 className="text-indigo-600" /> Vendor Risk Management
-            </h2>
-            <p className="text-slate-600">Track third-party vendors, contracts, and security assessments.</p>
+          <h1 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+            <Users className="text-blue-600" size={28} />
+            Vendor Management
+          </h1>
+          <p className="text-slate-500 text-sm font-medium mt-1">
+            Maintain your supply chain security and CUI handling authorizations.
+          </p>
         </div>
         <button 
-            onClick={() => setIsAdding(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm transition-colors"
+          onClick={() => setIsAddingVendor(true)}
+          className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-200"
         >
-            <Plus size={18} /> Add Vendor
+          <Plus size={18} />
+          Add Vendor
         </button>
       </div>
 
-      {isAdding && (
-          <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200 mb-6 animate-in fade-in slide-in-from-top-2">
-              <h3 className="font-bold text-slate-800 mb-4">{newVendor.id ? 'Edit Vendor' : 'Onboard New Vendor'}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Vendor Name</label>
-                      <input className="w-full border p-2 rounded" value={newVendor.name || ''} onChange={e => setNewVendor({...newVendor, name: e.target.value})} placeholder="e.g. AWS, cleaning service" />
-                  </div>
-                  <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Service Provided</label>
-                      <input className="w-full border p-2 rounded" value={newVendor.serviceProvided || ''} onChange={e => setNewVendor({...newVendor, serviceProvided: e.target.value})} placeholder="e.g. Hosting, Janitorial" />
-                  </div>
-                  <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Criticality</label>
-                      <select className="w-full border p-2 rounded" value={newVendor.criticality} onChange={e => setNewVendor({...newVendor, criticality: e.target.value as any})}>
-                          <option>Low</option>
-                          <option>Medium</option>
-                          <option>High</option>
-                          <option>Critical</option>
-                      </select>
-                  </div>
-                  <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Contact Person</label>
-                      <input className="w-full border p-2 rounded" value={newVendor.contactPerson || ''} onChange={e => setNewVendor({...newVendor, contactPerson: e.target.value})} />
-                  </div>
-                  <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Contact Email</label>
-                      <input className="w-full border p-2 rounded" value={newVendor.contactEmail || ''} onChange={e => setNewVendor({...newVendor, contactEmail: e.target.value})} />
-                  </div>
-                  <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
-                      <select className="w-full border p-2 rounded" value={newVendor.status} onChange={e => setNewVendor({...newVendor, status: e.target.value as any})}>
-                          <option>Active</option>
-                          <option>Under Review</option>
-                          <option>Rejected</option>
-                      </select>
-                  </div>
-                  <div className="md:col-span-3 flex gap-6 pt-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                          <input type="checkbox" className="w-4 h-4" checked={newVendor.hasNDASigned} onChange={e => setNewVendor({...newVendor, hasNDASigned: e.target.checked})} />
-                          <span className="text-sm font-medium text-slate-700">NDA Signed?</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                          <input type="checkbox" className="w-4 h-4" checked={newVendor.hasDPA} onChange={e => setNewVendor({...newVendor, hasDPA: e.target.checked})} />
-                          <span className="text-sm font-medium text-slate-700">DPA (Data Processing Agreement)?</span>
-                      </label>
-                  </div>
-              </div>
-              <div className="flex justify-end gap-2 mt-6 border-t border-slate-100 pt-4">
-                  <button onClick={() => { setIsAdding(false); setNewVendor({}); }} className="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded">Cancel</button>
-                  <button onClick={handleSave} className="px-6 py-2 bg-blue-600 text-white rounded font-medium shadow-sm hover:bg-blue-700">Save Vendor</button>
-              </div>
-          </div>
-      )}
-
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-200 flex items-center gap-2">
-              <Search className="text-slate-400" size={20} />
-              <input 
-                className="flex-1 outline-none text-sm" 
-                placeholder="Search vendors..." 
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-          </div>
-          
-          <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 text-slate-500 font-semibold">
-                  <tr>
-                      <th className="p-4">Vendor</th>
-                      <th className="p-4">Service</th>
-                      <th className="p-4">Criticality</th>
-                      <th className="p-4">Compliance Status</th>
-                      <th className="p-4">Next Review</th>
-                      <th className="p-4 text-right">Actions</th>
-                  </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                  {filteredVendors.length === 0 && (
-                      <tr><td colSpan={6} className="p-8 text-center text-slate-400 italic">No vendors found.</td></tr>
-                  )}
-                  {filteredVendors.map(vendor => (
-                      <tr key={vendor.id} className="hover:bg-slate-50 group">
-                          <td className="p-4">
-                              <div className="font-bold text-slate-900">{vendor.name}</div>
-                              <div className="text-xs text-slate-500">{vendor.contactEmail}</div>
-                          </td>
-                          <td className="p-4 text-slate-600">{vendor.serviceProvided}</td>
-                          <td className="p-4">
-                              <span className={`px-2 py-1 rounded text-xs font-bold border ${getCriticalityBadge(vendor.criticality)}`}>
-                                  {vendor.criticality}
-                              </span>
-                          </td>
-                          <td className="p-4">
-                              <div className="flex flex-col gap-1">
-                                  <div className="flex items-center gap-2 text-xs">
-                                      {vendor.hasNDASigned ? <ShieldCheck size={14} className="text-green-600" /> : <AlertTriangle size={14} className="text-red-500" />}
-                                      <span className={vendor.hasNDASigned ? 'text-slate-700' : 'text-red-600'}>NDA</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-xs">
-                                      {vendor.hasDPA ? <FileText size={14} className="text-green-600" /> : <AlertTriangle size={14} className="text-amber-500" />}
-                                      <span className={vendor.hasDPA ? 'text-slate-700' : 'text-amber-600'}>DPA</span>
-                                  </div>
-                              </div>
-                          </td>
-                          <td className="p-4 text-slate-600 flex items-center gap-2">
-                              <Calendar size={14} className="text-slate-400" />
-                              {new Date(vendor.nextAssessmentDate || Date.now()).toLocaleDateString()}
-                          </td>
-                          <td className="p-4 text-right">
-                              <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button onClick={() => { setNewVendor(vendor); setIsAdding(true); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded">
-                                      <Edit2 size={16} />
-                                  </button>
-                                  <button onClick={() => onDeleteVendor(vendor.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded">
-                                      <Trash2 size={16} />
-                                  </button>
-                              </div>
-                          </td>
-                      </tr>
-                  ))}
-              </tbody>
-          </table>
+      {/* Toolbar */}
+      <div className="px-8 py-4 bg-white border-b border-slate-200 flex gap-4 shrink-0">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <input 
+            type="text"
+            placeholder="Search vendors, domains, or contacts..."
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-12 pr-4 text-sm font-bold outline-none focus:border-blue-500 transition-all"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <button className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-2 text-sm font-bold">
+          <Filter size={18} />
+          Filters
+        </button>
       </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-8">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4">
+            {filteredVendors.length === 0 ? (
+              <div className="bg-white border-2 border-dashed border-slate-200 rounded-3xl p-12 flex flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                  <Users className="text-slate-400" size={32} />
+                </div>
+                <h3 className="text-lg font-black text-slate-900 uppercase">No Vendors Found</h3>
+                <p className="text-slate-500 text-sm max-w-xs mt-2">
+                  Start building your approved vendor list to manage CUI data flow.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Vendor / Domain</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Point Person</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">CUI Handling</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Criticality</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredVendors.map(vendor => (
+                      <tr key={vendor.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-all group">
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 font-black">
+                              {vendor.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="text-sm font-black text-slate-900">{vendor.name}</div>
+                              <div className="text-xs font-bold text-slate-400 flex items-center gap-1 mt-0.5">
+                                <Globe size={12} />
+                                {vendor.domain}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="text-sm font-bold text-slate-700">{vendor.contactPerson}</div>
+                          <div className="flex items-center gap-3 mt-1">
+                            <a href={`mailto:${vendor.contactEmail}`} className="text-slate-400 hover:text-blue-600 transition-all">
+                              <Mail size={14} />
+                            </a>
+                            {vendor.contactPhone && (
+                              <a href={`tel:${vendor.contactPhone}`} className="text-slate-400 hover:text-blue-600 transition-all">
+                                <Phone size={14} />
+                              </a>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          {vendor.handlesCUI ? (
+                            <div className="flex items-center gap-2 text-emerald-600 font-black text-[10px] uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100 w-fit">
+                              <ShieldCheck size={14} />
+                              Authorized
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 w-fit">
+                              <ShieldAlert size={14} />
+                              No CUI
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className={`px-2 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest w-fit ${getCriticalityColor(vendor.criticality)}`}>
+                            {vendor.criticality}
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest ${vendor.status === 'Active' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${vendor.status === 'Active' ? 'bg-emerald-600' : 'bg-slate-400'}`} />
+                            {vendor.status}
+                          </div>
+                        </td>
+                        <td className="px-6 py-5 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button 
+                              onClick={() => {
+                                setEditingVendor(vendor);
+                                setFormData(vendor);
+                                setIsAddingVendor(true);
+                              }}
+                              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(vendor.id)}
+                              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Add/Edit Modal */}
+      {isAddingVendor && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[40px] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in duration-200">
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+                  {editingVendor ? 'Edit Vendor' : 'Add New Vendor'}
+                </h2>
+                <p className="text-slate-500 text-sm font-medium mt-1">Register vendor details and CUI authorization status.</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setIsAddingVendor(false);
+                  setEditingVendor(null);
+                }}
+                className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-400"
+              >
+                <XCircle size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-8 grid grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Vendor Name</label>
+                  <input 
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold outline-none focus:border-blue-500 transition-all"
+                    placeholder="e.g. Acme Corp"
+                    value={formData.name}
+                    onChange={e => setFormData({...formData, name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Domain</label>
+                  <input 
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold outline-none focus:border-blue-500 transition-all"
+                    placeholder="e.g. acme.com"
+                    value={formData.domain}
+                    onChange={e => setFormData({...formData, domain: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Service Provided</label>
+                  <input 
+                    type="text"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold outline-none focus:border-blue-500 transition-all"
+                    placeholder="e.g. IT Support"
+                    value={formData.serviceProvided}
+                    onChange={e => setFormData({...formData, serviceProvided: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Criticality</label>
+                  <select 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold outline-none focus:border-blue-500 transition-all"
+                    value={formData.criticality}
+                    onChange={e => setFormData({...formData, criticality: e.target.value as any})}
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Point Person</label>
+                  <input 
+                    type="text"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold outline-none focus:border-blue-500 transition-all"
+                    placeholder="Full Name"
+                    value={formData.contactPerson}
+                    onChange={e => setFormData({...formData, contactPerson: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Contact Email</label>
+                  <input 
+                    type="email"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold outline-none focus:border-blue-500 transition-all"
+                    placeholder="email@vendor.com"
+                    value={formData.contactEmail}
+                    onChange={e => setFormData({...formData, contactEmail: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Contact Phone</label>
+                  <input 
+                    type="text"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold outline-none focus:border-blue-500 transition-all"
+                    placeholder="555-0000"
+                    value={formData.contactPhone}
+                    onChange={e => setFormData({...formData, contactPhone: e.target.value})}
+                  />
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${formData.handlesCUI ? 'bg-blue-600 border-blue-600' : 'bg-white border-slate-300 group-hover:border-blue-500'}`}>
+                      {formData.handlesCUI && <CheckCircle2 size={14} className="text-white" />}
+                    </div>
+                    <input 
+                      type="checkbox"
+                      className="hidden"
+                      checked={formData.handlesCUI}
+                      onChange={e => setFormData({...formData, handlesCUI: e.target.checked})}
+                    />
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Handles CUI</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${formData.hasNDASigned ? 'bg-blue-600 border-blue-600' : 'bg-white border-slate-300 group-hover:border-blue-500'}`}>
+                      {formData.hasNDASigned && <CheckCircle2 size={14} className="text-white" />}
+                    </div>
+                    <input 
+                      type="checkbox"
+                      className="hidden"
+                      checked={formData.hasNDASigned}
+                      onChange={e => setFormData({...formData, hasNDASigned: e.target.checked})}
+                    />
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">NDA Signed</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="col-span-2 pt-4">
+                <button 
+                  type="submit"
+                  className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+                >
+                  {editingVendor ? 'Update Vendor' : 'Register Vendor'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

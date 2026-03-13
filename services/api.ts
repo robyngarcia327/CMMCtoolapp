@@ -1,4 +1,4 @@
-import { Artifact, Client, CognitoGroup } from '../types';
+import { Artifact, Client, CognitoGroup, Vendor } from '../types';
 
 // Configuration - Your deployed API Gateway endpoint
 const API_BASE_URL = 'https://irwrdtn81b.execute-api.us-east-1.amazonaws.com/CualleeCyberEvidence'; 
@@ -297,6 +297,39 @@ export const api = {
     await fetchJson(`${API_BASE_URL}/vault/${id}`, {
       method: 'DELETE',
       token: accessToken
+    });
+  },
+
+  /**
+   * VENDOR MANAGEMENT API
+   */
+  getVendors: async (accessToken: string, orgId: string): Promise<Vendor[]> => {
+    // In production: await fetchJson(`${API_BASE_URL}/orgs/${orgId}/vendors`, { ... })
+    const response = await fetch(`/api/vendors?orgId=${orgId}`);
+    return response.json();
+  },
+
+  createVendor: async (accessToken: string, orgId: string, vendor: Omit<Vendor, 'id' | 'createdAt'>): Promise<Vendor> => {
+    const response = await fetch('/api/vendors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...vendor, orgId })
+    });
+    return response.json();
+  },
+
+  updateVendor: async (accessToken: string, orgId: string, id: string, updates: Partial<Vendor>): Promise<Vendor> => {
+    const response = await fetch(`/api/vendors/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...updates, orgId })
+    });
+    return response.json();
+  },
+
+  deleteVendor: async (accessToken: string, orgId: string, id: string): Promise<void> => {
+    await fetch(`/api/vendors/${id}?orgId=${orgId}`, {
+      method: 'DELETE'
     });
   }
 };
