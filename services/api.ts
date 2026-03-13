@@ -217,49 +217,86 @@ export const api = {
   },
 
   /**
-   * SECURE VAULT API (To be implemented in AWS)
-   * These methods currently point to the local server for demo purposes,
-   * but should be migrated to the AWS API Gateway.
+   * SECURE VAULT API (AWS Implementation)
    */
-  getVaultSharedWithMe: async (accessToken: string, email: string): Promise<any[]> => {
-    // In production, this would be: await fetchJson(`${API_BASE_URL}/vault/received`, { ... })
-    const response = await fetch(`/api/documents/shared-with-me?email=${encodeURIComponent(email)}`);
-    return response.json();
+  getVaultSharedWithMe: async (accessToken: string): Promise<any[]> => {
+    const data = await fetchJson(`${API_BASE_URL}/vault/received`, {
+      method: 'GET',
+      token: accessToken
+    });
+    return normalizeList(data);
   },
 
-  getVaultMyDocuments: async (accessToken: string, email: string): Promise<any[]> => {
-    // In production, this would be: await fetchJson(`${API_BASE_URL}/vault/sent`, { ... })
-    const response = await fetch(`/api/documents/my-documents?email=${encodeURIComponent(email)}`);
-    return response.json();
+  getVaultMyDocuments: async (accessToken: string): Promise<any[]> => {
+    const data = await fetchJson(`${API_BASE_URL}/vault/sent`, {
+      method: 'GET',
+      token: accessToken
+    });
+    return normalizeList(data);
   },
 
-  shareVaultDocument: async (accessToken: string, payload: any): Promise<any> => {
-    // In production, this would involve a pre-signed URL upload to S3
-    const response = await fetch('/api/documents/share', {
+  /**
+   * Initiates a secure share by requesting an S3 upload URL, 
+   * uploading the file, and then signaling completion.
+   */
+  shareVaultDocument: async (accessToken: string, file: File, recipientEmail: string): Promise<any> => {
+    // 1. Request Upload URL
+    const payload = {
+      filename: file.name,
+      contentType: file.type || 'application/octet-stream',
+      sizeBytes: file.size,
+      recipientEmail: recipientEmail
+    };
+
+    const data = await fetchJson(`${API_BASE_URL}/vault/share`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      token: accessToken,
       body: JSON.stringify(payload)
     });
-    return response.json();
-  },
+    
+    const { uploadUrl, vaultId, requiredHeaders } = data;
 
-  updateVaultStatus: async (accessToken: string, id: string, status: string, email: string): Promise<any> => {
-    const response = await fetch(`/api/documents/${id}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, userEmail: email })
+    // 2. Upload to S3
+    const s3Headers: Record<string, string> = { ...requiredHeaders };
+    if (!s3Headers['Content-Type']) s3Headers['Content-Type'] = file.type || 'application/octet-stream';
+
+    const s3Response = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: s3Headers,
+        body: file 
     });
-    return response.json();
+
+    if (!s3Response.ok) {
+        throw new Error(`Vault S3 Transfer Failed: ${s3Response.status}`);
+    }
+
+    // 3. Signal Completion
+    return await fetchJson(`${API_BASE_URL}/vault/${vaultId}/complete`, {
+      method: 'POST',
+      token: accessToken
+    });
   },
 
-  downloadVaultDocument: async (accessToken: string, id: string, email: string): Promise<any> => {
-    const response = await fetch(`/api/documents/${id}/download?email=${encodeURIComponent(email)}`);
-    return response.json();
+  updateVaultStatus: async (accessToken: string, id: string, status: string): Promise<any> => {
+    return await fetchJson(`${API_BASE_URL}/vault/${id}/status`, {
+      method: 'PATCH',
+      token: accessToken,
+      body: JSON.stringify({ status })
+    });
   },
 
-  deleteVaultDocument: async (accessToken: string, id: string, email: string): Promise<void> => {
-    await fetch(`/api/documents/${id}?email=${encodeURIComponent(email)}`, {
-      method: 'DELETE'
+  downloadVaultDocument: async (accessToken: string, id: string): Promise<string> => {
+    const data = await fetchJson(`${API_BASE_URL}/vault/${id}/download`, {
+      method: 'GET',
+      token: accessToken
+    });
+    return data.downloadUrl;
+  },
+
+  deleteVaultDocument: async (accessToken: string, id: string): Promise<void> => {
+    await fetchJson(`${API_BASE_URL}/vault/${id}`, {
+      method: 'DELETE',
+      token: accessToken
     });
   }
 };

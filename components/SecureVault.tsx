@@ -56,8 +56,8 @@ export const SecureVault: React.FC = () => {
     setIsLoading(true);
     try {
       const [myDocs, sharedDocs] = await Promise.all([
-        api.getVaultMyDocuments(auth.user.id_token, userEmail),
-        api.getVaultSharedWithMe(auth.user.id_token, userEmail)
+        api.getVaultMyDocuments(auth.user.id_token),
+        api.getVaultSharedWithMe(auth.user.id_token)
       ]);
       
       setMyDocs(myDocs);
@@ -73,35 +73,25 @@ export const SecureVault: React.FC = () => {
     e.preventDefault();
     if (!uploadData.file || !uploadData.recipientEmail || !auth.user?.id_token) return;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-      
-      try {
-        await api.shareVaultDocument(auth.user!.id_token!, {
-          name: uploadData.file!.name,
-          ownerId: auth.user?.profile.sub,
-          ownerEmail: userEmail,
-          recipientEmail: uploadData.recipientEmail,
-          fileSize: uploadData.file!.size,
-          mimeType: uploadData.file!.type,
-          content: base64
-        });
+    try {
+      await api.shareVaultDocument(
+        auth.user.id_token, 
+        uploadData.file, 
+        uploadData.recipientEmail
+      );
 
-        setIsUploading(false);
-        setUploadData({ recipientEmail: '', file: null });
-        fetchDocs();
-      } catch (error) {
-        console.error("Upload failed", error);
-      }
-    };
-    reader.readAsDataURL(uploadData.file);
+      setIsUploading(false);
+      setUploadData({ recipientEmail: '', file: null });
+      fetchDocs();
+    } catch (error) {
+      console.error("Upload failed", error);
+    }
   };
 
   const handleStatusUpdate = async (id: string, status: 'approved' | 'declined') => {
-    if (!auth.user?.id_token || !userEmail) return;
+    if (!auth.user?.id_token) return;
     try {
-      await api.updateVaultStatus(auth.user.id_token, id, status, userEmail);
+      await api.updateVaultStatus(auth.user.id_token, id, status);
       fetchDocs();
     } catch (error) {
       console.error("Status update failed", error);
@@ -109,12 +99,12 @@ export const SecureVault: React.FC = () => {
   };
 
   const handleDownload = async (id: string) => {
-    if (!auth.user?.id_token || !userEmail) return;
+    if (!auth.user?.id_token) return;
     try {
-      const data = await api.downloadVaultDocument(auth.user.id_token, id, userEmail);
+      const downloadUrl = await api.downloadVaultDocument(auth.user.id_token, id);
       const link = document.createElement('a');
-      link.href = data.content;
-      link.download = data.name;
+      link.href = downloadUrl;
+      link.download = "secure_document"; // S3 usually provides the name in the header
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -124,10 +114,10 @@ export const SecureVault: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!auth.user?.id_token || !userEmail) return;
+    if (!auth.user?.id_token) return;
     if (!confirm("Are you sure you want to delete this document? This will remove it for both you and the recipient.")) return;
     try {
-      await api.deleteVaultDocument(auth.user.id_token, id, userEmail);
+      await api.deleteVaultDocument(auth.user.id_token, id);
       fetchDocs();
     } catch (error) {
       console.error("Delete failed", error);
