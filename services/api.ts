@@ -214,5 +214,52 @@ export const api = {
     } catch (e) {
         return [];
     }
+  },
+
+  /**
+   * SECURE VAULT API (To be implemented in AWS)
+   * These methods currently point to the local server for demo purposes,
+   * but should be migrated to the AWS API Gateway.
+   */
+  getVaultSharedWithMe: async (accessToken: string, email: string): Promise<any[]> => {
+    // In production, this would be: await fetchJson(`${API_BASE_URL}/vault/received`, { ... })
+    const response = await fetch(`/api/documents/shared-with-me?email=${encodeURIComponent(email)}`);
+    return response.json();
+  },
+
+  getVaultMyDocuments: async (accessToken: string, email: string): Promise<any[]> => {
+    // In production, this would be: await fetchJson(`${API_BASE_URL}/vault/sent`, { ... })
+    const response = await fetch(`/api/documents/my-documents?email=${encodeURIComponent(email)}`);
+    return response.json();
+  },
+
+  shareVaultDocument: async (accessToken: string, payload: any): Promise<any> => {
+    // In production, this would involve a pre-signed URL upload to S3
+    const response = await fetch('/api/documents/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return response.json();
+  },
+
+  updateVaultStatus: async (accessToken: string, id: string, status: string, email: string): Promise<any> => {
+    const response = await fetch(`/api/documents/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, userEmail: email })
+    });
+    return response.json();
+  },
+
+  downloadVaultDocument: async (accessToken: string, id: string, email: string): Promise<any> => {
+    const response = await fetch(`/api/documents/${id}/download?email=${encodeURIComponent(email)}`);
+    return response.json();
+  },
+
+  deleteVaultDocument: async (accessToken: string, id: string, email: string): Promise<void> => {
+    await fetch(`/api/documents/${id}?email=${encodeURIComponent(email)}`, {
+      method: 'DELETE'
+    });
   }
 };

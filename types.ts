@@ -260,6 +260,7 @@ export enum AppView {
   REPORT_POLICY_CENTER = 'REPORT_POLICY_CENTER',
   POLICY_AUDIT = 'POLICY_AUDIT',
   PACKAGE_REVIEW = 'PACKAGE_REVIEW',
+  SECURE_VAULT = 'SECURE_VAULT',
   ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
   GLOBAL_ADMIN = 'GLOBAL_ADMIN'
 }
@@ -468,13 +469,23 @@ export interface WorkflowStep {
   description: string;
   assignedRole?: string;
   status: 'Pending' | 'In Progress' | 'Completed';
+  nextStepIds?: string[];
+  position?: { x: number; y: number };
+  type?: 'start' | 'process' | 'decision' | 'end';
 }
 
 export interface Workflow {
   id: string;
-  type: 'CUI_FLOW' | 'ONBOARDING' | 'OFFBOARDING' | 'ACCESS_CRITERIA' | 'CUSTOM';
+  type: 'CUI_FLOW' | 'ONBOARDING' | 'OFFBOARDING' | 'ACCESS_CRITERIA' | 'CUSTOM' | 
+        'CUI_FLOW_IN' | 'CUI_FLOW_OUT' | 'VENDOR_REVIEW' | 'USER_ONBOARDING' | 'USER_OFFBOARDING' | 
+        'ACCESS_REVIEW' | 'ASSET_PROVISIONING' | 'ASSET_DECOMMISSION' | 'SECURITY_INCIDENT_RESPONSE' | 
+        'CUI_LABELING' | 'SHIPPING' | 'CHANGE_REQUEST' | 'FIREWALL_CHANGE' | 'CONTROL_EVIDENCE_COLLECTION' | 
+        'RISK_ASSESSMENT' | 'POAM_TRACKING' | 'VENDOR_RISK_ASSESSMENT' | 'POLICY_REVIEW' | 
+        'BACKUP_VERIFICATION' | 'CUI_DATA_DESTRUCTION' | 'SECURITY_AWARENESS_TRAINING' | 'HR' | 
+        'ACCOUNTS_PAYABLE_RECEIVABLE';
   title: string;
   description: string;
   steps: WorkflowStep[];
   lastUpdated: number;
+  category?: string;
 }

@@ -61,6 +61,7 @@ import { PolicyReviewCenter } from './components/PolicyReviewCenter';
 import { PackageReviewCenter } from './components/PackageReviewCenter';
 import { PoamRegistry } from './components/PoamRegistry';
 import { WorkflowManager } from './components/WorkflowManager';
+import { SecureVault } from './components/SecureVault';
 import { api } from './services/api';
 
 const SidebarItem = ({ 
@@ -400,6 +401,7 @@ const App: React.FC = () => {
       case AppView.REPORT_SSP: return "System Security Plan";
       case AppView.POLICY_AUDIT: return "Policy Review";
       case AppView.PACKAGE_REVIEW: return "Package Auditor";
+      case AppView.SECURE_VAULT: return "Secure Document Vault";
       case AppView.POAM: return "POA&M Registry";
       default: return "Cuallee Cyber";
     }
@@ -421,6 +423,7 @@ const App: React.FC = () => {
             <SidebarItem icon={GitBranch} label="Workflows" isActive={currentView === AppView.WORKFLOWS} onClick={() => setCurrentView(AppView.WORKFLOWS)} />
           </SidebarSection>
           <SidebarSection title="Compliance">
+            <SidebarItem icon={Shield} label="Secure Vault" isActive={currentView === AppView.SECURE_VAULT} onClick={() => setCurrentView(AppView.SECURE_VAULT)} badge="New" />
             <SidebarItem icon={ListChecks} label="Controls" isActive={currentView === AppView.CONTROLS} onClick={() => setCurrentView(AppView.CONTROLS)} />
             <SidebarItem icon={ClipboardList} label="POA&M" isActive={currentView === AppView.POAM} onClick={() => setCurrentView(AppView.POAM)} />
             <SidebarItem icon={TrendingUp} label="SPRS Scorecard" isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
@@ -533,6 +536,7 @@ const App: React.FC = () => {
               poamItems={activeData.poamItems || []}
               onUpdate={handleUpdateClientData}
             />}
+            {currentView === AppView.SECURE_VAULT && <SecureVault />}
           </div>
         </main>
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />

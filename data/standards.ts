@@ -1272,41 +1272,59 @@ export const DEFAULT_WORKFLOWS: Workflow[] = [
   {
     id: 'wf-cui-flow',
     type: 'CUI_FLOW',
+    category: 'Data Flow',
     title: 'CUI Data Flow Lifecycle',
     description: 'Tracks how CUI enters, moves through, and leaves the organization.',
     steps: [
-      { id: 's1', title: 'Receipt of CUI', description: 'CUI is received via encrypted email or secure portal.', status: 'Pending' },
-      { id: 's2', title: 'Storage in Secure Enclave', description: 'CUI is moved to the designated secure storage area.', status: 'Pending' },
-      { id: 's3', title: 'Processing/Access', description: 'Authorized personnel access CUI for contract performance.', status: 'Pending' },
-      { id: 's4', title: 'Transmission', description: 'CUI is transmitted to authorized subcontractors or DoD.', status: 'Pending' },
-      { id: 's5', title: 'Destruction/Archiving', description: 'CUI is destroyed or archived per contract requirements.', status: 'Pending' }
+      { id: 's1', title: 'Receipt of CUI', description: 'CUI is received via encrypted email or secure portal.', status: 'Pending', type: 'start', position: { x: 100, y: 100 }, nextStepIds: ['s2'] },
+      { id: 's2', title: 'Storage in Secure Enclave', description: 'CUI is moved to the designated secure storage area.', status: 'Pending', type: 'process', position: { x: 100, y: 250 }, nextStepIds: ['s3'] },
+      { id: 's3', title: 'Processing/Access', description: 'Authorized personnel access CUI for contract performance.', status: 'Pending', type: 'process', position: { x: 100, y: 400 }, nextStepIds: ['s4'] },
+      { id: 's4', title: 'Transmission', description: 'CUI is transmitted to authorized subcontractors or DoD.', status: 'Pending', type: 'decision', position: { x: 100, y: 550 }, nextStepIds: ['s5'] },
+      { id: 's5', title: 'Destruction/Archiving', description: 'CUI is destroyed or archived per contract requirements.', status: 'Pending', type: 'end', position: { x: 100, y: 700 } }
     ],
     lastUpdated: Date.now()
   },
   {
     id: 'wf-onboarding',
     type: 'ONBOARDING',
+    category: 'HR',
     title: 'Employee Onboarding & CUI Authorization',
     description: 'Process for bringing new employees into the organization and granting CUI access.',
     steps: [
-      { id: 's1', title: 'Background Check', description: 'Verify employee background and citizenship.', status: 'Pending' },
-      { id: 's2', title: 'Security Awareness Training', description: 'Complete initial CMMC/NIST training.', status: 'Pending' },
-      { id: 's3', title: 'NDA Signing', description: 'Employee signs non-disclosure agreement.', status: 'Pending' },
-      { id: 's4', title: 'Account Creation', description: 'Create standard user account with MFA.', status: 'Pending' },
-      { id: 's5', title: 'CUI Access Grant', description: 'Grant access to CUI enclaves based on role.', status: 'Pending' }
+      { id: 's1', title: 'Background Check', description: 'Verify employee background and citizenship.', status: 'Pending', type: 'start', position: { x: 400, y: 100 }, nextStepIds: ['s2'] },
+      { id: 's2', title: 'Security Awareness Training', description: 'Complete initial CMMC/NIST training.', status: 'Pending', type: 'process', position: { x: 400, y: 250 }, nextStepIds: ['s3'] },
+      { id: 's3', title: 'NDA Signing', description: 'Employee signs non-disclosure agreement.', status: 'Pending', type: 'process', position: { x: 400, y: 400 }, nextStepIds: ['s4'] },
+      { id: 's4', title: 'Account Creation', description: 'Create standard user account with MFA.', status: 'Pending', type: 'process', position: { x: 400, y: 550 }, nextStepIds: ['s5'] },
+      { id: 's5', title: 'CUI Access Grant', description: 'Grant access to CUI enclaves based on role.', status: 'Pending', type: 'end', position: { x: 400, y: 700 } }
     ],
     lastUpdated: Date.now()
   },
   {
     id: 'wf-access-criteria',
     type: 'ACCESS_CRITERIA',
+    category: 'Access Control',
     title: 'Access Control Determination Criteria',
     description: 'Establishment of criteria for determining who gets access to what systems.',
     steps: [
-      { id: 's1', title: 'Role Definition', description: 'Define organizational roles and their standard access needs.', status: 'Pending' },
-      { id: 's2', title: 'Need-to-Know Verification', description: 'Verify the specific business need for access to CUI.', status: 'Pending' },
-      { id: 's3', title: 'Approval Workflow', description: 'Formal approval process by System Owner or Security Officer.', status: 'Pending' },
-      { id: 's4', title: 'Access Level Assignment', description: 'Assign appropriate access level (Low, Medium, High).', status: 'Pending' }
+      { id: 's1', title: 'Role Definition', description: 'Define organizational roles and their standard access needs.', status: 'Pending', type: 'start', position: { x: 700, y: 100 }, nextStepIds: ['s2'] },
+      { id: 's2', title: 'Need-to-Know Verification', description: 'Verify the specific business need for access to CUI.', status: 'Pending', type: 'decision', position: { x: 700, y: 250 }, nextStepIds: ['s3'] },
+      { id: 's3', title: 'Approval Workflow', description: 'Formal approval process by System Owner or Security Officer.', status: 'Pending', type: 'process', position: { x: 700, y: 400 }, nextStepIds: ['s4'] },
+      { id: 's4', title: 'Access Level Assignment', description: 'Assign appropriate access level (Low, Medium, High).', status: 'Pending', type: 'end', position: { x: 700, y: 550 } }
+    ],
+    lastUpdated: Date.now()
+  },
+  {
+    id: 'wf-visitor',
+    type: 'CUSTOM',
+    category: 'Operations',
+    title: 'Physical Visitor Process',
+    description: 'Standard operating procedure for managing visitors to the facility.',
+    steps: [
+      { id: 'v1', title: 'Visitor Identification', description: 'Verify visitor identity and citizenship status.', status: 'Pending', type: 'start', position: { x: 1000, y: 100 }, nextStepIds: ['v2'] },
+      { id: 'v2', title: 'Visitor Log Entry', description: 'Record visitor name, organization, and purpose of visit.', status: 'Pending', type: 'process', position: { x: 1000, y: 250 }, nextStepIds: ['v3'] },
+      { id: 'v3', title: 'Escort Assignment', description: 'Assign an authorized employee to escort the visitor.', status: 'Pending', type: 'process', position: { x: 1000, y: 400 }, nextStepIds: ['v4'] },
+      { id: 'v4', title: 'Badge Issuance', description: 'Issue a temporary visitor badge.', status: 'Pending', type: 'process', position: { x: 1000, y: 550 }, nextStepIds: ['v5'] },
+      { id: 'v5', title: 'Departure & Log Out', description: 'Collect badge and record departure time.', status: 'Pending', type: 'end', position: { x: 1000, y: 700 } }
     ],
     lastUpdated: Date.now()
   }

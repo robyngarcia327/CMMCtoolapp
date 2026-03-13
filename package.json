@@ -4,21 +4,27 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "tsx server.ts",
     "build": "tsc && vite build",
     "lint": "tsc --noEmit",
     "preview": "vite preview"
   },
   "dependencies": {
     "@google/genai": "*",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.1.0",
+    "clsx": "^2.1.0",
+    "express": "^5.2.1",
     "lucide-react": "^0.344.0",
+    "multer": "^2.1.1",
+    "oidc-client-ts": "^3.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^9.0.1",
-    "clsx": "^2.1.0",
+    "react-oidc-context": "^3.1.0",
+    "reactflow": "^11.11.4",
     "tailwind-merge": "^2.2.1",
-    "oidc-client-ts": "^3.0.1",
-    "react-oidc-context": "^3.1.0"
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
