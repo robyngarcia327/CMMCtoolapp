@@ -425,7 +425,6 @@ const App: React.FC = () => {
             <SidebarItem icon={GitBranch} label="Workflows" isActive={currentView === AppView.WORKFLOWS} onClick={() => setCurrentView(AppView.WORKFLOWS)} />
           </SidebarSection>
           <SidebarSection title="Compliance">
-            <SidebarItem icon={Shield} label="Secure Vault" isActive={currentView === AppView.SECURE_VAULT} onClick={() => setCurrentView(AppView.SECURE_VAULT)} badge="New" />
             <SidebarItem icon={ListChecks} label="Controls" isActive={currentView === AppView.CONTROLS} onClick={() => setCurrentView(AppView.CONTROLS)} />
             <SidebarItem icon={ClipboardList} label="POA&M" isActive={currentView === AppView.POAM} onClick={() => setCurrentView(AppView.POAM)} />
             <SidebarItem icon={TrendingUp} label="SPRS Scorecard" isActive={currentView === AppView.SPRS_SCORECARD} onClick={() => setCurrentView(AppView.SPRS_SCORECARD)} />
@@ -441,6 +440,7 @@ const App: React.FC = () => {
             <SidebarItem icon={BarChart3} label="Budgeting" isActive={currentView === AppView.COST_TO_COMPLIANCE} onClick={() => setCurrentView(AppView.COST_TO_COMPLIANCE)} />
           </SidebarSection>
           <SidebarSection title="Reports">
+            <SidebarItem icon={Shield} label="Secure Vault" isActive={currentView === AppView.SECURE_VAULT} onClick={() => setCurrentView(AppView.SECURE_VAULT)} badge="New" />
             <SidebarItem icon={FileSearch} label="Package Auditor" isActive={currentView === AppView.PACKAGE_REVIEW} onClick={() => setCurrentView(AppView.PACKAGE_REVIEW)} badge="AI" />
             <SidebarItem icon={FileCheck2} label="Policy Review" isActive={currentView === AppView.POLICY_AUDIT} onClick={() => setCurrentView(AppView.POLICY_AUDIT)} />
             <SidebarItem icon={FileCheck} label="Executive Summary" isActive={currentView === AppView.REPORT_EXECUTIVE} onClick={() => setCurrentView(AppView.REPORT_EXECUTIVE)} />
