@@ -540,7 +540,7 @@ const App: React.FC = () => {
               onUpdate={handleUpdateClientData}
             />}
             {currentView === AppView.SECURE_VAULT && <SecureVault />}
-            {currentView === AppView.VENDORS && <VendorManager />}
+            {currentView === AppView.VENDORS && <VendorManager activeClientId={activeClientId} />}
           </div>
         </main>
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />

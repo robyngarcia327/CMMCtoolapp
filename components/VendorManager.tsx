@@ -21,7 +21,11 @@ import { useAuth } from 'react-oidc-context';
 import { api } from '../services/api';
 import { Vendor } from '../types';
 
-export const VendorManager: React.FC = () => {
+interface VendorManagerProps {
+  activeClientId?: string;
+}
+
+export const VendorManager: React.FC<VendorManagerProps> = ({ activeClientId }) => {
   const auth = useAuth();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +48,7 @@ export const VendorManager: React.FC = () => {
     nextAssessmentDate: Date.now() + 365 * 24 * 60 * 60 * 1000
   });
 
-  const orgId = 'demo-org'; // In a real app, get from user profile
+  const orgId = activeClientId || 'demo-org';
 
   useEffect(() => {
     fetchVendors();

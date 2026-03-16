@@ -47,8 +47,11 @@ async function fetchJson(url: string, opts: any = {}) {
     }
 
     if (!response.ok) {
-        const msg = body?.message || body?.error || body?.errorMessage || body?.raw || `HTTP ${response.status}`;
-        throw new Error(`${fetchOpts.method || "GET"} ${url} failed (${response.status}): ${msg}`);
+        let msg = body?.message || body?.error || body?.errorMessage || body?.raw || `HTTP ${response.status}`;
+        if (typeof msg === 'object') {
+            msg = msg.message || JSON.stringify(msg);
+        }
+        throw new Error(msg);
     }
 
     return body;
@@ -138,9 +141,16 @@ export const api = {
     const cleanOrgId = (orgId || "").trim();
     const sanitizedReqId = (requirementId || "GENERAL").trim();
 
+    // Normalize MIME type to avoid "Unsupported MIME type" errors from backend
+    // Some backends have strict whitelists or length limits on Content-Type
+    let contentType = file.type || 'application/octet-stream';
+    if (contentType.length > 64 || contentType.includes('officedocument')) {
+        contentType = 'application/octet-stream';
+    }
+
     const payload = {
         filename: file.name,
-        contentType: file.type || 'application/octet-stream',
+        contentType,
         sizeBytes: file.size,
         requirementId: sanitizedReqId
     };
@@ -240,10 +250,16 @@ export const api = {
    * uploading the file, and then signaling completion.
    */
   shareVaultDocument: async (accessToken: string, file: File, recipientEmail: string): Promise<any> => {
+    // Normalize MIME type to avoid "Unsupported MIME type" errors from backend
+    let contentType = file.type || 'application/octet-stream';
+    if (contentType.length > 64 || contentType.includes('officedocument')) {
+        contentType = 'application/octet-stream';
+    }
+
     // 1. Request Upload URL
     const payload = {
       filename: file.name,
-      contentType: file.type || 'application/octet-stream',
+      contentType,
       sizeBytes: file.size,
       recipientEmail: recipientEmail
     };
