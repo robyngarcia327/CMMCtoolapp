@@ -9,7 +9,8 @@ import {
   FileSpreadsheet, Loader2, ShieldCheck, Sparkles, RefreshCw, BookOpen,
   Search,
   X,
-  FileText
+  FileText,
+  Image as ImageIcon
 } from 'lucide-react';
 import { ArtifactUploader } from './ArtifactUploader';
 import { Inventory } from './Inventory';
@@ -71,6 +72,7 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
 }) => {
   
   const [scopingAnswers, setScopingAnswers] = useState<Record<string, boolean>>({});
+  const [triggerSnip, setTriggerSnip] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
   // Policy Step State
@@ -571,8 +573,26 @@ export const ComplianceWizard: React.FC<ComplianceWizardProps> = ({
                 </div>
 
                 <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-200 shadow-inner">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><FileCheck size={18} className="text-blue-500" /> Evidence Upload</h3>
-                    <ArtifactUploader requirementId={currentReq.id} artifacts={artifacts.filter(a => a.requirementId === currentReq.id)} onAddArtifact={onAddArtifact} onRemoveArtifact={onRemoveArtifact} />
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <FileCheck size={18} className="text-blue-500" /> Evidence Upload
+                        </h3>
+                        <button 
+                            onClick={() => setTriggerSnip(true)}
+                            className="px-4 py-1.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center gap-2"
+                        >
+                            <ImageIcon size={14} /> Quick Snip
+                        </button>
+                    </div>
+                    <ArtifactUploader 
+                        requirementId={currentReq.id} 
+                        artifacts={artifacts.filter(a => a.requirementId === currentReq.id)} 
+                        onAddArtifact={onAddArtifact} 
+                        onRemoveArtifact={onRemoveArtifact} 
+                        activeClientId={activeClientId}
+                        autoOpenSnipper={triggerSnip}
+                        onSnipperHandled={() => setTriggerSnip(false)}
+                    />
                 </div>
             </div>
         )}

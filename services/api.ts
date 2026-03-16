@@ -19,6 +19,12 @@ function normalizeToken(token: string) {
  * even for non-200 responses.
  */
 async function fetchJson(url: string, opts: any = {}) {
+    // Prevent calls with "undefined" or empty orgId in the URL
+    if (url.includes('/orgs/undefined/') || url.includes('/orgs//')) {
+        console.error("API call blocked: Invalid orgId in URL", url);
+        throw new Error("Organization context is missing. Please select an organization.");
+    }
+
     const { token, ...fetchOpts } = opts;
     const headers = new Headers(fetchOpts.headers || {});
     

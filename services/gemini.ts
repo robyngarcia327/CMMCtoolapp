@@ -1,6 +1,36 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { Requirement, AuvikDevice, Risk, ProjectTask, PolicySection } from '../types';
+import * as mammoth from 'mammoth';
+
+const decodeBase64ToText = (base64: string): string => {
+  try {
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return new TextDecoder().decode(bytes);
+  } catch (e) {
+    console.error("Error decoding base64 to text:", e);
+    return "";
+  }
+};
+
+const extractTextFromDocx = async (base64: string): Promise<string> => {
+  try {
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const result = await mammoth.extractRawText({ arrayBuffer: bytes.buffer });
+    return result.value;
+  } catch (e) {
+    console.error("Error extracting text from DOCX:", e);
+    return "";
+  }
+};
 
 const SYSTEM_INSTRUCTION_CHAT = `
 You are an expert cybersecurity compliance consultant specialized in CMMC 2.0 and NIST SP 800-171A.
@@ -168,6 +198,36 @@ export const auditPolicyAgainstFramework = async (
   relevantRequirements: Requirement[],
   fileData?: { base64: string; mimeType: string }
 ): Promise<string> => {
+  let effectivePolicyText = policyText || "";
+  let inlineDataPart: any = null;
+
+  if (fileData) {
+    const base64Data = fileData.base64.split(',')[1] || fileData.base64;
+    
+    if (fileData.mimeType.includes('wordprocessingml') || fileData.mimeType.includes('msword')) {
+      const docxText = await extractTextFromDocx(base64Data);
+      effectivePolicyText += (effectivePolicyText ? "\n\n" : "") + docxText;
+    } else if (fileData.mimeType === 'text/plain') {
+      const text = decodeBase64ToText(base64Data);
+      effectivePolicyText += (effectivePolicyText ? "\n\n" : "") + text;
+    } else if (fileData.mimeType === 'application/pdf') {
+      inlineDataPart = {
+        inlineData: {
+          data: base64Data,
+          mimeType: 'application/pdf'
+        }
+      };
+    } else {
+      // Fallback for other types, though Gemini might reject them
+      inlineDataPart = {
+        inlineData: {
+          data: base64Data,
+          mimeType: fileData.mimeType
+        }
+      };
+    }
+  }
+
   const textPrompt = `
     Act as a Lead CMMC Assessor. Perform a detailed GAP ANALYSIS on the provided policy document.
     
@@ -176,7 +236,7 @@ export const auditPolicyAgainstFramework = async (
     EXPECTED CONTROLS TO AUDIT AGAINST:
     ${relevantRequirements.slice(0, 110).map(r => `- ${r.id}: ${r.title} (${r.description})`).join('\n')}
     
-    ${policyText ? `POLICY TEXT TO REVIEW:\n"""\n${policyText}\n"""` : 'Please review the attached document for compliance analysis.'}
+    ${effectivePolicyText ? `POLICY TEXT TO REVIEW:\n"""\n${effectivePolicyText}\n"""` : 'Please review the attached document for compliance analysis.'}
     
     OUTPUT FORMAT (Markdown):
     1. **Policy Maturity Score**: (0-100)
@@ -190,16 +250,8 @@ export const auditPolicyAgainstFramework = async (
   `;
 
   const contents: any[] = [{ text: textPrompt }];
-
-  if (fileData) {
-    // Correct format for Gemini inlineData
-    const base64Data = fileData.base64.split(',')[1] || fileData.base64;
-    contents.push({
-      inlineData: {
-        data: base64Data,
-        mimeType: fileData.mimeType
-      }
-    });
+  if (inlineDataPart) {
+    contents.push(inlineDataPart);
   }
 
   try {
@@ -296,6 +348,20 @@ export const parsePolicyDocument = async (
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const base64Data = fileData.base64.split(',')[1] || fileData.base64;
+  let parts: any[] = [];
+
+  if (fileData.mimeType.includes('wordprocessingml') || fileData.mimeType.includes('msword')) {
+    const docxText = await extractTextFromDocx(base64Data);
+    parts.push({ text: `Analyze this policy document text:\n\n${docxText}` });
+  } else if (fileData.mimeType === 'text/plain') {
+    const text = decodeBase64ToText(base64Data);
+    parts.push({ text: `Analyze this policy document text:\n\n${text}` });
+  } else if (fileData.mimeType === 'application/pdf') {
+    parts.push({ inlineData: { data: base64Data, mimeType: 'application/pdf' } });
+  } else {
+    // Fallback
+    parts.push({ inlineData: { data: base64Data, mimeType: fileData.mimeType } });
+  }
   
   const prompt = `
     Analyze this policy document and extract its main sections based on headers, sub-headers, and the table of contents if present. 
@@ -304,15 +370,13 @@ export const parsePolicyDocument = async (
     
     Return the sections as a JSON array of objects with 'title' and 'content' properties.
   `;
+  parts.push({ text: prompt });
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: {
-        parts: [
-          { inlineData: { data: base64Data, mimeType: fileData.mimeType } },
-          { text: prompt }
-        ]
+        parts: parts
       },
       config: {
         responseMimeType: "application/json",
@@ -387,15 +451,32 @@ export const analyzeCmmcPackage = async (
 
   const parts: any[] = [{ text: textPrompt }];
   
-  files.forEach(file => {
+  for (const file of files) {
     const base64Data = file.base64.split(',')[1] || file.base64;
-    parts.push({
-      inlineData: {
-        data: base64Data,
-        mimeType: file.mimeType
-      }
-    });
-  });
+    
+    if (file.mimeType.includes('wordprocessingml') || file.mimeType.includes('msword')) {
+      const docxText = await extractTextFromDocx(base64Data);
+      parts.push({ text: `Content of ${file.name}:\n\n${docxText}` });
+    } else if (file.mimeType === 'text/plain') {
+      const text = decodeBase64ToText(base64Data);
+      parts.push({ text: `Content of ${file.name}:\n\n${text}` });
+    } else if (file.mimeType === 'application/pdf' || file.mimeType.startsWith('image/')) {
+      parts.push({
+        inlineData: {
+          data: base64Data,
+          mimeType: file.mimeType
+        }
+      });
+    } else {
+      // Fallback
+      parts.push({
+        inlineData: {
+          data: base64Data,
+          mimeType: file.mimeType
+        }
+      });
+    }
+  }
 
   try {
     const response = await ai.models.generateContent({

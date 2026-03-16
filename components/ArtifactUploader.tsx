@@ -11,6 +11,8 @@ interface ArtifactUploaderProps {
   onAddArtifact: (artifact: Artifact) => void;
   onRemoveArtifact: (id: string) => void;
   activeClientId?: string; // Needed for API calls
+  autoOpenSnipper?: boolean;
+  onSnipperHandled?: () => void;
 }
 
 export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
@@ -18,11 +20,20 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
   artifacts,
   onAddArtifact,
   onRemoveArtifact,
-  activeClientId
+  activeClientId,
+  autoOpenSnipper,
+  onSnipperHandled
 }) => {
   const auth = useAuth();
   const [showSnipper, setShowSnipper] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  React.useEffect(() => {
+    if (autoOpenSnipper) {
+      setShowSnipper(true);
+      onSnipperHandled?.();
+    }
+  }, [autoOpenSnipper, onSnipperHandled]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

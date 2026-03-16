@@ -6,7 +6,7 @@ import { PolicyAnalyzer } from './PolicyAnalyzer';
 import { explainRequirement } from '../services/gemini';
 import { fetchAutomatedEvidence } from '../services/integrations';
 import ReactMarkdown from 'react-markdown';
-import { CheckCircle, Sparkles, Ticket as TicketIcon, ExternalLink, Share2, Layers, MessageSquare, Send, Mail, Copy, Clock, AlertTriangle, Cloud, Server, Shield, Loader2, PlayCircle, Lock, RefreshCw, Check, History, Eye, FileText, ClipboardList, Trash2, X } from 'lucide-react';
+import { CheckCircle, Sparkles, Ticket as TicketIcon, ExternalLink, Share2, Layers, MessageSquare, Send, Mail, Copy, Clock, AlertTriangle, Cloud, Server, Shield, Loader2, PlayCircle, Lock, RefreshCw, Check, History, Eye, FileText, ClipboardList, Trash2, X, Image as ImageIcon } from 'lucide-react';
 
 interface RequirementDetailProps {
   requirement: Requirement;
@@ -44,6 +44,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
   policies = []
 }) => {
   const [activeTab, setActiveTab] = useState<'DETAILS' | 'DISCUSSION' | 'EVIDENCE'>('DETAILS');
+  const [triggerSnip, setTriggerSnip] = useState(false);
   const [simpleMode, setSimpleMode] = useState(true);
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   const [loadingAi, setLoadingAi] = useState(false);
@@ -141,6 +142,24 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                     {requirement.poam ? 'Edit POA&M' : 'Add to POA&M'}
                 </button>
                 <div className="flex bg-white rounded-xl border border-slate-200 p-1 shadow-sm">
+                    <button 
+                        onClick={() => setActiveTab('EVIDENCE')}
+                        className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2 ${activeTab === 'EVIDENCE' ? 'bg-purple-600 text-white shadow-md' : 'text-purple-600 hover:bg-purple-50'}`}
+                    >
+                        <Layers size={14} /> Evidence
+                    </button>
+                    <button 
+                        onClick={() => {
+                            setActiveTab('EVIDENCE');
+                            // We'll use a small timeout to let the tab switch before we try to trigger the snipper
+                            // Or better, we just pass a prop to ArtifactUploader
+                            setTriggerSnip(true);
+                        }}
+                        className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-indigo-600 hover:bg-indigo-50 flex items-center gap-2"
+                    >
+                        <ImageIcon size={14} /> Snip
+                    </button>
+                    <div className="w-px h-4 bg-slate-200 self-center mx-1" />
                     <button onClick={() => setSimpleMode(true)} className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${simpleMode ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}>Summary</button>
                     <button onClick={() => setSimpleMode(false)} className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${!simpleMode ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}>Audit View</button>
                 </div>
@@ -318,6 +337,99 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                             </div>
                         </div>
                     </>
+                )}
+
+                {activeTab === 'EVIDENCE' && (
+                    <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-200">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="p-3 bg-purple-100 text-purple-600 rounded-xl">
+                                <Layers size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Evidence Repository</h3>
+                                <p className="text-slate-500 text-xs font-medium">Upload files or use the snipping tool to capture evidence for this control.</p>
+                            </div>
+                        </div>
+                        
+                        <ArtifactUploader 
+                            requirementId={requirement.id} 
+                            artifacts={relevantArtifacts} 
+                            onAddArtifact={onAddArtifact} 
+                            onRemoveArtifact={onRemoveArtifact}
+                            activeClientId={activeClientId}
+                            autoOpenSnipper={triggerSnip}
+                            onSnipperHandled={() => setTriggerSnip(false)}
+                        />
+                    </div>
+                )}
+
+                {activeTab === 'DISCUSSION' && (
+                    <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-200 flex flex-col h-[600px]">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="p-3 bg-green-100 text-green-600 rounded-xl">
+                                <MessageSquare size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Control Discussion</h3>
+                                <p className="text-slate-500 text-xs font-medium">Collaborate with your team on this specific requirement.</p>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto space-y-4 mb-6 pr-2 custom-scrollbar">
+                            {(requirement.comments || []).length === 0 ? (
+                                <div className="h-full flex flex-col items-center justify-center text-slate-300">
+                                    <MessageSquare size={48} className="opacity-10 mb-4" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest">No comments yet</p>
+                                </div>
+                            ) : (
+                                requirement.comments?.map((comment) => (
+                                    <div key={comment.id} className="flex gap-4">
+                                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 font-black text-xs shrink-0 uppercase">
+                                            {comment.userName.charAt(0)}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-xs font-black text-slate-900 uppercase tracking-tight">{comment.userName}</span>
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase">{new Date(comment.timestamp).toLocaleString()}</span>
+                                            </div>
+                                            <div className="bg-slate-50 p-4 rounded-2xl rounded-tl-none border border-slate-100 text-sm text-slate-700 font-medium">
+                                                {comment.text}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="relative">
+                            <textarea 
+                                className="w-full p-5 pr-16 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium text-slate-700 resize-none h-24"
+                                placeholder="Type your message..."
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                            />
+                            <button 
+                                onClick={() => {
+                                    if (!newComment.trim()) return;
+                                    const comment: Comment = {
+                                        id: `c-${Date.now()}`,
+                                        userId: currentUser?.id || 'User',
+                                        userName: currentUser?.name || 'User',
+                                        text: newComment,
+                                        timestamp: Date.now()
+                                    };
+                                    onUpdateRequirement({
+                                        ...requirement,
+                                        comments: [...(requirement.comments || []), comment]
+                                    });
+                                    setNewComment('');
+                                }}
+                                className="absolute bottom-4 right-4 p-3 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
+                            >
+                                <Send size={18} />
+                            </button>
+                        </div>
+                    </div>
                 )}
             </div>
 
