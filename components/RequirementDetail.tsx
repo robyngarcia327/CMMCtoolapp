@@ -260,32 +260,34 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                         </div>
 
                         <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-10">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="font-black text-slate-900 uppercase tracking-widest text-[10px]">Policy Alignment</h3>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-black text-slate-400 uppercase">Linked Policy:</span>
-                                    <select 
-                                        className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20"
-                                        value={requirement.policyMapping?.policyId || ''}
-                                        onChange={(e) => {
-                                            const policyId = e.target.value;
-                                            onUpdateRequirement({
-                                                ...requirement,
-                                                policyMapping: policyId ? { policyId, sectionId: '' } : undefined
-                                            });
-                                        }}
-                                    >
-                                        <option value="">No Policy Linked</option>
-                                        {policies.map(p => (
-                                            <option key={p.id} value={p.id}>{p.title}</option>
-                                        ))}
-                                    </select>
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                                <h3 className="font-black text-slate-900 uppercase tracking-[0.3em] text-[10px] whitespace-nowrap">Policy Alignment</h3>
+                                <div className="flex flex-wrap items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Linked Policy:</span>
+                                        <select 
+                                            className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-[10px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 min-w-[200px]"
+                                            value={requirement.policyMapping?.policyId || ''}
+                                            onChange={(e) => {
+                                                const policyId = e.target.value;
+                                                onUpdateRequirement({
+                                                    ...requirement,
+                                                    policyMapping: policyId ? { policyId, sectionId: '' } : undefined
+                                                });
+                                            }}
+                                        >
+                                            <option value="">No Policy Linked</option>
+                                            {policies.map(p => (
+                                                <option key={p.id} value={p.id}>{p.title}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                     
                                     {requirement.policyMapping?.policyId && (
-                                        <>
-                                            <span className="text-[9px] font-black text-slate-400 uppercase ml-2">Section:</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Section:</span>
                                             <select 
-                                                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 text-[10px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20"
+                                                className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-[10px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 min-w-[150px]"
                                                 value={requirement.policyMapping?.sectionId || ''}
                                                 onChange={(e) => {
                                                     onUpdateRequirement({
@@ -302,7 +304,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                                                     <option key={s.id} value={s.id}>{s.title}</option>
                                                 ))}
                                             </select>
-                                        </>
+                                        </div>
                                     )}
                                 </div>
                             </div>
