@@ -39,7 +39,7 @@ export const PolicyAnalyzer: React.FC<PolicyAnalyzerProps> = ({ requirement }) =
                      Paste your existing policy text below. The AI will audit it against <strong>Requirement {requirement.id}</strong> to check for compliance gaps.
                  </p>
                  <textarea 
-                    className="w-full h-48 border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full h-48 border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-coral-500 outline-none"
                     placeholder="Paste policy text here (e.g., 'Access Control Policy: Users must have unique IDs...')"
                     value={policyText}
                     onChange={(e) => setPolicyText(e.target.value)}
@@ -48,7 +48,7 @@ export const PolicyAnalyzer: React.FC<PolicyAnalyzerProps> = ({ requirement }) =
                      <button 
                         onClick={handleAnalyze}
                         disabled={isAnalyzing || !policyText}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-colors disabled:opacity-50"
+                        className="bg-coral-600 hover:bg-coral-700 text-white px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-colors disabled:opacity-50"
                      >
                          {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <FileText size={18} />}
                          {isAnalyzing ? 'Auditing Policy...' : 'Run Gap Analysis'}
@@ -61,7 +61,7 @@ export const PolicyAnalyzer: React.FC<PolicyAnalyzerProps> = ({ requirement }) =
                      <h4 className="font-bold text-slate-800">Audit Findings</h4>
                      <button 
                         onClick={() => setAnalysis(null)} 
-                        className="text-sm text-blue-600 hover:underline"
+                        className="text-sm text-coral-600 hover:underline"
                      >
                         Analyze Another Snippet
                      </button>
@@ -80,7 +80,7 @@ export const PolicyAnalyzer: React.FC<PolicyAnalyzerProps> = ({ requirement }) =
 };
 
 const InfoBox = ({ type, text }: { type: 'tip' | 'warning', text: string }) => (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded border ${type === 'tip' ? 'bg-blue-50 border-blue-100 text-blue-700' : 'bg-amber-50 border-amber-100 text-amber-700'}`}>
+    <div className={`flex items-center gap-2 px-3 py-2 rounded border ${type === 'tip' ? 'bg-coral-50 border-coral-100 text-coral-700' : 'bg-amber-50 border-amber-100 text-amber-700'}`}>
         {type === 'tip' ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
         {text}
     </div>

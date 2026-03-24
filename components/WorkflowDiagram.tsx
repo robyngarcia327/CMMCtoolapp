@@ -36,7 +36,7 @@ const CustomNode = ({ data }: { data: any }) => {
       case 'start': return <PlayCircle size={14} className="text-emerald-500" />;
       case 'end': return <StopCircle size={14} className="text-rose-500" />;
       case 'decision': return <HelpCircle size={14} className="text-amber-500" />;
-      default: return <Clock size={14} className="text-blue-500" />;
+      default: return <Clock size={14} className="text-coral-500" />;
     }
   };
 
@@ -157,7 +157,7 @@ export const WorkflowDiagram: React.FC<WorkflowDiagramProps> = ({ workflow, onUp
         <Panel position="top-right" className="bg-white p-2 rounded-lg shadow-md border border-slate-200 flex gap-2">
           <button 
             onClick={handleSaveLayout}
-            className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+            className="px-3 py-1.5 bg-coral-600 text-white text-xs font-bold rounded-md hover:bg-coral-700 transition-colors flex items-center gap-2"
           >
             <Shield size={14} /> Save Layout
           </button>

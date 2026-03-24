@@ -33,7 +33,7 @@ export const TrainingCenter: React.FC = () => {
         {/* Certification Dashboard Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm shrink-0">
             <div>
-                <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mb-2">
+                <div className="flex items-center gap-2 text-coral-600 font-black text-[10px] uppercase tracking-[0.2em] mb-2">
                     <Award size={14}/> Professional Certification Path
                 </div>
                 <h1 className="text-3xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
@@ -42,16 +42,16 @@ export const TrainingCenter: React.FC = () => {
                 <p className="text-slate-500 mt-1 font-medium">Master the CCP Test Blueprint and NIST 800-171 Control Families.</p>
             </div>
 
-            <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
+            <div className="flex bg-silver-100 p-1 rounded-2xl border border-silver-200">
                 <button 
                     onClick={() => { setViewMode('BLUEPRINT'); setActiveModuleId(null); }}
-                    className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'BLUEPRINT' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'BLUEPRINT' ? 'bg-coral-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                     Blueprint Domains
                 </button>
                 <button 
                     onClick={() => { setViewMode('DOMAINS'); setActiveModuleId(null); }}
-                    className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'DOMAINS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'DOMAINS' ? 'bg-coral-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                     Control Masterclasses
                 </button>
@@ -65,15 +65,15 @@ export const TrainingCenter: React.FC = () => {
                 
                 {/* Stats Widget */}
                 <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden shrink-0">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-16 -mt-16"></div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-coral-500/10 rounded-full blur-2xl -mr-16 -mt-16"></div>
                     <div className="relative z-10">
-                        <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Course Progress</div>
+                        <div className="text-[10px] font-black text-coral-400 uppercase tracking-widest mb-4">Course Progress</div>
                         <div className="flex items-end gap-2">
                             <span className="text-4xl font-black">12%</span>
-                            <span className="text-xs text-blue-300 mb-1">Mastery Score</span>
+                            <span className="text-xs text-coral-300 mb-1">Mastery Score</span>
                         </div>
                         <div className="h-1.5 bg-white/10 rounded-full mt-4 overflow-hidden">
-                            <div className="h-full bg-blue-500 transition-all duration-1000" style={{ width: '12%' }}></div>
+                            <div className="h-full bg-coral-500 transition-all duration-1000" style={{ width: '12%' }}></div>
                         </div>
                     </div>
                 </div>
@@ -86,18 +86,18 @@ export const TrainingCenter: React.FC = () => {
                             onClick={() => setActiveModuleId(module.id)}
                             className={`w-full text-left p-5 rounded-2xl border transition-all group flex gap-4 ${
                                 activeModuleId === module.id 
-                                ? 'bg-blue-50 border-blue-600 shadow-md ring-1 ring-blue-100' 
-                                : 'bg-white border-slate-200 hover:border-blue-300'
+                                ? 'bg-coral-50 border-coral-600 shadow-md ring-1 ring-coral-100' 
+                                : 'bg-white border-slate-200 hover:border-coral-300'
                             }`}
                         >
                             <div className={`p-3 rounded-xl h-fit transition-colors ${
-                                activeModuleId === module.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+                                activeModuleId === module.id ? 'bg-coral-600 text-white' : 'bg-slate-100 text-slate-500'
                             }`}>
                                 {viewMode === 'BLUEPRINT' ? <Target size={18}/> : <ShieldCheck size={18}/>}
                             </div>
                             <div className="flex-1">
                                 <div className="flex justify-between items-start mb-1">
-                                    <h4 className={`font-black text-xs uppercase tracking-tight ${activeModuleId === module.id ? 'text-blue-900' : 'text-slate-800'}`}>
+                                    <h4 className={`font-black text-xs uppercase tracking-tight ${activeModuleId === module.id ? 'text-coral-900' : 'text-slate-800'}`}>
                                         {module.title}
                                     </h4>
                                 </div>
@@ -128,7 +128,7 @@ export const TrainingCenter: React.FC = () => {
                             <div>
                                 <button 
                                     onClick={() => setActiveModuleId(null)} 
-                                    className="lg:hidden text-xs font-black text-blue-600 mb-2 uppercase tracking-widest flex items-center gap-1"
+                                    className="lg:hidden text-xs font-black text-coral-600 mb-2 uppercase tracking-widest flex items-center gap-1"
                                 >
                                     ← Back to Syllabus
                                 </button>
@@ -137,7 +137,7 @@ export const TrainingCenter: React.FC = () => {
                                     <span className="bg-slate-900 text-white px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase">{activeModule.familyId} Module</span>
                                     <div className="w-1 h-1 rounded-full bg-slate-300"></div>
                                     <span className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1">
-                                        <Zap size={10} className="text-blue-500"/> Blueprint Task Alignment
+                                        <Zap size={10} className="text-coral-500"/> Blueprint Task Alignment
                                     </span>
                                 </div>
                             </div>
@@ -152,17 +152,17 @@ export const TrainingCenter: React.FC = () => {
                         </div>
                         
                         <div className="flex-1 overflow-y-auto p-12 custom-scrollbar">
-                            <div className="prose prose-slate max-w-none prose-headings:text-slate-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-h1:text-4xl prose-h2:text-2xl prose-h2:mt-12 prose-h2:border-b-2 prose-h2:border-slate-100 prose-h2:pb-4 prose-p:text-slate-600 prose-p:leading-relaxed prose-strong:text-slate-900 prose-li:text-slate-600 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:rounded">
+                            <div className="prose prose-slate max-w-none prose-headings:text-slate-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-h1:text-4xl prose-h2:text-2xl prose-h2:mt-12 prose-h2:border-b-2 prose-h2:border-slate-100 prose-h2:pb-4 prose-p:text-slate-600 prose-p:leading-relaxed prose-strong:text-slate-900 prose-li:text-slate-600 prose-code:text-coral-600 prose-code:bg-coral-50 prose-code:px-1 prose-code:rounded">
                                 <ReactMarkdown>{activeModule.content}</ReactMarkdown>
                             </div>
                         </div>
 
                         <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center gap-6 shrink-0">
-                            <div className="flex items-center gap-3 bg-blue-50/50 border border-blue-100 px-4 py-3 rounded-2xl text-blue-800 text-xs font-medium">
+                            <div className="flex items-center gap-3 bg-coral-50/50 border border-coral-100 px-4 py-3 rounded-2xl text-coral-800 text-xs font-medium">
                                 <Info size={16} className="shrink-0" />
                                 Review implementation narratives in the 'Mission Control' to see these concepts in practice.
                             </div>
-                            <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-blue-200 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]">
+                            <button className="bg-coral-600 hover:bg-coral-700 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-coral-200 transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]">
                                 <CheckCircle2 size={16} /> Complete Module
                             </button>
                         </div>

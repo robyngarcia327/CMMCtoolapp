@@ -80,9 +80,9 @@ export const Settings: React.FC<SettingsProps> = ({
   const renderIntegrations = () => (
       <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* M365 */}
-          <div className={`border rounded-xl p-6 flex flex-col gap-4 ${m365Data.enabled ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-xl p-6 flex flex-col gap-4 ${m365Data.enabled ? 'bg-coral-50 border-coral-200' : 'bg-white border-slate-200'}`}>
               <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white"><Cloud size={20}/></div>
+                  <div className="w-10 h-10 bg-coral-600 rounded-lg flex items-center justify-center text-white"><Cloud size={20}/></div>
                   <div><h3 className="font-bold text-slate-900">Microsoft 365</h3><p className="text-xs text-slate-500">Entra ID, Secure Score</p></div>
               </div>
               <div className="flex-1"></div>
@@ -153,11 +153,11 @@ export const Settings: React.FC<SettingsProps> = ({
 
   const renderLibrary = () => (
       <div className="p-8 space-y-6">
-          <div className="bg-indigo-50 p-6 rounded-xl border border-indigo-100 mb-6 flex gap-4">
-              <div className="p-3 bg-white rounded-lg shadow-sm h-fit text-indigo-600"><Library size={24}/></div>
+          <div className="bg-coral-50 p-6 rounded-xl border border-coral-100 mb-6 flex gap-4">
+              <div className="p-3 bg-white rounded-lg shadow-sm h-fit text-coral-600"><Library size={24}/></div>
               <div>
-                  <h3 className="font-bold text-indigo-900 text-lg">Framework Library</h3>
-                  <p className="text-sm text-indigo-700 mt-1">
+                  <h3 className="font-bold text-coral-900 text-lg">Framework Library</h3>
+                  <p className="text-sm text-coral-700 mt-1">
                       This section manages the "Master Definitions" for compliance frameworks.
                       Clicking "Seed Database" below will trigger the automated population process, 
                       copying 110+ controls into your active client's database.
@@ -168,7 +168,7 @@ export const Settings: React.FC<SettingsProps> = ({
           <div className="grid gap-4">
               <div className="bg-white border p-6 rounded-xl flex items-center justify-between shadow-sm">
                   <div>
-                      <h4 className="font-bold text-slate-900 text-lg flex items-center gap-2"><Shield size={18} className="text-blue-600"/> NIST SP 800-171 r2</h4>
+                      <h4 className="font-bold text-slate-900 text-lg flex items-center gap-2"><Shield size={18} className="text-coral-600"/> NIST SP 800-171 r2</h4>
                       <div className="flex gap-4 mt-1">
                          <p className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Version: 2.0</p>
                          <p className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Controls: 110</p>
@@ -208,14 +208,14 @@ export const Settings: React.FC<SettingsProps> = ({
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="flex border-b border-slate-200 overflow-x-auto">
-            <button onClick={() => setActiveTab('ConnectWise')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap ${activeTab === 'ConnectWise' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600'}`}>ConnectWise</button>
-            <button onClick={() => setActiveTab('Jira')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap ${activeTab === 'Jira' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600'}`}>Jira</button>
-            <button onClick={() => setActiveTab('Confluence')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap ${activeTab === 'Confluence' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600'}`}>Confluence</button>
-            <button onClick={() => setActiveTab('Integrations')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Integrations' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-600'}`}><Plug size={14}/> Cloud Integrations</button>
+            <button onClick={() => setActiveTab('ConnectWise')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap ${activeTab === 'ConnectWise' ? 'border-coral-600 text-coral-600' : 'border-transparent text-slate-600'}`}>ConnectWise</button>
+            <button onClick={() => setActiveTab('Jira')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap ${activeTab === 'Jira' ? 'border-coral-600 text-coral-600' : 'border-transparent text-slate-600'}`}>Jira</button>
+            <button onClick={() => setActiveTab('Confluence')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap ${activeTab === 'Confluence' ? 'border-coral-600 text-coral-600' : 'border-transparent text-slate-600'}`}>Confluence</button>
+            <button onClick={() => setActiveTab('Integrations')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Integrations' ? 'border-coral-600 text-coral-600' : 'border-transparent text-slate-600'}`}><Plug size={14}/> Cloud Integrations</button>
             <button onClick={() => setActiveTab('Auvik')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap ${activeTab === 'Auvik' ? 'border-purple-600 text-purple-600' : 'border-transparent text-slate-600'}`}>Auvik</button>
             <button onClick={() => setActiveTab('Library')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Library' ? 'border-green-600 text-green-600' : 'border-transparent text-slate-600'}`}><Library size={14}/> Frameworks</button>
-            <button onClick={() => setActiveTab('Branding')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Branding' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-600'}`}><Palette size={14}/> Branding</button>
-            <button onClick={() => setActiveTab('Data')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Data' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-600'}`}><Database size={14}/> Data</button>
+            <button onClick={() => setActiveTab('Branding')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Branding' ? 'border-coral-600 text-coral-600' : 'border-transparent text-slate-600'}`}><Palette size={14}/> Branding</button>
+            <button onClick={() => setActiveTab('Data')} className={`flex-1 py-4 px-4 text-sm font-bold border-b-2 whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'Data' ? 'border-coral-600 text-coral-600' : 'border-transparent text-slate-600'}`}><Database size={14}/> Data</button>
         </div>
 
         <div>
@@ -279,7 +279,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <div className="p-8 space-y-6">
                     <div className="bg-white border p-6 rounded-xl flex items-center justify-between">
                         <div><h3 className="font-bold">Import Data</h3><p className="text-sm text-slate-500">Restore from JSON backup.</p></div>
-                        <label className="bg-indigo-600 text-white px-4 py-2 rounded cursor-pointer"><Upload size={16} className="inline mr-2"/> Upload<input type="file" className="hidden" onChange={handleFileUpload}/></label>
+                        <label className="bg-coral-600 text-white px-4 py-2 rounded cursor-pointer"><Upload size={16} className="inline mr-2"/> Upload<input type="file" className="hidden" onChange={handleFileUpload}/></label>
                     </div>
                     <button onClick={onExportData} className="w-full border border-slate-300 px-4 py-2 rounded">Download Backup</button>
                 </div>
@@ -288,7 +288,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
         {activeTab !== 'Data' && activeTab !== 'Library' && (
             <div className="p-6 bg-slate-50 border-t flex justify-end">
-                <button onClick={handleSave} className={`px-6 py-3 rounded-lg font-bold text-white transition-all flex items-center gap-2 ${isSaved ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                <button onClick={handleSave} className={`px-6 py-3 rounded-lg font-bold text-white transition-all flex items-center gap-2 ${isSaved ? 'bg-green-600' : 'bg-coral-600 hover:bg-coral-700'}`}>
                     {isSaved ? <><CheckCircle size={20}/> Saved!</> : <><Save size={20}/> Save Changes</>}
                 </button>
             </div>

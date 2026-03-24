@@ -127,7 +127,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
       <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-6">
               <div className="w-20 h-20 bg-slate-900 rounded-3xl flex items-center justify-center text-white shadow-2xl rotate-3">
-                  <ShieldCheck size={40} className="text-blue-500" />
+                  <ShieldCheck size={40} className="text-coral-500" />
               </div>
               <div>
                   <h1 className="text-3xl font-black text-slate-900 tracking-tight">AUDITOR PORTAL</h1>
@@ -136,7 +136,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
                     Verified Review Environment: {client.name}
                   </p>
                   <div className="flex gap-2 mt-3">
-                      <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border border-blue-100">{activeFramework.id}</span>
+                      <span className="bg-coral-50 text-coral-700 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border border-coral-100">{activeFramework.id}</span>
                       <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest">Read-Only Session</span>
                   </div>
               </div>
@@ -145,7 +145,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
           <div className="flex flex-wrap gap-3">
               <button 
                 onClick={() => setShowInviteModal(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
+                className="flex items-center gap-2 px-5 py-2.5 bg-coral-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-coral-200 hover:bg-coral-700 transition-all"
               >
                   <UserPlus size={18} /> Invite Agency
               </button>
@@ -162,15 +162,15 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
               <div className="text-4xl font-black text-slate-900">{stats.readiness}%</div>
               <div className="text-xs text-slate-500 mt-1 font-bold">{stats.met} of {stats.total} Controls Met</div>
               <div className="h-1.5 bg-slate-100 rounded-full mt-4 overflow-hidden">
-                  <div className="bg-blue-600 h-full transition-all" style={{ width: `${stats.readiness}%` }} />
+                  <div className="bg-coral-600 h-full transition-all" style={{ width: `${stats.readiness}%` }} />
               </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Evidence Coverage</div>
-              <div className="text-4xl font-black text-indigo-600">{stats.evidenceCoverage}%</div>
+              <div className="text-4xl font-black text-coral-600">{stats.evidenceCoverage}%</div>
               <div className="text-xs text-slate-500 mt-1 font-bold">{stats.evidenceCount} Total Artifacts</div>
               <div className="h-1.5 bg-slate-100 rounded-full mt-4 overflow-hidden">
-                  <div className="bg-indigo-50 h-full transition-all" style={{ width: `${stats.evidenceCoverage}%` }} />
+                  <div className="bg-coral-50 h-full transition-all" style={{ width: `${stats.evidenceCoverage}%` }} />
               </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -199,19 +199,19 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
         <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm w-fit">
             <button 
                 onClick={() => setActiveTab('CONTROLS')}
-                className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'CONTROLS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+                className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'CONTROLS' ? 'bg-coral-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
             >
                 <FileSearch size={16} /> Requirements List
             </button>
             <button 
                 onClick={() => setActiveTab('BOUNDARY')}
-                className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'BOUNDARY' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+                className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'BOUNDARY' ? 'bg-coral-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
             >
                 <Package size={16} /> Boundary Context
             </button>
             <button 
                 onClick={() => setActiveTab('RISKS')}
-                className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'RISKS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
+                className={`px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'RISKS' ? 'bg-coral-600 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
             >
                 <AlertTriangle size={16} /> Risk Register
             </button>
@@ -219,9 +219,9 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
 
         {activeTab === 'CONTROLS' && (
             <div className="flex gap-2">
-                <button onClick={expandAll} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors">Expand All</button>
+                <button onClick={expandAll} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-coral-600 transition-colors">Expand All</button>
                 <span className="text-slate-200">|</span>
-                <button onClick={collapseAll} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors">Collapse All</button>
+                <button onClick={collapseAll} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-coral-600 transition-colors">Collapse All</button>
             </div>
         )}
       </div>
@@ -235,7 +235,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
                       <div className="relative flex-1">
                           <Search className="absolute left-4 top-3 text-slate-400" size={20} />
                           <input 
-                            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none shadow-inner"
+                            className="w-full pl-12 pr-4 py-3 bg-silver-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-coral-500 outline-none shadow-inner"
                             placeholder="Review by Control ID, Title, or Domain..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -279,19 +279,19 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
                                     className={`w-full flex items-center justify-between p-5 text-left transition-colors ${isFamilyExpanded ? 'bg-slate-900 text-white' : 'bg-white hover:bg-slate-50 text-slate-900'}`}
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className={`p-2 rounded-xl transition-colors ${isFamilyExpanded ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                                        <div className={`p-2 rounded-xl transition-colors ${isFamilyExpanded ? 'bg-coral-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
                                             <ChevronDown size={20} className={`transition-transform duration-300 ${isFamilyExpanded ? '' : '-rotate-90'}`} />
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <span className={`text-[10px] font-black uppercase tracking-widest ${isFamilyExpanded ? 'text-blue-400' : 'text-slate-400'}`}>{familyId} Domain</span>
-                                                <div className={`w-1 h-1 rounded-full ${isFamilyExpanded ? 'bg-blue-400' : 'bg-slate-200'}`} />
+                                                <span className={`text-[10px] font-black uppercase tracking-widest ${isFamilyExpanded ? 'text-coral-400' : 'text-slate-400'}`}>{familyId} Domain</span>
+                                                <div className={`w-1 h-1 rounded-full ${isFamilyExpanded ? 'bg-coral-400' : 'bg-slate-200'}`} />
                                                 <span className="text-sm font-black uppercase tracking-tight">{getFamilyName(familyId)}</span>
                                             </div>
                                             <div className="flex items-center gap-3 mt-1">
                                                 <div className="text-[10px] font-bold opacity-60">{metCount} of {totalCount} MET</div>
                                                 <div className={`h-1 w-20 rounded-full overflow-hidden ${isFamilyExpanded ? 'bg-white/20' : 'bg-slate-100'}`}>
-                                                    <div className="h-full bg-blue-500" style={{ width: `${familyReadiness}%` }} />
+                                                    <div className="h-full bg-coral-500" style={{ width: `${familyReadiness}%` }} />
                                                 </div>
                                             </div>
                                         </div>
@@ -314,12 +314,12 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
                                             const reqArtifacts = artifacts.filter(a => a.requirementId === req.id);
 
                                             return (
-                                                <div key={req.id} className={`rounded-xl border transition-all ${isExpanded ? 'border-blue-400 bg-blue-50/20 ring-1 ring-blue-100 shadow-md' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
+                                                <div key={req.id} className={`rounded-xl border transition-all ${isExpanded ? 'border-coral-400 bg-coral-50/20 ring-1 ring-coral-100 shadow-md' : 'border-slate-100 bg-white hover:border-slate-200'}`}>
                                                     <div 
                                                         onClick={() => setExpandedReqId(isExpanded ? null : req.id)}
                                                         className="p-4 flex items-center gap-4 cursor-pointer"
                                                     >
-                                                        <div className={`transition-transform duration-300 ${isExpanded ? 'rotate-90 text-blue-600' : 'text-slate-400'}`}>
+                                                        <div className={`transition-transform duration-300 ${isExpanded ? 'rotate-90 text-coral-600' : 'text-slate-400'}`}>
                                                             <ChevronRight size={18} />
                                                         </div>
                                                         <div className="w-20 shrink-0 font-mono text-[10px] font-black text-slate-400">{req.id}</div>
@@ -330,8 +330,8 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
                                                         <div className="flex items-center gap-3">
                                                             {reqArtifacts.length > 0 && (
                                                                 <div className="flex -space-x-2">
-                                                                    {reqArtifacts.slice(0,2).map((_,i) => (
-                                                                        <div key={i} className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-blue-500">
+                                                                     {reqArtifacts.slice(0,2).map((_,i) => (
+                                                                        <div key={i} className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-coral-500">
                                                                             <FileText size={10} />
                                                                         </div>
                                                                     ))}
@@ -376,14 +376,14 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
                                                                     </div>
                                                                     
                                                                     <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-6 mb-2 flex items-center gap-2"><Activity size={14}/> Evidence Gallery</h5>
-                                                                    <div className="grid grid-cols-1 gap-2">
+                                                                     <div className="grid grid-cols-1 gap-2">
                                                                         {reqArtifacts.map(art => (
-                                                                            <button key={art.id} className="w-full flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all text-xs font-bold text-slate-700 group">
+                                                                            <button key={art.id} className="w-full flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-lg hover:border-coral-400 hover:shadow-md transition-all text-xs font-bold text-slate-700 group">
                                                                                 <div className="flex items-center gap-3">
-                                                                                    <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors"><Eye size={14}/></div>
+                                                                                    <div className="p-1.5 bg-coral-50 text-coral-600 rounded-lg group-hover:bg-coral-600 group-hover:text-white transition-colors"><Eye size={14}/></div>
                                                                                     <span>{art.name}</span>
                                                                                 </div>
-                                                                                <Download size={14} className="text-slate-300 group-hover:text-blue-600" />
+                                                                                <Download size={14} className="text-slate-300 group-hover:text-coral-600" />
                                                                             </button>
                                                                         ))}
                                                                         {reqArtifacts.length === 0 && (
@@ -427,7 +427,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
                                           <div className="font-bold text-slate-900 text-sm">{a.name}</div>
                                           <div className="text-[10px] text-slate-500 font-bold uppercase">{a.type} // {a.location}</div>
                                       </div>
-                                      <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-black">{a.cmmcCategory}</span>
+                                      <span className="bg-coral-100 text-coral-700 px-2 py-0.5 rounded text-[10px] font-black">{a.cmmcCategory}</span>
                                   </div>
                               ))}
                           </div>
@@ -493,7 +493,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
       {/* Invite Modal */}
       {showInviteModal && (
           <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border-t-8 border-blue-600">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border-t-8 border-coral-600">
                   <div className="bg-slate-900 px-6 py-4 flex justify-between items-center text-white">
                       <h3 className="font-black uppercase tracking-widest text-sm flex items-center gap-2">
                           <UserPlus size={18} /> Grant Access
@@ -507,7 +507,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
                               <Mail className="absolute left-4 top-3 text-slate-400" size={18} />
                               <input 
                                 type="email" 
-                                className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium" 
+                                className="w-full pl-12 pr-4 py-3 bg-silver-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-coral-500 outline-none transition-all font-medium" 
                                 placeholder="assessor@dcma.mil"
                                 value={auditorEmail}
                                 onChange={e => setAuditorEmail(e.target.value)}
@@ -515,7 +515,7 @@ export const AuditorPortal: React.FC<AuditorPortalProps> = ({
                               />
                           </div>
                       </div>
-                      <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-lg shadow-blue-100 transition-all">Send Session Token</button>
+                      <button type="submit" className="w-full py-4 bg-coral-600 hover:bg-coral-700 text-white rounded-xl font-black uppercase tracking-widest text-xs shadow-lg shadow-coral-100 transition-all">Send Session Token</button>
                   </form>
               </div>
           </div>

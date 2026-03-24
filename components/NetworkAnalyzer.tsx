@@ -162,7 +162,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
           <div className="mb-8 flex justify-between items-end">
             <div>
                 <h1 className="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2">
-                    <Network className="text-blue-600" /> Network Architecture Analysis
+                    <Network className="text-coral-600" /> Network Architecture Analysis
                 </h1>
                 <p className="text-slate-600">
                     Analyze system boundaries, detect flat networks, and generate CUI Enclave recommendations.
@@ -171,13 +171,13 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
             <div className="flex bg-slate-100 p-1 rounded-lg">
                 <button
                     onClick={() => setActiveTab('UPLOAD')}
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'UPLOAD' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'UPLOAD' ? 'bg-white shadow text-coral-600' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                     Diagram Upload
                 </button>
                 <button
                     onClick={() => setActiveTab('AUVIK')}
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'AUVIK' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'AUVIK' ? 'bg-white shadow text-coral-600' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                     Auvik Integration
                 </button>
@@ -189,11 +189,11 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
         
         <div className="lg:col-span-5 space-y-6">
             {activeTab === 'UPLOAD' && (
-                <div className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors ${previewUrl || isPdf ? 'border-blue-200 bg-blue-50/50' : 'border-slate-300 hover:bg-slate-50'}`}>
+                <div className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors ${previewUrl || isPdf ? 'border-coral-200 bg-coral-50/50' : 'border-slate-300 hover:bg-slate-50'}`}>
                     {!previewUrl && !isPdf ? (
                         <label className="cursor-pointer flex flex-col items-center w-full h-full">
-                            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                                <Upload className="text-blue-600" size={32} />
+                            <div className="w-16 h-16 bg-coral-100 rounded-full flex items-center justify-center mb-4">
+                                <Upload className="text-coral-600" size={32} />
                             </div>
                             <h3 className="text-lg font-semibold text-slate-700">Secure Vault Upload</h3>
                             <p className="text-sm text-slate-500 mb-4 mt-1">Network maps are stored in your private S3 bucket.</p>
@@ -216,7 +216,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
                                     className="max-h-[300px] w-auto mx-auto rounded shadow-lg object-contain bg-white" 
                                 />
                             )}
-                            <label className="absolute -top-2 -right-2 bg-white text-slate-500 rounded-full p-2 shadow border border-slate-200 hover:text-blue-600 cursor-pointer">
+                            <label className="absolute -top-2 -right-2 bg-white text-slate-500 rounded-full p-2 shadow border border-slate-200 hover:text-coral-600 cursor-pointer">
                                 {isAnalyzing ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
                                 <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileChange} disabled={isAnalyzing} />
                             </label>
@@ -260,7 +260,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
                      <button
                         onClick={handleAuvikSync}
                         disabled={isFetchingAuvik}
-                        className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-bold shadow-sm transition-all disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-2 bg-coral-600 hover:bg-coral-700 text-white py-3 rounded-lg font-bold shadow-sm transition-all disabled:opacity-50"
                      >
                         {isFetchingAuvik ? <Loader2 className="animate-spin" /> : <RefreshCw size={18} />}
                         {isFetchingAuvik ? 'Scanning Network...' : 'Sync & Analyze'}
@@ -278,11 +278,11 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
                 </div>
             )}
             
-            <div className="bg-indigo-50 p-6 rounded-xl border border-indigo-100">
-                <h4 className="font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+            <div className="bg-coral-50 p-6 rounded-xl border border-coral-100">
+                <h4 className="font-semibold text-coral-900 mb-3 flex items-center gap-2">
                     <Layers size={18}/> Compliance Architect Tips
                 </h4>
-                <ul className="space-y-2 text-sm text-indigo-800">
+                <ul className="space-y-2 text-sm text-coral-800">
                     <li className="flex items-start gap-2">
                         <span className="font-bold">•</span>
                         <span><strong>Isolate CUI:</strong> Maps must demonstrate logical isolation.</span>
@@ -298,7 +298,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
         <div className="lg:col-span-7 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[500px] overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <Shield size={20} className="text-indigo-600" />
+                    <Shield size={20} className="text-coral-600" />
                     <h3 className="font-semibold text-slate-800">Architectural Recommendations</h3>
                 </div>
                 {existingAnalysis && !isAnalyzing && (
@@ -311,7 +311,7 @@ export const NetworkAnalyzer: React.FC<NetworkAnalyzerProps> = ({
             <div className="flex-1 p-8 overflow-y-auto custom-scrollbar">
                 {isAnalyzing || isFetchingAuvik ? (
                     <div className="h-full flex flex-col items-center justify-center text-slate-300 space-y-4">
-                        <Loader2 size={48} className="animate-spin text-blue-500" />
+                        <Loader2 size={48} className="animate-spin text-coral-500" />
                         <p className="text-slate-500 font-medium text-lg">AI Generating Insight...</p>
                     </div>
                 ) : existingAnalysis ? (

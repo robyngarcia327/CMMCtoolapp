@@ -73,21 +73,21 @@ const QuizRunner: React.FC<{
         const finalScore = Math.round((score / questions.length) * 100);
         return (
             <div className="bg-white rounded-[2.5rem] p-12 text-center border border-slate-100 shadow-2xl animate-in zoom-in-95 duration-500">
-                <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-8">
-                    <Trophy size={48} className="text-blue-600" />
+                <div className="w-24 h-24 bg-coral-50 rounded-full flex items-center justify-center mx-auto mb-8">
+                    <Trophy size={48} className="text-coral-600" />
                 </div>
                 <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-2">Quiz Complete!</h2>
                 <p className="text-slate-500 font-medium mb-8">You've completed the knowledge check for this module.</p>
                 
                 <div className="bg-slate-50 rounded-3xl p-8 mb-8">
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Your Mastery Score</div>
-                    <div className="text-6xl font-black text-blue-600">{finalScore}%</div>
+                    <div className="text-6xl font-black text-coral-600">{finalScore}%</div>
                 </div>
 
                 <div className="flex gap-4">
                     <button 
                         onClick={() => onComplete(finalScore)}
-                        className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-blue-700 transition-all"
+                        className="flex-1 bg-coral-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-coral-700 transition-all"
                     >
                         Save & Continue
                     </button>
@@ -113,12 +113,12 @@ const QuizRunner: React.FC<{
                         disabled={showExplanation}
                         className={`w-full text-left p-6 rounded-2xl border-2 transition-all flex items-center justify-between group ${
                             selectedOption === idx 
-                                ? 'border-blue-600 bg-blue-50/50' 
-                                : 'border-slate-100 hover:border-blue-200 bg-slate-50/30'
+                                ? 'border-coral-600 bg-coral-50/50' 
+                                : 'border-slate-100 hover:border-coral-200 bg-slate-50/30'
                         } ${showExplanation && idx === currentQuestion.correctAnswerIndex ? 'border-green-500 bg-green-50/50' : ''}
                           ${showExplanation && selectedOption === idx && idx !== currentQuestion.correctAnswerIndex ? 'border-red-500 bg-red-50/50' : ''}`}
                     >
-                        <span className={`font-bold text-sm ${selectedOption === idx ? 'text-blue-700' : 'text-slate-600'}`}>
+                        <span className={`font-bold text-sm ${selectedOption === idx ? 'text-coral-700' : 'text-slate-600'}`}>
                             {option}
                         </span>
                         {showExplanation && idx === currentQuestion.correctAnswerIndex && <CheckCircle2 size={18} className="text-green-600" />}
@@ -128,11 +128,11 @@ const QuizRunner: React.FC<{
             </div>
 
             {showExplanation && (
-                <div className="bg-blue-50 rounded-2xl p-6 mb-8 border border-blue-100 animate-in slide-in-from-top-2">
-                    <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-2">
+                <div className="bg-coral-50 rounded-2xl p-6 mb-8 border border-coral-100 animate-in slide-in-from-top-2">
+                    <h4 className="text-[10px] font-black text-coral-600 uppercase tracking-widest mb-2 flex items-center gap-2">
                         <Info size={14} /> Explanation
                     </h4>
-                    <p className="text-sm text-blue-800 font-medium leading-relaxed">{currentQuestion.explanation}</p>
+                    <p className="text-sm text-coral-800 font-medium leading-relaxed">{currentQuestion.explanation}</p>
                 </div>
             )}
 
@@ -156,12 +156,12 @@ const MasteryDashboard: React.FC<{ mastery: Record<string, ControlMastery> }> = 
     return (
         <div className="p-10 space-y-10 animate-in fade-in duration-500">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
+                <div className="bg-coral-600 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-6">Overall Mastery</h4>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-coral-200 mb-6">Overall Mastery</h4>
                     <div className="flex items-end gap-3 mb-4">
                         <span className="text-6xl font-black leading-none">{progress}%</span>
-                        <span className="text-blue-200 font-bold text-sm mb-2">Complete</span>
+                        <span className="text-coral-200 font-bold text-sm mb-2">Complete</span>
                     </div>
                     <div className="h-2 bg-white/20 rounded-full overflow-hidden">
                         <div className="h-full bg-white transition-all duration-1000" style={{ width: `${progress}%` }}></div>
@@ -203,7 +203,7 @@ const MasteryDashboard: React.FC<{ mastery: Record<string, ControlMastery> }> = 
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div> Mastered
                         </span>
                         <span className="flex items-center gap-1 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div> In Progress
+                            <div className="w-2 h-2 bg-coral-500 rounded-full"></div> In Progress
                         </span>
                     </div>
                 </div>
@@ -216,7 +216,7 @@ const MasteryDashboard: React.FC<{ mastery: Record<string, ControlMastery> }> = 
                                 key={i}
                                 className={`h-12 rounded-xl flex items-center justify-center text-[10px] font-black transition-all border-2 ${
                                     m?.status === 'Mastered' ? 'bg-green-50 border-green-500 text-green-600' :
-                                    m?.status === 'In Progress' ? 'bg-blue-50 border-blue-500 text-blue-600' :
+                                    m?.status === 'In Progress' ? 'bg-coral-50 border-coral-500 text-coral-600' :
                                     'bg-slate-50 border-slate-100 text-slate-300'
                                 }`}
                                 title={controlId}
@@ -358,9 +358,9 @@ const SimulationRunner: React.FC<{
                     </div>
 
                     <div className="lg:col-span-5 space-y-6">
-                        <div className="bg-indigo-900 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
+                        <div className="bg-coral-900 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
                              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16"></div>
-                             <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-6 flex items-center gap-2">
+                             <h4 className="text-[10px] font-black uppercase tracking-widest text-coral-300 mb-6 flex items-center gap-2">
                                  <ShieldAlert size={14}/> Regulatory Insight
                              </h4>
                              <p className="text-sm font-medium leading-relaxed italic opacity-90">
@@ -396,7 +396,7 @@ const SimulationRunner: React.FC<{
             <div className="max-w-5xl mx-auto py-12 px-10 animate-in fade-in duration-700">
                 <div className="flex justify-between items-end mb-8 print:hidden">
                     <div>
-                        <button onClick={() => setStep('SIM')} className="text-blue-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-1 hover:underline mb-2">
+                        <button onClick={() => setStep('SIM')} className="text-coral-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-1 hover:underline mb-2">
                              ← Back to Simulation
                         </button>
                         <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">After-Action Report (AAR)</h2>
@@ -457,7 +457,7 @@ const SimulationRunner: React.FC<{
                                      <p className="text-sm text-slate-600 leading-relaxed mb-6 italic">{inj.scenario}</p>
                                      <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-2">Leadership Consensus & Decision</div>
                                      <p className="text-sm font-bold text-slate-900 leading-relaxed bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">{answers[inj.id]}</p>
-                                     <div className="mt-4 text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                                     <div className="mt-4 text-[10px] font-black text-coral-400 uppercase tracking-widest flex items-center gap-2">
                                          <ShieldCheck size={12}/> Regulatory Alignment: {inj.regulatoryHint}
                                      </div>
                                  </div>
@@ -554,19 +554,19 @@ export const CmmcAcademy: React.FC<{
         {/* ACADEMY SIDEBAR (Course Map) */}
         <aside className="w-80 bg-white border-r border-slate-200 flex flex-col shrink-0 z-10">
             <div className="p-8 border-b border-slate-100 bg-slate-900 text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-coral-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
                 <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-4 text-blue-400">
+                    <div className="flex items-center gap-2 mb-4 text-coral-400">
                         <GraduationCap size={24} />
                         <span className="font-black uppercase tracking-[0.2em] text-[10px]">CMMC Academy</span>
                     </div>
                     <h2 className="text-xl font-black uppercase tracking-tight leading-none">Assessment Readiness</h2>
                     <div className="mt-6 flex items-center justify-between">
                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Training Progress</div>
-                         <div className="text-[10px] font-black text-blue-400 uppercase">Phase {activePhaseId.replace('PH','')}</div>
+                         <div className="text-[10px] font-black text-coral-400 uppercase">Phase {activePhaseId.replace('PH','')}</div>
                     </div>
                     <div className="h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
-                        <div className="h-full bg-blue-500 w-1/5 transition-all duration-1000"></div>
+                        <div className="h-full bg-coral-500 w-1/5 transition-all duration-1000"></div>
                     </div>
                 </div>
             </div>
@@ -596,11 +596,11 @@ export const CmmcAcademy: React.FC<{
                                     key={phase.id}
                                     onClick={() => { setActivePhaseId(phase.id); setActiveModuleId(null); }}
                                     className={`w-full text-left px-4 py-3 rounded-xl flex items-center justify-between group transition-all ${
-                                        activePhaseId === phase.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'
+                                        activePhaseId === phase.id ? 'bg-coral-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`${activePhaseId === phase.id ? 'text-blue-100' : 'text-slate-400 group-hover:text-blue-600'}`}>
+                                        <div className={`${activePhaseId === phase.id ? 'text-coral-100' : 'text-slate-400 group-hover:text-coral-600'}`}>
                                             {getPhaseIcon(phase.icon)}
                                         </div>
                                         <span className="text-xs font-bold">{phase.name}</span>
@@ -612,24 +612,24 @@ export const CmmcAcademy: React.FC<{
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                        <div className="bg-coral-50 p-4 rounded-2xl border border-coral-100">
                             <div className="flex items-center gap-3 mb-2">
-                                <BarChart3 size={16} className="text-blue-600" />
-                                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Mastery Stats</span>
+                                <BarChart3 size={16} className="text-coral-600" />
+                                <span className="text-[10px] font-black text-coral-600 uppercase tracking-widest">Mastery Stats</span>
                             </div>
                             <div className="text-xs font-bold text-slate-900">12 / 110 Mastered</div>
-                            <div className="w-full h-1.5 bg-blue-200 rounded-full mt-2 overflow-hidden">
-                                <div className="h-full bg-blue-600" style={{ width: '11%' }}></div>
+                            <div className="w-full h-1.5 bg-coral-200 rounded-full mt-2 overflow-hidden">
+                                <div className="h-full bg-coral-600" style={{ width: '11%' }}></div>
                             </div>
                         </div>
                     </div>
                 )}
 
-                <div className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100">
-                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3">Resource Center</h4>
+                <div className="bg-silver-100/50 p-6 rounded-2xl border border-silver-200">
+                    <h4 className="text-[10px] font-black text-coral-500 uppercase tracking-widest mb-3">Resource Center</h4>
                     <ul className="space-y-2">
-                        <li><button className="text-xs font-bold text-slate-600 hover:text-blue-600 flex items-center gap-2">NIST SP 800-171A <ExternalLink size={10}/></button></li>
-                        <li><button className="text-xs font-bold text-slate-600 hover:text-blue-600 flex items-center gap-2">CMMC CAP Guide <ExternalLink size={10}/></button></li>
+                        <li><button className="text-xs font-bold text-slate-600 hover:text-coral-600 flex items-center gap-2">NIST SP 800-171A <ExternalLink size={10}/></button></li>
+                        <li><button className="text-xs font-bold text-slate-600 hover:text-coral-600 flex items-center gap-2">CMMC CAP Guide <ExternalLink size={10}/></button></li>
                     </ul>
                 </div>
             </div>
@@ -650,9 +650,9 @@ export const CmmcAcademy: React.FC<{
             <header className="h-20 border-b border-slate-100 px-10 flex items-center justify-between shrink-0">
                 <div className="flex-1 max-w-xl">
                     <div className="relative group">
-                        <Search className="absolute left-4 top-2.5 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={20} />
+                        <Search className="absolute left-4 top-2.5 text-slate-300 group-focus-within:text-coral-500 transition-colors" size={20} />
                         <input 
-                            className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium text-sm"
+                            className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-coral-500/10 focus:border-coral-500 outline-none transition-all font-medium text-sm"
                             placeholder="Search curriculum for ITAR, CUI, Artifact standards..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
@@ -660,11 +660,11 @@ export const CmmcAcademy: React.FC<{
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-100 transition-all border border-indigo-100">
-                        <Star size={14} className="fill-indigo-700" /> My Saved Modules
+                    <button className="flex items-center gap-2 px-4 py-2 bg-silver-100 text-coral-700 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-silver-200 transition-all border border-silver-200">
+                        <Star size={14} className="fill-coral-700" /> My Saved Modules
                     </button>
                     <div className="h-8 w-px bg-slate-200" />
-                    <button className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
+                    <button className="p-2 text-slate-400 hover:text-coral-600 transition-colors">
                         <PlayCircle size={24} />
                     </button>
                 </div>
@@ -678,7 +678,7 @@ export const CmmcAcademy: React.FC<{
                         <div className="flex items-center gap-2 mb-6">
                             <button 
                                 onClick={() => { setActiveModuleId(null); setIsQuizActive(false); }}
-                                className="text-blue-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-1 hover:underline"
+                                className="text-coral-600 font-black text-[10px] uppercase tracking-widest flex items-center gap-1 hover:underline"
                             >
                                 ← Curriculum View
                             </button>
@@ -703,42 +703,42 @@ export const CmmcAcademy: React.FC<{
                                         </div>
                                         <div className="flex gap-2">
                                             <span className="bg-slate-900 text-white px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest">{activeModule.durationMinutes} min read</span>
-                                            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-blue-200">{activeModule.difficulty}</span>
+                                            <span className="bg-coral-100 text-coral-700 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border border-coral-200">{activeModule.difficulty}</span>
                                         </div>
                                     </div>
                                     <p className="text-lg text-slate-500 font-medium leading-relaxed">{activeModule.description}</p>
                                 </div>
 
-                                <div className="prose prose-slate max-w-none prose-headings:text-slate-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-h1:text-3xl prose-h2:text-2xl prose-h2:mt-10 prose-h2:border-b-2 prose-h2:border-slate-50 prose-h2:pb-4 prose-p:text-slate-600 prose-p:leading-relaxed prose-strong:text-slate-900 prose-li:text-slate-600 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:rounded shadow-sm bg-white border border-slate-100 p-10 rounded-[2rem]">
+                                <div className="prose prose-slate max-w-none prose-headings:text-slate-900 prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-h1:text-3xl prose-h2:text-2xl prose-h2:mt-10 prose-h2:border-b-2 prose-h2:border-slate-50 prose-h2:pb-4 prose-p:text-slate-600 prose-p:leading-relaxed prose-strong:text-slate-900 prose-li:text-slate-600 prose-code:text-coral-600 prose-code:bg-coral-50 prose-code:px-1 prose-code:rounded shadow-sm bg-white border border-slate-100 p-10 rounded-[2rem]">
                                     <ReactMarkdown>{activeModule.content}</ReactMarkdown>
                                 </div>
 
                                 <div className="mt-12 pt-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-8">
                                     {activeModule.questions && activeModule.questions.length > 0 && (
-                                        <div className="bg-white border-2 border-blue-600 rounded-3xl p-8 flex-1 flex items-center justify-between shadow-xl">
+                                        <div className="bg-white border-2 border-coral-600 rounded-3xl p-8 flex-1 flex items-center justify-between shadow-xl">
                                             <div>
                                                 <h4 className="text-lg font-black uppercase tracking-tight text-slate-900">Ready for a Knowledge Check?</h4>
                                                 <p className="text-slate-500 text-sm font-medium mt-1">Complete the quiz to earn mastery points for this domain.</p>
                                             </div>
                                             <button 
                                                 onClick={() => setIsQuizActive(true)}
-                                                className="bg-blue-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-blue-700 transition-all flex items-center gap-2"
+                                                className="bg-coral-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-coral-700 transition-all flex items-center gap-2"
                                             >
                                                 Start Quiz <Zap size={14} />
                                             </button>
                                         </div>
                                     )}
 
-                                    <div className="bg-indigo-900 rounded-3xl p-6 text-white shadow-xl flex-1 flex items-center gap-6 relative overflow-hidden">
+                                    <div className="bg-coral-900 rounded-3xl p-6 text-white shadow-xl flex-1 flex items-center gap-6 relative overflow-hidden">
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-16 -mt-16"></div>
                                         <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-md">
-                                            <Sparkles className="text-blue-400" size={32} />
+                                            <Sparkles className="text-coral-400" size={32} />
                                         </div>
                                         <div className="relative z-10">
                                             <h4 className="text-lg font-black uppercase tracking-tight">Need technical help?</h4>
-                                            <p className="text-blue-200 text-sm font-medium mt-1">Ask our AI Academy Instructor for clarification or real-world implementation examples.</p>
+                                            <p className="text-coral-200 text-sm font-medium mt-1">Ask our AI Academy Instructor for clarification or real-world implementation examples.</p>
                                         </div>
-                                        <button className="relative z-10 bg-white text-indigo-900 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-blue-50 transition-all flex items-center gap-2">
+                                        <button className="relative z-10 bg-white text-coral-900 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-coral-50 transition-all flex items-center gap-2">
                                             <MessageCircle size={14} /> Instructor Chat
                                         </button>
                                     </div>
@@ -753,7 +753,7 @@ export const CmmcAcademy: React.FC<{
                                 {activePhaseId === 'PH6' ? (
                                     <Dices size={48} className="opacity-20 text-red-600" />
                                 ) : (
-                                    <ShieldCheck size={48} className="opacity-20 text-blue-600" />
+                                    <ShieldCheck size={48} className="opacity-20 text-coral-600" />
                                 )}
                             </div>
                             <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">
@@ -771,23 +771,23 @@ export const CmmcAcademy: React.FC<{
                                         key={module.id}
                                         onClick={() => setActiveModuleId(module.id)}
                                         className={`bg-white p-6 rounded-3xl border shadow-sm transition-all text-left group ${
-                                            activePhaseId === 'PH6' ? 'hover:border-red-600' : 'hover:border-blue-600'
+                                            activePhaseId === 'PH6' ? 'hover:border-red-600' : 'hover:border-coral-600'
                                         }`}
                                     >
                                         <div className="flex justify-between items-start mb-4">
                                             <div className={`p-2 bg-slate-50 rounded-lg text-slate-400 group-hover:text-white transition-all ${
-                                                activePhaseId === 'PH6' ? 'group-hover:bg-red-600' : 'group-hover:bg-blue-600'
+                                                activePhaseId === 'PH6' ? 'group-hover:bg-red-600' : 'group-hover:bg-coral-600'
                                             }`}>
                                                 <PlayCircle size={18} />
                                             </div>
                                             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{module.durationMinutes}m</span>
                                         </div>
                                         <h3 className={`font-black text-xs uppercase tracking-tight text-slate-900 transition-colors mb-2 ${
-                                            activePhaseId === 'PH6' ? 'group-hover:text-red-700' : 'group-hover:text-blue-600'
+                                            activePhaseId === 'PH6' ? 'group-hover:text-red-700' : 'group-hover:text-coral-600'
                                         }`}>{module.title}</h3>
                                         <p className="text-[10px] text-slate-500 font-medium line-clamp-3 leading-relaxed">{module.description}</p>
                                         <div className={`mt-4 flex items-center gap-1 text-[9px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity ${
-                                            activePhaseId === 'PH6' ? 'text-red-600' : 'text-blue-600'
+                                            activePhaseId === 'PH6' ? 'text-red-600' : 'text-coral-600'
                                         }`}>
                                             {activePhaseId === 'PH6' ? 'Begin Simulation' : 'Begin Training'} <ArrowRight size={10} />
                                         </div>

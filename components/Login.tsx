@@ -21,7 +21,7 @@ export const Login: React.FC = () => {
   if (auth.isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
-        <Loader2 size={48} className="animate-spin text-blue-500 mb-6" />
+        <Loader2 size={48} className="animate-spin text-coral-500 mb-6" />
         <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[10px]">
           Connecting to Secure Gateway...
         </p>
@@ -31,12 +31,12 @@ export const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 bg-blue-600/5 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-coral-600/5 pointer-events-none"></div>
       
       <div className="text-center space-y-10 relative z-10 max-w-sm w-full">
         <div className="space-y-4">
-          <div className="w-24 h-24 bg-slate-900 border border-slate-800 rounded-[2.5rem] flex items-center justify-center shadow-2xl mx-auto ring-1 ring-blue-500/20">
-            <Shield size={52} className="text-blue-500" />
+          <div className="w-24 h-24 bg-slate-900 border border-slate-800 rounded-[2.5rem] flex items-center justify-center shadow-2xl mx-auto ring-1 ring-coral-500/20">
+            <Shield size={52} className="text-coral-500" />
           </div>
           <div>
             <h1 className="text-3xl font-black text-white uppercase tracking-tighter mb-1">Cuallee Cyber</h1>
@@ -49,9 +49,9 @@ export const Login: React.FC = () => {
         <div className="space-y-4">
           <button 
             onClick={handleSignIn}
-            className="w-full bg-white hover:bg-blue-50 text-slate-950 font-black py-5 rounded-[2rem] flex items-center justify-center gap-3 transition-all shadow-2xl shadow-blue-900/20 group uppercase tracking-widest text-sm"
+            className="w-full bg-white hover:bg-coral-50 text-slate-950 font-black py-5 rounded-[2rem] flex items-center justify-center gap-3 transition-all shadow-2xl shadow-coral-900/20 group uppercase tracking-widest text-sm"
           >
-            <Lock size={18} className="text-blue-600" />
+            <Lock size={18} className="text-coral-600" />
             Secure Sign In
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </button>
@@ -79,7 +79,7 @@ export const Login: React.FC = () => {
         <div className="pt-4">
           <button 
             onClick={handleReset}
-            className="text-slate-600 hover:text-blue-400 text-[9px] font-black uppercase tracking-[0.2em] transition-colors flex items-center gap-2 mx-auto"
+            className="text-slate-600 hover:text-coral-400 text-[9px] font-black uppercase tracking-[0.2em] transition-colors flex items-center gap-2 mx-auto"
           >
             <RefreshCcw size={12} /> Clear Browser Cache & Retry
           </button>

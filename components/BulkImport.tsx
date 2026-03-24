@@ -227,15 +227,15 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
         </div>
 
         {syncSummary && (
-            <div className="bg-blue-50 border border-blue-100 px-4 py-2 rounded-xl flex items-center gap-4 animate-in slide-in-from-right-4">
-                <div className="flex items-center gap-2 text-xs font-bold text-blue-700">
+            <div className="bg-coral-50 border border-coral-100 px-4 py-2 rounded-xl flex items-center gap-4 animate-in slide-in-from-right-4">
+                <div className="flex items-center gap-2 text-xs font-bold text-coral-700">
                     <FileCheck2 size={16}/> {syncSummary.textUpdates} Narratives Parsed
                 </div>
-                <div className="w-px h-4 bg-blue-200"></div>
-                <div className="flex items-center gap-2 text-xs font-bold text-indigo-700">
+                <div className="w-px h-4 bg-coral-200"></div>
+                <div className="flex items-center gap-2 text-xs font-bold text-coral-700">
                     <Paperclip size={16}/> {syncSummary.filesLinked} Evidence Files Linked
                 </div>
-                <button onClick={() => setSyncSummary(null)} className="text-blue-400 hover:text-blue-600"><X size={14}/></button>
+                <button onClick={() => setSyncSummary(null)} className="text-coral-400 hover:text-coral-600"><X size={14}/></button>
             </div>
         )}
 
@@ -243,7 +243,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
              <div className="relative mr-2">
                 <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
                 <input 
-                    className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm w-48 focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm w-48 focus:ring-2 focus:ring-coral-500 outline-none"
                     placeholder="Filter..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
@@ -258,7 +258,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
                 <Download size={16} /> Get Template
             </button>
 
-            <label className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer border ${isProcessing ? 'bg-slate-100 border-slate-200 text-slate-400 pointer-events-none' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50 ring-offset-2 hover:ring-2 ring-blue-500'}`}>
+            <label className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer border ${isProcessing ? 'bg-slate-100 border-slate-200 text-slate-400 pointer-events-none' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50 ring-offset-2 hover:ring-2 ring-coral-500'}`}>
                 {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                 {isProcessing ? 'Linking Files...' : 'Batch Upload'}
                 <input type="file" multiple accept=".csv,image/*,.pdf,.doc,.docx" className="hidden" onChange={handleBatchUpload} disabled={isProcessing} />
@@ -276,8 +276,8 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
       </div>
 
       <div className="flex-1 overflow-auto p-8 pt-4">
-        <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl mb-4 flex items-center gap-4 text-sm text-indigo-900">
-             <div className="bg-indigo-600 text-white p-2 rounded-lg shadow-md"><Info size={18}/></div>
+        <div className="bg-coral-50 border border-coral-100 p-4 rounded-xl mb-4 flex items-center gap-4 text-sm text-coral-900">
+             <div className="bg-coral-600 text-white p-2 rounded-lg shadow-md"><Info size={18}/></div>
              <div className="flex-1">
                  <p className="font-bold">How to map evidence via CSV:</p>
                  <p className="opacity-80">Download the template, fill implementation details, and list your filenames (e.g. <code>screenshot1.png</code>) in the last column. Click **Batch Upload** and select both the CSV and the actual files.</p>
@@ -303,11 +303,11 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
                         return (
                             <tr 
                                 key={row.id} 
-                                className={`group hover:bg-blue-50/30 transition-colors ${activeRowId === row.id ? 'bg-blue-50/50' : ''}`}
+                                className={`group hover:bg-coral-50/30 transition-colors ${activeRowId === row.id ? 'bg-coral-50/50' : ''}`}
                                 onFocus={() => setActiveRowId(row.id)}
                             >
                                 <td className="p-3 align-top border-r border-slate-100">
-                                    <div className="font-mono text-xs font-black text-slate-400 group-hover:text-blue-600 transition-colors">{row.id}</div>
+                                    <div className="font-mono text-xs font-black text-slate-400 group-hover:text-coral-600 transition-colors">{row.id}</div>
                                     <div className="text-[10px] font-bold text-slate-400 uppercase mt-1">{row.family}</div>
                                     {row.isDirty && <div className="text-[9px] font-black text-amber-600 uppercase mt-2 flex items-center gap-1"><Info size={10}/> Unsaved</div>}
                                 </td>
@@ -334,7 +334,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
                                 </td>
                                 <td className="p-2 align-top border-r border-slate-100">
                                     <textarea 
-                                        className="w-full h-16 bg-transparent text-xs p-2 outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 rounded-lg resize-none transition-all font-medium text-slate-700"
+                                        className="w-full h-16 bg-transparent text-xs p-2 outline-none focus:bg-white focus:ring-1 focus:ring-coral-500 rounded-lg resize-none transition-all font-medium text-slate-700"
                                         placeholder="Describe implementation..."
                                         value={row.response || ''}
                                         onChange={(e) => updateRow(row.id, { response: e.target.value })}
@@ -343,8 +343,8 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
                                 <td className="p-2 align-top bg-slate-50/50">
                                     <div 
                                         className={`relative h-16 border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer overflow-hidden ${
-                                            row.isUploading ? 'border-blue-400 bg-blue-50' : 
-                                            activeRowId === row.id ? 'border-blue-400 bg-white shadow-inner' : 'border-slate-200 group-hover:border-slate-300'
+                                            row.isUploading ? 'border-coral-400 bg-coral-50' : 
+                                            activeRowId === row.id ? 'border-coral-400 bg-white shadow-inner' : 'border-slate-200 group-hover:border-slate-300'
                                         }`}
                                         onPaste={(e) => handlePaste(e, row.id)}
                                         tabIndex={0}
@@ -352,8 +352,8 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
                                     >
                                         {row.isUploading ? (
                                             <div className="flex flex-col items-center">
-                                                <Loader2 className="animate-spin text-blue-600 mb-1" size={16} />
-                                                <span className="text-[9px] font-black text-blue-600 uppercase">Syncing...</span>
+                                                <Loader2 className="animate-spin text-coral-600 mb-1" size={16} />
+                                                <span className="text-[9px] font-black text-coral-600 uppercase">Syncing...</span>
                                             </div>
                                         ) : row.uploadError ? (
                                             <div className="flex flex-col items-center text-red-500">
@@ -361,7 +361,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
                                                 <span className="text-[9px] font-bold uppercase">{row.uploadError}</span>
                                             </div>
                                         ) : (
-                                            <div className="flex flex-col items-center text-slate-400 group-hover:text-blue-500 transition-colors">
+                                            <div className="flex flex-col items-center text-slate-400 group-hover:text-coral-500 transition-colors">
                                                 <ClipboardPaste size={16} className="mb-1 opacity-40 group-hover:opacity-100" />
                                                 <span className="text-[8px] font-black uppercase text-center leading-tight">
                                                     Paste Image<br/>(Ctrl+V)
@@ -381,7 +381,7 @@ export const BulkImport: React.FC<BulkImportProps> = ({ requirements, activeFram
       <div className="bg-slate-900 px-8 py-3 text-white flex justify-between items-center shrink-0">
           <div className="flex items-center gap-6">
               <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span> 
+                  <span className="w-2 h-2 bg-coral-500 rounded-full animate-pulse"></span> 
                   Organization Scope: <span className="text-white uppercase">{activeClientId}</span>
               </div>
           </div>

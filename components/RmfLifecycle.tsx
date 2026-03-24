@@ -172,9 +172,9 @@ export const RmfLifecycle: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto p-8 h-full flex flex-col space-y-8 overflow-y-auto bg-slate-50/50">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+         <div className="absolute top-0 right-0 w-64 h-64 bg-coral-600/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
          <div>
-            <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mb-3">
+            <div className="flex items-center gap-2 text-coral-600 font-black text-[10px] uppercase tracking-[0.2em] mb-3">
                 <Shield size={14}/> NIST Risk Management Framework Workbook
             </div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">RMF Operations Center</h1>
@@ -184,9 +184,9 @@ export const RmfLifecycle: React.FC = () => {
          </div>
          <div className="flex gap-4 mt-6 md:mt-0">
              <div className="bg-slate-900 text-white px-8 py-4 rounded-[2rem] shadow-2xl flex items-center gap-4">
-                 <Clock size={20} className="text-blue-400" />
+                 <Clock size={20} className="text-coral-400" />
                  <div className="text-left">
-                     <div className="text-[9px] font-black uppercase text-blue-400 tracking-widest">Active Step</div>
+                     <div className="text-[9px] font-black uppercase text-coral-400 tracking-widest">Active Step</div>
                      <div className="text-lg font-black uppercase tracking-tight">{activeStep.name} Phase</div>
                  </div>
              </div>
@@ -206,12 +206,12 @@ export const RmfLifecycle: React.FC = () => {
                   >
                       <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center transition-all duration-500 border-4 ${
                           isActive 
-                            ? 'bg-blue-600 text-white border-blue-100 shadow-2xl scale-110 rotate-3' 
-                            : 'bg-white text-slate-400 border-white hover:border-blue-200 hover:text-blue-500'
+                            ? 'bg-coral-600 text-white border-coral-100 shadow-2xl scale-110 rotate-3' 
+                            : 'bg-white text-slate-400 border-white hover:border-coral-200 hover:text-coral-500'
                       }`}>
                           {step.icon}
                       </div>
-                      <div className={`mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-center transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                      <div className={`mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-center transition-colors ${isActive ? 'text-coral-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
                           Step {idx + 1}
                       </div>
                       <div className={`mt-1 text-[9px] font-bold uppercase transition-colors ${isActive ? 'text-slate-900' : 'text-slate-400'}`}>
@@ -229,7 +229,7 @@ export const RmfLifecycle: React.FC = () => {
               <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
                   <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                        <div className="flex items-center gap-4">
-                            <div className="p-4 bg-blue-600 rounded-2xl text-white shadow-xl shadow-blue-200">
+                            <div className="p-4 bg-coral-600 rounded-2xl text-white shadow-xl shadow-coral-200">
                                 {activeStep.icon}
                             </div>
                             <div>
@@ -243,8 +243,8 @@ export const RmfLifecycle: React.FC = () => {
                   </div>
 
                   <div className="p-10 space-y-8 flex-1">
-                       <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100/50">
-                            <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 flex items-center gap-2">
+                       <div className="bg-coral-50/50 p-6 rounded-3xl border border-coral-100/50">
+                            <h3 className="text-[10px] font-black text-coral-600 uppercase tracking-widest mb-2 flex items-center gap-2">
                                 <Info size={14}/> Step Objective
                             </h3>
                             <p className="text-slate-700 font-bold leading-relaxed italic">
@@ -256,9 +256,9 @@ export const RmfLifecycle: React.FC = () => {
                             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Detailed Tasks</h4>
                             <div className="grid gap-3">
                                 {stepTasks.map(task => (
-                                    <div key={task.id} className="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm group hover:border-blue-400 transition-all flex justify-between items-center">
+                                    <div key={task.id} className="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm group hover:border-coral-400 transition-all flex justify-between items-center">
                                         <div className="flex items-center gap-4">
-                                            <div className="font-mono text-sm font-black text-blue-600 w-12">{task.id}</div>
+                                            <div className="font-mono text-sm font-black text-coral-600 w-12">{task.id}</div>
                                             <div>
                                                 <div className="text-sm font-black text-slate-900 uppercase tracking-tight">{task.name}</div>
                                                 <div className="text-[10px] text-slate-500 font-medium">{task.description}</div>
@@ -279,21 +279,21 @@ export const RmfLifecycle: React.FC = () => {
           {/* SIDEBAR: INTERVIEW PREP & ROLE FOCUS */}
           <div className="lg:col-span-5 space-y-8">
               <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl -mr-24 -mt-24"></div>
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-coral-500/10 rounded-full blur-3xl -mr-24 -mt-24"></div>
                   <h3 className="text-xl font-black uppercase tracking-tighter mb-8 flex items-center gap-3">
-                      <MessageCircle size={24} className="text-blue-400" /> Assessor Interview Suite
+                      <MessageCircle size={24} className="text-coral-400" /> Assessor Interview Suite
                   </h3>
                   
                   <div className="space-y-10">
                       {activeStep.interviewees.map((person, pIdx) => (
                           <div key={pIdx} className="space-y-6">
-                              <div className="flex items-center gap-4">
-                                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-blue-400 border border-white/10">
+                               <div className="flex items-center gap-4">
+                                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-coral-400 border border-white/10">
                                       <Users size={20} />
                                   </div>
                                   <div>
                                       <h4 className="text-sm font-black uppercase tracking-widest">{person.role}</h4>
-                                      <p className="text-[9px] text-blue-300 font-bold uppercase tracking-[0.2em]">{person.focus}</p>
+                                      <p className="text-[9px] text-coral-300 font-bold uppercase tracking-[0.2em]">{person.focus}</p>
                                   </div>
                               </div>
 
@@ -301,7 +301,7 @@ export const RmfLifecycle: React.FC = () => {
                                   {person.questions.map((q, qIdx) => (
                                       <div key={qIdx} className="bg-white/5 border border-white/5 p-5 rounded-2xl hover:bg-white/10 transition-all group cursor-help">
                                           <div className="flex gap-4">
-                                              <div className="text-blue-500 font-black text-xs">Q.</div>
+                                              <div className="text-coral-500 font-black text-xs">Q.</div>
                                               <p className="text-xs font-medium leading-relaxed opacity-90 group-hover:opacity-100">{q}</p>
                                           </div>
                                       </div>
@@ -312,7 +312,7 @@ export const RmfLifecycle: React.FC = () => {
                   </div>
 
                   <div className="mt-10 pt-10 border-t border-white/10">
-                      <button className="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl shadow-blue-900/40 flex items-center justify-center gap-3">
+                      <button className="w-full bg-coral-600 hover:bg-coral-700 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl shadow-coral-900/40 flex items-center justify-center gap-3">
                           <Sparkles size={16}/> Simulate Leadership Review
                       </button>
                   </div>
@@ -330,9 +330,9 @@ export const RmfLifecycle: React.FC = () => {
                          { name: 'Plan of Action & Milestones (POAM)', citation: 'OMB M-02-01' },
                          { name: 'Risk Assessment Report (RAR)', citation: 'NIST 800-30' }
                        ].map((doc, dIdx) => (
-                           <div key={dIdx} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl group hover:bg-blue-50 transition-colors">
+                           <div key={dIdx} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl group hover:bg-coral-50 transition-colors">
                                <div className="flex items-center gap-3">
-                                   <div className="w-2 h-2 rounded-full bg-slate-200 group-hover:bg-blue-500 transition-colors"></div>
+                                   <div className="w-2 h-2 rounded-full bg-slate-200 group-hover:bg-coral-500 transition-colors"></div>
                                    <span className="text-xs font-black text-slate-700 uppercase tracking-tight">{doc.name}</span>
                                </div>
                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{doc.citation}</span>
@@ -340,8 +340,8 @@ export const RmfLifecycle: React.FC = () => {
                        ))}
                    </div>
                    
-                   <div className="mt-8 p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
-                        <p className="text-[10px] text-indigo-700 font-bold leading-relaxed flex items-start gap-2">
+                   <div className="mt-8 p-6 bg-coral-50 rounded-2xl border border-coral-100">
+                        <p className="text-[10px] text-coral-700 font-bold leading-relaxed flex items-start gap-2">
                             <ShieldAlert size={14} className="shrink-0 mt-0.5" />
                             Note: The Authorize step depends on the development of credible security and privacy evidence generated for the authorization package.
                         </p>
@@ -352,7 +352,7 @@ export const RmfLifecycle: React.FC = () => {
 
       <div className="flex justify-center pb-12">
           <div className="inline-flex items-center gap-3 px-6 py-2 bg-slate-900 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-white/50">
-              <ShieldCheck size={14} className="text-blue-500" /> Verified Standard: NIST SP 800-37 R2 // System Agnostic
+              <ShieldCheck size={14} className="text-coral-500" /> Verified Standard: NIST SP 800-37 R2 // System Agnostic
           </div>
       </div>
     </div>

@@ -21,7 +21,7 @@ const TEMPLATES: DocTemplate[] = [
     id: 'ssp',
     title: 'System Security Plan (SSP)',
     type: 'Plan',
-    icon: <ShieldCheck className="text-blue-500" />,
+    icon: <ShieldCheck className="text-coral-500" />,
     description: 'Formal document defined by NIST 800-18 describing system boundary, operational environment, and control implementation.',
     standardCitation: 'NIST SP 800-18 REV 1 ALIGNED',
     questions: [
@@ -179,13 +179,13 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
         <div className="flex bg-slate-200 p-1 rounded-xl">
             <button 
                 onClick={() => setViewMode('EDIT')}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'EDIT' ? 'bg-white shadow-lg text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'EDIT' ? 'bg-white shadow-lg text-coral-600' : 'text-slate-500 hover:text-slate-700'}`}
             >
                 <Edit3 size={16} /> Data Entry
             </button>
             <button 
                 onClick={() => setViewMode('PREVIEW')}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'PREVIEW' ? 'bg-white shadow-lg text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'PREVIEW' ? 'bg-white shadow-lg text-coral-600' : 'text-slate-500 hover:text-slate-700'}`}
             >
                 <Eye size={16} /> Document View
             </button>
@@ -203,13 +203,13 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                         onClick={() => setSelectedTemplateId(template.id)}
                         className={`w-full text-left p-4 rounded-xl flex items-start gap-3 transition-all border-2 ${
                             selectedTemplateId === template.id 
-                            ? 'bg-blue-50 border-blue-600 shadow-md' 
+                            ? 'bg-coral-50 border-coral-600 shadow-md' 
                             : 'bg-white border-transparent hover:border-slate-200'
                         }`}
                     >
                         <div className="mt-1">{template.icon}</div>
                         <div>
-                            <div className={`text-sm font-bold ${selectedTemplateId === template.id ? 'text-blue-900' : 'text-slate-700'}`}>
+                            <div className={`text-sm font-bold ${selectedTemplateId === template.id ? 'text-coral-900' : 'text-slate-700'}`}>
                                 {template.title}
                             </div>
                             <div className="text-[10px] text-slate-500 mt-1 font-medium leading-relaxed">
@@ -229,7 +229,7 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                             {selectedTemplate.icon}
                             {selectedTemplate.title}
                         </h3>
-                        <div className="mt-3 text-[10px] bg-blue-50 text-blue-700 px-3 py-2 rounded-lg font-bold flex items-center gap-2 border border-blue-100">
+                        <div className="mt-3 text-[10px] bg-coral-50 text-coral-700 px-3 py-2 rounded-lg font-bold flex items-center gap-2 border border-coral-100">
                             <Info size={14} /> Alignment: {selectedTemplate.standardCitation}
                         </div>
                     </div>
@@ -239,7 +239,7 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                             <div key={q} className="space-y-1.5">
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">{q}</label>
                                 <textarea 
-                                    className="w-full border-2 border-slate-100 bg-slate-50 rounded-xl p-4 text-sm min-h-[90px] focus:ring-4 focus:ring-blue-50 focus:border-blue-500 focus:bg-white transition-all font-medium"
+                                    className="w-full border-2 border-slate-100 bg-slate-50 rounded-xl p-4 text-sm min-h-[90px] focus:ring-4 focus:ring-coral-50 focus:border-coral-500 focus:bg-white transition-all font-medium"
                                     placeholder={`Required info for ${q}...`}
                                     value={allAnswers[q] || ''}
                                     onChange={(e) => handleInputChange(q, e.target.value)}
@@ -266,7 +266,7 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
             <div className="lg:col-span-4 bg-slate-900 p-8 rounded-2xl shadow-inner border border-slate-800 flex flex-col h-full min-h-[600px]">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="font-bold text-white flex items-center gap-2 uppercase tracking-widest text-xs">
-                    <FileText size={18} className="text-blue-500"/> MarkDown Editor
+                    <FileText size={18} className="text-coral-500"/> MarkDown Editor
                     </h3>
                     <div className="flex gap-2">
                         {generatedDoc && (
@@ -283,7 +283,7 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
 
                 <div className="flex-1 bg-slate-800/50 p-4 rounded-xl border border-slate-700 overflow-hidden relative">
                     <textarea 
-                        className="w-full h-full resize-none outline-none text-[11px] font-mono text-blue-100/80 bg-transparent p-2 leading-relaxed"
+                        className="w-full h-full resize-none outline-none text-[11px] font-mono text-coral-100/80 bg-transparent p-2 leading-relaxed"
                         value={generatedDoc}
                         onChange={(e) => setGeneratedDoc(e.target.value)}
                         placeholder="# Your generated document will appear here after clicking 'Generate'..."
@@ -305,7 +305,7 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                             <button 
                                 onClick={handlePublish}
                                 disabled={isPublishing}
-                                className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg"
+                                className="bg-coral-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-coral-700 flex items-center gap-2 shadow-lg"
                             >
                                 {isPublishing ? <Loader2 className="animate-spin" size={16}/> : <UploadCloud size={16}/>}
                                 Push to Confluence
@@ -323,7 +323,7 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                             <div className="flex flex-col h-[23cm] justify-between text-center border-b-8 border-slate-900 mb-12 pb-12 page-break-after">
                                 <div className="flex justify-between items-start">
                                     <div className="flex items-center gap-2 text-slate-900 font-black text-xl">
-                                        <Shield className="text-blue-600" size={32} />
+                                        <Shield className="text-coral-600" size={32} />
                                         <span>Cuallee Cyber</span>
                                     </div>
                                     {clientBranding?.logoUrl && (
@@ -331,11 +331,11 @@ export const DocGenerator: React.FC<DocGeneratorProps> = ({ clientName, clientBr
                                     )}
                                 </div>
                                 <div className="mt-24">
-                                    <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mb-4">
+                                    <div className="text-[10px] font-black text-coral-600 uppercase tracking-[0.3em] mb-4">
                                         {selectedTemplate.standardCitation}
                                     </div>
                                     <h1 className="text-5xl font-black text-slate-900 mb-6 tracking-tighter uppercase leading-none">{selectedTemplate.title}</h1>
-                                    <div className="w-32 h-2 bg-blue-600 mx-auto mb-8"></div>
+                                    <div className="w-32 h-2 bg-coral-600 mx-auto mb-8"></div>
                                     <h2 className="text-3xl text-slate-500 font-medium tracking-tight italic">{clientName || 'Client Name'}</h2>
                                 </div>
                                 <div className="space-y-4">

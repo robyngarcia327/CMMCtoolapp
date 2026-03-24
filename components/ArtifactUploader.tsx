@@ -109,7 +109,7 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
         <button
           onClick={() => setShowSnipper(true)}
           disabled={isUploading}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg border border-indigo-200 transition-colors text-sm font-medium disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 bg-coral-50 hover:bg-coral-100 text-coral-700 rounded-lg border border-coral-200 transition-colors text-sm font-medium disabled:opacity-50"
         >
           <ImageIcon size={16} />
           Snipping Tool
@@ -125,7 +125,7 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
           <div key={art.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
             <div className="flex items-center gap-3 overflow-hidden">
               <div className="bg-slate-100 p-2 rounded">
-                {art.type === 'image' ? <ImageIcon size={18} className="text-blue-500" /> : <FileText size={18} className="text-orange-500" />}
+                {art.type === 'image' ? <ImageIcon size={18} className="text-coral-500" /> : <FileText size={18} className="text-orange-500" />}
               </div>
               <div className="truncate">
                 <p className="text-sm font-medium text-slate-800 truncate">{art.name}</p>
@@ -134,8 +134,8 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
             </div>
             <div className="flex items-center gap-2">
                 <button 
-                    onClick={() => handleDownload(art)}
-                    className="text-xs text-blue-600 hover:underline px-2"
+                    onClick={() => handleDownload(artifact)}
+                    className="text-xs text-coral-600 hover:underline px-2"
                 >
                     View
                 </button>

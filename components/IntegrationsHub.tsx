@@ -37,19 +37,19 @@ const CONNECTORS: Connector[] = [
     id: 'm365Config',
     name: 'Microsoft 365',
     category: 'Identity',
-    icon: <Cloud className="text-blue-500" />,
+    icon: <Cloud className="text-coral-500" />,
     description: 'Sync identities, track MFA status, and ingest Secure Score data.',
     mappedFamilies: ['AC', 'IA', 'AT', 'MP'],
-    providerColor: 'bg-blue-600'
+    providerColor: 'bg-coral-600'
   },
   {
     id: 'defenderConfig',
     name: 'Microsoft Defender',
     category: 'Endpoint',
-    icon: <Shield className="text-blue-600" />,
+    icon: <Shield className="text-coral-600" />,
     description: 'Pull endpoint security telemetry and vulnerability assessment data.',
     mappedFamilies: ['SI', 'RA', 'IR'],
-    providerColor: 'bg-blue-500'
+    providerColor: 'bg-coral-500'
   },
   {
     id: 's1Config',
@@ -91,10 +91,10 @@ const CONNECTORS: Connector[] = [
     id: 'siemConfig',
     name: 'SIEM / Sentinel',
     category: 'Operations',
-    icon: <Lock className="text-indigo-600" />,
+    icon: <Lock className="text-coral-600" />,
     description: 'Centralized log analysis and incident reporting integration.',
     mappedFamilies: ['AU', 'IR', 'SI'],
-    providerColor: 'bg-indigo-600'
+    providerColor: 'bg-coral-600'
   }
 ];
 
@@ -118,11 +118,11 @@ export const IntegrationsHub: React.FC<IntegrationsHubProps> = ({ data, onUpdate
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                <Zap className="text-blue-600 fill-blue-600" size={28} /> Integrations Hub
+                <Zap className="text-coral-600 fill-coral-600" size={28} /> Integrations Hub
             </h1>
             <p className="text-slate-500 mt-2 font-medium">Connect your security tools to automate compliance evidence collection.</p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl border border-blue-100 text-xs font-bold uppercase tracking-wider">
+        <div className="flex items-center gap-2 px-4 py-2 bg-coral-50 text-coral-700 rounded-xl border border-coral-100 text-xs font-bold uppercase tracking-wider">
             <CheckCircle2 size={14} /> Total Automations: {CONNECTORS.filter(c => (data[c.id] as IntegrationConfig)?.enabled).length} Active
         </div>
       </div>
@@ -138,8 +138,8 @@ export const IntegrationsHub: React.FC<IntegrationsHubProps> = ({ data, onUpdate
                     <div 
                         key={connector.id}
                         className={`bg-white rounded-2xl border transition-all hover:shadow-lg flex flex-col ${
-                            isEnabled ? 'border-blue-100 ring-1 ring-blue-50' : 'border-slate-200'
-                        } ${selectedConnectorId === connector.id ? 'ring-2 ring-blue-500' : ''}`}
+                            isEnabled ? 'border-coral-100 ring-1 ring-coral-50' : 'border-slate-200'
+                        } ${selectedConnectorId === connector.id ? 'ring-2 ring-coral-500' : ''}`}
                     >
                         <div className="p-6 flex-1">
                             <div className="flex justify-between items-start mb-4">
@@ -165,7 +165,7 @@ export const IntegrationsHub: React.FC<IntegrationsHubProps> = ({ data, onUpdate
                         <div className="px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100 flex items-center justify-between">
                             <button 
                                 onClick={() => setSelectedConnectorId(connector.id as string)}
-                                className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline"
+                                className="text-xs font-bold text-coral-600 flex items-center gap-1 hover:underline"
                             >
                                 <Settings2 size={14} /> Configure
                             </button>
@@ -173,9 +173,9 @@ export const IntegrationsHub: React.FC<IntegrationsHubProps> = ({ data, onUpdate
                                 <button 
                                     onClick={() => handleSync(connector.id as string)}
                                     disabled={activeSync}
-                                    className="p-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-blue-600 hover:border-blue-200 transition-all disabled:opacity-50"
+                                    className="p-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-coral-600 hover:border-coral-200 transition-all disabled:opacity-50"
                                 >
-                                    <RefreshCw size={14} className={activeSync ? 'animate-spin text-blue-600' : ''} />
+                                    <RefreshCw size={14} className={activeSync ? 'animate-spin text-coral-600' : ''} />
                                 </button>
                             )}
                         </div>
@@ -212,7 +212,7 @@ export const IntegrationsHub: React.FC<IntegrationsHubProps> = ({ data, onUpdate
                                 <button 
                                     onClick={() => onUpdateConfig(selectedConnector.id, { ...config!, enabled: !config?.enabled })}
                                     className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                                        config?.enabled ? 'bg-red-50 text-red-600' : 'bg-blue-600 text-white shadow-lg'
+                                        config?.enabled ? 'bg-red-50 text-red-600' : 'bg-coral-600 text-white shadow-lg'
                                     }`}
                                 >
                                     {config?.enabled ? 'Disable' : 'Enable'}
@@ -224,7 +224,7 @@ export const IntegrationsHub: React.FC<IntegrationsHubProps> = ({ data, onUpdate
                                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tenant / Environment ID</label>
                                     <input 
                                         type="text" 
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-coral-500 outline-none transition-all font-mono"
                                         placeholder="e.g. env-9921-prod"
                                         value={config?.tenantId || ''}
                                         onChange={(e) => onUpdateConfig(selectedConnector.id, { ...config!, tenantId: e.target.value })}
@@ -234,7 +234,7 @@ export const IntegrationsHub: React.FC<IntegrationsHubProps> = ({ data, onUpdate
                                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">API Access Token</label>
                                     <input 
                                         type="password" 
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-coral-500 outline-none transition-all font-mono"
                                         placeholder="••••••••••••••••"
                                         value={config?.apiKey || ''}
                                         onChange={(e) => onUpdateConfig(selectedConnector.id, { ...config!, apiKey: e.target.value })}
@@ -248,11 +248,11 @@ export const IntegrationsHub: React.FC<IntegrationsHubProps> = ({ data, onUpdate
                                 </h4>
                                 <ul className="space-y-3">
                                     <li className="flex items-start gap-3 text-xs text-slate-600">
-                                        <div className="mt-0.5 text-blue-600"><CheckCircle2 size={12} /></div>
+                                        <div className="mt-0.5 text-coral-600"><CheckCircle2 size={12} /></div>
                                         <span>Automates evidence for <strong>{selectedConnector.mappedFamilies.length * 8} assessment objectives</strong>.</span>
                                     </li>
                                     <li className="flex items-start gap-3 text-xs text-slate-600">
-                                        <div className="mt-0.5 text-blue-600"><CheckCircle2 size={12} /></div>
+                                        <div className="mt-0.5 text-coral-600"><CheckCircle2 size={12} /></div>
                                         <span>Continuous monitoring detects configuration drift in real-time.</span>
                                     </li>
                                 </ul>

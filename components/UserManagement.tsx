@@ -176,7 +176,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div>
             <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                <UserIcon className="text-blue-600" /> Identity Management
+                <UserIcon className="text-coral-600" /> Identity Management
             </h2>
             <p className="text-slate-600 text-sm">Control user access, CUI authorization, and role-based permissions.</p>
         </div>
@@ -184,14 +184,14 @@ export const UserManagement: React.FC<UserManagementProps> = ({
             <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleCsvUpload} />
             <button 
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 shadow-sm text-sm font-medium transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-silver-300 text-slate-700 rounded-lg hover:bg-silver-50 shadow-sm text-sm font-medium transition-all"
             >
                 <FileSpreadsheet size={18} className="text-green-600" /> Bulk Import (CSV)
             </button>
             <button 
                 onClick={handleEntraSync}
                 disabled={isSyncing}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 shadow-sm text-sm font-bold transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-coral-50 border border-coral-200 text-coral-700 rounded-lg hover:bg-coral-100 shadow-sm text-sm font-bold transition-all disabled:opacity-50"
             >
                 {isSyncing ? <RefreshCw className="animate-spin" size={16} /> : <Cloud size={16} />}
                 {isSyncing ? 'Syncing...' : 'Sync with Entra ID'}
@@ -231,17 +231,17 @@ export const UserManagement: React.FC<UserManagementProps> = ({
               </div>
               <div className="flex justify-end gap-2 pt-4 border-t">
                   <button onClick={() => setIsAdding(false)} className="px-4 py-2 text-slate-600">Cancel</button>
-                  <button onClick={handleSaveUser} className="px-4 py-2 bg-blue-600 text-white rounded font-bold">Save Identity</button>
+                  <button onClick={handleSaveUser} className="px-4 py-2 bg-coral-600 text-white rounded font-bold">Save Identity</button>
               </div>
           </div>
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+          <div className="p-4 border-b border-silver-200 flex justify-between items-center bg-silver-50">
               <div className="relative w-72">
                   <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
                   <input 
-                    className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full pl-9 pr-4 py-2 border border-silver-300 rounded-lg text-sm focus:ring-2 focus:ring-coral-500 outline-none"
                     placeholder="Search users..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -300,7 +300,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                                     <span className={`text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${
                                       user.accessLevel === 'High' || user.accessLevel === 'Restricted' 
                                         ? 'bg-purple-50 text-purple-700 border-purple-200' 
-                                        : 'bg-blue-50 text-blue-700 border-blue-200'
+                                        : 'bg-coral-50 text-coral-700 border-coral-200'
                                     }`}>
                                       {user.accessLevel || 'Low'} Access
                                     </span>
@@ -345,7 +345,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                           <td className="p-4">
                               <div className="flex flex-col">
                                 <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                                    {(user.iamSource === 'EntraID' || user.iamSource === 'CSV_Import') && <Database size={12} className="text-blue-500" />}
+                                    {(user.iamSource === 'EntraID' || user.iamSource === 'CSV_Import') && <Database size={12} className="text-coral-500" />}
                                     {user.iamSource || 'Manual'}
                                 </span>
                                 {user.lastSynced && <span className="text-[9px] text-slate-400">Synced {new Date(user.lastSynced).toLocaleDateString()}</span>}
@@ -364,7 +364,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({
                                   </>
                                 ) : (
                                   <>
-                                    <button onClick={() => handleStartEdit(user)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+                                    <button onClick={() => handleStartEdit(user)} className="p-2 text-slate-400 hover:text-coral-600 hover:bg-coral-50 rounded-lg">
                                       <Edit3 size={16} />
                                     </button>
                                     <button onClick={() => onDeleteUser(user.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg">

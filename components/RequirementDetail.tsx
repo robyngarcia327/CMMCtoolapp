@@ -128,7 +128,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
         <div className="flex justify-between items-start mb-6">
             <div>
                 <div className="flex items-center gap-3 mb-2">
-                    <span className="font-mono text-sm font-black text-blue-700 bg-blue-100 px-2 py-1 rounded border border-blue-200">{requirement.id}</span>
+                    <span className="font-mono text-sm font-black text-coral-700 bg-coral-100 px-2 py-1 rounded border border-coral-200">{requirement.id}</span>
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">DOMAIN: {requirement.family}</span>
                 </div>
                 <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight leading-none">{requirement.title}</h1>
@@ -155,7 +155,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                             // Or better, we just pass a prop to ArtifactUploader
                             setTriggerSnip(true);
                         }}
-                        className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-indigo-600 hover:bg-indigo-50 flex items-center gap-2"
+                        className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all text-coral-600 hover:bg-coral-50 flex items-center gap-2"
                     >
                         <ImageIcon size={14} /> Snip
                     </button>
@@ -166,8 +166,8 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
             </div>
         </div>
 
-        <div className="flex border-b border-slate-200 mb-8 bg-white rounded-2xl px-4 pt-2 shadow-sm mx-1">
-            <button onClick={() => setActiveTab('DETAILS')} className={`px-8 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 ${activeTab === 'DETAILS' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'}`}><Check size={16} /> Discovery & Criteria</button>
+        <div className="flex border-b border-silver-200 mb-8 bg-white rounded-2xl px-4 pt-2 shadow-sm mx-1">
+            <button onClick={() => setActiveTab('DETAILS')} className={`px-8 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 ${activeTab === 'DETAILS' ? 'border-coral-600 text-coral-600' : 'border-transparent text-slate-400'}`}><Check size={16} /> Discovery & Criteria</button>
             <button onClick={() => setActiveTab('EVIDENCE')} className={`px-8 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 ${activeTab === 'EVIDENCE' ? 'border-purple-600 text-purple-600' : 'border-transparent text-slate-400'}`}><Layers size={16} /> Evidence ({relevantArtifacts.length})</button>
             <button onClick={() => setActiveTab('DISCUSSION')} className={`px-8 py-4 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 ${activeTab === 'DISCUSSION' ? 'border-green-600 text-green-600' : 'border-transparent text-slate-400'}`}><MessageSquare size={16} /> Discussions</button>
         </div>
@@ -176,18 +176,18 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
             <div className="lg:col-span-8 space-y-8">
                 {activeTab === 'DETAILS' && (
                     <>
-                        <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-200 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                        <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-silver-200 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-coral-600/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
                             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Official Control Text</h3>
                             <p className="text-slate-700 text-xl leading-relaxed font-bold mb-8">{requirement.description}</p>
                             <div className="flex justify-end border-t border-slate-50 pt-6">
-                                <button onClick={handleExplain} disabled={loadingAi} className="text-blue-600 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-blue-50 px-4 py-2 rounded-xl transition-all flex items-center gap-2">
+                                <button onClick={handleExplain} disabled={loadingAi} className="text-coral-600 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-coral-50 px-4 py-2 rounded-xl transition-all flex items-center gap-2">
                                     {loadingAi ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
                                     AI Compliance Insight
                                 </button>
                             </div>
                             {aiExplanation && (
-                                <div className="mt-6 bg-blue-50/50 p-8 rounded-[2rem] border border-blue-100 prose prose-sm max-w-none animate-in fade-in slide-in-from-top-2">
+                                <div className="mt-6 bg-coral-50/50 p-8 rounded-[2rem] border border-coral-100 prose prose-sm max-w-none animate-in fade-in slide-in-from-top-2">
                                     <ReactMarkdown>{aiExplanation}</ReactMarkdown>
                                 </div>
                             )}
@@ -221,14 +221,14 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                              </div>
                          )}
 
-                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-silver-200 overflow-hidden">
                             <div className="bg-slate-900 px-10 py-6 border-b border-slate-800 flex justify-between items-center text-white">
                                 <h3 className="font-black text-[10px] uppercase tracking-[0.3em]">Practitioner Verification Objectives</h3>
                                 <div className="flex items-center gap-2">
                                     <div className="h-1.5 w-32 bg-white/10 rounded-full overflow-hidden">
-                                        <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${(metCount / (totalCount || 1)) * 100}%` }} />
+                                        <div className="h-full bg-coral-500 transition-all duration-500" style={{ width: `${(metCount / (totalCount || 1)) * 100}%` }} />
                                     </div>
-                                    <span className="text-[9px] font-black text-blue-400 uppercase">{metCount} / {totalCount}</span>
+                                    <span className="text-[9px] font-black text-coral-400 uppercase">{metCount} / {totalCount}</span>
                                 </div>
                             </div>
                             <div className="divide-y divide-slate-100">
@@ -236,7 +236,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                                     <div key={obj.id} className={`p-8 flex items-start gap-8 hover:bg-slate-50 transition-all group ${obj.status === 'met' ? 'bg-green-50/20' : ''}`}>
                                         <button 
                                             onClick={() => handleStatusChange(obj.id, obj.status === 'met' ? 'pending' : 'met')} 
-                                            className={`mt-1 w-10 h-10 rounded-2xl border-2 flex items-center justify-center transition-all ${obj.status === 'met' ? 'bg-green-600 border-green-600 text-white shadow-xl rotate-3' : 'bg-white border-slate-200 hover:border-blue-400 group-hover:scale-110'}`}
+                                            className={`mt-1 w-10 h-10 rounded-2xl border-2 flex items-center justify-center transition-all ${obj.status === 'met' ? 'bg-green-600 border-green-600 text-white shadow-xl rotate-3' : 'bg-white border-slate-200 hover:border-coral-400 group-hover:scale-110'}`}
                                         >
                                             {obj.status === 'met' ? <Check size={20} strokeWidth={3} /> : <div className="w-2 h-2 rounded-full bg-slate-100" />}
                                         </button>
@@ -266,7 +266,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                                     <div className="flex items-center gap-2">
                                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Linked Policy:</span>
                                         <select 
-                                            className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-[10px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 min-w-[200px]"
+                                            className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-[10px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-coral-500/20 min-w-[200px]"
                                             value={requirement.policyMapping?.policyId || ''}
                                             onChange={(e) => {
                                                 const policyId = e.target.value;
@@ -287,7 +287,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                                         <div className="flex items-center gap-2">
                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Section:</span>
                                             <select 
-                                                className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-[10px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 min-w-[150px]"
+                                                className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2 text-[10px] font-bold text-slate-700 outline-none focus:ring-2 focus:ring-coral-500/20 min-w-[150px]"
                                                 value={requirement.policyMapping?.sectionId || ''}
                                                 onChange={(e) => {
                                                     onUpdateRequirement({
@@ -312,7 +312,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                             {requirement.policyMapping?.policyId && requirement.policyMapping?.sectionId ? (
                                 <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                                     <div className="flex items-center gap-2 mb-3">
-                                        <FileText size={14} className="text-blue-600" />
+                                        <FileText size={14} className="text-coral-600" />
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Linked Policy Content</span>
                                     </div>
                                     <p className="text-sm text-slate-600 font-medium leading-relaxed italic">
@@ -326,10 +326,10 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                             )}
                         </div>
 
-                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-10">
+                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-silver-200 p-10">
                             <h3 className="font-black text-slate-900 uppercase tracking-widest text-[10px] mb-6">Client Implementation Narrative (SSP)</h3>
                             <textarea 
-                                className="w-full h-64 p-8 border-2 border-slate-100 rounded-[2.5rem] focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none resize-none text-slate-700 bg-slate-50/50 font-medium text-lg leading-relaxed shadow-inner"
+                                className="w-full h-64 p-8 border-2 border-slate-100 rounded-[2.5rem] focus:ring-4 focus:ring-coral-50 focus:border-coral-500 outline-none resize-none text-slate-700 bg-slate-50/50 font-medium text-lg leading-relaxed shadow-inner"
                                 placeholder="Detail the client's technical and administrative controls used to satisfy this requirement..."
                                 value={requirement.response || ''}
                                 onChange={(e) => onUpdateRequirement({ ...requirement, response: e.target.value })}
@@ -405,7 +405,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
 
                         <div className="relative">
                             <textarea 
-                                className="w-full p-5 pr-16 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium text-slate-700 resize-none h-24"
+                                className="w-full p-5 pr-16 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-coral-500/10 focus:border-coral-500 outline-none transition-all font-medium text-slate-700 resize-none h-24"
                                 placeholder="Type your message..."
                                 value={newComment}
                                 onChange={(e) => setNewComment(e.target.value)}
@@ -426,7 +426,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                                     });
                                     setNewComment('');
                                 }}
-                                className="absolute bottom-4 right-4 p-3 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
+                                className="absolute bottom-4 right-4 p-3 bg-coral-600 text-white rounded-xl shadow-lg shadow-coral-200 hover:bg-coral-700 transition-all"
                             >
                                 <Send size={18} />
                             </button>
@@ -436,14 +436,14 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
             </div>
 
             <div className="lg:col-span-4 space-y-8">
-                <div className="bg-indigo-50/50 border border-indigo-100 rounded-[2.5rem] p-8 space-y-6">
-                    <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                <div className="bg-coral-50/50 border border-coral-100 rounded-[2.5rem] p-8 space-y-6">
+                    <h3 className="text-[10px] font-black text-coral-600 uppercase tracking-widest flex items-center gap-2">
                         <MessageSquare size={16}/> Practitioner Prep Guide
                     </h3>
                     <div className="space-y-4">
                         {requirement.interviewOptions?.map((q, i) => (
-                            <div key={i} className="flex gap-3 bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm">
-                                <div className="text-indigo-600 font-black text-sm">Q.</div>
+                            <div key={i} className="flex gap-3 bg-white p-4 rounded-2xl border border-coral-100 shadow-sm">
+                                <div className="text-coral-600 font-black text-sm">Q.</div>
                                 <p className="text-sm font-bold text-slate-700 leading-relaxed">{q}</p>
                             </div>
                         ))}
@@ -453,12 +453,12 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                 <PolicyAnalyzer requirement={requirement} />
                 
                 <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                    <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-6 flex items-center gap-2"><Share2 size={16}/> Cross-Walk Mappings</h4>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-coral-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                    <h4 className="text-[10px] font-black text-coral-400 uppercase tracking-widest mb-6 flex items-center gap-2"><Share2 size={16}/> Cross-Walk Mappings</h4>
                     <div className="space-y-6">
                         <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">NIST 800-53:</span>
-                            <span className="text-blue-300 font-mono font-bold">{requirement.mappings?.nist800_53?.join(', ') || 'N/A'}</span>
+                            <span className="text-coral-300 font-mono font-bold">{requirement.mappings?.nist800_53?.join(', ') || 'N/A'}</span>
                         </div>
                         <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">ISO 27001:</span>
@@ -467,11 +467,11 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({
                     </div>
                 </div>
 
-                <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm">
+                <div className="bg-white p-8 rounded-[2.5rem] border border-silver-200 shadow-sm">
                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Discovery Methods</h4>
                     <div className="space-y-4">
                         <div className="flex gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                             <div className="p-2 bg-white rounded-lg shadow-sm h-fit"><Eye size={16} className="text-blue-500"/></div>
+                             <div className="p-2 bg-white rounded-lg shadow-sm h-fit"><Eye size={16} className="text-coral-500"/></div>
                              <div>
                                 <span className="text-[9px] font-black uppercase text-slate-400">Examine</span>
                                 <p className="text-xs font-bold text-slate-700 leading-relaxed mt-1">Review policies, system configs, and access logs with client.</p>

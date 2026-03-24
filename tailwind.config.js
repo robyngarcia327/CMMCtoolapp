@@ -13,20 +13,30 @@ export default {
         sans: ['Inter', 'sans-serif'],
       },
       colors: {
-        // Re-mapping Indigo to Coral for the Secondary Theme Color
-        // This ensures all existing components using 'indigo' classes now appear as Coral
-        indigo: {
-          50: '#fff0eb',  // Very light coral background
-          100: '#ffe3d9',
-          200: '#ffc6b3',
-          300: '#ff9e80',
-          400: '#ff7f50', // Classic Coral
-          500: '#f76736', // Vibrant Coral
-          600: '#db4e20', // Deep Coral (Good for Text readability)
-          700: '#b53a17',
-          800: '#923018',
-          900: '#762a18',
-          950: '#421309',
+        coral: {
+          50: '#fff1f0',
+          100: '#ffe1de',
+          200: '#ffc7c2',
+          300: '#ffa099',
+          400: '#ff6f61', // Living Coral
+          500: '#fa4d3d',
+          600: '#e63526',
+          700: '#c2291c',
+          800: '#a1251b',
+          900: '#85241b',
+          950: '#4a0f0a',
+        },
+        silver: {
+          50: '#f8f9fa',
+          100: '#f1f3f5',
+          200: '#e9ecef',
+          300: '#dee2e6',
+          400: '#ced4da',
+          500: '#adb5bd',
+          600: '#868e96',
+          700: '#495057',
+          800: '#343a40',
+          900: '#212529',
         }
       }
     },

@@ -135,7 +135,7 @@ export const Inventory: React.FC<InventoryProps> = ({
   const getIcon = (type: string) => {
       switch(type) {
           case 'Server': return <Server size={18} className="text-purple-600" />;
-          case 'Workstation': return <Monitor size={18} className="text-blue-600" />;
+          case 'Workstation': return <Monitor size={18} className="text-coral-600" />;
           case 'Mobile': return <Smartphone size={18} className="text-slate-600" />;
           case 'Network Device': return <Box size={18} className="text-orange-600" />; 
           case 'Software': return <FileKey size={18} className="text-green-600" />;
@@ -148,8 +148,8 @@ export const Inventory: React.FC<InventoryProps> = ({
           case 'CUI': return 'bg-red-100 text-red-800 border-red-200 ring-1 ring-red-300';
           case 'SPA': return 'bg-purple-100 text-purple-800 border-purple-200 ring-1 ring-purple-300';
           case 'CRMA': return 'bg-amber-100 text-amber-800 border-amber-200';
-          case 'FCI': return 'bg-blue-100 text-blue-800 border-blue-200';
-          default: return 'bg-slate-100 text-slate-500 border-slate-200';
+          case 'FCI': return 'bg-coral-100 text-coral-800 border-coral-200';
+          default: return 'bg-silver-100 text-slate-500 border-silver-200';
       }
   };
 
@@ -186,13 +186,13 @@ export const Inventory: React.FC<InventoryProps> = ({
             <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleCsvUpload} />
             <button 
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 shadow-sm text-sm font-medium transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-silver-300 text-slate-700 rounded-lg hover:bg-silver-50 shadow-sm text-sm font-medium transition-all"
             >
                 <FileSpreadsheet size={18} className="text-green-600" /> Bulk Import (CSV)
             </button>
             <button 
                 onClick={() => { setIsBulkMode(!isBulkMode); setIsAdding(false); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition-all ${isBulkMode ? 'bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm text-sm font-bold transition-all ${isBulkMode ? 'bg-coral-100 text-coral-700 border border-coral-200' : 'bg-white border border-silver-300 text-slate-700 hover:bg-silver-50'}`}
             >
                 <ListPlus size={18} /> Interactive Bulk Entry
             </button>
@@ -256,22 +256,22 @@ export const Inventory: React.FC<InventoryProps> = ({
                       </div>
                   </div>
               </div>
-              <div className="flex justify-end gap-2 mt-6 border-t border-slate-100 pt-4">
+              <div className="flex justify-end gap-2 mt-6 border-t border-silver-100 pt-4">
                   <button onClick={() => setIsAdding(false)} className="px-4 py-2 text-slate-600">Cancel</button>
-                  <button onClick={handleAdd} className="px-6 py-2 bg-blue-600 text-white rounded font-bold shadow-sm">Save Asset</button>
+                  <button onClick={handleAdd} className="px-6 py-2 bg-coral-600 text-white rounded font-bold shadow-sm">Save Asset</button>
               </div>
           </div>
       )}
 
       {isBulkMode && (
-          <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-indigo-100 mb-6 animate-in fade-in slide-in-from-top-2 overflow-hidden flex flex-col">
+          <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-silver-100 mb-6 animate-in fade-in slide-in-from-top-2 overflow-hidden flex flex-col">
               <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-black text-indigo-900 uppercase tracking-tight">Interactive Bulk Asset Entry</h3>
+                  <h3 className="font-black text-coral-900 uppercase tracking-tight">Interactive Bulk Asset Entry</h3>
                   <button onClick={() => setIsBulkMode(false)} className="text-slate-400 hover:text-red-500 transition-colors"><X size={24}/></button>
               </div>
               <div className="overflow-x-auto border rounded-xl mb-4">
                   <table className="w-full text-sm text-left">
-                      <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-b">
+                      <thead className="bg-silver-50 text-slate-500 font-bold uppercase text-[10px] tracking-widest border-b">
                           <tr>
                               <th className="p-3">Asset Name</th>
                               <th className="p-3">Type</th>
@@ -280,7 +280,7 @@ export const Inventory: React.FC<InventoryProps> = ({
                               <th className="p-3 w-10"></th>
                           </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-silver-100">
                           {bulkRows.map((row, idx) => (
                               <tr key={idx}>
                                   <td className="p-2"><input className="w-full border rounded p-1.5 text-sm" placeholder="e.g. SRV-01" value={row.name} onChange={e => updateBulkRow(idx, 'name', e.target.value)} /></td>
@@ -310,12 +310,12 @@ export const Inventory: React.FC<InventoryProps> = ({
                   </table>
               </div>
               <div className="flex justify-between items-center">
-                  <button onClick={handleAddBulkRow} className="text-indigo-600 font-bold text-xs uppercase flex items-center gap-1 hover:underline">
+                  <button onClick={handleAddBulkRow} className="text-coral-600 font-bold text-xs uppercase flex items-center gap-1 hover:underline">
                       <Plus size={14} /> Add Row
                   </button>
                   <div className="flex gap-2">
                       <button onClick={() => setIsBulkMode(false)} className="px-6 py-2 text-slate-500 font-bold text-xs uppercase">Discard</button>
-                      <button onClick={handleSaveBulk} className="px-8 py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase flex items-center gap-2 shadow-lg shadow-indigo-100">
+                      <button onClick={handleSaveBulk} className="px-8 py-2 bg-coral-600 text-white rounded-xl font-bold text-xs uppercase flex items-center gap-2 shadow-lg shadow-coral-100">
                           <Save size={14} /> Save Assets
                       </button>
                   </div>
@@ -368,7 +368,7 @@ export const Inventory: React.FC<InventoryProps> = ({
                               </td>
                               <td className="p-4">
                                   <div className="flex items-center gap-1.5">
-                                      {asset.source === 'Intune' ? <span title="Synced from Intune"><Cloud size={14} className="text-blue-500" /></span> : 
+                                      {asset.source === 'Intune' ? <span title="Synced from Intune"><Cloud size={14} className="text-coral-500" /></span> : 
                                        asset.source === 'CSV_Import' ? <span title="Imported via CSV"><FileSpreadsheet size={14} className="text-green-500" /></span> : 
                                        <span title="Manually entered"><Info size={14} className="text-slate-400" /></span>}
                                       <span className="text-xs font-medium text-slate-500">{asset.source || 'Manual'}</span>

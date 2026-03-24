@@ -82,14 +82,14 @@ const SidebarItem = ({
     onClick={onClick}
     className={`w-full group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 mb-0.5 ${
       isActive 
-        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20 font-bold' 
+        ? 'bg-coral-600 text-white shadow-lg shadow-coral-900/20 font-bold' 
         : 'text-slate-400 hover:bg-slate-800 hover:text-white'
     }`}
   >
-    <Icon size={18} className={`${isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'} transition-colors`} />
+    <Icon size={18} className={`${isActive ? 'text-white' : 'text-slate-500 group-hover:text-coral-400'} transition-colors`} />
     <span className="flex-1 text-left text-sm whitespace-nowrap">{label}</span>
     {badge && (
-      <span className="bg-blue-500/20 text-blue-400 text-[9px] px-1.5 py-0.5 rounded font-black uppercase">
+      <span className="bg-coral-500/20 text-coral-400 text-[9px] px-1.5 py-0.5 rounded font-black uppercase">
         {badge}
       </span>
     )}
@@ -354,7 +354,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => { auth.signoutRedirect(); };
   
-  if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-500" size={48} /></div>;
+  if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-500" size={48} /></div>;
   if (!auth.isAuthenticated) return <Login />;
 
   if (apiError) {
@@ -367,7 +367,7 @@ const App: React.FC = () => {
               <p className="text-slate-400 max-w-md mb-8">{apiError}</p>
               <button 
                   onClick={() => { fetchAttempted.current = false; loadOrganizations(); }}
-                  className="bg-white text-slate-950 px-8 py-3 rounded-full font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-blue-50 transition-all"
+                  className="bg-white text-slate-950 px-8 py-3 rounded-full font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-coral-50 transition-all"
               >
                   <RefreshCcw size={16} /> Retry Connection
               </button>
@@ -375,7 +375,7 @@ const App: React.FC = () => {
       );
   }
 
-  if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-blue-600" size={48} /></div>;
+  if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-600" size={48} /></div>;
 
   if (hasCheckedOrgs && (clients.length === 0 || !activeClientId)) {
     return <Onboarding user={{ id: auth.user?.profile.sub || '', name: userDisplayName, email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }} onCreateOrganization={async (name, domain, financials) => { if (!auth.user?.id_token) return; setIsDataLoading(true); try { const newOrg = await api.createOrg(auth.user.id_token, name, domain); setClientDataStore(prev => ({ ...prev, [newOrg.orgId]: { ...createInitialClientData(false), financials } })); fetchAttempted.current = false; await loadOrganizations(); } finally { setIsDataLoading(false); } }} onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }} debugTokens={{ idToken: auth.user?.id_token }} />;
@@ -411,11 +411,11 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
-      <aside className="w-64 bg-slate-950 text-slate-300 flex flex-col shrink-0 z-50 border-r border-slate-900 shadow-2xl">
+      <aside className="w-64 bg-slate-950 text-slate-300 flex flex-col shrink-0 z-50 border-r border-silver-800 shadow-2xl">
         <div className="p-6 pb-10">
           <div className="flex items-center gap-3 text-white">
-            <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-900/20"><Shield size={20} className="text-white" /></div>
-            <span className="tracking-tighter uppercase font-black text-lg leading-none">Cuallee<br/><span className="text-blue-500">Cyber</span></span>
+            <div className="p-2 bg-coral-600 rounded-xl shadow-lg shadow-coral-900/20"><Shield size={20} className="text-white" /></div>
+            <span className="tracking-tighter uppercase font-black text-lg leading-none">Cuallee<br/><span className="text-coral-500">Cyber</span></span>
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto px-4 scrollbar-hide">
@@ -457,11 +457,11 @@ const App: React.FC = () => {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between shrink-0 z-40">
+        <header className="h-16 bg-white border-b border-silver-200 px-8 flex items-center justify-between shrink-0 z-40">
           <div className="flex items-center gap-4"><h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">{getViewLabel(currentView)}</h2></div>
           <div className="flex items-center gap-6">
-            <button onClick={() => setIsChatOpen(!isChatOpen)} className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-[11px] transition-all ${isChatOpen ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}><MessageSquare size={14} /> AI Expert</button>
-            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-200">{userDisplayName.charAt(0).toUpperCase()}</div>
+            <button onClick={() => setIsChatOpen(!isChatOpen)} className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-[11px] transition-all ${isChatOpen ? 'bg-coral-600 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}><MessageSquare size={14} /> AI Expert</button>
+            <div className="w-8 h-8 rounded-xl bg-coral-600 flex items-center justify-center text-white font-black shadow-lg shadow-coral-200">{userDisplayName.charAt(0).toUpperCase()}</div>
           </div>
         </header>
 

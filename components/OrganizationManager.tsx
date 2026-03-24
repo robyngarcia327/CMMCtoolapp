@@ -38,7 +38,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
   }>({
       name: '',
       industry: '',
-      branding: { primaryColor: '#3b82f6', logoUrl: '' }
+      branding: { primaryColor: '#ff6f61', logoUrl: '' }
   });
 
   const [isAddingUser, setIsAddingUser] = useState(false);
@@ -75,7 +75,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
         setIsAddingClient(false);
     }
     
-    setClientForm({ name: '', industry: '', branding: { primaryColor: '#3b82f6', logoUrl: '' } });
+    setClientForm({ name: '', industry: '', branding: { primaryColor: '#ff6f61', logoUrl: '' } });
   };
 
   const openEditClient = (client: Client) => {
@@ -83,7 +83,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
       setClientForm({
           name: client.name,
           industry: client.industry,
-          branding: client.branding || { primaryColor: '#3b82f6', logoUrl: '' }
+          branding: client.branding || { primaryColor: '#ff6f61', logoUrl: '' }
       });
       setIsAddingClient(true);
   };
@@ -171,19 +171,19 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
         <div className="flex bg-white rounded-lg p-1 border border-slate-200 shadow-sm">
            <button 
              onClick={() => setActiveTab('CLIENTS')}
-             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'CLIENTS' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:bg-slate-50'}`}
+             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'CLIENTS' ? 'bg-coral-600 text-white shadow' : 'text-slate-600 hover:bg-slate-50'}`}
            >
              Clients
            </button>
            <button 
              onClick={() => setActiveTab('USERS')}
-             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'USERS' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:bg-slate-50'}`}
+             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'USERS' ? 'bg-coral-600 text-white shadow' : 'text-slate-600 hover:bg-slate-50'}`}
            >
              Users
            </button>
            <button 
              onClick={() => setActiveTab('INTEGRATIONS')}
-             className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'INTEGRATIONS' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:bg-slate-50'}`}
+             className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'INTEGRATIONS' ? 'bg-coral-600 text-white shadow' : 'text-slate-600 hover:bg-slate-50'}`}
            >
              <Zap size={14} /> Integrations
            </button>
@@ -197,7 +197,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                     <div className="relative w-96">
                         <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
                         <input 
-                            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 outline-none bg-silver-50"
                             placeholder="Search clients..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
@@ -206,10 +206,10 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                     <button 
                         onClick={() => {
                             setEditingClient(null);
-                            setClientForm({ name: '', industry: '', branding: { primaryColor: '#3b82f6', logoUrl: '' } });
+                            setClientForm({ name: '', industry: '', branding: { primaryColor: '#ff6f61', logoUrl: '' } });
                             setIsAddingClient(true);
                         }}
-                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
+                        className="flex items-center gap-2 bg-coral-600 text-white px-4 py-2 rounded-lg hover:bg-coral-700 font-medium"
                     >
                         <Plus size={18} /> Add Client
                     </button>
@@ -221,13 +221,13 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                            <div className="space-y-4">
                                <input 
-                                   className="w-full border p-2 rounded" 
+                                   className="w-full border p-2 rounded bg-silver-50" 
                                    placeholder="Company Name" 
                                    value={clientForm.name}
                                    onChange={e => setClientForm({...clientForm, name: e.target.value})}
                                />
                                <input 
-                                   className="w-full border p-2 rounded" 
+                                   className="w-full border p-2 rounded bg-silver-50" 
                                    placeholder="Industry" 
                                    value={clientForm.industry}
                                    onChange={e => setClientForm({...clientForm, industry: e.target.value})}
@@ -251,7 +251,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                                        <div className="flex items-center gap-2">
                                            <input 
                                                 type="color" 
-                                                value={clientForm.branding?.primaryColor || '#3b82f6'} 
+                                                value={clientForm.branding?.primaryColor || '#ff6f61'} 
                                                 onChange={e => setClientForm(prev => ({ ...prev, branding: { ...prev.branding, primaryColor: e.target.value } }))}
                                                 className="w-8 h-8 rounded border-0 cursor-pointer"
                                            />
@@ -263,16 +263,16 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                        </div>
                        <div className="flex justify-end gap-2">
                            <button onClick={() => setIsAddingClient(false)} className="px-4 py-2 text-slate-600">Cancel</button>
-                           <button onClick={handleSaveClient} className="px-4 py-2 bg-blue-600 text-white rounded">Save Changes</button>
+                           <button onClick={handleSaveClient} className="px-4 py-2 bg-coral-600 text-white rounded">Save Changes</button>
                        </div>
                    </div>
                )}
 
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                    {filteredClients.map(client => (
-                       <div key={client.id} className={`bg-white rounded-xl shadow-sm border p-6 relative group ${client.isParent ? 'border-blue-400 ring-1 ring-blue-100' : 'border-slate-200'}`}>
+                       <div key={client.id} className={`bg-white rounded-xl shadow-sm border p-6 relative group ${client.isParent ? 'border-coral-400 ring-1 ring-coral-100' : 'border-slate-200'}`}>
                             {client.isParent && (
-                                <div className="absolute top-4 right-4 bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1">
+                                <div className="absolute top-4 right-4 bg-coral-100 text-coral-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1">
                                     <Shield size={10} /> Parent Org
                                 </div>
                             )}
@@ -286,7 +286,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                                 )}
                                 
                                 <div>
-                                    <h3 className="font-bold text-slate-900 text-lg hover:text-blue-600 cursor-pointer" onClick={() => openEditClient(client)}>{client.name}</h3>
+                                    <h3 className="font-bold text-slate-900 text-lg hover:text-coral-600 cursor-pointer" onClick={() => openEditClient(client)}>{client.name}</h3>
                                     <p className="text-sm text-slate-500">{client.industry}</p>
                                 </div>
                             </div>
@@ -305,13 +305,13 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                             <div className="flex items-center gap-2 pt-4 border-t border-slate-100">
                                 <button 
                                     onClick={() => handleToggleParent(client)}
-                                    className={`flex-1 text-xs py-2 rounded border transition-colors ${client.isParent ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                                    className={`flex-1 text-xs py-2 rounded border transition-colors ${client.isParent ? 'bg-coral-50 text-coral-700 border-coral-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
                                 >
                                     {client.isParent ? 'Is Parent (MSP)' : 'Set as Parent'}
                                 </button>
                                 <button 
                                     onClick={() => openEditClient(client)}
-                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                    className="p-2 text-slate-400 hover:text-coral-600 hover:bg-coral-50 rounded"
                                 >
                                     <Palette size={16} />
                                 </button>
@@ -336,7 +336,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                     <div className="relative w-96">
                         <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
                         <input 
-                            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-coral-500 outline-none bg-silver-50"
                             placeholder="Search users..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
@@ -344,7 +344,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                     </div>
                     <button 
                         onClick={() => setIsAddingUser(true)}
-                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
+                        className="flex items-center gap-2 bg-coral-600 text-white px-4 py-2 rounded-lg hover:bg-coral-700 font-medium"
                     >
                         <Plus size={18} /> Add User
                     </button>
@@ -355,19 +355,19 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                        <h3 className="font-bold text-slate-800 mb-4">Add New User</h3>
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                            <input 
-                               className="border p-2 rounded" 
+                               className="border p-2 rounded bg-silver-50" 
                                placeholder="Full Name" 
                                value={newUser.name}
                                onChange={e => setNewUser({...newUser, name: e.target.value})}
                            />
                            <input 
-                               className="border p-2 rounded" 
+                               className="border p-2 rounded bg-silver-50" 
                                placeholder="Email Address" 
                                value={newUser.email}
                                onChange={e => setNewUser({...newUser, email: e.target.value})}
                            />
                             <select
-                                className="border p-2 rounded"
+                                className="border p-2 rounded bg-silver-50"
                                 value={newUser.organizationId || ''}
                                 onChange={e => setNewUser({...newUser, organizationId: e.target.value})}
                             >
@@ -375,7 +375,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                             <select
-                                className="border p-2 rounded"
+                                className="border p-2 rounded bg-silver-50"
                                 value={newUser.role}
                                 onChange={e => setNewUser({...newUser, role: e.target.value as any})}
                             >
@@ -385,7 +385,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                                 <option value="MSP_ADMIN">MSP Admin (Super User)</option>
                             </select>
                             <input 
-                               className="border p-2 rounded" 
+                               className="border p-2 rounded bg-silver-50" 
                                placeholder="Department (Optional)" 
                                value={newUser.department}
                                onChange={e => setNewUser({...newUser, department: e.target.value})}
@@ -393,7 +393,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                        </div>
                        <div className="flex justify-end gap-2">
                            <button onClick={() => setIsAddingUser(false)} className="px-4 py-2 text-slate-600">Cancel</button>
-                           <button onClick={handleCreateUser} className="px-4 py-2 bg-blue-600 text-white rounded">Save User</button>
+                           <button onClick={handleCreateUser} className="px-4 py-2 bg-coral-600 text-white rounded">Save User</button>
                        </div>
                    </div>
                )}
@@ -421,7 +421,7 @@ export const OrganizationManager: React.FC<OrganizationManagerProps> = ({
                                    </td>
                                    <td className="p-4">
                                        <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
-                                           user.role.includes('MSP') ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                                           user.role.includes('MSP') ? 'bg-purple-100 text-purple-700' : 'bg-coral-100 text-coral-700'
                                        }`}>
                                            {user.role.replace('_', ' ')}
                                        </span>

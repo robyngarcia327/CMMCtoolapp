@@ -120,9 +120,9 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
 
   const getCategoryIcon = (cat: string) => {
     switch(cat) {
-      case 'Software': return <Laptop size={16} className="text-blue-500" />;
+      case 'Software': return <Laptop size={16} className="text-coral-500" />;
       case 'Hardware': return <HardDrive size={16} className="text-purple-500" />;
-      case 'Internal Labor': return <Users size={16} className="text-indigo-500" />;
+      case 'Internal Labor': return <Users size={16} className="text-coral-500" />;
       case 'Vendor Fees': return <Briefcase size={16} className="text-orange-500" />;
       case 'Assessor Fees': return <ShieldCheck size={16} className="text-emerald-500" />;
       default: return <DollarSign size={16} className="text-green-500" />;
@@ -135,7 +135,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
       {/* Financial Mission Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
-           <div className="flex items-center gap-2 text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-2">
+           <div className="flex items-center gap-2 text-[10px] font-black text-coral-600 uppercase tracking-[0.2em] mb-2">
                <TrendingUp size={12}/> Investment Strategy
            </div>
            <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Cost to Compliance</h1>
@@ -153,7 +153,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                 onClick={syncFromPoam}
                 className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all"
             >
-                <ListRestart size={14} className="text-blue-600" /> Sync POA&M ({gaps.length})
+                <ListRestart size={14} className="text-coral-600" /> Sync POA&M ({gaps.length})
             </button>
             <button 
                 onClick={() => { setIsAdding(!isAdding); setShowAssessorPlanner(false); }}
@@ -170,12 +170,12 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Initial Investment (CapEx)</div>
               <div className="text-4xl font-black text-slate-900">${summary.oneTime.toLocaleString()}</div>
               <div className="h-1.5 bg-slate-100 rounded-full mt-6 overflow-hidden">
-                  <div className="bg-blue-600 h-full" style={{ width: '100%' }} />
+                  <div className="bg-coral-600 h-full" style={{ width: '100%' }} />
               </div>
           </div>
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Recurring Annual (OpEx)</div>
-              <div className="text-4xl font-black text-indigo-600">${summary.recurring.toLocaleString()}</div>
+              <div className="text-4xl font-black text-coral-600">${summary.recurring.toLocaleString()}</div>
               <div className="text-xs text-slate-400 font-bold mt-6">Projected Maintenance Cost</div>
           </div>
           <div className="bg-emerald-50 p-8 rounded-3xl shadow-sm border border-emerald-100 flex flex-col justify-between">
@@ -186,7 +186,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
               </div>
           </div>
           <div className="bg-slate-900 p-8 rounded-3xl shadow-2xl flex flex-col justify-between text-white">
-              <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Total Certification Cost</div>
+              <div className="text-[10px] font-black text-coral-400 uppercase tracking-widest mb-4">Total Certification Cost</div>
               <div className="text-4xl font-black">${summary.total.toLocaleString()}</div>
               <div className="text-[10px] text-white/50 font-bold mt-6 uppercase tracking-widest">Year 1 Projection</div>
           </div>
@@ -314,7 +314,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
       )}
 
       {isAdding && (
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-blue-100 animate-in fade-in slide-in-from-top-4">
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-coral-100 animate-in fade-in slide-in-from-top-4">
               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-6">Financial Data Entry</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -322,7 +322,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                       <div>
                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Link to Compliance Gap</label>
                           <select 
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-coral-500 outline-none"
                             value={selectedReq}
                             onChange={e => setSelectedReq(e.target.value)}
                           >
@@ -335,7 +335,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                       <div>
                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Item Name</label>
                           <input 
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none" 
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-coral-500 outline-none" 
                             placeholder="e.g. SIEM Software Subscription"
                             value={newItem.name || ''}
                             onChange={e => setNewItem({...newItem, name: e.target.value})}
@@ -348,7 +348,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                           <div>
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Expense Class</label>
                             <select 
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-coral-500 outline-none"
                                 value={newItem.category}
                                 onChange={e => setNewItem({...newItem, category: e.target.value as any})}
                             >
@@ -362,7 +362,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                           <div>
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Model</label>
                             <select 
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-coral-500 outline-none"
                                 value={newItem.costType}
                                 onChange={e => setNewItem({...newItem, costType: e.target.value as any})}
                             >
@@ -378,7 +378,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Est. Hours</label>
                                 <input 
                                     type="number"
-                                    className="w-full bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-sm font-mono font-bold focus:ring-2 focus:ring-blue-500 outline-none" 
+                                    className="w-full bg-silver-50 border border-silver-100 rounded-xl p-3 text-sm font-mono font-bold focus:ring-2 focus:ring-coral-500 outline-none" 
                                     placeholder="40"
                                     value={newItem.hours || ''}
                                     onChange={e => setNewItem({...newItem, hours: parseFloat(e.target.value)})}
@@ -388,7 +388,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Hourly Rate ($)</label>
                                 <input 
                                     type="number"
-                                    className="w-full bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-sm font-mono font-bold focus:ring-2 focus:ring-blue-500 outline-none" 
+                                    className="w-full bg-silver-50 border border-silver-100 rounded-xl p-3 text-sm font-mono font-bold focus:ring-2 focus:ring-coral-500 outline-none" 
                                     placeholder="150"
                                     value={newItem.rate || ''}
                                     onChange={e => setNewItem({...newItem, rate: parseFloat(e.target.value)})}
@@ -400,7 +400,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Fixed Amount ($)</label>
                             <input 
                                 type="number"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-mono font-bold focus:ring-2 focus:ring-blue-500 outline-none" 
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-mono font-bold focus:ring-2 focus:ring-coral-500 outline-none" 
                                 placeholder="0.00"
                                 value={newItem.amount || ''}
                                 onChange={e => setNewItem({...newItem, amount: parseFloat(e.target.value)})}
@@ -413,7 +413,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                       <div>
                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Remediation Notes</label>
                           <textarea 
-                             className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none min-h-[95px]"
+                             className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-coral-500 outline-none min-h-[95px]"
                              placeholder="Basis for estimation..."
                              value={newItem.notes || ''}
                              onChange={e => setNewItem({...newItem, notes: e.target.value})}
@@ -426,7 +426,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                   <button onClick={() => setIsAdding(false)} className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Discard</button>
                   <button 
                     onClick={handleAdd}
-                    className="bg-blue-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center gap-2"
+                    className="bg-coral-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-coral-100 hover:bg-coral-700 transition-all flex items-center gap-2"
                   >
                       Add to Project Budget <ArrowRight size={14}/>
                   </button>
@@ -441,7 +441,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                    <div className="p-2 bg-white rounded-lg border border-slate-200"><Calculator size={18} className="text-slate-400"/></div>
                    <h3 className="font-black text-slate-900 uppercase tracking-tight">Certification Ledger</h3>
                </div>
-               <button className="text-[10px] font-black uppercase tracking-widest text-blue-600 flex items-center gap-1.5 hover:underline">
+               <button className="text-[10px] font-black uppercase tracking-widest text-coral-600 flex items-center gap-1.5 hover:underline">
                    <Download size={14} /> Export Financial Summary
                </button>
            </div>
@@ -476,7 +476,7 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
                                    {item.notes && <div className="text-[10px] text-slate-500 mt-1 italic leading-relaxed">{item.notes}</div>}
                                </td>
                                <td className="p-5">
-                                   <span className={`font-mono text-xs font-black ${item.linkedRequirementId === 'General' ? 'text-slate-300' : 'text-blue-600'}`}>
+                                   <span className={`font-mono text-xs font-black ${item.linkedRequirementId === 'General' ? 'text-slate-300' : 'text-coral-600'}`}>
                                        {item.linkedRequirementId === 'General' ? 'GLOBAL' : item.linkedRequirementId}
                                    </span>
                                </td>
@@ -511,18 +511,18 @@ export const BudgetCalculator: React.FC<BudgetCalculatorProps> = ({
            </div>
       </div>
 
-      <div className="bg-blue-900 rounded-3xl p-8 text-white flex flex-col md:flex-row items-center gap-8 shadow-2xl relative overflow-hidden">
+       <div className="bg-slate-900 rounded-3xl p-8 text-white flex flex-col md:flex-row items-center gap-8 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
           <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-md">
-              <PieChart size={32} className="text-blue-400" />
+              <PieChart size={32} className="text-coral-400" />
           </div>
           <div className="flex-1">
               <h4 className="text-xl font-black uppercase tracking-tight mb-2">Cost Optimization Strategy</h4>
-              <p className="text-blue-200 text-sm leading-relaxed max-w-2xl font-medium">
+              <p className="text-coral-200 text-sm leading-relaxed max-w-2xl font-medium">
                   By tracking remediation costs at the control level, you can generate an ROI report demonstrating how specific technical upgrades satisfy multiple framework requirements, potentially reducing vendor fees by identifying tool overlap.
               </p>
           </div>
-          <button className="bg-white text-blue-900 px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-blue-50 transition-all">
+          <button className="bg-white text-coral-900 px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-coral-50 transition-all">
               Generate ROI Forecast
           </button>
       </div>
