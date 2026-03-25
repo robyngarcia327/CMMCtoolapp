@@ -51,12 +51,20 @@ export const SnippingTool: React.FC<SnippingToolProps> = ({ onCapture, onClose }
 
   const takeSnapshot = () => {
     if (videoRef.current && stream) {
+      const video = videoRef.current;
+      
+      // Ensure video is actually playing and has dimensions
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        setError("Video stream not ready. Please wait a moment and try again.");
+        return;
+      }
+
       const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.drawImage(videoRef.current, 0, 0);
+        ctx.drawImage(video, 0, 0);
         const dataUrl = canvas.toDataURL('image/png');
         onCapture(dataUrl);
         stopStream(stream); // Stop sharing after capture
@@ -96,7 +104,7 @@ export const SnippingTool: React.FC<SnippingToolProps> = ({ onCapture, onClose }
            {!error && (
              <button
               onClick={takeSnapshot}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+              className="flex items-center gap-2 bg-coral-600 hover:bg-coral-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
              >
                <Camera size={20} /> Capture Artifact
              </button>

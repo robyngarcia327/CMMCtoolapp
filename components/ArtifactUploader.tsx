@@ -61,15 +61,19 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
 
   const handleSnipCapture = async (dataUrl: string) => {
     const idToken = auth.user?.id_token;
-    if (!activeClientId || !idToken) return;
+    if (!activeClientId || !idToken) {
+        console.error("Missing context for capture", { activeClientId, hasToken: !!idToken });
+        alert("Organization context or authentication missing. Please select an organization and try again.");
+        return;
+    }
 
     // Convert Data URL to File
-    const res = await fetch(dataUrl);
-    const blob = await res.blob();
-    const file = new File([blob], `Screen_Capture_${new Date().getTime()}.png`, { type: 'image/png' });
-
-    setIsUploading(true);
     try {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], `Screen_Capture_${new Date().getTime()}.png`, { type: 'image/png' });
+
+        setIsUploading(true);
         const newArtifact = await api.uploadEvidence(
             idToken,
             activeClientId,
@@ -134,7 +138,7 @@ export const ArtifactUploader: React.FC<ArtifactUploaderProps> = ({
             </div>
             <div className="flex items-center gap-2">
                 <button 
-                    onClick={() => handleDownload(artifact)}
+                    onClick={() => handleDownload(art)}
                     className="text-xs text-coral-600 hover:underline px-2"
                 >
                     View

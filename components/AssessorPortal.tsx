@@ -288,7 +288,7 @@ export const AssessorPortal: React.FC<AssessorPortalProps> = ({
                            </div>
                            <button className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all">In-Brief Checklist</button>
                       </div>
-                  </div>>
+                  </div>
 
                   <div className="flex-1 overflow-y-auto min-0 custom-scrollbar">
                       <div className="divide-y divide-slate-100">
@@ -312,7 +312,7 @@ export const AssessorPortal: React.FC<AssessorPortalProps> = ({
                                               </span>
                                               <ChevronRight size={24} className={`text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-coral-600' : ''}`} />
                                           </div>
-                                      </div>>
+                                      </div>
                                       
                                       {isExpanded && (
                                           <div className="bg-slate-50/50 px-12 pb-12 pt-6 animate-in fade-in duration-300">

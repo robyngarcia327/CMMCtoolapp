@@ -202,7 +202,7 @@ export const PackageReviewCenter: React.FC<PackageReviewCenterProps> = ({
   const getFileIcon = (type: string) => {
     if (type.includes('image')) return <ImageIcon size={18} className="text-purple-500" />;
     if (type.includes('spreadsheet') || type.includes('excel')) return <FileSpreadsheet size={18} className="text-green-600" />;
-    return <FileText size={18} className="text-blue-500" />;
+    return <FileText size={18} className="text-coral-500" />;
   };
 
   return (
@@ -265,9 +265,9 @@ export const PackageReviewCenter: React.FC<PackageReviewCenterProps> = ({
                 <button
                   onClick={handleAnalyze}
                   disabled={files.length === 0 || isAnalyzing}
-                  className="bg-blue-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-30"
+                  className="bg-coral-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-coral-100 hover:bg-coral-700 transition-all flex items-center gap-2 disabled:opacity-30"
                 >
-                  {isAnalyzing ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} className="text-blue-200" />}
+                  {isAnalyzing ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} className="text-coral-200" />}
                   {isAnalyzing ? 'Analyzing...' : 'Analyze Package'}
                 </button>
               </div>
@@ -297,7 +297,7 @@ export const PackageReviewCenter: React.FC<PackageReviewCenterProps> = ({
                   <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -mr-32 -mt-32 opacity-50"></div>
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="p-3 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-100">
+                      <div className="p-3 bg-coral-600 text-white rounded-2xl shadow-lg shadow-coral-100">
                         <Sparkles size={24} />
                       </div>
                       <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Executive Summary</h3>

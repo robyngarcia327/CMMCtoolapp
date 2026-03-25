@@ -316,7 +316,7 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                 }`}
               >
                 <div className="flex justify-between items-start mb-1">
-                  <h5 className={`font-black text-xs uppercase tracking-tight truncate ${activePolicyId === pol.id ? 'text-blue-900' : 'text-slate-700'}`}>
+                  <h5 className={`font-black text-xs uppercase tracking-tight truncate ${activePolicyId === pol.id ? 'text-coral-900' : 'text-slate-700'}`}>
                     {pol.title}
                   </h5>
                   <button 
@@ -349,14 +349,14 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
             {/* Header */}
             <div className="bg-white p-8 border-b border-slate-200 flex justify-between items-center shrink-0">
               <div className="flex items-center gap-6">
-                <div className="p-4 bg-blue-600 text-white rounded-[1.5rem] shadow-xl shadow-blue-100">
+                <div className="p-4 bg-coral-600 text-white rounded-[1.5rem] shadow-xl shadow-coral-100">
                   <FileText size={24} />
                 </div>
                 <div>
                   <div className="flex items-center gap-3">
                     {isEditing ? (
                       <input 
-                        className="text-2xl font-black text-slate-900 uppercase tracking-tighter outline-none border-b-2 border-blue-500 bg-blue-50/50 px-2"
+                        className="text-2xl font-black text-slate-900 uppercase tracking-tighter outline-none border-b-2 border-coral-500 bg-coral-50/50 px-2"
                         value={activePolicy.title}
                         onChange={e => handleUpdatePolicy({ title: e.target.value })}
                         autoFocus
@@ -364,7 +364,7 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                     ) : (
                       <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{activePolicy.title}</h2>
                     )}
-                    <button onClick={() => setIsEditing(!isEditing)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
+                    <button onClick={() => setIsEditing(!isEditing)} className="p-2 text-slate-400 hover:text-coral-600 transition-colors">
                       <Edit3 size={18} />
                     </button>
                   </div>
@@ -381,9 +381,9 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                 <button 
                   onClick={handleAudit}
                   disabled={isAuditing}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-100 transition-all flex items-center gap-2 disabled:opacity-30"
+                  className="bg-coral-600 hover:bg-coral-700 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-coral-100 transition-all flex items-center gap-2 disabled:opacity-30"
                 >
-                  {isAuditing ? <Loader2 className="animate-spin" size={14}/> : <Zap size={14} className="text-blue-200"/>}
+                  {isAuditing ? <Loader2 className="animate-spin" size={14}/> : <Zap size={14} className="text-coral-200"/>}
                   {isAuditing ? 'Auditing...' : 'AI Audit'}
                 </button>
               </div>
@@ -399,7 +399,7 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                   </div>
                   <button 
                     onClick={handleAddSection}
-                    className="flex items-center gap-1 text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700"
+                    className="flex items-center gap-1 text-[10px] font-black text-coral-600 uppercase tracking-widest hover:text-coral-700"
                   >
                     <Plus size={14} /> Add Section
                   </button>
@@ -412,7 +412,7 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                         <div className="flex items-center gap-3">
                           <span className="w-6 h-6 bg-slate-900 text-white rounded-lg flex items-center justify-center text-[10px] font-black">{idx + 1}</span>
                           <input 
-                            className="font-black text-slate-900 uppercase tracking-tight outline-none border-b border-transparent focus:border-blue-400 bg-transparent"
+                            className="font-black text-slate-900 uppercase tracking-tight outline-none border-b border-transparent focus:border-coral-400 bg-transparent"
                             value={section.title}
                             onChange={e => handleUpdateSection(section.id, { title: e.target.value })}
                             placeholder="Section Title"
@@ -426,7 +426,7 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                         </button>
                       </div>
                       <textarea 
-                        className="w-full min-h-[150px] p-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-400 focus:bg-white transition-all text-slate-700 leading-relaxed font-medium resize-none"
+                        className="w-full min-h-[150px] p-6 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-coral-500/5 focus:border-coral-400 focus:bg-white transition-all text-slate-700 leading-relaxed font-medium resize-none"
                         placeholder="Enter section content..."
                         value={section.content}
                         onChange={e => handleUpdateSection(section.id, { content: e.target.value })}
@@ -438,14 +438,14 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                     <div className="mt-10 p-6 bg-blue-50 rounded-3xl border border-blue-100 flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="p-3 bg-white rounded-xl shadow-sm border border-blue-100">
-                          <FileText size={20} className="text-blue-600" />
+                          <FileText size={20} className="text-coral-600" />
                         </div>
                         <div>
                           <h6 className="font-black text-slate-900 text-xs uppercase tracking-tight">{activePolicy.fileName}</h6>
                           <div className="flex items-center gap-3 mt-1">
                             <button 
                                 onClick={() => setShowViewer(true)}
-                                className="text-[9px] text-blue-600 font-black uppercase tracking-widest hover:underline flex items-center gap-1"
+                                className="text-[9px] text-coral-600 font-black uppercase tracking-widest hover:underline flex items-center gap-1"
                             >
                                 <Eye size={10} /> View Document
                             </button>
@@ -477,7 +477,7 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
                     <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-5xl h-full flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
                         <div className="bg-slate-900 p-6 flex justify-between items-center text-white">
                             <h3 className="font-black uppercase tracking-[0.2em] text-sm flex items-center gap-3">
-                                <FileText size={20} className="text-blue-400" /> {activePolicy.fileName}
+                                <FileText size={20} className="text-coral-400" /> {activePolicy.fileName}
                             </h3>
                             <button onClick={() => setShowViewer(false)} className="text-white/50 hover:text-white transition-colors"><X size={24} /></button>
                         </div>
@@ -509,12 +509,12 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
               <div className="lg:col-span-5 flex flex-col bg-slate-50/50 overflow-hidden">
                 <div className="p-4 bg-white border-b border-slate-200 flex justify-between items-center">
                   <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    <Sparkles size={14} className="text-blue-600" /> AI Compliance Audit
+                    <Sparkles size={14} className="text-coral-600" /> AI Compliance Audit
                   </div>
                   {activePolicy.analysisResult && (
                     <button 
                       onClick={() => handleUpdatePolicy({ analysisResult: undefined })}
-                      className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors"
+                      className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-coral-600 transition-colors"
                     >
                       Clear
                     </button>
@@ -574,7 +574,7 @@ export const PolicyReviewCenter: React.FC<PolicyReviewCenterProps> = ({
             </p>
             <button 
               onClick={handleCreatePolicy}
-              className="bg-blue-600 text-white px-10 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-3"
+              className="bg-coral-600 text-white px-10 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-coral-200 hover:bg-coral-700 transition-all flex items-center gap-3"
             >
               <Plus size={20} /> Create First Policy
             </button>

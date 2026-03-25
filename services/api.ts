@@ -1,7 +1,7 @@
 import { Artifact, Client, CognitoGroup, Vendor } from '../types';
 
-// Configuration - Your deployed API Gateway endpoint
-const API_BASE_URL = 'https://irwrdtn81b.execute-api.us-east-1.amazonaws.com/CualleeCyberEvidence'; 
+// Configuration - Using local API proxy for multi-tenant S3 support
+const API_BASE_URL = window.location.origin + '/api'; 
 
 /**
  * Ensures the token is formatted correctly for the Authorization header.

@@ -3,6 +3,18 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import multer from "multer";
 import fs from "fs";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+// AWS S3 Client Configuration
+// These should be set in environment variables
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || "us-east-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+  },
+});
 
 // In-memory storage for demo purposes (since Firebase was declined)
 // In a real app, this would be a database
@@ -38,6 +50,10 @@ interface Vendor {
 }
 
 let sharedDocuments: SharedDocument[] = [];
+let organizations: any[] = [
+  { orgId: 'demo-org', name: 'Demo Organization', role: 'Tenant_Admin' }
+];
+let evidence: any[] = [];
 let vendors: Vendor[] = [
   {
     id: 'v1',
@@ -81,8 +97,166 @@ async function startServer() {
 
   app.use(express.json({ limit: '50mb' }));
 
-  // API Routes
-  
+  // --- Organization API ---
+  app.get("/api/orgs", (req, res) => {
+    res.json({ items: organizations });
+  });
+
+  app.post("/api/orgs", (req, res) => {
+    const { name, domain } = req.body;
+    const newOrg = {
+      orgId: Math.random().toString(36).substr(2, 9),
+      name,
+      domain,
+      role: 'Tenant_Admin',
+      createdAt: new Date().toISOString()
+    };
+    organizations.push(newOrg);
+    res.status(201).json(newOrg);
+  });
+
+  app.get("/api/orgs/discover", (req, res) => {
+    const { domain } = req.query;
+    const suggested = organizations.filter(o => o.domain === domain);
+    res.json({ items: suggested });
+  });
+
+  app.post("/api/orgs/:orgId/join", (req, res) => {
+    res.json({ status: "success" });
+  });
+
+  // --- Evidence Upload API (Multi-tenant S3) ---
+  app.get("/api/orgs/:orgId/evidence", (req, res) => {
+    const { orgId } = req.params;
+    const items = evidence.filter(e => e.orgId === orgId);
+    res.json({ items });
+  });
+
+  app.post("/api/orgs/:orgId/evidence", async (req, res) => {
+    const { orgId } = req.params;
+    const { filename, contentType, requirementId, sizeBytes } = req.body;
+
+    if (!orgId || !filename || !contentType) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Tenant-specific bucket name
+    const bucketName = `cuallee-cyber-evidence-${orgId.toLowerCase()}`;
+    const key = `uploads/${requirementId || 'GENERAL'}/${Date.now()}_${filename}`;
+
+    try {
+      const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        ContentType: contentType,
+      });
+
+      const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+      const evidenceId = Math.random().toString(36).substr(2, 9);
+
+      // Store metadata
+      evidence.push({
+        evidenceId,
+        orgId,
+        requirementId: requirementId || 'GENERAL',
+        filename,
+        contentType,
+        sizeBytes,
+        uploadedAt: new Date().toISOString(),
+        s3Key: key,
+        bucketName
+      });
+
+      res.json({
+        uploadUrl,
+        evidenceId,
+        requiredHeaders: {
+          'Content-Type': contentType
+        }
+      });
+    } catch (error: any) {
+      console.error("Error generating S3 upload URL:", error);
+      res.status(500).json({ error: "Failed to generate upload URL. Ensure the S3 bucket exists and permissions are correct." });
+    }
+  });
+
+  app.post("/api/orgs/:orgId/evidence/:evidenceId/upload-complete", (req, res) => {
+    res.json({ status: "success" });
+  });
+
+  app.post("/api/orgs/:orgId/evidence/:evidenceId/download-request", async (req, res) => {
+    const { orgId, evidenceId } = req.params;
+    const item = evidence.find(e => e.evidenceId === evidenceId && e.orgId === orgId);
+    
+    if (!item) return res.status(404).json({ error: "Evidence not found" });
+
+    try {
+      // In a real app, you'd use GetObjectCommand to generate a pre-signed download URL
+      // For now, we'll just return a mock URL or implement the real one if we have the client
+      res.json({ downloadUrl: `https://${item.bucketName}.s3.amazonaws.com/${item.s3Key}` });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to generate download URL" });
+    }
+  });
+
+  // --- Secure Vault API ---
+  app.get("/api/vault/received", (req, res) => {
+    const userEmail = req.query.email as string;
+    const docs = sharedDocuments.filter(d => d.recipientEmail === userEmail);
+    res.json({ items: docs });
+  });
+
+  app.get("/api/vault/sent", (req, res) => {
+    const userEmail = req.query.email as string;
+    const docs = sharedDocuments.filter(d => d.ownerEmail === userEmail);
+    res.json({ items: docs });
+  });
+
+  app.post("/api/vault/share", async (req, res) => {
+    const { filename, contentType, recipientEmail, sizeBytes } = req.body;
+    const vaultId = Math.random().toString(36).substr(2, 9);
+    
+    // Use a shared vault bucket or tenant-specific
+    const bucketName = "cuallee-cyber-vault-shared"; 
+    const key = `vault/${vaultId}/${filename}`;
+
+    try {
+      const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        ContentType: contentType,
+      });
+
+      const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+
+      res.json({
+        uploadUrl,
+        vaultId,
+        requiredHeaders: {
+          'Content-Type': contentType
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to generate vault upload URL" });
+    }
+  });
+
+  app.post("/api/vault/:id/complete", (req, res) => {
+    res.json({ status: "success" });
+  });
+
+  app.patch("/api/vault/:id/status", (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    const docIndex = sharedDocuments.findIndex(d => d.id === id);
+    if (docIndex !== -1) {
+      sharedDocuments[docIndex].status = status;
+      res.json(sharedDocuments[docIndex]);
+    } else {
+      res.status(404).json({ error: "Document not found" });
+    }
+  });
+
   // Get documents shared WITH the user
   app.get("/api/documents/shared-with-me", (req, res) => {
     const userEmail = req.query.email as string;
