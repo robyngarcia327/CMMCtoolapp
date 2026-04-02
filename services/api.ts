@@ -1,7 +1,7 @@
 import { Artifact, Client, CognitoGroup, Vendor } from '../types';
 
 // Configuration - Using local API proxy for multi-tenant S3 support
-const API_BASE_URL = window.location.origin + '/api';
+const API_BASE_URL = '/api';
 
 /**
  * Ensures the token is formatted correctly for the Authorization header.
