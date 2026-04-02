@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, ArrowRight, Loader2, RefreshCw, ShieldCheck, Check, DollarSign, Users, Wallet, Briefcase, Info, ArrowLeft } from 'lucide-react';
+import { Building2, ArrowRight, Loader2, RefreshCw, ShieldCheck, Check, DollarSign, Users, Wallet, Briefcase, Info, ArrowLeft, AlertCircle } from 'lucide-react';
 import { User, OrganizationFinancials } from '../types';
 import { api } from '../services/api';
 
@@ -67,9 +67,15 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
   };
 
   const isSubmitting = creationStatus === 'creating' || creationStatus === 'verifying';
+  const [provisioningError, setProvisioningError] = useState<string | null>(null);
 
-  const handleSubmitFinal = () => {
-    onCreateOrganization(orgName, userDomain, financials);
+  const handleSubmitFinal = async () => {
+    setProvisioningError(null);
+    try {
+      await onCreateOrganization(orgName, userDomain, financials);
+    } catch (error: any) {
+      setProvisioningError(error.message || "Failed to provision organization.");
+    }
   };
 
   return (
@@ -253,6 +259,13 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
                         </p>
                     </div>
 
+                    {provisioningError && (
+                        <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3 animate-in fade-in slide-in-from-top-2">
+                            <AlertCircle className="text-red-500 shrink-0" size={18} />
+                            <p className="text-xs text-red-700 font-medium">{provisioningError}</p>
+                        </div>
+                    )}
+
                     <button 
                         onClick={handleSubmitFinal}
                         disabled={isSubmitting}
@@ -261,7 +274,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
                         {isSubmitting ? (
                             <>
                                 <Loader2 className="animate-spin" size={20} />
-                                Creating Secured Vault...
+                                Provisioning Secure Vault...
                             </>
                         ) : (
                             <>

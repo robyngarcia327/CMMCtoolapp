@@ -1,7 +1,7 @@
 import { Artifact, Client, CognitoGroup, Vendor } from '../types';
 
 // Configuration - Using local API proxy for multi-tenant S3 support
-const API_BASE_URL = window.location.origin + '/api'; 
+const API_BASE_URL = '/api';
 
 /**
  * Ensures the token is formatted correctly for the Authorization header.
@@ -53,10 +53,11 @@ async function fetchJson(url: string, opts: any = {}) {
     }
 
     if (!response.ok) {
-        let msg = body?.message || body?.error || body?.errorMessage || body?.raw || `HTTP ${response.status}`;
+        let msg = `[${response.status}] ${url}: ` + (body?.message || body?.error || body?.errorMessage || body?.raw || `HTTP ${response.status}`);
         if (typeof msg === 'object') {
-            msg = msg.message || JSON.stringify(msg);
+            msg = (msg as any).message || JSON.stringify(msg);
         }
+        if (msg.length > 500) msg = msg.substring(0, 500) + "...";
         throw new Error(msg);
     }
 

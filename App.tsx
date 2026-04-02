@@ -377,8 +377,52 @@ const App: React.FC = () => {
 
   if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-600" size={48} /></div>;
 
+  const [creationStatus, setCreationStatus] = useState<'idle' | 'creating' | 'verifying' | 'failed_verification'>('idle');
+
+  const handleCreateOrganization = async (name: string, domain: string, financials: OrganizationFinancials) => {
+    if (!auth.user?.id_token) return;
+    setCreationStatus('creating');
+    setIsDataLoading(true);
+    try {
+      const newOrg = await api.createOrg(auth.user.id_token, name, domain);
+      setCreationStatus('verifying');
+      setClientDataStore(prev => ({
+        ...prev,
+        [newOrg.orgId]: { ...createInitialClientData(false), financials }
+      }));
+      fetchAttempted.current = false;
+      await loadOrganizations();
+      setCreationStatus('idle');
+    } catch (error: any) {
+      setCreationStatus('failed_verification');
+      throw error; // Rethrow to be caught by Onboarding's handleSubmitFinal
+    } finally {
+      setIsDataLoading(false);
+    }
+  };
+
   if (hasCheckedOrgs && (clients.length === 0 || !activeClientId)) {
-    return <Onboarding user={{ id: auth.user?.profile.sub || '', name: userDisplayName, email: auth.user?.profile.email || '', role: 'Admin_Created_Users', domain: (auth.user?.profile.email || '').split('@')[1], organizationId: '', department: '', lastLogin: 0, mfaEnabled: false, hasPasskey: false, isCuiAuthorized: false }} onCreateOrganization={async (name, domain, financials) => { if (!auth.user?.id_token) return; setIsDataLoading(true); try { const newOrg = await api.createOrg(auth.user.id_token, name, domain); setClientDataStore(prev => ({ ...prev, [newOrg.orgId]: { ...createInitialClientData(false), financials } })); fetchAttempted.current = false; await loadOrganizations(); } finally { setIsDataLoading(false); } }} onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }} debugTokens={{ idToken: auth.user?.id_token }} />;
+    return (
+      <Onboarding 
+        user={{ 
+          id: auth.user?.profile.sub || '', 
+          name: userDisplayName, 
+          email: auth.user?.profile.email || '', 
+          role: 'Admin_Created_Users', 
+          domain: (auth.user?.profile.email || '').split('@')[1], 
+          organizationId: '', 
+          department: '', 
+          lastLogin: 0, 
+          mfaEnabled: false, 
+          hasPasskey: false, 
+          isCuiAuthorized: false 
+        }} 
+        onCreateOrganization={handleCreateOrganization} 
+        onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }} 
+        creationStatus={creationStatus}
+        debugTokens={{ idToken: auth.user?.id_token }} 
+      />
+    );
   }
 
   const activeData = clientDataStore[activeClientId];
