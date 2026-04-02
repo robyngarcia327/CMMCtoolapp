@@ -4,21 +4,44 @@ import path from "path";
 import multer from "multer";
 import fs from "fs";
 import cors from "cors";
+import { S3Client, PutObjectCommand, CreateBucketCommand, HeadBucketCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-// Mock S3 Client for demo purposes without requiring AWS credentials
-const s3Client = {
-  send: async (command: any) => {
-    console.log("Mock S3 command sent:", command.constructor.name);
-    return {};
-  }
-};
+// AWS S3 Client Configuration - Only initialize if credentials are provided
+// This prevents the app from crashing on startup if keys are missing
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || "us-east-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "MOCK_KEY",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "MOCK_SECRET",
+  },
+});
 
 /**
- * Mock function to ensure a tenant-specific bucket exists.
+ * Ensures a tenant-specific bucket exists.
+ * If it doesn't, it creates it automatically.
  */
 async function ensureBucketExists(bucketName: string) {
-  console.log(`Mock: Ensuring bucket ${bucketName} exists.`);
-  return Promise.resolve();
+  if (!process.env.AWS_ACCESS_KEY_ID) {
+    console.warn(`AWS Credentials missing. Skipping bucket check for ${bucketName}`);
+    return;
+  }
+  try {
+    await s3Client.send(new HeadBucketCommand({ Bucket: bucketName }));
+    console.log(`Bucket ${bucketName} already exists.`);
+  } catch (error: any) {
+    if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+      console.log(`Creating bucket: ${bucketName}`);
+      await s3Client.send(new CreateBucketCommand({ 
+        Bucket: bucketName,
+        ...(process.env.AWS_REGION && process.env.AWS_REGION !== 'us-east-1' ? {
+          CreateBucketConfiguration: { LocationConstraint: process.env.AWS_REGION as any }
+        } : {})
+      }));
+    } else {
+      throw error;
+    }
+  }
 }
 
 // In-memory storage for demo purposes
@@ -177,8 +200,21 @@ async function startServer() {
     const key = `uploads/${requirementId || 'GENERAL'}/${Date.now()}_${filename}`;
 
     try {
-      // Mock upload URL for demo
-      const uploadUrl = `https://mock-s3-upload.local/${bucketName}/${key}`;
+      if (!process.env.AWS_ACCESS_KEY_ID) {
+        // Fallback to mock URL if no credentials
+        const uploadUrl = `https://mock-s3-upload.local/${bucketName}/${key}`;
+        const evidenceId = Math.random().toString(36).substr(2, 9);
+        evidence.push({ evidenceId, orgId, requirementId: requirementId || 'GENERAL', filename, contentType, sizeBytes, uploadedAt: new Date().toISOString(), s3Key: key, bucketName });
+        return res.json({ uploadUrl, evidenceId, requiredHeaders: { 'Content-Type': contentType } });
+      }
+
+      const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        ContentType: contentType,
+      });
+
+      const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
       const evidenceId = Math.random().toString(36).substr(2, 9);
 
       // Store metadata
@@ -218,8 +254,10 @@ async function startServer() {
     if (!item) return res.status(404).json({ error: "Evidence not found" });
 
     try {
-      // Mock download URL
-      res.json({ downloadUrl: `https://mock-s3-download.local/${item.bucketName}/${item.s3Key}` });
+      if (!process.env.AWS_ACCESS_KEY_ID) {
+        return res.json({ downloadUrl: `https://mock-s3-download.local/${item.bucketName}/${item.s3Key}` });
+      }
+      res.json({ downloadUrl: `https://${item.bucketName}.s3.amazonaws.com/${item.s3Key}` });
     } catch (error) {
       res.status(500).json({ error: "Failed to generate download URL" });
     }
@@ -247,8 +285,18 @@ async function startServer() {
     const key = `vault/${vaultId}/${filename}`;
 
     try {
-      // Mock vault upload URL
-      const uploadUrl = `https://mock-vault-upload.local/${bucketName}/${key}`;
+      if (!process.env.AWS_ACCESS_KEY_ID) {
+        const uploadUrl = `https://mock-vault-upload.local/${bucketName}/${key}`;
+        return res.json({ uploadUrl, vaultId, requiredHeaders: { 'Content-Type': contentType } });
+      }
+
+      const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        ContentType: contentType,
+      });
+
+      const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 
       res.json({
         uploadUrl,

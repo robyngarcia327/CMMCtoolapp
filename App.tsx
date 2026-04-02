@@ -104,7 +104,14 @@ const SidebarSection = ({ title, children }: { title: string, children?: React.R
 );
 
 const App: React.FC = () => {
-  const auth = useAuth();
+  try {
+    const auth = useAuth();
+  console.log("App Render - Auth State:", { 
+    isAuthenticated: auth.isAuthenticated, 
+    isLoading: auth.isLoading, 
+    error: auth.error?.message,
+    user: auth.user ? "Present" : "Missing"
+  });
   
   // Persistence Keys
   const KEY_VIEW = 'cuallee_cyber_v2_current_view';
@@ -590,7 +597,25 @@ const App: React.FC = () => {
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
       </div>
     </div>
-  );
+    );
+  } catch (e: any) {
+    console.error("App Render Crash:", e);
+    return (
+      <div className="flex h-screen flex-col items-center justify-center bg-slate-950 p-8 text-center">
+        <div className="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-[2.5rem] flex items-center justify-center mb-6">
+          <AlertCircle size={40} className="text-red-500" />
+        </div>
+        <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Application Crash</h2>
+        <p className="text-slate-400 max-w-md mb-8">{e.message}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="bg-white text-slate-950 px-8 py-3 rounded-full font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-coral-50 transition-all"
+        >
+          <RefreshCcw size={16} /> Reload Application
+        </button>
+      </div>
+    );
+  }
 };
 
 export default App;
