@@ -84,22 +84,33 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  console.log(`[Server] Starting in ${process.env.NODE_ENV || 'development'} mode`);
+
   app.use(cors());
   app.use(express.json({ limit: '50mb' }));
 
   app.use((req, res, next) => {
-    console.log(`[Server] ${req.method} ${req.url}`);
+    console.log(`[Server] ${req.method} ${req.url} - Host: ${req.headers.host}`);
     next();
   });
 
-  // --- API Routes ---
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
-  });
-
-  app.get("/api/orgs", (req, res) => {
-    console.log("Handling GET /api/orgs");
-    res.json({ items: organizations });
+  // --- API Routes (Unified) ---
+  app.use("/api", (req, res, next) => {
+    console.log(`[API Request] ${req.method} ${req.url}`);
+    
+    // Handle specific routes
+    if (req.path === "/health") {
+      return res.json({ status: "ok", timestamp: new Date().toISOString() });
+    }
+    
+    if (req.path === "/orgs" || req.path === "/orgs/") {
+      if (req.method === "GET") {
+        return res.json({ items: organizations });
+      }
+    }
+    
+    // If no match, continue to other specific routes or 404
+    next();
   });
 
   app.post("/api/orgs", async (req, res) => {
@@ -325,6 +336,16 @@ async function startServer() {
     
     vendors.splice(index, 1);
     res.status(204).send();
+  });
+
+  // Explicit 404 for any other /api routes
+  app.all("/api/*", (req, res) => {
+    console.log(`[API 404] ${req.method} ${req.url}`);
+    res.status(404).json({ 
+      error: "API route not found", 
+      method: req.method,
+      path: req.url 
+    });
   });
 
   // Vite middleware for development
