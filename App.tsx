@@ -104,8 +104,7 @@ const SidebarSection = ({ title, children }: { title: string, children?: React.R
 );
 
 const App: React.FC = () => {
-  try {
-    const auth = useAuth();
+  const auth = useAuth();
   console.log("App Render - Auth State:", { 
     isAuthenticated: auth.isAuthenticated, 
     isLoading: auth.isLoading, 
@@ -227,6 +226,66 @@ const App: React.FC = () => {
     return { name: 'Unauthorized Tenant', id: '', domain: '', industry: '', contactName: '', logoInitial: '?', primaryFramework: '', targetCmmcLevel: 2 as const, nextAuditDate: 0, accountManager: '', isParent: false };
   }, [clients, activeClientId]);
 
+  const loadOrganizations = useCallback(async () => {
+    // FIX: Using ID TOKEN for API calls as required by Cognito Authorizers
+    const idToken = auth.user?.id_token;
+    if (!auth.isAuthenticated || !idToken) return;
+    
+    setIsDataLoading(true);
+    setApiError(null);
+    try {
+      const apiOrgs = await api.getOrgs(idToken);
+      
+      const mappedClients: Client[] = apiOrgs.map((o: any) => ({
+        id: o.orgId, 
+        name: o.name || 'Organization', 
+        domain: (auth.user?.profile.email || '').split('@')[1], 
+        industry: 'Defense Industrial Base', 
+        contactName: auth.user?.profile.email || 'Admin', 
+        logoInitial: (o.name || 'O').charAt(0).toUpperCase(), 
+        primaryFramework: 'NIST-CMMC', 
+        targetCmmcLevel: 2, 
+        nextAuditDate: Date.now() + 31536000000, 
+        accountManager: 'Self-Managed', 
+        isParent: false
+      }));
+      
+      setClients(mappedClients);
+      
+      if (mappedClients.length > 0) {
+        const savedId = localStorage.getItem(KEY_CLIENT);
+        const selId = (savedId && mappedClients.some(c => c.id === savedId)) 
+          ? savedId 
+          : mappedClients[0].id;
+          
+        setActiveClientId(selId);
+        setClientDataStore(prev => {
+          const nextStore = { ...prev };
+          mappedClients.forEach(c => {
+            if (!nextStore[c.id]) nextStore[c.id] = createInitialClientData(false);
+          });
+          return nextStore;
+        });
+      }
+    } catch (error: any) { 
+      console.error("Discovery error:", error); 
+      //Surfaces the detailed error from fetchJson
+      setApiError(error.message);
+    } finally { 
+      setIsDataLoading(false); 
+      setHasCheckedOrgs(true); 
+    }
+  }, [auth.isAuthenticated, auth.user]);
+
+  useEffect(() => {
+    if (auth.isAuthenticated && auth.user?.id_token && !fetchAttempted.current) {
+      fetchAttempted.current = true;
+      loadOrganizations();
+    }
+  }, [auth.isAuthenticated, auth.user, loadOrganizations]);
+
+  const handleLogout = () => { auth.signoutRedirect(); };
+  
   const handleUpdateRequirement = (updatedReq: Requirement) => {
     if (!activeClientId) return;
     setClientDataStore(prev => ({
@@ -301,89 +360,6 @@ const App: React.FC = () => {
       }));
   };
 
-  const loadOrganizations = useCallback(async () => {
-    // FIX: Using ID TOKEN for API calls as required by Cognito Authorizers
-    const idToken = auth.user?.id_token;
-    if (!auth.isAuthenticated || !idToken) return;
-    
-    setIsDataLoading(true);
-    setApiError(null);
-    try {
-      const apiOrgs = await api.getOrgs(idToken);
-      
-      const mappedClients: Client[] = apiOrgs.map((o: any) => ({
-        id: o.orgId, 
-        name: o.name || 'Organization', 
-        domain: (auth.user?.profile.email || '').split('@')[1], 
-        industry: 'Defense Industrial Base', 
-        contactName: auth.user?.profile.email || 'Admin', 
-        logoInitial: (o.name || 'O').charAt(0).toUpperCase(), 
-        primaryFramework: 'NIST-CMMC', 
-        targetCmmcLevel: 2, 
-        nextAuditDate: Date.now() + 31536000000, 
-        accountManager: 'Self-Managed', 
-        isParent: false
-      }));
-      
-      setClients(mappedClients);
-      
-      if (mappedClients.length > 0) {
-        const savedId = localStorage.getItem(KEY_CLIENT);
-        const selId = (savedId && mappedClients.some(c => c.id === savedId)) 
-          ? savedId 
-          : mappedClients[0].id;
-          
-        setActiveClientId(selId);
-        setClientDataStore(prev => {
-          const nextStore = { ...prev };
-          mappedClients.forEach(c => {
-            if (!nextStore[c.id]) nextStore[c.id] = createInitialClientData(false);
-          });
-          return nextStore;
-        });
-      }
-    } catch (error: any) { 
-      console.error("Discovery error:", error); 
-      //Surfaces the detailed error from fetchJson
-      setApiError(error.message);
-    } finally { 
-      setIsDataLoading(false); 
-      setHasCheckedOrgs(true); 
-    }
-  }, [auth.isAuthenticated, auth.user]);
-
-  useEffect(() => {
-    if (auth.isAuthenticated && auth.user?.id_token && !fetchAttempted.current) {
-      fetchAttempted.current = true;
-      loadOrganizations();
-    }
-  }, [auth.isAuthenticated, auth.user, loadOrganizations]);
-
-  const handleLogout = () => { auth.signoutRedirect(); };
-  
-  if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-500" size={48} /></div>;
-  if (!auth.isAuthenticated) return <Login />;
-
-  if (apiError) {
-      return (
-          <div className="flex h-screen flex-col items-center justify-center bg-slate-950 p-8 text-center">
-              <div className="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-[2.5rem] flex items-center justify-center mb-6">
-                  <AlertCircle size={40} className="text-red-500" />
-              </div>
-              <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Vault Connection Failure</h2>
-              <p className="text-slate-400 max-w-md mb-8">{apiError}</p>
-              <button 
-                  onClick={() => { fetchAttempted.current = false; loadOrganizations(); }}
-                  className="bg-white text-slate-950 px-8 py-3 rounded-full font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-coral-50 transition-all"
-              >
-                  <RefreshCcw size={16} /> Retry Connection
-              </button>
-          </div>
-      );
-  }
-
-  if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-600" size={48} /></div>;
-
   const [creationStatus, setCreationStatus] = useState<'idle' | 'creating' | 'verifying' | 'failed_verification'>('idle');
 
   const handleCreateOrganization = async (name: string, domain: string, financials: OrganizationFinancials) => {
@@ -407,6 +383,30 @@ const App: React.FC = () => {
       setIsDataLoading(false);
     }
   };
+
+  // --- EARLY RETURNS (AFTER ALL HOOKS) ---
+  if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-500" size={48} /></div>;
+  if (!auth.isAuthenticated) return <Login />;
+
+  if (apiError) {
+      return (
+          <div className="flex h-screen flex-col items-center justify-center bg-slate-950 p-8 text-center">
+              <div className="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-[2.5rem] flex items-center justify-center mb-6">
+                  <AlertCircle size={40} className="text-red-500" />
+              </div>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Vault Connection Failure</h2>
+              <p className="text-slate-400 max-w-md mb-8">{apiError}</p>
+              <button 
+                  onClick={() => { fetchAttempted.current = false; loadOrganizations(); }}
+                  className="bg-white text-slate-950 px-8 py-3 rounded-full font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-coral-50 transition-all"
+              >
+                  <RefreshCcw size={16} /> Retry Connection
+              </button>
+          </div>
+      );
+  }
+
+  if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-600" size={48} /></div>;
 
   if (hasCheckedOrgs && (clients.length === 0 || !activeClientId)) {
     return (
@@ -597,25 +597,7 @@ const App: React.FC = () => {
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
       </div>
     </div>
-    );
-  } catch (e: any) {
-    console.error("App Render Crash:", e);
-    return (
-      <div className="flex h-screen flex-col items-center justify-center bg-slate-950 p-8 text-center">
-        <div className="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-[2.5rem] flex items-center justify-center mb-6">
-          <AlertCircle size={40} className="text-red-500" />
-        </div>
-        <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Application Crash</h2>
-        <p className="text-slate-400 max-w-md mb-8">{e.message}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="bg-white text-slate-950 px-8 py-3 rounded-full font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-coral-50 transition-all"
-        >
-          <RefreshCcw size={16} /> Reload Application
-        </button>
-      </div>
-    );
-  }
+  );
 };
 
 export default App;
