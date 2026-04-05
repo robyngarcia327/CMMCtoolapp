@@ -94,26 +94,19 @@ async function startServer() {
     next();
   });
 
-  // --- API Routes (Unified) ---
-  app.use("/api", (req, res, next) => {
-    console.log(`[API Request] ${req.method} ${req.url}`);
-    
-    // Handle specific routes
-    if (req.path === "/health") {
-      return res.json({ status: "ok", timestamp: new Date().toISOString() });
-    }
-    
-    if (req.path === "/orgs" || req.path === "/orgs/") {
-      if (req.method === "GET") {
-        return res.json({ items: organizations });
-      }
-    }
-    
-    // If no match, continue to other specific routes or 404
-    next();
+  // --- API Router ---
+  const apiRouter = express.Router();
+
+  apiRouter.get("/health", (req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
-  app.post("/api/orgs", async (req, res) => {
+  apiRouter.get("/orgs", (req, res) => {
+    console.log("Handling GET /api/orgs");
+    res.json({ items: organizations });
+  });
+
+  apiRouter.post("/orgs", async (req, res) => {
     const { name, domain } = req.body;
     const orgId = Math.random().toString(36).substr(2, 9);
     const newOrg = {
@@ -128,24 +121,24 @@ async function startServer() {
     res.status(201).json(newOrg);
   });
 
-  app.get("/api/orgs/discover", (req, res) => {
+  apiRouter.get("/orgs/discover", (req, res) => {
     const { domain } = req.query;
     const suggested = organizations.filter(o => o.domain === domain);
     res.json({ items: suggested });
   });
 
-  app.post("/api/orgs/:orgId/join", (req, res) => {
+  apiRouter.post("/orgs/:orgId/join", (req, res) => {
     res.json({ status: "success" });
   });
 
   // --- Evidence Upload API ---
-  app.get("/api/orgs/:orgId/evidence", (req, res) => {
+  apiRouter.get("/orgs/:orgId/evidence", (req, res) => {
     const { orgId } = req.params;
     const items = evidence.filter(e => e.orgId === orgId);
     res.json({ items });
   });
 
-  app.post("/api/orgs/:orgId/evidence", async (req, res) => {
+  apiRouter.post("/orgs/:orgId/evidence", async (req, res) => {
     const { orgId } = req.params;
     const { filename, contentType, requirementId, sizeBytes } = req.body;
 
@@ -162,11 +155,11 @@ async function startServer() {
     return res.json({ uploadUrl, evidenceId, requiredHeaders: { 'Content-Type': contentType } });
   });
 
-  app.post("/api/orgs/:orgId/evidence/:evidenceId/upload-complete", (req, res) => {
+  apiRouter.post("/orgs/:orgId/evidence/:evidenceId/upload-complete", (req, res) => {
     res.json({ status: "success" });
   });
 
-  app.post("/api/orgs/:orgId/evidence/:evidenceId/download-request", async (req, res) => {
+  apiRouter.post("/orgs/:orgId/evidence/:evidenceId/download-request", async (req, res) => {
     const { orgId, evidenceId } = req.params;
     const item = evidence.find(e => e.evidenceId === evidenceId && e.orgId === orgId);
     
@@ -176,19 +169,19 @@ async function startServer() {
   });
 
   // --- Secure Vault API ---
-  app.get("/api/vault/received", (req, res) => {
+  apiRouter.get("/vault/received", (req, res) => {
     const userEmail = req.query.email as string;
     const docs = sharedDocuments.filter(d => d.recipientEmail === userEmail);
     res.json({ items: docs });
   });
 
-  app.get("/api/vault/sent", (req, res) => {
+  apiRouter.get("/vault/sent", (req, res) => {
     const userEmail = req.query.email as string;
     const docs = sharedDocuments.filter(d => d.ownerEmail === userEmail);
     res.json({ items: docs });
   });
 
-  app.post("/api/vault/share", async (req, res) => {
+  apiRouter.post("/vault/share", async (req, res) => {
     const { filename, contentType, recipientEmail, sizeBytes } = req.body;
     const vaultId = Math.random().toString(36).substr(2, 9);
     
@@ -199,11 +192,11 @@ async function startServer() {
     return res.json({ uploadUrl, vaultId, requiredHeaders: { 'Content-Type': contentType } });
   });
 
-  app.post("/api/vault/:id/complete", (req, res) => {
+  apiRouter.post("/vault/:id/complete", (req, res) => {
     res.json({ status: "success" });
   });
 
-  app.patch("/api/vault/:id/status", (req, res) => {
+  apiRouter.patch("/vault/:id/status", (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     const docIndex = sharedDocuments.findIndex(d => d.id === id);
@@ -215,7 +208,7 @@ async function startServer() {
     }
   });
 
-  app.get("/api/documents/shared-with-me", (req, res) => {
+  apiRouter.get("/documents/shared-with-me", (req, res) => {
     const userEmail = req.query.email as string;
     if (!userEmail) return res.status(400).json({ error: "Email required" });
     
@@ -223,7 +216,7 @@ async function startServer() {
     res.json(docs);
   });
 
-  app.get("/api/documents/my-documents", (req, res) => {
+  apiRouter.get("/documents/my-documents", (req, res) => {
     const userEmail = req.query.email as string;
     if (!userEmail) return res.status(400).json({ error: "Email required" });
     
@@ -231,7 +224,7 @@ async function startServer() {
     res.json(docs);
   });
 
-  app.post("/api/documents/share", (req, res) => {
+  apiRouter.post("/documents/share", (req, res) => {
     const { name, ownerId, ownerEmail, recipientEmail, fileSize, mimeType, content } = req.body;
     
     if (!name || !ownerEmail || !recipientEmail) {
@@ -255,7 +248,7 @@ async function startServer() {
     res.status(201).json(newDoc);
   });
 
-  app.patch("/api/documents/:id/status", (req, res) => {
+  apiRouter.patch("/documents/:id/status", (req, res) => {
     const { id } = req.params;
     const { status, userEmail } = req.body;
 
@@ -272,7 +265,7 @@ async function startServer() {
     res.json(sharedDocuments[docIndex]);
   });
 
-  app.get("/api/documents/:id/download", (req, res) => {
+  apiRouter.get("/documents/:id/download", (req, res) => {
     const { id } = req.params;
     const userEmail = req.query.email as string;
 
@@ -286,7 +279,7 @@ async function startServer() {
     res.json({ content: doc.content, name: doc.name, mimeType: doc.mimeType });
   });
 
-  app.delete("/api/documents/:id", (req, res) => {
+  apiRouter.delete("/documents/:id", (req, res) => {
     const { id } = req.params;
     const userEmail = req.query.email as string;
 
@@ -302,13 +295,13 @@ async function startServer() {
     res.status(204).send();
   });
 
-  app.get("/api/vendors", (req, res) => {
+  apiRouter.get("/vendors", (req, res) => {
     const orgId = req.query.orgId as string;
     if (!orgId) return res.status(400).json({ error: "orgId required" });
     res.json(vendors);
   });
 
-  app.post("/api/vendors", (req, res) => {
+  apiRouter.post("/vendors", (req, res) => {
     const vendor = req.body;
     const newVendor: Vendor = {
       ...vendor,
@@ -319,7 +312,7 @@ async function startServer() {
     res.status(201).json(newVendor);
   });
 
-  app.patch("/api/vendors/:id", (req, res) => {
+  apiRouter.patch("/vendors/:id", (req, res) => {
     const { id } = req.params;
     const updates = req.body;
     const index = vendors.findIndex(v => v.id === id);
@@ -329,7 +322,7 @@ async function startServer() {
     res.json(vendors[index]);
   });
 
-  app.delete("/api/vendors/:id", (req, res) => {
+  apiRouter.delete("/vendors/:id", (req, res) => {
     const { id } = req.params;
     const index = vendors.findIndex(v => v.id === id);
     if (index === -1) return res.status(404).json({ error: "Vendor not found" });
@@ -338,15 +331,14 @@ async function startServer() {
     res.status(204).send();
   });
 
-  // Explicit 404 for any other /api routes
-  app.all("/api/*", (req, res) => {
+  // Catch-all for API router to return JSON 404
+  apiRouter.all("*", (req, res) => {
     console.log(`[API 404] ${req.method} ${req.url}`);
-    res.status(404).json({ 
-      error: "API route not found", 
-      method: req.method,
-      path: req.url 
-    });
+    res.status(404).json({ error: "API endpoint not found" });
   });
+
+  // Mount API router
+  app.use("/api", apiRouter);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
