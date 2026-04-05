@@ -22,11 +22,16 @@ const oidcConfig = {
   onSigninError: (error: Error) => {
     console.error("OIDC Signin Error:", error);
     // If we have a state/code mismatch, it's usually due to a double-redirect.
-    // Clearing session storage is the standard fix.
+    // Clearing session storage is the standard fix, but we only do it once.
     if (error.message.includes('state') || error.message.includes('code')) {
-       sessionStorage.clear();
-       // Auto-reload to give the user a clean slate
-       window.location.href = window.location.origin;
+       const hasReloaded = sessionStorage.getItem('oidc_error_reloaded');
+       if (!hasReloaded) {
+           sessionStorage.setItem('oidc_error_reloaded', 'true');
+           sessionStorage.clear();
+           window.location.href = window.location.origin;
+       } else {
+           console.warn("OIDC error persisted after reload. Stopping loop.");
+       }
     }
   }
 };

@@ -99,7 +99,7 @@ async function startServer() {
 
   // API Logger
   apiRouter.use((req, res, next) => {
-    console.log(`[API] ${req.method} ${req.path} - Full URL: ${req.originalUrl}`);
+    console.log(`[API] ${req.method} ${req.path} - Headers: ${JSON.stringify(req.headers)}`);
     next();
   });
 

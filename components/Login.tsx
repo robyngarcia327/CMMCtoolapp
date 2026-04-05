@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useAuth } from "react-oidc-context";
-import { Shield, Loader2, Lock, ArrowRight, RefreshCcw, AlertCircle } from 'lucide-react';
+import { Shield, Loader2, Lock, ArrowRight, RefreshCcw, AlertCircle, Wand2 } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const auth = useAuth();
@@ -10,6 +10,11 @@ export const Login: React.FC = () => {
     // Ensuring a clean state for the new request
     sessionStorage.clear();
     auth.signinRedirect();
+  };
+
+  const handleMockLogin = () => {
+    localStorage.setItem('mock_auth', 'true');
+    window.location.reload();
   };
 
   const handleReset = () => {
@@ -54,6 +59,14 @@ export const Login: React.FC = () => {
             <Lock size={18} className="text-coral-600" />
             Secure Sign In
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          </button>
+
+          <button 
+            onClick={handleMockLogin}
+            className="w-full bg-slate-900 hover:bg-slate-800 text-slate-400 font-bold py-4 rounded-[2rem] flex items-center justify-center gap-3 transition-all border border-slate-800 uppercase tracking-widest text-[10px]"
+          >
+            <Wand2 size={14} className="text-coral-500" />
+            Bypass OIDC (Mock Login)
           </button>
           
           {auth.error && (

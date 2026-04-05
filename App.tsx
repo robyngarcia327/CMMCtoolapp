@@ -135,6 +135,7 @@ const App: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false); 
   const [apiError, setApiError] = useState<string | null>(null);
+  const [isMockAuth, setIsMockAuth] = useState(() => localStorage.getItem('mock_auth') === 'true');
   const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [activeFramework, setActiveFramework] = useState<Framework>(FRAMEWORKS[0]);
@@ -228,8 +229,8 @@ const App: React.FC = () => {
 
   const loadOrganizations = useCallback(async () => {
     // FIX: Using ID TOKEN for API calls as required by Cognito Authorizers
-    const idToken = auth.user?.id_token;
-    if (!auth.isAuthenticated || !idToken) return;
+    const idToken = isMockAuth ? 'mock-token' : auth.user?.id_token;
+    if ((!auth.isAuthenticated && !isMockAuth) || !idToken) return;
     
     setIsDataLoading(true);
     setApiError(null);
@@ -278,13 +279,21 @@ const App: React.FC = () => {
   }, [auth.isAuthenticated, auth.user]);
 
   useEffect(() => {
-    if (auth.isAuthenticated && auth.user?.id_token && !fetchAttempted.current) {
+    if ((auth.isAuthenticated || isMockAuth) && (auth.user?.id_token || isMockAuth) && !fetchAttempted.current) {
       fetchAttempted.current = true;
       loadOrganizations();
     }
-  }, [auth.isAuthenticated, auth.user, loadOrganizations]);
+  }, [auth.isAuthenticated, auth.user, isMockAuth, loadOrganizations]);
 
-  const handleLogout = () => { auth.signoutRedirect(); };
+  const handleLogout = () => { 
+    if (isMockAuth) {
+      localStorage.removeItem('mock_auth');
+      setIsMockAuth(false);
+      window.location.reload();
+    } else {
+      auth.signoutRedirect(); 
+    }
+  };
   
   const handleUpdateRequirement = (updatedReq: Requirement) => {
     if (!activeClientId) return;
@@ -385,8 +394,8 @@ const App: React.FC = () => {
   };
 
   // --- EARLY RETURNS (AFTER ALL HOOKS) ---
-  if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-500" size={48} /></div>;
-  if (!auth.isAuthenticated) return <Login />;
+  if (auth.isLoading && !isMockAuth) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-500" size={48} /></div>;
+  if (!auth.isAuthenticated && !isMockAuth) return <Login />;
 
   if (apiError) {
       return (
@@ -409,9 +418,23 @@ const App: React.FC = () => {
   if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-600" size={48} /></div>;
 
   if (hasCheckedOrgs && (clients.length === 0 || !activeClientId)) {
+    const mockUser: User = {
+        id: 'mock-user-123',
+        name: 'Mock Admin',
+        email: 'admin@mock.local',
+        role: 'Tenant_Admin' as CognitoGroup,
+        domain: 'mock.local',
+        organizationId: 'demo-org',
+        department: 'Security',
+        lastLogin: Date.now(),
+        mfaEnabled: false,
+        hasPasskey: false,
+        isCuiAuthorized: true
+    };
+
     return (
       <Onboarding 
-        user={{ 
+        user={isMockAuth ? mockUser : { 
           id: auth.user?.profile.sub || '', 
           name: userDisplayName, 
           email: auth.user?.profile.email || '', 
@@ -427,7 +450,7 @@ const App: React.FC = () => {
         onCreateOrganization={handleCreateOrganization} 
         onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }} 
         creationStatus={creationStatus}
-        debugTokens={{ idToken: auth.user?.id_token }} 
+        debugTokens={{ idToken: isMockAuth ? 'mock-token' : auth.user?.id_token }} 
       />
     );
   }
