@@ -95,11 +95,33 @@ async function startServer() {
   });
 
   // --- API Router ---
-  const apiRouter = express.Router({ strict: false });
+  const apiRouter = express.Router();
+
+  // Mount API router at the very top
+  app.use("/api", (req, res, next) => {
+    console.log(`[API-Mount] ${req.method} ${req.url} - Path: ${req.path}`);
+    next();
+  }, apiRouter);
+
+  // Debug route directly on app to verify prefix matching
+  app.get("/api-health-check", (req, res) => {
+    res.json({ status: "ok", message: "API prefix is working", url: req.url });
+  });
+
+  // Direct app routes for critical endpoints to bypass router issues
+  app.get(["/api/orgs", "/api/orgs/"], (req, res) => {
+    console.log("Direct app match for GET /api/orgs");
+    res.json({ items: organizations });
+  });
+
+  app.get(["/api/vendors", "/api/vendors/"], (req, res) => {
+    console.log("Direct app match for GET /api/vendors");
+    res.json(vendors);
+  });
 
   // API Logger
   apiRouter.use((req, res, next) => {
-    console.log(`[API] ${req.method} ${req.path} - Headers: ${JSON.stringify(req.headers)}`);
+    console.log(`[API-Router] ${req.method} ${req.path} - Headers: ${JSON.stringify(req.headers)}`);
     next();
   });
 
@@ -339,12 +361,14 @@ async function startServer() {
 
   // Catch-all for API router to return JSON 404
   apiRouter.all("*", (req, res) => {
-    console.log(`[API 404] ${req.method} ${req.url}`);
-    res.status(404).json({ error: "API endpoint not found" });
+    console.log(`[API 404] ${req.method} ${req.url} (Path: ${req.path})`);
+    res.status(404).json({ 
+      error: "API endpoint not found",
+      method: req.method,
+      path: req.path,
+      url: req.url
+    });
   });
-
-  // Mount API router
-  app.use("/api", apiRouter);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

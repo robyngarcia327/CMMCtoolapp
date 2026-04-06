@@ -63,6 +63,7 @@ import { PoamRegistry } from './components/PoamRegistry';
 import { WorkflowManager } from './components/WorkflowManager';
 import { SecureVault } from './components/SecureVault';
 import { VendorManager } from './components/VendorManager';
+import { TenantInsights } from './components/TenantInsights';
 import { api } from './services/api';
 
 const SidebarItem = ({ 
@@ -109,7 +110,8 @@ const App: React.FC = () => {
     isAuthenticated: auth.isAuthenticated, 
     isLoading: auth.isLoading, 
     error: auth.error?.message,
-    user: auth.user ? "Present" : "Missing"
+    user: auth.user ? "Present" : "Missing",
+    origin: window.location.origin
   });
   
   // Persistence Keys
@@ -135,7 +137,6 @@ const App: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false); 
   const [apiError, setApiError] = useState<string | null>(null);
-  const [isMockAuth, setIsMockAuth] = useState(() => localStorage.getItem('mock_auth') === 'true');
   const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [activeFramework, setActiveFramework] = useState<Framework>(FRAMEWORKS[0]);
@@ -228,9 +229,9 @@ const App: React.FC = () => {
   }, [clients, activeClientId]);
 
   const loadOrganizations = useCallback(async () => {
-    // FIX: Using ID TOKEN for API calls as required by Cognito Authorizers
-    const idToken = isMockAuth ? 'mock-token' : auth.user?.id_token;
-    if ((!auth.isAuthenticated && !isMockAuth) || !idToken) return;
+    // FIX: Using ID TOKEN for API calls
+    const idToken = auth.user?.id_token;
+    if (!auth.isAuthenticated || !idToken) return;
     
     setIsDataLoading(true);
     setApiError(null);
@@ -279,20 +280,14 @@ const App: React.FC = () => {
   }, [auth.isAuthenticated, auth.user]);
 
   useEffect(() => {
-    if ((auth.isAuthenticated || isMockAuth) && (auth.user?.id_token || isMockAuth) && !fetchAttempted.current) {
+    if (auth.isAuthenticated && auth.user?.id_token && !fetchAttempted.current) {
       fetchAttempted.current = true;
       loadOrganizations();
     }
-  }, [auth.isAuthenticated, auth.user, isMockAuth, loadOrganizations]);
+  }, [auth.isAuthenticated, auth.user, loadOrganizations]);
 
   const handleLogout = () => { 
-    if (isMockAuth) {
-      localStorage.removeItem('mock_auth');
-      setIsMockAuth(false);
-      window.location.reload();
-    } else {
-      auth.signoutRedirect(); 
-    }
+    auth.signoutRedirect(); 
   };
   
   const handleUpdateRequirement = (updatedReq: Requirement) => {
@@ -394,8 +389,8 @@ const App: React.FC = () => {
   };
 
   // --- EARLY RETURNS (AFTER ALL HOOKS) ---
-  if (auth.isLoading && !isMockAuth) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-500" size={48} /></div>;
-  if (!auth.isAuthenticated && !isMockAuth) return <Login />;
+  if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-500" size={48} /></div>;
+  if (!auth.isAuthenticated) return <Login />;
 
   if (apiError) {
       return (
@@ -404,7 +399,8 @@ const App: React.FC = () => {
                   <AlertCircle size={40} className="text-red-500" />
               </div>
               <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Vault Connection Failure</h2>
-              <p className="text-slate-400 max-w-md mb-8">{apiError}</p>
+              <p className="text-slate-400 max-w-md mb-4">{apiError}</p>
+              <p className="text-slate-500 text-[10px] mb-8 uppercase tracking-widest">Origin: {window.location.origin}</p>
               <button 
                   onClick={() => { fetchAttempted.current = false; loadOrganizations(); }}
                   className="bg-white text-slate-950 px-8 py-3 rounded-full font-black uppercase text-xs tracking-widest flex items-center gap-2 hover:bg-coral-50 transition-all"
@@ -418,23 +414,9 @@ const App: React.FC = () => {
   if (isDataLoading && !hasCheckedOrgs) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-600" size={48} /></div>;
 
   if (hasCheckedOrgs && (clients.length === 0 || !activeClientId)) {
-    const mockUser: User = {
-        id: 'mock-user-123',
-        name: 'Mock Admin',
-        email: 'admin@mock.local',
-        role: 'Tenant_Admin' as CognitoGroup,
-        domain: 'mock.local',
-        organizationId: 'demo-org',
-        department: 'Security',
-        lastLogin: Date.now(),
-        mfaEnabled: false,
-        hasPasskey: false,
-        isCuiAuthorized: true
-    };
-
     return (
       <Onboarding 
-        user={isMockAuth ? mockUser : { 
+        user={{ 
           id: auth.user?.profile.sub || '', 
           name: userDisplayName, 
           email: auth.user?.profile.email || '', 
@@ -450,7 +432,7 @@ const App: React.FC = () => {
         onCreateOrganization={handleCreateOrganization} 
         onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }} 
         creationStatus={creationStatus}
-        debugTokens={{ idToken: isMockAuth ? 'mock-token' : auth.user?.id_token }} 
+        debugTokens={{ idToken: auth.user?.id_token }} 
       />
     );
   }
@@ -479,6 +461,7 @@ const App: React.FC = () => {
       case AppView.SECURE_VAULT: return "Secure Document Vault";
       case AppView.VENDORS: return "Vendor Ecosystem";
       case AppView.POAM: return "POA&M Registry";
+      case AppView.INSIGHTS: return "Tenant Insights";
       default: return "Cuallee Cyber";
     }
   };
@@ -506,6 +489,7 @@ const App: React.FC = () => {
             <SidebarItem icon={Package} label="Assets" isActive={currentView === AppView.ASSETS} onClick={() => setCurrentView(AppView.ASSETS)} />
             <SidebarItem icon={Users} label="Users" isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
             <SidebarItem icon={Building2} label="Vendors" isActive={currentView === AppView.VENDORS} onClick={() => setCurrentView(AppView.VENDORS)} />
+            <SidebarItem icon={Shield} label="Tenant Insights" isActive={currentView === AppView.INSIGHTS} onClick={() => setCurrentView(AppView.INSIGHTS)} badge="M365" />
           </SidebarSection>
           <SidebarSection title="Governance">
             <SidebarItem icon={AlertTriangle} label="Risk Registry" isActive={currentView === AppView.RISK_MANAGEMENT} onClick={() => setCurrentView(AppView.RISK_MANAGEMENT)} />
@@ -615,6 +599,7 @@ const App: React.FC = () => {
             />}
             {currentView === AppView.SECURE_VAULT && <SecureVault />}
             {currentView === AppView.VENDORS && <VendorManager activeClientId={activeClientId} />}
+            {currentView === AppView.INSIGHTS && <TenantInsights organizationId={activeClientId} />}
           </div>
         </main>
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />

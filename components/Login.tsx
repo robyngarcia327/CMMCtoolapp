@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useAuth } from "react-oidc-context";
-import { Shield, Loader2, Lock, ArrowRight, RefreshCcw, AlertCircle, Wand2 } from 'lucide-react';
+import { Shield, Loader2, ArrowRight, RefreshCcw, AlertCircle } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const auth = useAuth();
@@ -10,11 +10,6 @@ export const Login: React.FC = () => {
     // Ensuring a clean state for the new request
     sessionStorage.clear();
     auth.signinRedirect();
-  };
-
-  const handleMockLogin = () => {
-    localStorage.setItem('mock_auth', 'true');
-    window.location.reload();
   };
 
   const handleReset = () => {
@@ -56,18 +51,16 @@ export const Login: React.FC = () => {
             onClick={handleSignIn}
             className="w-full bg-white hover:bg-coral-50 text-slate-950 font-black py-5 rounded-[2rem] flex items-center justify-center gap-3 transition-all shadow-2xl shadow-coral-900/20 group uppercase tracking-widest text-sm"
           >
-            <Lock size={18} className="text-coral-600" />
-            Secure Sign In
+            <Shield size={18} className="text-coral-600" />
+            Sign In with Microsoft
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </button>
-
-          <button 
-            onClick={handleMockLogin}
-            className="w-full bg-slate-900 hover:bg-slate-800 text-slate-400 font-bold py-4 rounded-[2rem] flex items-center justify-center gap-3 transition-all border border-slate-800 uppercase tracking-widest text-[10px]"
-          >
-            <Wand2 size={14} className="text-coral-500" />
-            Bypass OIDC (Mock Login)
-          </button>
+          
+          <div className="text-center py-2">
+            <p className="text-slate-600 text-[8px] font-black uppercase tracking-widest">
+              Enterprise Identity Gateway // {window.location.origin}
+            </p>
+          </div>
           
           {auth.error && (
             <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl animate-in fade-in slide-in-from-top-2 text-left">
