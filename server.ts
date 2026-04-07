@@ -6,7 +6,8 @@ import fs from "fs";
 import cors from "cors";
 import Stripe from "stripe";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import jwt from "jsonwebtoken";
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -19,11 +20,32 @@ const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const TENANTS_TABLE = process.env.DYNAMODB_TENANTS_TABLE!;
 const USERS_TABLE = process.env.DYNAMODB_USERS_TABLE!;
 
+// Helper to extract user sub from JWT
+function getUserSub(req: express.Request): string | null {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return null;
+  
+  let token = authHeader;
+  if (authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+  
+  try {
+    const decoded = jwt.decode(token) as any;
+    return decoded?.sub || null;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Entitlement Middleware
 async function checkEntitlement(req: express.Request, res: express.Response, next: express.NextFunction) {
   const orgId = req.params.orgId || req.query.orgId || req.body.orgId;
   
   if (!orgId) return next(); // If no orgId, skip (might be global route)
+
+  // Allow hardcoded demo orgs
+  if (organizations.some(o => o.orgId === orgId)) return next();
 
   try {
     const result = await ddbDocClient.send(new QueryCommand({
@@ -36,8 +58,6 @@ async function checkEntitlement(req: express.Request, res: express.Response, nex
     }));
 
     if (!result.Items || result.Items.length === 0) {
-      // For demo purposes, if it's the demo-org, allow it
-      if (orgId === 'demo-org') return next();
       return res.status(403).json({ error: "No active subscription found for this organization" });
     }
 
@@ -88,7 +108,9 @@ interface Vendor {
 
 let sharedDocuments: SharedDocument[] = [];
 let organizations: any[] = [
-  { orgId: 'demo-org', name: 'Demo Organization', role: 'Tenant_Admin' }
+  { orgId: 'demo-org', name: 'Demo Organization', role: 'Tenant_Admin', domain: 'demo.com' },
+  { orgId: 'cyber-solutions', name: 'Cyber Solutions Inc.', role: 'Tenant_Admin', domain: 'cybersolutions.com' },
+  { orgId: 'defense-a', name: 'Defense Systems A', role: 'Tenant_Admin', domain: 'defense-a.com' }
 ];
 let evidence: any[] = [];
 let vendors: Vendor[] = [
@@ -248,6 +270,7 @@ async function startServer() {
               tenantId,
               orgId,
               orgName,
+              ownerSub: userSub, // Track the owner
               status: "active",
               stripeCustomerId: session.customer as string,
               stripeSubscriptionId: session.subscription as string,
@@ -256,13 +279,17 @@ async function startServer() {
             },
           }));
 
-          // Create Organization in our internal list (or DB)
-          organizations.push({
-            orgId,
-            name: orgName,
-            role: "Tenant_Admin",
-            createdAt: new Date().toISOString(),
-          });
+          // Update User record to link to org
+          await ddbDocClient.send(new UpdateCommand({
+            TableName: USERS_TABLE,
+            Key: { userId: userSub },
+            UpdateExpression: "set organizationId = :orgId, status = :status, updatedAt = :updatedAt",
+            ExpressionAttributeValues: {
+              ":orgId": orgId,
+              ":status": "ACTIVE",
+              ":updatedAt": new Date().toISOString(),
+            },
+          }));
 
           console.log(`[Billing] Tenant and Org created for ${email}`);
           break;
@@ -405,9 +432,39 @@ async function startServer() {
     res.json(org);
   });
 
-  apiRouter.get(["/orgs", "/orgs/"], (req, res) => {
-    console.log("Handling GET /api/orgs - Current Orgs:", organizations.length);
-    res.json({ items: organizations });
+  apiRouter.get(["/orgs", "/orgs/"], async (req, res) => {
+    const userSub = getUserSub(req);
+    console.log("Handling GET /api/orgs for user:", userSub);
+
+    let userOrgs = [...organizations];
+
+    if (userSub) {
+      try {
+        // Query DynamoDB for tenants owned by this user
+        const result = await ddbDocClient.send(new ScanCommand({
+          TableName: TENANTS_TABLE,
+          FilterExpression: "ownerSub = :sub",
+          ExpressionAttributeValues: {
+            ":sub": userSub,
+          },
+        }));
+
+        if (result.Items) {
+          const dbOrgs = result.Items.map(item => ({
+            orgId: item.orgId,
+            name: item.orgName,
+            role: 'Tenant_Admin',
+            createdAt: item.createdAt,
+            status: item.status
+          }));
+          userOrgs = [...userOrgs, ...dbOrgs];
+        }
+      } catch (error) {
+        console.error("Error fetching user orgs from DynamoDB:", error);
+      }
+    }
+
+    res.json({ items: userOrgs });
   });
 
   apiRouter.post(["/orgs", "/orgs/"], async (req, res) => {
