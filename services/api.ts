@@ -233,95 +233,6 @@ export const api = {
     }
   },
 
-  /**
-   * SECURE VAULT API (AWS Implementation)
-   */
-  getVaultSharedWithMe: async (accessToken: string): Promise<any[]> => {
-    const data = await fetchJson(`${API_BASE_URL}/vault/received`, {
-      method: 'GET',
-      token: accessToken
-    });
-    return normalizeList(data);
-  },
-
-  getVaultMyDocuments: async (accessToken: string): Promise<any[]> => {
-    const data = await fetchJson(`${API_BASE_URL}/vault/sent`, {
-      method: 'GET',
-      token: accessToken
-    });
-    return normalizeList(data);
-  },
-
-  /**
-   * Initiates a secure share by requesting an S3 upload URL, 
-   * uploading the file, and then signaling completion.
-   */
-  shareVaultDocument: async (accessToken: string, file: File, recipientEmail: string): Promise<any> => {
-    // Normalize MIME type to avoid "Unsupported MIME type" errors from backend
-    let contentType = file.type || 'application/octet-stream';
-    if (contentType.length > 64 || contentType.includes('officedocument')) {
-        contentType = 'application/octet-stream';
-    }
-
-    // 1. Request Upload URL
-    const payload = {
-      filename: file.name,
-      contentType,
-      sizeBytes: file.size,
-      recipientEmail: recipientEmail
-    };
-
-    const data = await fetchJson(`${API_BASE_URL}/vault/share`, {
-      method: 'POST',
-      token: accessToken,
-      body: JSON.stringify(payload)
-    });
-    
-    const { uploadUrl, vaultId, requiredHeaders } = data;
-
-    // 2. Upload to S3
-    const s3Headers: Record<string, string> = { ...requiredHeaders };
-    if (!s3Headers['Content-Type']) s3Headers['Content-Type'] = file.type || 'application/octet-stream';
-
-    const s3Response = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: s3Headers,
-        body: file 
-    });
-
-    if (!s3Response.ok) {
-        throw new Error(`Vault S3 Transfer Failed: ${s3Response.status}`);
-    }
-
-    // 3. Signal Completion
-    return await fetchJson(`${API_BASE_URL}/vault/${vaultId}/complete`, {
-      method: 'POST',
-      token: accessToken
-    });
-  },
-
-  updateVaultStatus: async (accessToken: string, id: string, status: string): Promise<any> => {
-    return await fetchJson(`${API_BASE_URL}/vault/${id}/status`, {
-      method: 'PATCH',
-      token: accessToken,
-      body: JSON.stringify({ status })
-    });
-  },
-
-  downloadVaultDocument: async (accessToken: string, id: string): Promise<string> => {
-    const data = await fetchJson(`${API_BASE_URL}/vault/${id}/download`, {
-      method: 'GET',
-      token: accessToken
-    });
-    return data.downloadUrl;
-  },
-
-  deleteVaultDocument: async (accessToken: string, id: string): Promise<void> => {
-    await fetchJson(`${API_BASE_URL}/vault/${id}`, {
-      method: 'DELETE',
-      token: accessToken
-    });
-  },
 
   /**
    * VENDOR MANAGEMENT API
@@ -353,6 +264,40 @@ export const api = {
   deleteVendor: async (accessToken: string, orgId: string, id: string): Promise<void> => {
     await fetch(`/api/vendors/${id}?orgId=${orgId}`, {
       method: 'DELETE'
+    });
+  },
+
+  /**
+   * BILLING & SUBSCRIPTION API
+   */
+  createCheckoutSession: async (accessToken: string, orgName: string, email: string, userSub: string): Promise<{ url: string }> => {
+    return await fetchJson(`${API_BASE_URL}/billing/checkout-session`, {
+      method: 'POST',
+      token: accessToken,
+      body: JSON.stringify({ orgName, email, userSub })
+    });
+  },
+
+  getBillingStatus: async (accessToken: string, orgId: string): Promise<any> => {
+    return await fetchJson(`${API_BASE_URL}/billing/status?orgId=${orgId}`, {
+      method: 'GET',
+      token: accessToken
+    });
+  },
+
+  createPortalSession: async (accessToken: string, orgId: string): Promise<{ url: string }> => {
+    return await fetchJson(`${API_BASE_URL}/billing/portal-session`, {
+      method: 'POST',
+      token: accessToken,
+      body: JSON.stringify({ orgId })
+    });
+  },
+
+  cancelSubscription: async (accessToken: string, orgId: string): Promise<{ status: string }> => {
+    return await fetchJson(`${API_BASE_URL}/billing/cancel`, {
+      method: 'POST',
+      token: accessToken,
+      body: JSON.stringify({ orgId })
     });
   }
 };

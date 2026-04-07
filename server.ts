@@ -4,6 +4,54 @@ import path from "path";
 import multer from "multer";
 import fs from "fs";
 import cors from "cors";
+import Stripe from "stripe";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+
+// Initialize Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-01-27-acacia",
+});
+
+// Initialize DynamoDB
+const ddbClient = new DynamoDBClient({ region: process.env.AWS_REGION });
+const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
+const TENANTS_TABLE = process.env.DYNAMODB_TENANTS_TABLE!;
+const USERS_TABLE = process.env.DYNAMODB_USERS_TABLE!;
+
+// Entitlement Middleware
+async function checkEntitlement(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const orgId = req.params.orgId || req.query.orgId || req.body.orgId;
+  
+  if (!orgId) return next(); // If no orgId, skip (might be global route)
+
+  try {
+    const result = await ddbDocClient.send(new QueryCommand({
+      TableName: TENANTS_TABLE,
+      IndexName: "OrgIdIndex",
+      KeyConditionExpression: "orgId = :orgId",
+      ExpressionAttributeValues: {
+        ":orgId": orgId,
+      },
+    }));
+
+    if (!result.Items || result.Items.length === 0) {
+      // For demo purposes, if it's the demo-org, allow it
+      if (orgId === 'demo-org') return next();
+      return res.status(403).json({ error: "No active subscription found for this organization" });
+    }
+
+    const tenant = result.Items[0];
+    if (tenant.status !== 'active' && tenant.status !== 'canceling') {
+      return res.status(403).json({ error: "Subscription is inactive. Please renew to continue." });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Entitlement Check Error:", error);
+    next(); // Fail open for now to avoid blocking demo, but in production should fail closed
+  }
+}
 
 // In-memory storage for demo purposes
 // In a real app, this would be a database
@@ -129,6 +177,234 @@ async function startServer() {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
+  // --- Billing API ---
+  apiRouter.post("/billing/checkout-session", async (req, res) => {
+    const { orgName, email, userSub } = req.body;
+
+    if (!orgName || !email || !userSub) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    try {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price: process.env.STRIPE_PRICE_ID_YEARLY,
+            quantity: 1,
+          },
+        ],
+        mode: "subscription",
+        success_url: `${process.env.APP_SUCCESS_URL}?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: process.env.APP_CANCEL_URL,
+        customer_email: email,
+        metadata: {
+          userSub,
+          email,
+          orgName,
+        },
+      });
+
+      res.json({ url: session.url });
+    } catch (error: any) {
+      console.error("Stripe Checkout Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  apiRouter.post("/billing/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+    const sig = req.headers["stripe-signature"];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig as string,
+        process.env.STRIPE_WEBHOOK_SECRET || ""
+      );
+    } catch (err: any) {
+      console.error("Webhook Signature Error:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    try {
+      switch (event.type) {
+        case "checkout.session.completed": {
+          const session = event.data.object as Stripe.Checkout.Session;
+          const { userSub, email, orgName } = session.metadata || {};
+          
+          if (!userSub || !email || !orgName) {
+            console.error("Missing metadata in checkout session");
+            break;
+          }
+
+          const orgId = `org_${Math.random().toString(36).substr(2, 9)}`;
+          const tenantId = `tenant_${Math.random().toString(36).substr(2, 9)}`;
+
+          // Create Tenant Record in DynamoDB
+          await ddbDocClient.send(new PutCommand({
+            TableName: TENANTS_TABLE,
+            Item: {
+              tenantId,
+              orgId,
+              orgName,
+              status: "active",
+              stripeCustomerId: session.customer as string,
+              stripeSubscriptionId: session.subscription as string,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          }));
+
+          // Create Organization in our internal list (or DB)
+          organizations.push({
+            orgId,
+            name: orgName,
+            role: "Tenant_Admin",
+            createdAt: new Date().toISOString(),
+          });
+
+          console.log(`[Billing] Tenant and Org created for ${email}`);
+          break;
+        }
+        case "customer.subscription.updated":
+        case "customer.subscription.deleted": {
+          const subscription = event.data.object as Stripe.Subscription;
+          const status = subscription.status === "active" ? "active" : 
+                         subscription.status === "past_due" ? "inactive" : 
+                         subscription.status === "canceled" ? "inactive" : "inactive";
+
+          // Update Tenant Status in DynamoDB
+          // This requires a query to find the tenant by stripeSubscriptionId
+          const result = await ddbDocClient.send(new QueryCommand({
+            TableName: TENANTS_TABLE,
+            IndexName: "StripeSubscriptionIndex", // Assuming this index exists
+            KeyConditionExpression: "stripeSubscriptionId = :subId",
+            ExpressionAttributeValues: {
+              ":subId": subscription.id,
+            },
+          }));
+
+          if (result.Items && result.Items.length > 0) {
+            const tenant = result.Items[0];
+            await ddbDocClient.send(new UpdateCommand({
+              TableName: TENANTS_TABLE,
+              Key: { tenantId: tenant.tenantId },
+              UpdateExpression: "set #status = :status, updatedAt = :updatedAt, cancelAtPeriodEnd = :cancelAt",
+              ExpressionAttributeNames: { "#status": "status" },
+              ExpressionAttributeValues: {
+                ":status": status,
+                ":updatedAt": new Date().toISOString(),
+                ":cancelAt": subscription.cancel_at_period_end,
+              },
+            }));
+          }
+          break;
+        }
+      }
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error("Webhook Processing Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  apiRouter.get("/billing/status", async (req, res) => {
+    const { orgId } = req.query;
+    if (!orgId) return res.status(400).json({ error: "orgId required" });
+
+    try {
+      const result = await ddbDocClient.send(new QueryCommand({
+        TableName: TENANTS_TABLE,
+        IndexName: "OrgIdIndex", // Assuming this index exists
+        KeyConditionExpression: "orgId = :orgId",
+        ExpressionAttributeValues: {
+          ":orgId": orgId,
+        },
+      }));
+
+      if (!result.Items || result.Items.length === 0) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const tenant = result.Items[0];
+      res.json({
+        status: tenant.status,
+        renewalDate: tenant.currentPeriodEnd,
+        cancelAtPeriodEnd: tenant.cancelAtPeriodEnd,
+        currentPriceId: tenant.stripePriceId,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  apiRouter.post("/billing/portal-session", async (req, res) => {
+    const { orgId } = req.body;
+    if (!orgId) return res.status(400).json({ error: "orgId required" });
+
+    try {
+      const result = await ddbDocClient.send(new QueryCommand({
+        TableName: TENANTS_TABLE,
+        IndexName: "OrgIdIndex",
+        KeyConditionExpression: "orgId = :orgId",
+        ExpressionAttributeValues: {
+          ":orgId": orgId,
+        },
+      }));
+
+      if (!result.Items || result.Items.length === 0) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const tenant = result.Items[0];
+      const session = await stripe.billingPortal.sessions.create({
+        customer: tenant.stripeCustomerId,
+        return_url: process.env.APP_SUCCESS_URL,
+      });
+
+      res.json({ url: session.url });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  apiRouter.post("/billing/cancel", async (req, res) => {
+    const { orgId } = req.body;
+    if (!orgId) return res.status(400).json({ error: "orgId required" });
+
+    try {
+      const result = await ddbDocClient.send(new QueryCommand({
+        TableName: TENANTS_TABLE,
+        IndexName: "OrgIdIndex",
+        KeyConditionExpression: "orgId = :orgId",
+        ExpressionAttributeValues: {
+          ":orgId": orgId,
+        },
+      }));
+
+      if (!result.Items || result.Items.length === 0) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const tenant = result.Items[0];
+      await stripe.subscriptions.update(tenant.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+
+      res.json({ status: "canceling" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  apiRouter.get("/orgs/:orgId", checkEntitlement, (req, res) => {
+    const { orgId } = req.params;
+    const org = organizations.find(o => o.orgId === orgId);
+    if (!org) return res.status(404).json({ error: "Organization not found" });
+    res.json(org);
+  });
+
   apiRouter.get(["/orgs", "/orgs/"], (req, res) => {
     console.log("Handling GET /api/orgs - Current Orgs:", organizations.length);
     res.json({ items: organizations });
@@ -160,13 +436,13 @@ async function startServer() {
   });
 
   // --- Evidence Upload API ---
-  apiRouter.get(["/orgs/:orgId/evidence", "/orgs/:orgId/evidence/"], (req, res) => {
+  apiRouter.get(["/orgs/:orgId/evidence", "/orgs/:orgId/evidence/"], checkEntitlement, (req, res) => {
     const { orgId } = req.params;
     const items = evidence.filter(e => e.orgId === orgId);
     res.json({ items });
   });
 
-  apiRouter.post(["/orgs/:orgId/evidence", "/orgs/:orgId/evidence/"], async (req, res) => {
+  apiRouter.post(["/orgs/:orgId/evidence", "/orgs/:orgId/evidence/"], checkEntitlement, async (req, res) => {
     const { orgId } = req.params;
     const { filename, contentType, requirementId, sizeBytes } = req.body;
 
@@ -183,11 +459,11 @@ async function startServer() {
     return res.json({ uploadUrl, evidenceId, requiredHeaders: { 'Content-Type': contentType } });
   });
 
-  apiRouter.post(["/orgs/:orgId/evidence/:evidenceId/upload-complete", "/orgs/:orgId/evidence/:evidenceId/upload-complete/"], (req, res) => {
+  apiRouter.post(["/orgs/:orgId/evidence/:evidenceId/upload-complete", "/orgs/:orgId/evidence/:evidenceId/upload-complete/"], checkEntitlement, (req, res) => {
     res.json({ status: "success" });
   });
 
-  apiRouter.post(["/orgs/:orgId/evidence/:evidenceId/download-request", "/orgs/:orgId/evidence/:evidenceId/download-request/"], async (req, res) => {
+  apiRouter.post(["/orgs/:orgId/evidence/:evidenceId/download-request", "/orgs/:orgId/evidence/:evidenceId/download-request/"], checkEntitlement, async (req, res) => {
     const { orgId, evidenceId } = req.params;
     const item = evidence.find(e => e.evidenceId === evidenceId && e.orgId === orgId);
     

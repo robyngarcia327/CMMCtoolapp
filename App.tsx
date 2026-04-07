@@ -35,7 +35,8 @@ import {
   FileCheck2,
   AlertCircle,
   RefreshCcw,
-  GitBranch
+  GitBranch,
+  CreditCard
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData, REQUIREMENTS_DATA } from './data/standards';
@@ -63,6 +64,7 @@ import { PoamRegistry } from './components/PoamRegistry';
 import { WorkflowManager } from './components/WorkflowManager';
 import { VendorManager } from './components/VendorManager';
 import { TenantInsights } from './components/TenantInsights';
+import { Billing } from './components/Billing';
 import { api } from './services/api';
 
 const SidebarItem = ({ 
@@ -365,6 +367,28 @@ const App: React.FC = () => {
 
   const [creationStatus, setCreationStatus] = useState<'idle' | 'creating' | 'verifying' | 'failed_verification'>('idle');
 
+  const handleStartCheckout = async (name: string, domain: string, financials: OrganizationFinancials) => {
+    if (!auth.user?.access_token) return;
+    setIsDataLoading(true);
+    try {
+      // 1. Initiate Stripe Checkout
+      const { url } = await api.createCheckoutSession(
+        auth.user.access_token,
+        name,
+        auth.user.profile.email || '',
+        auth.user.profile.sub || ''
+      );
+      
+      // 2. Redirect to Stripe
+      window.location.href = url;
+    } catch (e: any) {
+      console.error("Checkout failed", e);
+      throw e;
+    } finally {
+      setIsDataLoading(false);
+    }
+  };
+
   const handleCreateOrganization = async (name: string, domain: string, financials: OrganizationFinancials) => {
     if (!auth.user?.id_token) return;
     setCreationStatus('creating');
@@ -414,25 +438,25 @@ const App: React.FC = () => {
 
   if (hasCheckedOrgs && (clients.length === 0 || !activeClientId)) {
     return (
-      <Onboarding 
-        user={{ 
-          id: auth.user?.profile.sub || '', 
-          name: userDisplayName, 
-          email: auth.user?.profile.email || '', 
-          role: 'Admin_Created_Users', 
-          domain: (auth.user?.profile.email || '').split('@')[1], 
-          organizationId: '', 
-          department: '', 
-          lastLogin: 0, 
-          mfaEnabled: false, 
-          hasPasskey: false, 
-          isCuiAuthorized: false 
-        }} 
-        onCreateOrganization={handleCreateOrganization} 
-        onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }} 
-        creationStatus={creationStatus}
-        debugTokens={{ idToken: auth.user?.id_token }} 
-      />
+        <Onboarding 
+          user={{ 
+            id: auth.user?.profile.sub || '', 
+            name: userDisplayName, 
+            email: auth.user?.profile.email || '', 
+            role: 'Admin_Created_Users', 
+            domain: (auth.user?.profile.email || '').split('@')[1], 
+            organizationId: '', 
+            department: '', 
+            lastLogin: 0, 
+            mfaEnabled: false, 
+            hasPasskey: false, 
+            isCuiAuthorized: false 
+          }} 
+          onStartCheckout={handleStartCheckout} 
+          onRefresh={() => { fetchAttempted.current = false; loadOrganizations(); }} 
+          creationStatus={isDataLoading ? 'creating' : 'idle'}
+          debugTokens={{ idToken: auth.user?.access_token }} 
+        />
     );
   }
 
@@ -459,6 +483,7 @@ const App: React.FC = () => {
       case AppView.PACKAGE_REVIEW: return "Package Auditor";
       case AppView.VENDORS: return "Vendor Ecosystem";
       case AppView.POAM: return "POA&M Registry";
+      case AppView.BILLING: return "Billing & Subscription";
       case AppView.INSIGHTS: return "Tenant Insights";
       default: return "Cuallee Cyber";
     }
@@ -500,6 +525,7 @@ const App: React.FC = () => {
             <SidebarItem icon={FileCheck2} label="Policy Review" isActive={currentView === AppView.POLICY_AUDIT} onClick={() => setCurrentView(AppView.POLICY_AUDIT)} />
             <SidebarItem icon={FileCheck} label="Executive Summary" isActive={currentView === AppView.REPORT_EXECUTIVE} onClick={() => setCurrentView(AppView.REPORT_EXECUTIVE)} />
             <SidebarItem icon={FileText} label="System Security Plan" isActive={currentView === AppView.REPORT_SSP} onClick={() => setCurrentView(AppView.REPORT_SSP)} />
+            <SidebarItem icon={CreditCard} label="Billing" isActive={currentView === AppView.BILLING} onClick={() => setCurrentView(AppView.BILLING)} />
           </SidebarSection>
         </nav>
         <div className="p-4 mt-auto border-t border-slate-900 bg-slate-950/50">
@@ -595,6 +621,13 @@ const App: React.FC = () => {
               onUpdate={handleUpdateClientData}
             />}
             {currentView === AppView.VENDORS && <VendorManager activeClientId={activeClientId} />}
+            {currentView === AppView.BILLING && (
+              <Billing 
+                accessToken={auth.user?.access_token || ''} 
+                orgId={activeClientId} 
+                orgName={activeClient?.name || ''} 
+              />
+            )}
             {currentView === AppView.INSIGHTS && <TenantInsights organizationId={activeClientId} />}
           </div>
         </main>

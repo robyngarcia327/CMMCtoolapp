@@ -240,6 +240,28 @@ export interface ClientData {
   s1Config: IntegrationConfig;
 }
 
+export interface Tenant {
+  tenantId: string;
+  orgId: string;
+  orgName: string;
+  status: 'pending' | 'active' | 'canceling' | 'inactive';
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  stripePriceId?: string;
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  cancelAtPeriodEnd?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BillingStatus {
+  status: Tenant['status'];
+  renewalDate?: string;
+  cancelAtPeriodEnd?: boolean;
+  currentPriceId?: string;
+}
+
 export enum AppView {
   DASHBOARD = 'DASHBOARD',
   WIZARD = 'WIZARD',
@@ -261,6 +283,7 @@ export enum AppView {
   POLICY_AUDIT = 'POLICY_AUDIT',
   PACKAGE_REVIEW = 'PACKAGE_REVIEW',
   VENDORS = 'VENDORS',
+  BILLING = 'BILLING',
   ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
   GLOBAL_ADMIN = 'GLOBAL_ADMIN',
   INSIGHTS = 'INSIGHTS'

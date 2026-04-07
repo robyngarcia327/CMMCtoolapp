@@ -5,7 +5,7 @@ import { api } from '../services/api';
 
 interface OnboardingProps {
   user: User;
-  onCreateOrganization: (name: string, domain: string, financials: OrganizationFinancials) => void;
+  onStartCheckout: (name: string, domain: string, financials: OrganizationFinancials) => void;
   onRefresh?: () => void;
   creationStatus?: 'idle' | 'creating' | 'verifying' | 'failed_verification';
   debugTokens?: {
@@ -13,7 +13,7 @@ interface OnboardingProps {
   };
 }
 
-export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganization, onRefresh, creationStatus = 'idle', debugTokens }) => {
+export const Onboarding: React.FC<OnboardingProps> = ({ user, onStartCheckout, onRefresh, creationStatus = 'idle', debugTokens }) => {
   const [step, setStep] = useState<'DISCOVERY' | 'PROFILE' | 'FINANCIALS'>('DISCOVERY');
   const [orgName, setOrgName] = useState('');
   const [suggestedOrgs, setSuggestedOrgs] = useState<any[]>([]);
@@ -72,9 +72,9 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
   const handleSubmitFinal = async () => {
     setProvisioningError(null);
     try {
-      await onCreateOrganization(orgName, userDomain, financials);
+      await onStartCheckout(orgName, userDomain, financials);
     } catch (error: any) {
-      setProvisioningError(error.message || "Failed to provision organization.");
+      setProvisioningError(error.message || "Failed to initiate checkout.");
     }
   };
 
@@ -274,11 +274,11 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onCreateOrganizati
                         {isSubmitting ? (
                             <>
                                 <Loader2 className="animate-spin" size={20} />
-                                Provisioning Secure Vault...
+                                Initiating Secure Checkout...
                             </>
                         ) : (
                             <>
-                                Finalize & Launch Dashboard <ArrowRight size={20} />
+                                Subscribe & Launch Dashboard <ArrowRight size={20} />
                             </>
                         )}
                     </button>

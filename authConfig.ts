@@ -4,9 +4,9 @@ import { WebStorageStateStore } from "oidc-client-ts";
  * --- AWS COGNITO CONFIGURATION ---
  */
 
-const REGION = import.meta.env.VITE_COGNITO_REGION || "us-east-1";
-const USER_POOL_ID = import.meta.env.VITE_COGNITO_USER_POOL_ID || "us-east-1_ky47RcgYh";
-const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID || "YOUR_CLIENT_ID_HERE";
+const REGION = import.meta.env.VITE_COGNITO_REGION;
+const USER_POOL_ID = import.meta.env.VITE_COGNITO_USER_POOL_ID;
+const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID;
 
 export const authConfig = {
   authority: `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}`,
