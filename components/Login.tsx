@@ -52,7 +52,7 @@ export const Login: React.FC = () => {
             className="w-full bg-white hover:bg-coral-50 text-slate-950 font-black py-5 rounded-[2rem] flex items-center justify-center gap-3 transition-all shadow-2xl shadow-coral-900/20 group uppercase tracking-widest text-sm"
           >
             <Shield size={18} className="text-coral-600" />
-            Sign In with Microsoft
+            Sign In with Identity Provider
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </button>
           

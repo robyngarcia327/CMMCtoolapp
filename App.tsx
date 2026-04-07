@@ -61,7 +61,6 @@ import { PolicyReviewCenter } from './components/PolicyReviewCenter';
 import { PackageReviewCenter } from './components/PackageReviewCenter';
 import { PoamRegistry } from './components/PoamRegistry';
 import { WorkflowManager } from './components/WorkflowManager';
-import { SecureVault } from './components/SecureVault';
 import { VendorManager } from './components/VendorManager';
 import { TenantInsights } from './components/TenantInsights';
 import { api } from './services/api';
@@ -458,7 +457,6 @@ const App: React.FC = () => {
       case AppView.REPORT_SSP: return "System Security Plan";
       case AppView.POLICY_AUDIT: return "Policy Review";
       case AppView.PACKAGE_REVIEW: return "Package Auditor";
-      case AppView.SECURE_VAULT: return "Secure Document Vault";
       case AppView.VENDORS: return "Vendor Ecosystem";
       case AppView.POAM: return "POA&M Registry";
       case AppView.INSIGHTS: return "Tenant Insights";
@@ -498,7 +496,6 @@ const App: React.FC = () => {
             <SidebarItem icon={BarChart3} label="Budgeting" isActive={currentView === AppView.COST_TO_COMPLIANCE} onClick={() => setCurrentView(AppView.COST_TO_COMPLIANCE)} />
           </SidebarSection>
           <SidebarSection title="Reports">
-            <SidebarItem icon={Shield} label="Secure Vault" isActive={currentView === AppView.SECURE_VAULT} onClick={() => setCurrentView(AppView.SECURE_VAULT)} badge="New" />
             <SidebarItem icon={FileSearch} label="Package Auditor" isActive={currentView === AppView.PACKAGE_REVIEW} onClick={() => setCurrentView(AppView.PACKAGE_REVIEW)} badge="AI" />
             <SidebarItem icon={FileCheck2} label="Policy Review" isActive={currentView === AppView.POLICY_AUDIT} onClick={() => setCurrentView(AppView.POLICY_AUDIT)} />
             <SidebarItem icon={FileCheck} label="Executive Summary" isActive={currentView === AppView.REPORT_EXECUTIVE} onClick={() => setCurrentView(AppView.REPORT_EXECUTIVE)} />
@@ -597,7 +594,6 @@ const App: React.FC = () => {
               poamItems={activeData.poamItems || []}
               onUpdate={handleUpdateClientData}
             />}
-            {currentView === AppView.SECURE_VAULT && <SecureVault />}
             {currentView === AppView.VENDORS && <VendorManager activeClientId={activeClientId} />}
             {currentView === AppView.INSIGHTS && <TenantInsights organizationId={activeClientId} />}
           </div>
