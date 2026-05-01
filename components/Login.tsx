@@ -9,7 +9,25 @@ export const Login: React.FC = () => {
   const handleSignIn = () => {
     // Ensuring a clean state for the new request
     sessionStorage.clear();
-    auth.signinRedirect();
+    auth.signinPopup().catch(err => {
+      console.error("Popup login failed, falling back to redirect:", err);
+      auth.signinRedirect();
+    });
+  };
+
+  const handleDemoLogin = () => {
+    localStorage.setItem('cuallee_mock_auth', JSON.stringify({
+      id: 'demo-user-id',
+      name: 'Demo Admin',
+      email: 'admin@demo.com',
+      sub: 'demo-user-sub',
+      profile: {
+        name: 'Demo Admin',
+        email: 'admin@demo.com',
+        sub: 'demo-user-sub'
+      }
+    }));
+    window.location.reload();
   };
 
   const handleReset = () => {
@@ -54,6 +72,13 @@ export const Login: React.FC = () => {
             <Shield size={18} className="text-coral-600" />
             Sign In with Identity Provider
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          </button>
+          
+          <button 
+            onClick={handleDemoLogin}
+            className="w-full bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white font-black py-4 rounded-[1.5rem] flex items-center justify-center gap-3 transition-all group uppercase tracking-widest text-[10px]"
+          >
+            Quick Access (Demo Environment)
           </button>
           
           <div className="text-center py-2">
