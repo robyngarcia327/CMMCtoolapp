@@ -106,36 +106,14 @@ const SidebarSection = ({ title, children }: { title: string, children?: React.R
 );
 
 const App: React.FC = () => {
-  const oidcAuth = useAuth();
-  
-  const [mockUser, setMockUser] = useState<any>(() => {
-    const saved = localStorage.getItem('cuallee_mock_auth');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  // Combined auth object to satisfy the rest of the app
-  const auth = useMemo(() => {
-    if (mockUser) {
-      return {
-        isAuthenticated: true,
-        isLoading: false,
-        user: mockUser,
-        signinRedirect: () => {},
-        signoutRedirect: () => {
-          localStorage.removeItem('cuallee_mock_auth');
-          window.location.reload();
-        },
-        error: null
-      } as any;
-    }
-    return oidcAuth;
-  }, [oidcAuth, mockUser]);
+  const auth = useAuth();
 
   console.log("App Render - Auth State:", { 
     isAuthenticated: auth.isAuthenticated, 
     isLoading: auth.isLoading, 
-    isMock: !!mockUser,
-    user: auth.user ? "Present" : "Missing"
+    error: auth.error?.message,
+    user: auth.user ? "Present" : "Missing",
+    origin: window.location.origin
   });
   
   // Persistence Keys

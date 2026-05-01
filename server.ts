@@ -7,7 +7,6 @@ import cors from "cors";
 import Stripe from "stripe";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
-import jwt from "jsonwebtoken";
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -19,24 +18,6 @@ const ddbClient = new DynamoDBClient({ region: process.env.AWS_REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const TENANTS_TABLE = process.env.DYNAMODB_TENANTS_TABLE!;
 const USERS_TABLE = process.env.DYNAMODB_USERS_TABLE!;
-
-// Helper to extract user sub from JWT
-function getUserSub(req: express.Request): string | null {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return null;
-  
-  let token = authHeader;
-  if (authHeader.startsWith("Bearer ")) {
-    token = authHeader.split(" ")[1];
-  }
-  
-  try {
-    const decoded = jwt.decode(token) as any;
-    return decoded?.sub || null;
-  } catch (e) {
-    return null;
-  }
-}
 
 // Entitlement Middleware
 async function checkEntitlement(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -433,38 +414,7 @@ async function startServer() {
   });
 
   apiRouter.get(["/orgs", "/orgs/"], async (req, res) => {
-    const userSub = getUserSub(req);
-    console.log("Handling GET /api/orgs for user:", userSub);
-
-    let userOrgs = [...organizations];
-
-    if (userSub) {
-      try {
-        // Query DynamoDB for tenants owned by this user
-        const result = await ddbDocClient.send(new ScanCommand({
-          TableName: TENANTS_TABLE,
-          FilterExpression: "ownerSub = :sub",
-          ExpressionAttributeValues: {
-            ":sub": userSub,
-          },
-        }));
-
-        if (result.Items) {
-          const dbOrgs = result.Items.map(item => ({
-            orgId: item.orgId,
-            name: item.orgName,
-            role: 'Tenant_Admin',
-            createdAt: item.createdAt,
-            status: item.status
-          }));
-          userOrgs = [...userOrgs, ...dbOrgs];
-        }
-      } catch (error) {
-        console.error("Error fetching user orgs from DynamoDB:", error);
-      }
-    }
-
-    res.json({ items: userOrgs });
+    res.json({ items: organizations });
   });
 
   apiRouter.post(["/orgs", "/orgs/"], async (req, res) => {
