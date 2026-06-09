@@ -107,7 +107,6 @@ const SidebarSection = ({ title, children }: { title: string, children?: React.R
 
 const App: React.FC = () => {
   const auth = useAuth();
-
   console.log("App Render - Auth State:", { 
     isAuthenticated: auth.isAuthenticated, 
     isLoading: auth.isLoading, 
@@ -368,19 +367,19 @@ const App: React.FC = () => {
 
   const [creationStatus, setCreationStatus] = useState<'idle' | 'creating' | 'verifying' | 'failed_verification'>('idle');
 
-  const handleStartCheckout = async (name: string, domain: string, financials: OrganizationFinancials) => {
-    if (!auth.user?.access_token) return;
+  const handleStartCheckout = async (name: string, domain: string, financials: OrganizationFinancials, tenantType: 'ENTERPRISE' | 'MSP') => {
+    // Use ID token — the Cognito authorizer on API Gateway expects the ID token
+    const idToken = auth.user?.id_token;
+    if (!idToken) return;
     setIsDataLoading(true);
     try {
-      // 1. Initiate Stripe Checkout
       const { url } = await api.createCheckoutSession(
-        auth.user.access_token,
+        idToken,
         name,
-        auth.user.profile.email || '',
-        auth.user.profile.sub || ''
+        auth.user?.profile.email || '',
+        auth.user?.profile.sub || '',
+        tenantType
       );
-      
-      // 2. Redirect to Stripe
       window.location.href = url;
     } catch (e: any) {
       console.error("Checkout failed", e);
@@ -624,7 +623,7 @@ const App: React.FC = () => {
             {currentView === AppView.VENDORS && <VendorManager activeClientId={activeClientId} />}
             {currentView === AppView.BILLING && (
               <Billing 
-                accessToken={auth.user?.access_token || ''} 
+                accessToken={auth.user?.id_token || ''} 
                 orgId={activeClientId} 
                 orgName={activeClient?.name || ''} 
               />

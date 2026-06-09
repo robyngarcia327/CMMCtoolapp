@@ -244,6 +244,7 @@ export interface Tenant {
   tenantId: string;
   orgId: string;
   orgName: string;
+  tenantType: 'ENTERPRISE' | 'MSP';
   status: 'pending' | 'active' | 'canceling' | 'inactive';
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
@@ -328,6 +329,7 @@ export interface Client {
   id: string;
   name: string;
   domain: string;
+  tenantType?: 'ENTERPRISE' | 'MSP';
   industry: string;
   contactName: string;
   logoInitial: string;

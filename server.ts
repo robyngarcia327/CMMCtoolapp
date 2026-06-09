@@ -7,6 +7,8 @@ import cors from "cors";
 import Stripe from "stripe";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import jwt from "jsonwebtoken";
+import "dotenv/config";
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -18,6 +20,24 @@ const ddbClient = new DynamoDBClient({ region: process.env.AWS_REGION });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 const TENANTS_TABLE = process.env.DYNAMODB_TENANTS_TABLE!;
 const USERS_TABLE = process.env.DYNAMODB_USERS_TABLE!;
+
+// Helper to extract user sub from JWT
+function getUserSub(req: express.Request): string | null {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return null;
+  
+  let token = authHeader;
+  if (authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+  
+  try {
+    const decoded = jwt.decode(token) as any;
+    return decoded?.sub || null;
+  } catch (e) {
+    return null;
+  }
+}
 
 // Entitlement Middleware
 async function checkEntitlement(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -160,15 +180,7 @@ async function startServer() {
   });
 
   // Direct app routes for critical endpoints to bypass router issues
-  app.get(["/api/orgs", "/api/orgs/"], (req, res) => {
-    console.log("Direct app match for GET /api/orgs");
-    res.json({ items: organizations });
-  });
-
-  app.get(["/api/vendors", "/api/vendors/"], (req, res) => {
-    console.log("Direct app match for GET /api/vendors");
-    res.json(vendors);
-  });
+  // Removed hardcoded routes to allow API Router to handle /api/orgs and /api/vendors
 
   // API Logger
   apiRouter.use((req, res, next) => {
@@ -182,18 +194,26 @@ async function startServer() {
 
   // --- Billing API ---
   apiRouter.post("/billing/checkout-session", async (req, res) => {
-    const { orgName, email, userSub } = req.body;
+    const { orgName, email, userSub, tenantType = 'ENTERPRISE' } = req.body;
 
     if (!orgName || !email || !userSub) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     try {
+      const selectedPrice = tenantType === "MSP" 
+        ? "price_1TbnTz1mCx4EnrM0LxszcMOL" 
+        : "price_1TbnPq1mCx4EnrM0iyBzkpXz";
+
+      if (!selectedPrice) {
+        return res.status(500).json({ error: "Stripe Price ID not configured" });
+      }
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
           {
-            price: process.env.STRIPE_PRICE_ID_YEARLY,
+            price: selectedPrice,
             quantity: 1,
           },
         ],
@@ -205,6 +225,7 @@ async function startServer() {
           userSub,
           email,
           orgName,
+          tenantType,
         },
       });
 
@@ -234,7 +255,7 @@ async function startServer() {
       switch (event.type) {
         case "checkout.session.completed": {
           const session = event.data.object as Stripe.Checkout.Session;
-          const { userSub, email, orgName } = session.metadata || {};
+          const { userSub, email, orgName, tenantType = 'ENTERPRISE' } = session.metadata || {};
           
           if (!userSub || !email || !orgName) {
             console.error("Missing metadata in checkout session");
@@ -251,6 +272,7 @@ async function startServer() {
               tenantId,
               orgId,
               orgName,
+              tenantType, // Store Enterprise vs MSP
               ownerSub: userSub, // Track the owner
               status: "active",
               stripeCustomerId: session.customer as string,
@@ -278,9 +300,7 @@ async function startServer() {
         case "customer.subscription.updated":
         case "customer.subscription.deleted": {
           const subscription = event.data.object as Stripe.Subscription;
-          const status = subscription.status === "active" ? "active" : 
-                         subscription.status === "past_due" ? "inactive" : 
-                         subscription.status === "canceled" ? "inactive" : "inactive";
+          const status = subscription.status === "active" ? "active" : "inactive";
 
           // Update Tenant Status in DynamoDB
           // This requires a query to find the tenant by stripeSubscriptionId
@@ -414,7 +434,38 @@ async function startServer() {
   });
 
   apiRouter.get(["/orgs", "/orgs/"], async (req, res) => {
-    res.json({ items: organizations });
+    const userSub = getUserSub(req);
+    console.log("Handling GET /api/orgs for user:", userSub);
+
+    let userOrgs = [...organizations];
+
+    if (userSub) {
+      try {
+        // Query DynamoDB for tenants owned by this user
+        const result = await ddbDocClient.send(new ScanCommand({
+          TableName: TENANTS_TABLE,
+          FilterExpression: "ownerSub = :sub",
+          ExpressionAttributeValues: {
+            ":sub": userSub,
+          },
+        }));
+
+        if (result.Items) {
+          const dbOrgs = result.Items.map(item => ({
+            orgId: item.orgId,
+            name: item.orgName,
+            role: 'Tenant_Admin',
+            createdAt: item.createdAt,
+            status: item.status
+          }));
+          userOrgs = [...userOrgs, ...dbOrgs];
+        }
+      } catch (error) {
+        console.error("Error fetching user orgs from DynamoDB:", error);
+      }
+    }
+
+    res.json({ items: userOrgs });
   });
 
   apiRouter.post(["/orgs", "/orgs/"], async (req, res) => {
