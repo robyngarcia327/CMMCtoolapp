@@ -10,8 +10,8 @@ Body:   { "orgName": "Acme Corp" }
 Environment Variables Required:
   STRIPE_SECRET_KEY       — from Stripe Dashboard → Developers → API Keys
   STRIPE_PRICE_ID_YEARLY  — the Price ID from Stripe Dashboard → Products
-  APP_SUCCESS_URL         — e.g. https://your-app.amplifyapp.com/?checkout=success&session_id={CHECKOUT_SESSION_ID}
-  APP_CANCEL_URL          — e.g. https://your-app.amplifyapp.com/?checkout=cancel
+  APP_SUCCESS_URL         — e.g. https://app.cualleecyber.com/?checkout=success&session_id={CHECKOUT_SESSION_ID}
+  APP_CANCEL_URL          — e.g. https://app.cualleecyber.com/?checkout=cancel
 """
 import os
 import traceback

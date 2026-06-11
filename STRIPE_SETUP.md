@@ -50,8 +50,8 @@ For each file in `lambda/billing_*.py`, create a new Lambda function:
 | `STRIPE_SECRET_KEY` | `sk_live_...` | Stripe Dashboard → Developers → API Keys |
 | `STRIPE_PRICE_ID_YEARLY` | `price_...` | Stripe Dashboard → Products → your product → Price ID |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_...` | Stripe Dashboard → Developers → Webhooks → your endpoint → Signing secret |
-| `APP_SUCCESS_URL` | `https://your-app.amplifyapp.com/?checkout=success&session_id={CHECKOUT_SESSION_ID}` | Your Amplify domain |
-| `APP_CANCEL_URL` | `https://your-app.amplifyapp.com/?checkout=cancel` | Your Amplify domain |
+| `APP_SUCCESS_URL` | `https://app.cualleecyber.com/?checkout=success&session_id={CHECKOUT_SESSION_ID}` | Your Amplify domain |
+| `APP_CANCEL_URL` | `https://app.cualleecyber.com/?checkout=cancel` | Your Amplify domain |
 | `TENANT_TABLE` | `Tenants` | Your DynamoDB table name |
 | `ORG_TABLE` | `OrgDirectory` | Your DynamoDB table name |
 
