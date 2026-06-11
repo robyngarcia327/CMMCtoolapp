@@ -5,7 +5,7 @@ import { api } from '../services/api';
 
 interface OnboardingProps {
   user: User;
-  onStartCheckout: (name: string, domain: string, financials: OrganizationFinancials) => void;
+  onStartCheckout: (name: string, domain: string, financials: OrganizationFinancials, tenantType: 'ENTERPRISE' | 'MSP') => void;
   onRefresh?: () => void;
   creationStatus?: 'idle' | 'creating' | 'verifying' | 'failed_verification';
   debugTokens?: {
@@ -14,7 +14,8 @@ interface OnboardingProps {
 }
 
 export const Onboarding: React.FC<OnboardingProps> = ({ user, onStartCheckout, onRefresh, creationStatus = 'idle', debugTokens }) => {
-  const [step, setStep] = useState<'DISCOVERY' | 'PROFILE' | 'FINANCIALS'>('DISCOVERY');
+  const [step, setStep] = useState<'DISCOVERY' | 'PROFILE' | 'TIER' | 'FINANCIALS'>('DISCOVERY');
+  const [tenantType, setTenantType] = useState<'ENTERPRISE' | 'MSP'>('ENTERPRISE');
   const [orgName, setOrgName] = useState('');
   const [suggestedOrgs, setSuggestedOrgs] = useState<any[]>([]);
   const [isSearchingOrgs, setIsSearchingOrgs] = useState(false);
@@ -72,7 +73,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onStartCheckout, o
   const handleSubmitFinal = async () => {
     setProvisioningError(null);
     try {
-      await onStartCheckout(orgName, userDomain, financials);
+      await onStartCheckout(orgName, userDomain, financials, tenantType);
     } catch (error: any) {
       setProvisioningError(error.message || "Failed to initiate checkout.");
     }
@@ -87,16 +88,17 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onStartCheckout, o
         {/* Progress Tracker */}
         <div className="bg-slate-900 px-10 py-6 border-b border-white/5 flex justify-between items-center">
             <div className="flex gap-4">
-                {[1, 2, 3].map(num => (
+                {[1, 2, 3, 4].map(num => (
                     <div key={num} className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${
                         (num === 1 && step === 'DISCOVERY') || 
                         (num === 2 && step === 'PROFILE') || 
-                        (num === 3 && step === 'FINANCIALS') 
+                        (num === 3 && step === 'TIER') || 
+                        (num === 4 && step === 'FINANCIALS') 
                         ? 'bg-coral-500 scale-125' : 'bg-white/20'
                     }`} />
                 ))}
             </div>
-            <div className="text-[10px] font-black text-coral-400 uppercase tracking-[0.3em]">Setup Step {step === 'DISCOVERY' ? 1 : step === 'PROFILE' ? 2 : 3} of 3</div>
+            <div className="text-[10px] font-black text-coral-400 uppercase tracking-[0.3em]">Setup Step {step === 'DISCOVERY' ? 1 : step === 'PROFILE' ? 2 : step === 'TIER' ? 3 : 4} of 4</div>
         </div>
 
         <div className="p-10">
@@ -187,7 +189,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onStartCheckout, o
                         </div>
 
                         <button 
-                            onClick={() => setStep('FINANCIALS')}
+                            onClick={() => setStep('TIER')}
                             disabled={!orgName.trim()}
                             className="w-full bg-slate-900 text-white font-black py-5 rounded-[2rem] flex items-center justify-center gap-3 shadow-2xl hover:bg-black transition-all uppercase tracking-widest text-xs disabled:opacity-30"
                         >
@@ -197,10 +199,55 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onStartCheckout, o
                 </div>
             )}
 
-            {step === 'FINANCIALS' && (
+            {step === 'TIER' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <button onClick={() => setStep('PROFILE')} className="mb-6 flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors">
                         <ArrowLeft size={14}/> Entity Profile
+                    </button>
+                    <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tighter uppercase leading-none">Subscription Tier</h2>
+                    <p className="text-slate-500 mb-8 text-sm font-medium">Select the best compliance model for your organization.</p>
+                    
+                    <div className="space-y-4 mb-8">
+                        <div 
+                            onClick={() => setTenantType('ENTERPRISE')}
+                            className={`p-6 rounded-[1.5rem] border-2 cursor-pointer transition-all flex items-start gap-4 ${tenantType === 'ENTERPRISE' ? 'border-coral-500 bg-coral-50/50' : 'border-slate-100 bg-white hover:border-coral-200'}`}
+                        >
+                            <div className={`p-3 rounded-full ${tenantType === 'ENTERPRISE' ? 'bg-coral-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                <Building2 size={24} />
+                            </div>
+                            <div>
+                                <h3 className="font-black text-slate-900 uppercase tracking-tight mb-1">Enterprise Internal</h3>
+                                <p className="text-xs text-slate-500 font-medium leading-relaxed">For organizations managing their own compliance journey internally. Includes standard dashboard and reporting.</p>
+                            </div>
+                        </div>
+
+                        <div 
+                            onClick={() => setTenantType('MSP')}
+                            className={`p-6 rounded-[1.5rem] border-2 cursor-pointer transition-all flex items-start gap-4 ${tenantType === 'MSP' ? 'border-coral-500 bg-coral-50/50' : 'border-slate-100 bg-white hover:border-coral-200'}`}
+                        >
+                            <div className={`p-3 rounded-full ${tenantType === 'MSP' ? 'bg-coral-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                <Briefcase size={24} />
+                            </div>
+                            <div>
+                                <h3 className="font-black text-slate-900 uppercase tracking-tight mb-1">MSP Partner Hub</h3>
+                                <p className="text-xs text-slate-500 font-medium leading-relaxed">For Managed Service Providers managing compliance across multiple sub-tenants.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={() => setStep('FINANCIALS')}
+                        className="w-full bg-slate-900 text-white font-black py-5 rounded-[2rem] flex items-center justify-center gap-3 shadow-2xl hover:bg-black transition-all uppercase tracking-widest text-xs"
+                    >
+                        Configure Risk Benchmarks <ArrowRight size={18} className="text-coral-500" />
+                    </button>
+                </div>
+            )}
+
+            {step === 'FINANCIALS' && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <button onClick={() => setStep('TIER')} className="mb-6 flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors">
+                        <ArrowLeft size={14}/> Subscription Tier
                     </button>
                     <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tighter uppercase leading-none">Risk Benchmarking</h2>
                     <p className="text-slate-500 mb-8 text-sm font-medium">Enter financial baseline data for the <strong>FAIR Quantitative Risk Model</strong>.</p>

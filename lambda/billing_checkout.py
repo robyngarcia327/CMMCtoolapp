@@ -22,7 +22,8 @@ from common.utils import response, get_user_sub, parse_json_body
 # Initialize Stripe once at module level (reused across warm Lambda invocations)
 stripe.api_key = os.environ["STRIPE_SECRET_KEY"]
 
-PRICE_ID      = os.environ["STRIPE_PRICE_ID_YEARLY"]
+PRICE_ID_MSP      = os.environ["STRIPE_PRICE_ID_MSP"]
+PRICE_ID_ENTERPRISE = os.environ["STRIPE_PRICE_ID_ENTERPRISE"]
 SUCCESS_URL   = os.environ["APP_SUCCESS_URL"]
 CANCEL_URL    = os.environ["APP_CANCEL_URL"]
 
@@ -46,7 +47,7 @@ def lambda_handler(event, context):
             return response(400, {"error": "orgName is required"})
 
         # Select price based on tenantType
-        selected_price = "price_1TbnTz1mCx4EnrM0LxszcMOL" if tenant_type == "MSP" else "price_1TbnPq1mCx4EnrM0iyBzkpXz"
+        selected_price = PRICE_ID_MSP if tenant_type == "MSP" else PRICE_ID_ENTERPRISE
         if not selected_price:
              return response(500, {"error": f"Price ID missing for tenant type {tenant_type}"})
 

@@ -202,8 +202,8 @@ async function startServer() {
 
     try {
       const selectedPrice = tenantType === "MSP" 
-        ? "price_1TbnTz1mCx4EnrM0LxszcMOL" 
-        : "price_1TbnPq1mCx4EnrM0iyBzkpXz";
+        ? process.env.STRIPE_PRICE_ID_MSP 
+        : process.env.STRIPE_PRICE_ID_ENTERPRISE;
 
       if (!selectedPrice) {
         return res.status(500).json({ error: "Stripe Price ID not configured" });
@@ -714,10 +714,10 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-  app.get('*', (req, res) => {
-    console.log(`[Fallback] ${req.method} ${req.url}`);
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
+    app.get('*', (req, res) => {
+      console.log(`[Fallback] ${req.method} ${req.url}`);
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
   }
 
   app.listen(PORT, "0.0.0.0", () => {

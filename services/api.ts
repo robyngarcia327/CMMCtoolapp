@@ -1,6 +1,9 @@
 import { Artifact, Client, CognitoGroup, Vendor } from '../types';
 
-// Configuration - Using local API proxy for multi-tenant S3 support
+// API base URL:
+//  - Local dev:   set VITE_API_BASE_URL in .env → Vite proxy rewrites /api → API Gateway
+//  - Production:  Amplify rewrite rule proxies /api/* → API Gateway
+//  - Fallback:    relative /api (works if Amplify rewrite is configured)
 const API_BASE_URL = '/api';
 
 /**
@@ -113,8 +116,9 @@ export const api = {
       body: JSON.stringify({ name, domain, initialRole: 'Tenant_Admin' })
     });
     return {
-        orgId: data.orgId,
-        name: data.name
+        // Lambda returns orgId (lowercase d) — normalize both cases defensively
+        orgId: data.orgId || data.orgID,
+        name: data.name || data.orgName || name,
     };
   },
 
@@ -238,43 +242,43 @@ export const api = {
    * VENDOR MANAGEMENT API
    */
   getVendors: async (accessToken: string, orgId: string): Promise<Vendor[]> => {
-    // In production: await fetchJson(`${API_BASE_URL}/orgs/${orgId}/vendors`, { ... })
-    const response = await fetch(`/api/vendors?orgId=${orgId}`);
-    return response.json();
+    return await fetchJson(`${API_BASE_URL}/vendors?orgId=${orgId}`, {
+      method: 'GET',
+      token: accessToken
+    });
   },
 
   createVendor: async (accessToken: string, orgId: string, vendor: Omit<Vendor, 'id' | 'createdAt'>): Promise<Vendor> => {
-    const response = await fetch('/api/vendors', {
+    return await fetchJson(`${API_BASE_URL}/vendors`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      token: accessToken,
       body: JSON.stringify({ ...vendor, orgId })
     });
-    return response.json();
   },
 
   updateVendor: async (accessToken: string, orgId: string, id: string, updates: Partial<Vendor>): Promise<Vendor> => {
-    const response = await fetch(`/api/vendors/${id}`, {
+    return await fetchJson(`${API_BASE_URL}/vendors/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      token: accessToken,
       body: JSON.stringify({ ...updates, orgId })
     });
-    return response.json();
   },
 
   deleteVendor: async (accessToken: string, orgId: string, id: string): Promise<void> => {
-    await fetch(`/api/vendors/${id}?orgId=${orgId}`, {
-      method: 'DELETE'
+    await fetchJson(`${API_BASE_URL}/vendors/${id}?orgId=${orgId}`, {
+      method: 'DELETE',
+      token: accessToken
     });
   },
 
   /**
    * BILLING & SUBSCRIPTION API
    */
-  createCheckoutSession: async (accessToken: string, orgName: string, email: string, userSub: string): Promise<{ url: string }> => {
+  createCheckoutSession: async (accessToken: string, orgName: string, email: string, userSub: string, tenantType: 'ENTERPRISE' | 'MSP'): Promise<{ url: string }> => {
     return await fetchJson(`${API_BASE_URL}/billing/checkout-session`, {
       method: 'POST',
       token: accessToken,
-      body: JSON.stringify({ orgName, email, userSub })
+      body: JSON.stringify({ orgName, email, userSub, tenantType })
     });
   },
 

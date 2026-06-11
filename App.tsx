@@ -389,27 +389,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleCreateOrganization = async (name: string, domain: string, financials: OrganizationFinancials) => {
-    if (!auth.user?.id_token) return;
-    setCreationStatus('creating');
-    setIsDataLoading(true);
-    try {
-      const newOrg = await api.createOrg(auth.user.id_token, name, domain);
-      setCreationStatus('verifying');
-      setClientDataStore(prev => ({
-        ...prev,
-        [newOrg.orgId]: { ...createInitialClientData(false), financials }
-      }));
-      fetchAttempted.current = false;
-      await loadOrganizations();
-      setCreationStatus('idle');
-    } catch (error: any) {
-      setCreationStatus('failed_verification');
-      throw error; // Rethrow to be caught by Onboarding's handleSubmitFinal
-    } finally {
-      setIsDataLoading(false);
-    }
-  };
+
 
   // --- EARLY RETURNS (AFTER ALL HOOKS) ---
   if (auth.isLoading) return <div className="flex h-screen items-center justify-center bg-slate-950"><Loader2 className="animate-spin text-coral-500" size={48} /></div>;
