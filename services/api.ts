@@ -1,10 +1,11 @@
 import { Artifact, Client, CognitoGroup, Vendor } from '../types';
 
-// API base URL:
-//  - Local dev:   set VITE_API_BASE_URL in .env → Vite proxy rewrites /api → API Gateway
-//  - Production:  Amplify rewrite rule proxies /api/* → API Gateway
-//  - Fallback:    relative /api (works if Amplify rewrite is configured)
-const API_BASE_URL = '/api';
+// API Gateway base URL. VITE_API_BASE_URL is injected by Amplify at build time.
+// The production fallback prevents the SPA host from accidentally receiving API requests.
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://irwrdtn81b.execute-api.us-east-1.amazonaws.com/CualleeCyberEvidence'
+).replace(/\/$/, '');
 
 /**
  * Ensures the token is formatted correctly for the Authorization header.
@@ -274,11 +275,17 @@ export const api = {
   /**
    * BILLING & SUBSCRIPTION API
    */
-  createCheckoutSession: async (accessToken: string, orgName: string, email: string, userSub: string, tenantType: 'ENTERPRISE' | 'MSP'): Promise<{ url: string }> => {
+  createCheckoutSession: async (
+    accessToken: string,
+    orgId: string,
+    planCode: 'starter' | 'professional' | 'guided' | 'msp',
+    interval: 'month' | 'year' = 'month',
+    managedClientCount?: number
+  ): Promise<{ url: string; sessionId: string }> => {
     return await fetchJson(`${API_BASE_URL}/billing/checkout-session`, {
       method: 'POST',
       token: accessToken,
-      body: JSON.stringify({ orgName, email, userSub, tenantType })
+      body: JSON.stringify({ orgId, planCode, interval, managedClientCount })
     });
   },
 
