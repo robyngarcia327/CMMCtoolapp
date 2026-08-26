@@ -11,7 +11,7 @@ export const Login: React.FC = () => {
     // Clear stale OIDC state, then retain the protected route requested by the user.
     sessionStorage.clear();
     sessionStorage.setItem('cuallee_return_path', returnPath);
-    auth.signinRedirect();
+    auth.signinRedirect({ extraQueryParams: { prompt: 'login' } });
   };
 
   const handleReset = () => {

@@ -66,6 +66,7 @@ import { VendorManager } from './components/VendorManager';
 import { TenantInsights } from './components/TenantInsights';
 import { Billing } from './components/Billing';
 import { api } from './services/api';
+import { cognitoHostedUiDomain } from './authConfig';
 
 const SidebarItem = ({ 
   label, 
@@ -122,10 +123,11 @@ const App: React.FC = () => {
   const KEY_DATASTORE = 'cuallee_cyber_v2_datastore';
 
   const [currentView, setCurrentView] = useState<AppView>(() => {
-    if (window.location.pathname.replace(/\/$/, '') === '/billing') return AppView.BILLING;
-    const saved = localStorage.getItem(KEY_VIEW);
-    if (saved && Object.values(AppView).includes(saved as AppView)) return saved as AppView;
-    return AppView.DASHBOARD;
+    // The URL is authoritative. A previously saved Billing view must not
+    // redirect a deliberate visit to the application root back to /billing.
+    return window.location.pathname.replace(/\/$/, '') === '/billing'
+      ? AppView.BILLING
+      : AppView.DASHBOARD;
   });
   
   const [activeClientId, setActiveClientId] = useState<string>(() => {
@@ -300,8 +302,17 @@ const App: React.FC = () => {
     }
   }, [auth.isAuthenticated, auth.user, loadOrganizations]);
 
-  const handleLogout = () => { 
-    auth.signoutRedirect(); 
+  const handleLogout = async () => {
+    const clientId = auth.settings.client_id;
+    const logoutUrl = new URL(`${cognitoHostedUiDomain}/logout`);
+    logoutUrl.searchParams.set('client_id', clientId);
+    logoutUrl.searchParams.set('logout_uri', window.location.origin);
+
+    // Remove the local OIDC user before ending the Cognito hosted session.
+    sessionStorage.clear();
+    localStorage.removeItem(KEY_VIEW);
+    await auth.removeUser();
+    window.location.assign(logoutUrl.toString());
   };
   
   const handleUpdateRequirement = (updatedReq: Requirement) => {
