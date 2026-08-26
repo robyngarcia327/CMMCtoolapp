@@ -7,8 +7,10 @@ export const Login: React.FC = () => {
   const auth = useAuth();
 
   const handleSignIn = () => {
-    // Ensuring a clean state for the new request
+    const returnPath = window.location.pathname + window.location.search;
+    // Clear stale OIDC state, then retain the protected route requested by the user.
     sessionStorage.clear();
+    sessionStorage.setItem('cuallee_return_path', returnPath);
     auth.signinRedirect();
   };
 
