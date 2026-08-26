@@ -122,6 +122,7 @@ const App: React.FC = () => {
   const KEY_DATASTORE = 'cuallee_cyber_v2_datastore';
 
   const [currentView, setCurrentView] = useState<AppView>(() => {
+    if (window.location.pathname.replace(/\/$/, '') === '/billing') return AppView.BILLING;
     const saved = localStorage.getItem(KEY_VIEW);
     if (saved && Object.values(AppView).includes(saved as AppView)) return saved as AppView;
     return AppView.DASHBOARD;
@@ -204,7 +205,19 @@ const App: React.FC = () => {
 
   useEffect(() => {
     localStorage.setItem(KEY_VIEW, currentView);
+    const targetPath = currentView === AppView.BILLING ? '/billing' : '/';
+    if (window.location.pathname !== targetPath) {
+      window.history.replaceState({}, document.title, targetPath + window.location.search);
+    }
   }, [currentView]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentView(window.location.pathname.replace(/\/$/, '') === '/billing' ? AppView.BILLING : AppView.DASHBOARD);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     if (activeClientId) localStorage.setItem(KEY_CLIENT, activeClientId);
