@@ -15,9 +15,10 @@ const oidcConfig = {
   ...authConfig,
   // This cleans up the URL after redirecting back from Cognito
   onSigninCallback: (_user: any): void => {
-    // Immediately remove code/state from URL to prevent loop on refresh
-    const cleanUrl = window.location.origin + window.location.pathname;
-    window.history.replaceState({}, document.title, cleanUrl);
+    // Remove OIDC parameters and restore the protected route requested before login.
+    const returnPath = sessionStorage.getItem('cuallee_return_path') || '/';
+    sessionStorage.removeItem('cuallee_return_path');
+    window.history.replaceState({}, document.title, window.location.origin + returnPath);
   },
   onSigninError: (error: Error) => {
     console.error("OIDC Signin Error:", error);
