@@ -310,5 +310,20 @@ export const api = {
       token: accessToken,
       body: JSON.stringify({ orgId })
     });
+  },
+
+  resumeSubscription: async (accessToken: string, orgId: string): Promise<{ status: string }> => {
+    return await fetchJson(`${API_BASE_URL}/billing/resume`, {
+      method: 'POST',
+      token: accessToken,
+      body: JSON.stringify({ orgId })
+    });
+  },
+
+  getBillingUsage: async (accessToken: string, orgId: string): Promise<any> => {
+    return await fetchJson(`${API_BASE_URL}/billing/usage?orgId=${encodeURIComponent(orgId)}`, {
+      method: 'GET',
+      token: accessToken
+    });
   }
 };
