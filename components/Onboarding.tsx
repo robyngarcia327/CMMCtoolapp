@@ -5,7 +5,7 @@ import { api } from '../services/api';
 
 interface OnboardingProps {
   user: User;
-  onStartCheckout: (name: string, domain: string, financials: OrganizationFinancials, tenantType: 'ENTERPRISE' | 'MSP') => void;
+  onStartCheckout: (name: string, domain: string, financials: OrganizationFinancials, planCode: 'starter' | 'professional' | 'guided' | 'msp') => void;
   onRefresh?: () => void;
   creationStatus?: 'idle' | 'creating' | 'verifying' | 'failed_verification';
   debugTokens?: {
@@ -15,7 +15,7 @@ interface OnboardingProps {
 
 export const Onboarding: React.FC<OnboardingProps> = ({ user, onStartCheckout, onRefresh, creationStatus = 'idle', debugTokens }) => {
   const [step, setStep] = useState<'DISCOVERY' | 'PROFILE' | 'TIER' | 'FINANCIALS'>('DISCOVERY');
-  const [tenantType, setTenantType] = useState<'ENTERPRISE' | 'MSP'>('ENTERPRISE');
+  const [planCode, setPlanCode] = useState<'starter' | 'professional' | 'guided' | 'msp'>('starter');
   const [orgName, setOrgName] = useState('');
   const [suggestedOrgs, setSuggestedOrgs] = useState<any[]>([]);
   const [isSearchingOrgs, setIsSearchingOrgs] = useState(false);
@@ -73,7 +73,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onStartCheckout, o
   const handleSubmitFinal = async () => {
     setProvisioningError(null);
     try {
-      await onStartCheckout(orgName, userDomain, financials, tenantType);
+      await onStartCheckout(orgName, userDomain, financials, planCode);
     } catch (error: any) {
       setProvisioningError(error.message || "Failed to initiate checkout.");
     }
@@ -207,32 +207,33 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onStartCheckout, o
                     <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tighter uppercase leading-none">Subscription Tier</h2>
                     <p className="text-slate-500 mb-8 text-sm font-medium">Select the best compliance model for your organization.</p>
                     
-                    <div className="space-y-4 mb-8">
-                        <div 
-                            onClick={() => setTenantType('ENTERPRISE')}
-                            className={`p-6 rounded-[1.5rem] border-2 cursor-pointer transition-all flex items-start gap-4 ${tenantType === 'ENTERPRISE' ? 'border-coral-500 bg-coral-50/50' : 'border-slate-100 bg-white hover:border-coral-200'}`}
-                        >
-                            <div className={`p-3 rounded-full ${tenantType === 'ENTERPRISE' ? 'bg-coral-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                <Building2 size={24} />
+                    <div className="space-y-3 mb-8">
+                        {([
+                            { code: 'starter', name: 'Starter', price: '$299/month', description: '50 GB, 5 users, and 1 assessor.' },
+                            { code: 'professional', name: 'Professional', price: '$599/month', description: '100 GB, 10 users, and 3 assessors.' },
+                            { code: 'guided', name: 'Guided', price: '$1,499/month', description: 'Unlimited storage and users, 5 assessors, plus up to 5 hours/month of application-use guidance.' },
+                            { code: 'msp', name: 'MSP Partner Hub', price: '$499 + $100/client/month', description: 'Unlimited storage and users for managed service providers.' }
+                        ] as const).map(plan => (
+                            <div
+                                key={plan.code}
+                                onClick={() => setPlanCode(plan.code)}
+                                className={`p-5 rounded-[1.5rem] border-2 cursor-pointer transition-all flex items-start gap-4 ${planCode === plan.code ? 'border-coral-500 bg-coral-50/50' : 'border-slate-100 bg-white hover:border-coral-200'}`}
+                            >
+                                <div className={`p-3 rounded-full ${planCode === plan.code ? 'bg-coral-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                    {plan.code === 'msp' ? <Briefcase size={22} /> : <Building2 size={22} />}
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex justify-between gap-3">
+                                        <h3 className="font-black text-slate-900 uppercase tracking-tight">{plan.name}</h3>
+                                        <span className="text-xs font-black text-coral-600 whitespace-nowrap">{plan.price}</span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">{plan.description}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="font-black text-slate-900 uppercase tracking-tight mb-1">Enterprise Internal</h3>
-                                <p className="text-xs text-slate-500 font-medium leading-relaxed">For organizations managing their own compliance journey internally. Includes standard dashboard and reporting.</p>
-                            </div>
-                        </div>
-
-                        <div 
-                            onClick={() => setTenantType('MSP')}
-                            className={`p-6 rounded-[1.5rem] border-2 cursor-pointer transition-all flex items-start gap-4 ${tenantType === 'MSP' ? 'border-coral-500 bg-coral-50/50' : 'border-slate-100 bg-white hover:border-coral-200'}`}
-                        >
-                            <div className={`p-3 rounded-full ${tenantType === 'MSP' ? 'bg-coral-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                                <Briefcase size={24} />
-                            </div>
-                            <div>
-                                <h3 className="font-black text-slate-900 uppercase tracking-tight mb-1">MSP Partner Hub</h3>
-                                <p className="text-xs text-slate-500 font-medium leading-relaxed">For Managed Service Providers managing compliance across multiple sub-tenants.</p>
-                            </div>
-                        </div>
+                        ))}
+                        <p className="text-[10px] text-slate-400 px-2">
+                            Enterprise plans are sales-assisted. Annual Starter, Professional, and Guided options can be selected from the billing page after onboarding.
+                        </p>
                     </div>
 
                     <button 

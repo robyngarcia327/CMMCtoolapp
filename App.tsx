@@ -367,18 +367,26 @@ const App: React.FC = () => {
 
   const [creationStatus, setCreationStatus] = useState<'idle' | 'creating' | 'verifying' | 'failed_verification'>('idle');
 
-  const handleStartCheckout = async (name: string, domain: string, financials: OrganizationFinancials, tenantType: 'ENTERPRISE' | 'MSP') => {
-    // Use ID token — the Cognito authorizer on API Gateway expects the ID token
+  const handleStartCheckout = async (
+    name: string,
+    domain: string,
+    financials: OrganizationFinancials,
+    planCode: 'starter' | 'professional' | 'guided' | 'msp'
+  ) => {
+    // The billing backend requires an existing organization so Stripe metadata
+    // can be linked safely to its Readiness tenant.
     const idToken = auth.user?.id_token;
-    if (!idToken) return;
+    if (!idToken) throw new Error('Your session has expired. Please sign in again.');
+
     setIsDataLoading(true);
     try {
+      const organization = await api.createOrg(idToken, name, domain);
       const { url } = await api.createCheckoutSession(
         idToken,
-        name,
-        auth.user?.profile.email || '',
-        auth.user?.profile.sub || '',
-        tenantType
+        organization.orgId,
+        planCode,
+        'month',
+        planCode === 'msp' ? 1 : undefined
       );
       window.location.href = url;
     } catch (e: any) {
