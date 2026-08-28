@@ -64,7 +64,8 @@ import { PoamRegistry } from './components/PoamRegistry';
 import { WorkflowManager } from './components/WorkflowManager';
 import { VendorManager } from './components/VendorManager';
 import { TenantInsights } from './components/TenantInsights';
-import { Billing } from './components/Billing';\nimport { ReferenceCenter } from './components/ReferenceCenter';
+import { Billing } from './components/Billing';
+import { ReferenceCenter } from './components/ReferenceCenter';
 import { api } from './services/api';
 import { cognitoHostedUiDomain } from './authConfig';
 
@@ -497,7 +498,8 @@ const App: React.FC = () => {
       case AppView.VENDORS: return "Vendor Ecosystem";
       case AppView.POAM: return "POA&M Registry";
       case AppView.BILLING: return "Billing & Subscription";
-      case AppView.INSIGHTS: return "Tenant Insights";\n      case AppView.REFERENCES: return "CMMC & CUI References";
+      case AppView.INSIGHTS: return "Tenant Insights";
+      case AppView.REFERENCES: return "CMMC & CUI References";
       default: return "Cuallee Cyber";
     }
   };
@@ -515,7 +517,8 @@ const App: React.FC = () => {
           <SidebarSection title="General">
             <SidebarItem icon={LayoutDashboard} label="Dashboard" isActive={currentView === AppView.DASHBOARD} onClick={() => setCurrentView(AppView.DASHBOARD)} />
             <SidebarItem icon={Wand2} label="Wizard" isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} badge="Guided" />
-            <SidebarItem icon={GitBranch} label="Workflows" isActive={currentView === AppView.WORKFLOWS} onClick={() => setCurrentView(AppView.WORKFLOWS)} />\n            <SidebarItem icon={BookOpen} label="Reference Center" isActive={currentView === AppView.REFERENCES} onClick={() => setCurrentView(AppView.REFERENCES)} badge="Official" />
+            <SidebarItem icon={GitBranch} label="Workflows" isActive={currentView === AppView.WORKFLOWS} onClick={() => setCurrentView(AppView.WORKFLOWS)} />
+            <SidebarItem icon={BookOpen} label="Reference Center" isActive={currentView === AppView.REFERENCES} onClick={() => setCurrentView(AppView.REFERENCES)} badge="Official" />
           </SidebarSection>
           <SidebarSection title="Compliance">
             <SidebarItem icon={ListChecks} label="Controls" isActive={currentView === AppView.CONTROLS} onClick={() => setCurrentView(AppView.CONTROLS)} />
@@ -666,7 +669,8 @@ const App: React.FC = () => {
                 orgName={activeClient?.name || ''} 
               />
             )}
-            {currentView === AppView.INSIGHTS && <TenantInsights organizationId={activeClientId} />}\n            {currentView === AppView.REFERENCES && <ReferenceCenter />}
+            {currentView === AppView.INSIGHTS && <TenantInsights organizationId={activeClientId} />}
+            {currentView === AppView.REFERENCES && <ReferenceCenter />}
           </div>
         </main>
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
