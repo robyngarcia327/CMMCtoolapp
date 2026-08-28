@@ -10,7 +10,11 @@ const authorityStyles: Record<ReferenceAuthority, string> = {
   Historical: 'bg-slate-100 text-slate-600 border-slate-200',
 };
 
-export const ReferenceCenter: React.FC = () => {
+interface ReferenceCenterProps {
+  isMspEdition?: boolean;
+}
+
+export const ReferenceCenter: React.FC<ReferenceCenterProps> = ({ isMspEdition = false }) => {
   const [query, setQuery] = useState('');
   const [phase, setPhase] = useState<ReferencePhase | 'All'>('All');
   const [authority, setAuthority] = useState<ReferenceAuthority | 'All'>('All');
@@ -52,7 +56,10 @@ export const ReferenceCenter: React.FC = () => {
           <h2 className="font-black text-amber-950">Current program notice</h2>
           <p className="text-sm text-amber-900 mt-1 leading-relaxed">
             DoD suspended the scheduled CMMC Phase II rollout on July 13, 2026. Phase I self-assessment requirements remain in place.
-            The underlying DFARS 252.204-7012 and NIST SP 800-171 obligations are not canceled. Confirm current status on the official DoD resource page before advising a customer.
+            The underlying DFARS 252.204-7012 and NIST SP 800-171 obligations are not canceled.{' '}
+            {isMspEdition
+              ? 'Confirm current status on the official DoD resource page before advising a managed client.'
+              : 'Confirm current status on the official DoD resource page before making compliance decisions.'}
           </p>
           <a className="inline-flex items-center gap-1.5 mt-3 text-xs font-black text-amber-800 hover:text-amber-950" href="https://dodcio.defense.gov/CMMC/Resources-Documentation/" target="_blank" rel="noreferrer">
             Verify with DoD <ExternalLink size={13} />

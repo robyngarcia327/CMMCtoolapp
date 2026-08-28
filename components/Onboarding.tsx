@@ -2,6 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Building2, ArrowRight, Loader2, RefreshCw, ShieldCheck, Check, DollarSign, Users, Wallet, Briefcase, Info, ArrowLeft, AlertCircle } from 'lucide-react';
 import { User, OrganizationFinancials } from '../types';
 import { api } from '../services/api';
+import { PLAN_ENTITLEMENTS } from '../data/productEditions';
+
+const ONBOARDING_PLANS = (['starter', 'professional', 'guided', 'msp'] as const).map(code => {
+  const plan = PLAN_ENTITLEMENTS[code];
+  const storage = plan.storageGb === null ? 'Unlimited storage' : `${plan.storageGb} GB`;
+  const users = plan.userLimit === null ? 'unlimited users' : `${plan.userLimit} users`;
+  const editionDetail = plan.edition === 'MSP' ? ' Includes managed-client workspaces and delegated client access.' : '';
+  return {
+    code,
+    name: plan.displayName,
+    price: plan.monthlyPrice,
+    description: `${storage}, ${users}, and ${plan.assessorLimit} assessors.${editionDetail}`,
+  };
+});
 
 interface OnboardingProps {
   user: User;
@@ -208,12 +222,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ user, onStartCheckout, o
                     <p className="text-slate-500 mb-8 text-sm font-medium">Select the best compliance model for your organization.</p>
                     
                     <div className="space-y-3 mb-8">
-                        {([
-                            { code: 'starter', name: 'Starter', price: '$299/month', description: '50 GB, 5 users, and 1 assessor.' },
-                            { code: 'professional', name: 'Professional', price: '$599/month', description: '100 GB, 10 users, and 3 assessors.' },
-                            { code: 'guided', name: 'Guided', price: '$1,499/month', description: 'Unlimited storage and users, 5 assessors, plus up to 5 hours/month of application-use guidance.' },
-                            { code: 'msp', name: 'MSP Partner Hub', price: '$499 + $100/client/month', description: 'Unlimited storage and users for managed service providers.' }
-                        ] as const).map(plan => (
+                        {ONBOARDING_PLANS.map(plan => (
                             <div
                                 key={plan.code}
                                 onClick={() => setPlanCode(plan.code)}

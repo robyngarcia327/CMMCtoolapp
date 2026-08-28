@@ -16,6 +16,7 @@ import {
   Users
 } from 'lucide-react';
 import { api } from '../services/api';
+import { PLAN_ENTITLEMENTS, PlanCode } from '../data/productEditions';
 
 interface BillingProps {
   accessToken: string;
@@ -44,49 +45,25 @@ interface Usage {
   remainingBytes?: number | null;
 }
 
-type PaidPlan = 'starter' | 'professional' | 'guided' | 'msp';
+type PaidPlan = Exclude<PlanCode, 'readiness'>;
 type Interval = 'month' | 'year';
 
-const PLANS: Array<{
-  code: PaidPlan;
-  name: string;
-  monthly: string;
-  annual?: string;
-  description: string;
-  features: string[];
-}> = [
-  {
-    code: 'starter',
-    name: 'Starter',
-    monthly: '$299/month',
-    annual: '$3,200/year',
-    description: 'A focused workspace for organizations beginning their CMMC program.',
-    features: ['50 GB evidence storage', '5 users', '1 assessor']
-  },
-  {
-    code: 'professional',
-    name: 'Professional',
-    monthly: '$599/month',
-    annual: '$7,000/year',
-    description: 'More capacity for established compliance teams and assessors.',
-    features: ['100 GB evidence storage', '10 users', '3 assessors']
-  },
-  {
-    code: 'guided',
-    name: 'Guided',
-    monthly: '$1,499/month',
-    annual: '$17,000/year',
-    description: 'Hands-on help using Cuallee Cyber throughout your program.',
-    features: ['Unlimited storage and users', '5 assessors', 'Up to 5 guidance hours/month']
-  },
-  {
-    code: 'msp',
-    name: 'MSP',
-    monthly: '$499 + $100/client/month',
-    description: 'A multi-client subscription for managed service providers.',
-    features: ['Unlimited storage and users', '5 assessors', 'Base plus managed-client pricing']
-  }
-];
+const PAID_PLAN_CODES: PaidPlan[] = ['starter', 'professional', 'guided', 'msp'];
+const PLANS = PAID_PLAN_CODES.map(code => {
+  const plan = PLAN_ENTITLEMENTS[code];
+  const storage = plan.storageGb === null ? 'Unlimited storage' : `${plan.storageGb} GB evidence storage`;
+  const users = plan.userLimit === null ? 'Unlimited users' : `${plan.userLimit} users`;
+  const clients = plan.capabilities.managed_clients ? 'Managed-client workspaces and client portal' : null;
+  const guidance = plan.guidanceHoursMonthly ? `Up to ${plan.guidanceHoursMonthly} guidance hours/month` : null;
+  return {
+    code,
+    name: plan.displayName,
+    monthly: plan.monthlyPrice,
+    annual: plan.annualPrice,
+    description: plan.description,
+    features: [storage, users, `${plan.assessorLimit} assessors`, clients, guidance].filter(Boolean) as string[],
+  };
+});
 
 const formatBytes = (bytes = 0) => {
   if (bytes < 1024) return `${bytes} B`;
