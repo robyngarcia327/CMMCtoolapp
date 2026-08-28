@@ -66,6 +66,8 @@ import { VendorManager } from './components/VendorManager';
 import { TenantInsights } from './components/TenantInsights';
 import { Billing } from './components/Billing';
 import { ReferenceCenter } from './components/ReferenceCenter';
+import { MSPDashboard } from './components/MSPDashboard';
+import { resolveEdition } from './data/productEditions';
 import { api } from './services/api';
 import { cognitoHostedUiDomain } from './authConfig';
 
@@ -246,6 +248,27 @@ const App: React.FC = () => {
     return { name: 'Unauthorized Tenant', id: '', domain: '', industry: '', contactName: '', logoInitial: '?', primaryFramework: '', targetCmmcLevel: 2 as const, nextAuditDate: 0, accountManager: '', isParent: false };
   }, [clients, activeClientId]);
 
+  const mspParent = useMemo(() => clients.find(client =>
+    client.relationshipType === 'PARENT' ||
+    client.isParent ||
+    (client.tenantType === 'MSP' && !client.parentOrgId)
+  ), [clients]);
+
+  const managedClients = useMemo(() => {
+    if (!mspParent) return [];
+    return clients.filter(client =>
+      client.id !== mspParent.id &&
+      (client.parentOrgId === mspParent.id || client.relationshipType === 'MANAGED_CLIENT')
+    );
+  }, [clients, mspParent]);
+
+  const isMspEdition = resolveEdition({
+    planCode: mspParent?.planCode || activeClient.planCode,
+    tenantType: mspParent?.tenantType || activeClient.tenantType,
+    edition: mspParent?.edition || activeClient.edition,
+    isParent: Boolean(mspParent),
+  }) === 'MSP';
+
   const loadOrganizations = useCallback(async () => {
     // FIX: Using ID TOKEN for API calls
     const idToken = auth.user?.id_token;
@@ -260,14 +283,20 @@ const App: React.FC = () => {
         id: o.orgId, 
         name: o.name || 'Organization', 
         domain: (auth.user?.profile.email || '').split('@')[1], 
-        industry: 'Defense Industrial Base', 
+        industry: o.industry || 'Defense Industrial Base', 
         contactName: auth.user?.profile.email || 'Admin', 
         logoInitial: (o.name || 'O').charAt(0).toUpperCase(), 
         primaryFramework: 'NIST-CMMC', 
         targetCmmcLevel: 2, 
         nextAuditDate: Date.now() + 31536000000, 
-        accountManager: 'Self-Managed', 
-        isParent: false
+        accountManager: o.tenantType === 'MSP' ? 'MSP Managed' : 'Self-Managed',
+        tenantType: o.tenantType || (o.planCode === 'msp' ? 'MSP' : 'ENTERPRISE'),
+        edition: o.edition || (o.planCode === 'msp' ? 'MSP' : 'ENTERPRISE'),
+        planCode: o.planCode,
+        parentOrgId: o.parentOrgId,
+        relationshipType: o.relationshipType || (o.isParent ? 'PARENT' : o.parentOrgId ? 'MANAGED_CLIENT' : 'STANDALONE'),
+        membershipRole: o.role,
+        isParent: Boolean(o.isParent || o.relationshipType === 'PARENT')
       }));
       
       setClients(mappedClients);
@@ -278,7 +307,14 @@ const App: React.FC = () => {
           ? savedId 
           : mappedClients[0].id;
           
-        setActiveClientId(selId);
+        const detectedMspParent = mappedClients.find(client =>
+          client.relationshipType === 'PARENT' ||
+          client.isParent ||
+          (client.tenantType === 'MSP' && !client.parentOrgId)
+        );
+        const initialId = detectedMspParent?.id || selId;
+        setActiveClientId(initialId);
+        if (detectedMspParent) setCurrentView(AppView.MSP_PORTFOLIO);
         setClientDataStore(prev => {
           const nextStore = { ...prev };
           mappedClients.forEach(c => {
@@ -500,6 +536,7 @@ const App: React.FC = () => {
       case AppView.BILLING: return "Billing & Subscription";
       case AppView.INSIGHTS: return "Tenant Insights";
       case AppView.REFERENCES: return "CMMC & CUI References";
+      case AppView.MSP_PORTFOLIO: return "MSP Client Portfolio";
       default: return "Cuallee Cyber";
     }
   };
@@ -516,6 +553,18 @@ const App: React.FC = () => {
         <nav className="flex-1 overflow-y-auto px-4 scrollbar-hide">
           <SidebarSection title="General">
             <SidebarItem icon={LayoutDashboard} label="Dashboard" isActive={currentView === AppView.DASHBOARD} onClick={() => setCurrentView(AppView.DASHBOARD)} />
+            {mspParent && (
+              <SidebarItem
+                icon={Building2}
+                label="Client Portfolio"
+                isActive={currentView === AppView.MSP_PORTFOLIO}
+                onClick={() => {
+                  setActiveClientId(mspParent.id);
+                  setCurrentView(AppView.MSP_PORTFOLIO);
+                }}
+                badge={managedClients.length.toString()}
+              />
+            )}
             <SidebarItem icon={Wand2} label="Wizard" isActive={currentView === AppView.WIZARD} onClick={() => setCurrentView(AppView.WIZARD)} badge="Guided" />
             <SidebarItem icon={GitBranch} label="Workflows" isActive={currentView === AppView.WORKFLOWS} onClick={() => setCurrentView(AppView.WORKFLOWS)} />
             <SidebarItem icon={BookOpen} label="Reference Center" isActive={currentView === AppView.REFERENCES} onClick={() => setCurrentView(AppView.REFERENCES)} badge="Official" />
@@ -589,6 +638,16 @@ const App: React.FC = () => {
 
         <main className="flex-1 overflow-hidden relative bg-slate-50/50">
           <div className="h-full w-full overflow-y-auto">
+            {currentView === AppView.MSP_PORTFOLIO && mspParent && (
+              <MSPDashboard
+                clients={managedClients}
+                clientDataStore={clientDataStore}
+                onSelectClient={(clientId) => {
+                  setActiveClientId(clientId);
+                  setCurrentView(AppView.DASHBOARD);
+                }}
+              />
+            )}
             {currentView === AppView.DASHBOARD && <Dashboard requirements={activeData.requirements} artifacts={activeData.artifacts} activeFramework={activeFramework} targetLevel={activeData.targetCmmcLevel} onUpdateLevel={handleUpdateLevel} onNavigate={setCurrentView} onToggleChat={() => setIsChatOpen(!isChatOpen)} />}
             {currentView === AppView.WIZARD && (
                 <ComplianceWizard 
@@ -670,7 +729,7 @@ const App: React.FC = () => {
               />
             )}
             {currentView === AppView.INSIGHTS && <TenantInsights organizationId={activeClientId} />}
-            {currentView === AppView.REFERENCES && <ReferenceCenter />}
+            {currentView === AppView.REFERENCES && <ReferenceCenter isMspEdition={isMspEdition} />}
           </div>
         </main>
         <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
