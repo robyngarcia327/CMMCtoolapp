@@ -1,3 +1,4 @@
+import type { PlanCode, ProductEdition } from './data/productEditions';
 
 export type CognitoGroup = 'Admin_Created_Users' | 'Application_Administrator' | 'Tenant_Admin' | 'Auditor';
 
@@ -288,7 +289,8 @@ export enum AppView {
   ORGANIZATION_MANAGER = 'ORGANIZATION_MANAGER',
   GLOBAL_ADMIN = 'GLOBAL_ADMIN',
   INSIGHTS = 'INSIGHTS',
-  REFERENCES = 'REFERENCES'
+  REFERENCES = 'REFERENCES',
+  MSP_PORTFOLIO = 'MSP_PORTFOLIO'
 }
 
 export interface WizardProgress {
@@ -331,6 +333,11 @@ export interface Client {
   name: string;
   domain: string;
   tenantType?: 'ENTERPRISE' | 'MSP';
+  edition?: ProductEdition;
+  planCode?: PlanCode;
+  parentOrgId?: string;
+  relationshipType?: 'PARENT' | 'MANAGED_CLIENT' | 'STANDALONE';
+  membershipRole?: string;
   industry: string;
   contactName: string;
   logoInitial: string;
@@ -518,4 +525,111 @@ export interface Workflow {
   steps: WorkflowStep[];
   lastUpdated: number;
   category?: string;
+}
+
+
+export type ResponsibilityPartyType = 'OSC' | 'MSP' | 'ESP' | 'CSP' | 'OTHER';
+export type InheritanceLevel = 'FULL' | 'PARTIAL' | 'NONE';
+export type MatrixReviewStatus = 'REQUESTED' | 'UPLOADED' | 'PARSING' | 'NEEDS_MAPPING' | 'CLIENT_REVIEW' | 'ACCEPTED' | 'DEFICIENT' | 'EXPIRED' | 'SUPERSEDED';
+
+export interface ServiceCatalogItem {
+  id: string;
+  ownerOrgId: string;
+  name: string;
+  description: string;
+  deliveryTeam?: string;
+  includedToolIds: string[];
+  supportedRequirementIds: string[];
+  supportedObjectiveIds: string[];
+  evidenceObligations: string[];
+  limitations?: string;
+  status: 'DRAFT' | 'ACTIVE' | 'RETIRED';
+}
+
+export interface ToolCatalogItem {
+  id: string;
+  ownerOrgId: string;
+  vendor: string;
+  product: string;
+  function: string;
+  serviceIds: string[];
+  assetCategory?: CmmcAssetCategory;
+  handlesCui: boolean;
+  handlesSecurityProtectionData: boolean;
+  hostingModel: 'ON_PREMISES' | 'CLOUD' | 'HYBRID';
+  fedRampStatus?: string;
+  fipsValidation?: string;
+  dataResidency?: string;
+  supportedObjectiveIds: string[];
+  evidenceProduced: string[];
+  knownLimitations?: string;
+}
+
+export interface ClientServiceInstance {
+  id: string;
+  mspOrgId: string;
+  clientOrgId: string;
+  serviceId: string;
+  toolIds: string[];
+  contractReference?: string;
+  workPackageReference?: string;
+  coveredAssetIds: string[];
+  mspOwnerUserId?: string;
+  clientOwnerUserId?: string;
+  limitations?: string;
+  effectiveDate: number;
+  expirationDate?: number;
+  status: 'PLANNED' | 'ACTIVE' | 'SUSPENDED' | 'ENDED';
+}
+
+export interface ResponsibilityAssignment {
+  id: string;
+  matrixId: string;
+  requirementId: string;
+  objectiveId: string;
+  partyType: ResponsibilityPartyType;
+  partyOrgId: string;
+  inheritance: InheritanceLevel;
+  responsibility: string;
+  implementationDescription?: string;
+  supportingPartyOrgIds: string[];
+  toolIds: string[];
+  serviceInstanceIds: string[];
+  evidenceObligations: string[];
+  contractLimitation?: string;
+  effectiveDate?: number;
+  expirationDate?: number;
+}
+
+export interface SharedResponsibilityMatrix {
+  id: string;
+  clientOrgId: string;
+  providerOrgId: string;
+  providerType: 'ESP' | 'CSP' | 'MSP';
+  serviceInstanceIds: string[];
+  sourceArtifactId?: string;
+  version: string;
+  status: MatrixReviewStatus;
+  assignments: ResponsibilityAssignment[];
+  parserConfidence?: number;
+  reviewedByUserId?: string;
+  reviewedAt?: number;
+  effectiveDate?: number;
+  expirationDate?: number;
+}
+
+export interface ResponsibilityGap {
+  id: string;
+  clientOrgId: string;
+  matrixId: string;
+  requirementId: string;
+  objectiveId: string;
+  description: string;
+  scoreImpact?: number;
+  poamEligible?: boolean;
+  linkedRiskId?: string;
+  linkedPoamId?: string;
+  linkedTaskIds: string[];
+  status: 'DRAFT' | 'VALIDATED' | 'REMEDIATING' | 'RESOLVED' | 'ACCEPTED';
+  requiresHumanApproval: true;
 }
