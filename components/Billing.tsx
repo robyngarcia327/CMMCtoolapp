@@ -113,6 +113,7 @@ export const Billing: React.FC<BillingProps> = ({ accessToken, orgId, orgName })
   const [error, setError] = useState<string | null>(null);
 
   const checkoutReturned = new URLSearchParams(window.location.search).has('session_id');
+  const planChangesEnabled = import.meta.env.VITE_ENABLE_PLAN_CHANGES === 'true';
   const hasSubscription = Boolean(status && !['readiness', 'inactive'].includes(status.status));
   const storagePercent = useMemo(() => {
     if (!usage || usage.unlimited || usage.limitBytes <= 0) return 0;
@@ -156,6 +157,27 @@ export const Billing: React.FC<BillingProps> = ({ accessToken, orgId, orgName })
       window.location.assign(url);
     } catch (e: any) {
       setError(e.message || 'Checkout could not be started.');
+      setAction(null);
+    }
+  };
+
+  const changePlan = async (planCode: PaidPlan) => {
+    if (planCode === 'msp' || !planChangesEnabled) return;
+    const timing = status?.planCode === 'starter' && planCode !== 'starter' && interval === 'month'
+      ? 'The upgrade will be applied immediately and Stripe will invoice the prorated difference.'
+      : 'The change will take effect at the next renewal.';
+    if (!window.confirm(`Change to ${titleCase(planCode)}? ${timing}`)) return;
+    setAction(`change-${planCode}`);
+    setError(null);
+    try {
+      const result = await api.changePlan(accessToken, orgId, planCode, interval);
+      window.alert(result.changeType === 'immediate_upgrade'
+        ? 'Upgrade submitted. Billing will refresh after Stripe confirms it.'
+        : 'Plan change scheduled for the next renewal.');
+      await loadBilling();
+    } catch (e: any) {
+      setError(e.message || 'The plan could not be changed.');
+    } finally {
       setAction(null);
     }
   };
@@ -310,7 +332,7 @@ export const Billing: React.FC<BillingProps> = ({ accessToken, orgId, orgName })
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-5">
           <div>
             <h2 className="text-2xl font-black text-slate-950 uppercase tracking-tight">{hasSubscription ? 'Available plans' : 'Choose a paid plan'}</h2>
-            <p className="text-sm text-slate-500 mt-1">{hasSubscription ? 'Contact billing to change an active subscription. This prevents duplicate subscriptions and unexpected charges.' : 'Checkout is securely hosted by Stripe.'}</p>
+            <p className="text-sm text-slate-500 mt-1">{hasSubscription ? (planChangesEnabled ? 'Upgrades are prorated immediately; downgrades and interval changes begin at renewal.' : 'Contact billing to change an active subscription. This prevents duplicate subscriptions and unexpected charges.') : 'Checkout is securely hosted by Stripe.'}</p>
           </div>
           <div className="bg-white border border-slate-200 p-1 rounded-xl flex">
             {(['month', 'year'] as Interval[]).map(value => (
@@ -345,12 +367,12 @@ export const Billing: React.FC<BillingProps> = ({ accessToken, orgId, orgName })
                   </label>
                 )}
                 <button
-                  onClick={() => beginCheckout(plan.code)}
-                  disabled={!!action || isMspAnnual || hasSubscription || isCurrent}
+                  onClick={() => hasSubscription ? changePlan(plan.code) : beginCheckout(plan.code)}
+                  disabled={!!action || isMspAnnual || isCurrent || (hasSubscription && (!planChangesEnabled || plan.code === 'msp'))}
                   className="mt-auto w-full bg-slate-950 text-white rounded-xl py-3 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-40"
                 >
-                  {action === `checkout-${plan.code}` ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
-                  {isCurrent ? 'Current plan' : hasSubscription ? 'Contact billing to change' : isMspAnnual ? 'Monthly only' : 'Continue to checkout'}
+                  {action === `checkout-${plan.code}` || action === `change-${plan.code}` ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
+                  {isCurrent ? 'Current plan' : hasSubscription ? (planChangesEnabled && plan.code !== 'msp' ? 'Change plan' : 'Contact billing to change') : isMspAnnual ? 'Monthly only' : 'Continue to checkout'}
                 </button>
               </article>
             );

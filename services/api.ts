@@ -289,6 +289,19 @@ export const api = {
     });
   },
 
+  changePlan: async (
+    accessToken: string,
+    orgId: string,
+    planCode: 'starter' | 'professional' | 'guided',
+    interval: 'month' | 'year'
+  ): Promise<any> => {
+    return await fetchJson(`${API_BASE_URL}/billing/change-plan`, {
+      method: 'POST',
+      token: accessToken,
+      body: JSON.stringify({ orgId, planCode, interval })
+    });
+  },
+
   getBillingStatus: async (accessToken: string, orgId: string): Promise<any> => {
     return await fetchJson(`${API_BASE_URL}/billing/status?orgId=${orgId}`, {
       method: 'GET',
