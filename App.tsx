@@ -503,7 +503,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
+    <div data-ui-version="account-menu-v1" className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
       <aside className="w-64 bg-slate-950 text-slate-300 flex flex-col shrink-0 z-50 border-r border-silver-800 shadow-2xl">
         <div className="p-6 pb-10">
           <div className="flex items-center gap-3 text-white">
