@@ -139,6 +139,7 @@ const App: React.FC = () => {
   });
 
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false); 
   const [apiError, setApiError] = useState<string | null>(null);
   const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
@@ -537,15 +538,11 @@ const App: React.FC = () => {
             <SidebarItem icon={FileCheck2} label="Policy Review" isActive={currentView === AppView.POLICY_AUDIT} onClick={() => setCurrentView(AppView.POLICY_AUDIT)} />
             <SidebarItem icon={FileCheck} label="Executive Summary" isActive={currentView === AppView.REPORT_EXECUTIVE} onClick={() => setCurrentView(AppView.REPORT_EXECUTIVE)} />
             <SidebarItem icon={FileText} label="System Security Plan" isActive={currentView === AppView.REPORT_SSP} onClick={() => setCurrentView(AppView.REPORT_SSP)} />
-            <SidebarItem icon={CreditCard} label="Billing" isActive={currentView === AppView.BILLING} onClick={() => setCurrentView(AppView.BILLING)} />
           </SidebarSection>
         </nav>
         <div className="p-4 mt-auto border-t border-slate-900 bg-slate-950/50">
           <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Context</div>
           <div className="text-xs font-bold text-white truncate uppercase">{activeClient.name}</div>
-          <button onClick={handleLogout} className="mt-4 w-full flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 hover:text-red-400 transition-colors">
-            <LogOut size={14} /> Log Out
-          </button>
         </div>
       </aside>
 
@@ -554,7 +551,36 @@ const App: React.FC = () => {
           <div className="flex items-center gap-4"><h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">{getViewLabel(currentView)}</h2></div>
           <div className="flex items-center gap-6">
             <button onClick={() => setIsChatOpen(!isChatOpen)} className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-[11px] transition-all ${isChatOpen ? 'bg-coral-600 text-white shadow-lg' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}><MessageSquare size={14} /> AI Expert</button>
-            <div className="w-8 h-8 rounded-xl bg-coral-600 flex items-center justify-center text-white font-black shadow-lg shadow-coral-200">{userDisplayName.charAt(0).toUpperCase()}</div>
+            <div className="relative">
+              <button
+                type="button"
+                aria-label="Open account menu"
+                aria-expanded={isAccountMenuOpen}
+                onClick={() => setIsAccountMenuOpen(open => !open)}
+                className="w-9 h-9 rounded-xl bg-coral-600 flex items-center justify-center text-white font-black shadow-lg shadow-coral-200 hover:bg-coral-700 transition-colors"
+              >
+                {userDisplayName.charAt(0).toUpperCase()}
+              </button>
+              {isAccountMenuOpen && (
+                <div className="absolute right-0 top-12 w-72 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl z-50">
+                  <div className="px-3 py-3 border-b border-slate-100">
+                    <div className="font-black text-sm text-slate-950 truncate">{userDisplayName}</div>
+                    <div className="text-xs text-slate-500 truncate">{auth.user?.profile.email || ''}</div>
+                    <div className="mt-2 text-[9px] font-black uppercase tracking-widest text-slate-400">Organization</div>
+                    <div className="text-xs font-bold text-slate-700 truncate">{activeClient.name}</div>
+                  </div>
+                  <button onClick={() => { setCurrentView(AppView.USERS); setIsAccountMenuOpen(false); }} className="mt-1 w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                    <Building2 size={16} className="text-slate-400" /> Organization & Users
+                  </button>
+                  <button onClick={() => { setCurrentView(AppView.BILLING); setIsAccountMenuOpen(false); }} className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                    <CreditCard size={16} className="text-slate-400" /> Billing & Subscription
+                  </button>
+                  <button onClick={handleLogout} className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50">
+                    <LogOut size={16} /> Log Out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
