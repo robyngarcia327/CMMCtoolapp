@@ -289,15 +289,9 @@ export const Billing: React.FC<BillingProps> = ({ accessToken, orgId, orgName })
                 {action === 'portal' ? <Loader2 size={15} className="animate-spin" /> : <ExternalLink size={15} />}
                 Manage payment details
               </button>
-              {status?.cancelAtPeriodEnd ? (
-                <button onClick={resumeSubscription} disabled={!!action} className="border-2 border-emerald-100 text-emerald-700 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 disabled:opacity-50">
-                  <RotateCcw size={15} /> Resume subscription
-                </button>
-              ) : (
-                <button onClick={cancelSubscription} disabled={!!action} className="border-2 border-slate-100 text-slate-500 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:border-red-100 hover:text-red-600 disabled:opacity-50">
-                  Cancel at period end
-                </button>
-              )}
+              <a href="mailto:billing@cualleecyber.com?subject=Subscription%20assistance" className="border-2 border-slate-100 text-slate-600 px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:border-coral-100 hover:text-coral-600">
+                Contact billing
+              </a>
             </div>
           )}
         </section>
@@ -315,8 +309,8 @@ export const Billing: React.FC<BillingProps> = ({ accessToken, orgId, orgName })
       <section>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-5">
           <div>
-            <h2 className="text-2xl font-black text-slate-950 uppercase tracking-tight">{hasSubscription ? 'Change your plan' : 'Choose a paid plan'}</h2>
-            <p className="text-sm text-slate-500 mt-1">Checkout is securely hosted by Stripe.</p>
+            <h2 className="text-2xl font-black text-slate-950 uppercase tracking-tight">{hasSubscription ? 'Available plans' : 'Choose a paid plan'}</h2>
+            <p className="text-sm text-slate-500 mt-1">{hasSubscription ? 'Contact billing to change an active subscription. This prevents duplicate subscriptions and unexpected charges.' : 'Checkout is securely hosted by Stripe.'}</p>
           </div>
           <div className="bg-white border border-slate-200 p-1 rounded-xl flex">
             {(['month', 'year'] as Interval[]).map(value => (
@@ -352,11 +346,11 @@ export const Billing: React.FC<BillingProps> = ({ accessToken, orgId, orgName })
                 )}
                 <button
                   onClick={() => beginCheckout(plan.code)}
-                  disabled={!!action || isMspAnnual}
+                  disabled={!!action || isMspAnnual || hasSubscription || isCurrent}
                   className="mt-auto w-full bg-slate-950 text-white rounded-xl py-3 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-40"
                 >
                   {action === `checkout-${plan.code}` ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
-                  {isMspAnnual ? 'Monthly only' : isCurrent ? 'Select plan' : 'Continue to checkout'}
+                  {isCurrent ? 'Current plan' : hasSubscription ? 'Contact billing to change' : isMspAnnual ? 'Monthly only' : 'Continue to checkout'}
                 </button>
               </article>
             );
