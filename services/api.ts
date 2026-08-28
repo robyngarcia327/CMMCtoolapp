@@ -90,7 +90,19 @@ export const api = {
    * GET /orgs - Primary bootstrap method.
    * Expects ACCESS_TOKEN.
    */
-  getOrgs: async (accessToken: string): Promise<{ orgId: string, name: string, role: string, industry?: string, domain?: string }[]> => {
+  getOrgs: async (accessToken: string): Promise<{
+    orgId: string;
+    name: string;
+    role: string;
+    industry?: string;
+    domain?: string;
+    tenantType?: 'ENTERPRISE' | 'MSP';
+    edition?: 'ENTERPRISE' | 'MSP';
+    planCode?: string;
+    parentOrgId?: string;
+    relationshipType?: 'PARENT' | 'MANAGED_CLIENT' | 'STANDALONE';
+    isParent?: boolean;
+  }[]> => {
     const rawData = await fetchJson(`${API_BASE_URL}/orgs`, {
       method: 'GET',
       token: accessToken
@@ -102,6 +114,14 @@ export const api = {
         orgId: o.orgId || o.id,
         name: o.orgName || o.name || 'Unnamed Organization',
         role: o.role,
+        industry: o.industry,
+        domain: o.domain,
+        tenantType: o.tenantType || o.orgType,
+        edition: o.edition,
+        planCode: o.planCode || o.subscriptionPlan,
+        parentOrgId: o.parentOrgId || o.mspOrgId,
+        relationshipType: o.relationshipType,
+        isParent: o.isParent,
         createdAt: o.createdAt,
         memberStatus: o.memberStatus
     }));
