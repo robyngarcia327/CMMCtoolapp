@@ -346,7 +346,8 @@ export const api = {
     interval: 'month' | 'year',
     managedClientCount?: number
   ): Promise<any> => {
-    return await fetchJson(`${API_BASE_URL}/billing/change-plan`, {
+    const route = planCode === 'msp' ? 'upgrade-msp' : 'change-plan';
+    return await fetchJson(`${API_BASE_URL}/billing/${route}`, {
       method: 'POST',
       token: accessToken,
       body: JSON.stringify({ orgId, planCode, interval, managedClientCount })
