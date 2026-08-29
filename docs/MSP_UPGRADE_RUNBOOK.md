@@ -2,6 +2,18 @@
 
 Use this sequence for the demo account before enabling MSP upgrades generally.
 
+## Infrastructure as code boundary
+
+The CDK application is in `infrastructure/`. It deploys all new Lambda functions, IAM permissions, and new API child routes. Because the existing REST API methods, stage, DynamoDB tables, and Stripe webhook were created outside this CDK stack, CloudFormation does not own them and must not overwrite them implicitly.
+
+After CDK deployment, manually:
+
+1. Point existing `GET /orgs` and `POST /orgs` methods to the Lambda ARNs printed by the stack.
+2. Merge the MSP synchronization branch from the candidate Lambda into the existing Stripe webhook so all existing event handlers remain intact.
+3. Enable point-in-time recovery and `ttl` on the existing tables if not already enabled.
+4. Deploy the existing API Gateway stage.
+5. Run the demo migration dry run and review it before `--apply`.
+
 ## 1. Deploy and migrate
 
 1. Deploy `create_org.py`, `list_orgs.py`, `org_hierarchy.py`, and `responsibility_matrices.py` with the routes documented in `MSP_HIERARCHY_DEPLOYMENT.md`.
