@@ -342,13 +342,14 @@ export const api = {
   changePlan: async (
     accessToken: string,
     orgId: string,
-    planCode: 'starter' | 'professional' | 'guided',
-    interval: 'month' | 'year'
+    planCode: 'starter' | 'professional' | 'guided' | 'msp',
+    interval: 'month' | 'year',
+    managedClientCount?: number
   ): Promise<any> => {
     return await fetchJson(`${API_BASE_URL}/billing/change-plan`, {
       method: 'POST',
       token: accessToken,
-      body: JSON.stringify({ orgId, planCode, interval })
+      body: JSON.stringify({ orgId, planCode, interval, managedClientCount })
     });
   },
 

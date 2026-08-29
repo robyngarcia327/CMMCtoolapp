@@ -37,3 +37,5 @@ Grant `dynamodb:GetItem`, `Query`, `BatchGetItem`, and `TransactWriteItems` on t
 | `ORG#{orgId}` | `CRM#{matrixId}` | Provider CRM, assignments, and draft gaps |
 
 Before replacing legacy organization handlers, migrate existing organizations and memberships into this key structure. Validate in a non-production environment with Enterprise and MSP accounts, including a client administrator who can access only their client organization.
+
+For conversion of an existing paid account, follow `MSP_UPGRADE_RUNBOOK.md`. Do not activate the frontend upgrade flag until the signed Stripe webhook can atomically synchronize the billing tenant and organization directory.
