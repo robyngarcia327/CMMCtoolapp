@@ -1,0 +1,17 @@
+{
+  "ExistingRestApiId": "irwrdtn81b",
+  "ExistingOrgIdResourceId": "REPLACE_WITH_ORGS_VARIABLE_RESOURCE_ID",
+  "ExistingBillingResourceId": "REPLACE_WITH_BILLING_RESOURCE_ID",
+  "ExistingCognitoAuthorizerId": "wj153r",
+  "OrgDirectoryTableName": "REPLACE_WITH_ORG_DIRECTORY_TABLE",
+  "TenantsTableName": "REPLACE_WITH_TENANTS_TABLE",
+  "StripeSecretArn": "arn:aws:secretsmanager:REGION:ACCOUNT:secret:REPLACE",
+  "StripePythonLayerArn": "arn:aws:lambda:REGION:ACCOUNT:layer:REPLACE:VERSION",
+  "StripeMspBasePriceId": "price_REPLACE",
+  "StripeMspClientPriceId": "price_REPLACE",
+  "StripeStarterPriceId": "price_REPLACE",
+  "StripeProfessionalPriceId": "price_REPLACE",
+  "StripeGuidedPriceId": "price_REPLACE",
+  "InvitationFromEmail": "invites@cualleecyber.com",
+  "AppBaseUrl": "https://app.cualleecyber.com"
+}
