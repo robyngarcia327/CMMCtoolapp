@@ -227,6 +227,8 @@ export interface ClientData {
   poamItems?: PoamItem[];
   packageAnalyses?: PackageAnalysis[];
   workflows?: Workflow[];
+  sharedResponsibilityMatrices?: SharedResponsibilityMatrix[];
+  responsibilityGaps?: ResponsibilityGap[];
   m365Config: IntegrationConfig;
   intuneConfig: IntegrationConfig;
   adConfig: IntegrationConfig;
@@ -290,7 +292,8 @@ export enum AppView {
   GLOBAL_ADMIN = 'GLOBAL_ADMIN',
   INSIGHTS = 'INSIGHTS',
   REFERENCES = 'REFERENCES',
-  MSP_PORTFOLIO = 'MSP_PORTFOLIO'
+  MSP_PORTFOLIO = 'MSP_PORTFOLIO',
+  RESPONSIBILITY = 'RESPONSIBILITY'
 }
 
 export interface WizardProgress {
@@ -616,6 +619,7 @@ export interface SharedResponsibilityMatrix {
   reviewedAt?: number;
   effectiveDate?: number;
   expirationDate?: number;
+  importedFileName?: string;
 }
 
 export interface ResponsibilityGap {
