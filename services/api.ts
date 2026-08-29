@@ -130,11 +130,11 @@ export const api = {
   /**
    * POST /orgs - Create new organization.
    */
-  createOrg: async (accessToken: string, name: string, domain?: string): Promise<{ orgId: string, name: string }> => {
+  createOrg: async (accessToken: string, name: string, domain: string | undefined, planCode: 'starter' | 'professional' | 'guided' | 'msp'): Promise<{ orgId: string, name: string }> => {
     const data = await fetchJson(`${API_BASE_URL}/orgs`, {
       method: 'POST',
       token: accessToken,
-      body: JSON.stringify({ name, domain, initialRole: 'Tenant_Admin' })
+      body: JSON.stringify({ name, domain, planCode, initialRole: 'Tenant_Admin' })
     });
     return {
         // Lambda returns orgId (lowercase d) — normalize both cases defensively
@@ -142,6 +142,27 @@ export const api = {
         name: data.name || data.orgName || name,
     };
   },
+
+  createManagedClient: async (
+    accessToken: string,
+    parentOrgId: string,
+    input: { name: string; domain: string; industry: string }
+  ): Promise<any> => fetchJson(`${API_BASE_URL}/orgs/${parentOrgId}/clients`, {
+    method: 'POST', token: accessToken, body: JSON.stringify(input)
+  }),
+
+  inviteOrganizationUser: async (
+    accessToken: string,
+    orgId: string,
+    input: { email: string; role: string }
+  ): Promise<any> => fetchJson(`${API_BASE_URL}/orgs/${orgId}/invitations`, {
+    method: 'POST', token: accessToken, body: JSON.stringify(input)
+  }),
+
+  acceptOrganizationInvitation: async (accessToken: string, token: string): Promise<any> =>
+    fetchJson(`${API_BASE_URL}/invitations/accept`, {
+      method: 'POST', token: accessToken, body: JSON.stringify({ token })
+    }),
 
   /**
    * GET /orgs/discover - Tenant discovery.
