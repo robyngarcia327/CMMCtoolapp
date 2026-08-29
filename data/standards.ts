@@ -1349,6 +1349,8 @@ export const createInitialClientData = (isParent: boolean): ClientData => ({
   poamItems: [],
   packageAnalyses: [],
   workflows: [...DEFAULT_WORKFLOWS],
+  sharedResponsibilityMatrices: [],
+  responsibilityGaps: [],
   m365Config: { enabled: false },
   intuneConfig: { enabled: false },
   adConfig: { enabled: false },
