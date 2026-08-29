@@ -1,15 +1,35 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Client, ClientData } from '../types';
-import { Users, AlertTriangle, Calendar, CheckCircle2, TrendingUp, ArrowRight, ShieldAlert, MoreHorizontal, Clock, FileWarning } from 'lucide-react';
+import { Users, Calendar, CheckCircle2, TrendingUp, ArrowRight, ShieldAlert, Clock, FileWarning, Plus, X, Loader2 } from 'lucide-react';
 
 interface MSPDashboardProps {
   clients: Client[];
   clientDataStore: Record<string, ClientData>;
   onSelectClient: (clientId: string) => void;
+  onCreateClient: (input: { name: string; domain: string; industry: string; adminEmail?: string }) => Promise<void>;
 }
 
-export const MSPDashboard: React.FC<MSPDashboardProps> = ({ clients, clientDataStore, onSelectClient }) => {
+export const MSPDashboard: React.FC<MSPDashboardProps> = ({ clients, clientDataStore, onSelectClient, onCreateClient }) => {
+  const [showCreate, setShowCreate] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [form, setForm] = useState({ name: '', domain: '', industry: 'Defense Industrial Base', adminEmail: '' });
+
+  const submitClient = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setFormError('');
+    setIsCreating(true);
+    try {
+      await onCreateClient(form);
+      setForm({ name: '', domain: '', industry: 'Defense Industrial Base', adminEmail: '' });
+      setShowCreate(false);
+    } catch (error: any) {
+      setFormError(error?.message || 'Client creation failed.');
+    } finally {
+      setIsCreating(false);
+    }
+  };
   // Helper to calculate score for a specific client
   const getClientMetrics = (clientId: string) => {
     const data = clientDataStore[clientId];
@@ -55,10 +75,34 @@ export const MSPDashboard: React.FC<MSPDashboardProps> = ({ clients, clientDataS
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">MSP Command Center</h1>
-        <p className="text-slate-600">Overview of client compliance posture and audit lifecycles.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">MSP Command Center</h1>
+          <p className="text-slate-600">Overview of client compliance posture and audit lifecycles.</p>
+        </div>
+        <button onClick={() => setShowCreate(true)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700">
+          <Plus size={17} /> Add managed client
+        </button>
       </div>
+
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-labelledby="create-client-title">
+          <form onSubmit={submitClient} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-start justify-between">
+              <div><h2 id="create-client-title" className="text-xl font-bold text-slate-900">Add managed client</h2><p className="text-sm text-slate-500">Create an isolated client workspace and optionally invite its administrator.</p></div>
+              <button type="button" onClick={() => setShowCreate(false)} aria-label="Close" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X size={18} /></button>
+            </div>
+            <div className="space-y-4">
+              <label className="block text-sm font-bold text-slate-700">Client name<input required minLength={2} maxLength={160} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 font-normal" /></label>
+              <label className="block text-sm font-bold text-slate-700">Primary domain<input required placeholder="client.example" value={form.domain} onChange={e => setForm({ ...form, domain: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 font-normal" /></label>
+              <label className="block text-sm font-bold text-slate-700">Industry<input required value={form.industry} onChange={e => setForm({ ...form, industry: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 font-normal" /></label>
+              <label className="block text-sm font-bold text-slate-700">Client administrator email <span className="font-normal text-slate-400">(optional)</span><input type="email" value={form.adminEmail} onChange={e => setForm({ ...form, adminEmail: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 font-normal" /></label>
+            </div>
+            {formError && <div className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-700">{formError}</div>}
+            <div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700">Cancel</button><button disabled={isCreating} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60">{isCreating && <Loader2 size={16} className="animate-spin" />} Create client</button></div>
+          </form>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -128,6 +172,7 @@ export const MSPDashboard: React.FC<MSPDashboardProps> = ({ clients, clientDataS
                       </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
+                      {enhancedClients.length === 0 && <tr><td colSpan={7} className="p-12 text-center text-slate-500">No managed clients yet. Add your first client to create its isolated CMMC workspace.</td></tr>}
                       {enhancedClients.sort((a,b) => a.daysToAudit - b.daysToAudit).map(client => (
                           <tr key={client.id} className="hover:bg-slate-50 transition-colors group">
                               <td className="p-4">
