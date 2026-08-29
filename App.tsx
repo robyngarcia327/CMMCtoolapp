@@ -442,7 +442,7 @@ const App: React.FC = () => {
 
     setIsDataLoading(true);
     try {
-      const organization = await api.createOrg(idToken, name, domain);
+      const organization = await api.createOrg(idToken, name, domain, planCode);
       const { url } = await api.createCheckoutSession(
         idToken,
         organization.orgId,
@@ -645,6 +645,19 @@ const App: React.FC = () => {
                 onSelectClient={(clientId) => {
                   setActiveClientId(clientId);
                   setCurrentView(AppView.DASHBOARD);
+                }}
+                onCreateClient={async (input) => {
+                  const idToken = auth.user?.id_token;
+                  if (!idToken || !mspParent) throw new Error('Your MSP session is missing. Please sign in again.');
+                  const client = await api.createManagedClient(idToken, mspParent.id, input);
+                  if (input.adminEmail) {
+                    await api.inviteOrganizationUser(idToken, client.orgId, {
+                      email: input.adminEmail,
+                      role: 'CLIENT_ADMIN'
+                    });
+                  }
+                  fetchAttempted.current = false;
+                  await loadOrganizations();
                 }}
               />
             )}
