@@ -40,7 +40,7 @@ import {
 } from 'lucide-react';
 
 import { FRAMEWORKS, createInitialClientData, REQUIREMENTS_DATA } from './data/standards';
-import { Requirement, Artifact, AppView, Ticket, User, Framework, Client, ClientData, CognitoGroup, Risk, WizardProgress, Asset, BudgetLineItem, OrganizationFinancials, ControlMastery, ProjectTask } from './types';
+import { Requirement, Artifact, AppView, Ticket, User, Framework, Client, ClientData, CognitoGroup, Risk, WizardProgress, Asset, BudgetLineItem, OrganizationFinancials, ControlMastery, ProjectTask, ResponsibilityGap, SharedResponsibilityMatrix, PoamItem } from './types';
 import { RequirementsList } from './components/RequirementsList';
 import { RequirementDetail } from './components/RequirementDetail';
 import { AIChat } from './components/AIChat';
@@ -63,6 +63,7 @@ import { PackageReviewCenter } from './components/PackageReviewCenter';
 import { PoamRegistry } from './components/PoamRegistry';
 import { WorkflowManager } from './components/WorkflowManager';
 import { VendorManager } from './components/VendorManager';
+import { ResponsibilityCenter } from './components/ResponsibilityCenter';
 import { TenantInsights } from './components/TenantInsights';
 import { Billing } from './components/Billing';
 import { ReferenceCenter } from './components/ReferenceCenter';
@@ -322,6 +323,22 @@ const App: React.FC = () => {
           });
           return nextStore;
         });
+        const responsibilityResults = await Promise.allSettled(mappedClients.map(async client => ({
+          clientId: client.id,
+          data: await api.getResponsibilityMatrices(idToken, client.id)
+        })));
+        setClientDataStore(prev => {
+          const next = { ...prev };
+          responsibilityResults.forEach(result => {
+            if (result.status !== 'fulfilled' || !next[result.value.clientId]) return;
+            next[result.value.clientId] = {
+              ...next[result.value.clientId],
+              sharedResponsibilityMatrices: result.value.data.matrices,
+              responsibilityGaps: result.value.data.gaps
+            };
+          });
+          return next;
+        });
       }
     } catch (error: any) { 
       console.error("Discovery error:", error); 
@@ -537,6 +554,7 @@ const App: React.FC = () => {
       case AppView.INSIGHTS: return "Tenant Insights";
       case AppView.REFERENCES: return "CMMC & CUI References";
       case AppView.MSP_PORTFOLIO: return "MSP Client Portfolio";
+      case AppView.RESPONSIBILITY: return "Shared Responsibility";
       default: return "Cuallee Cyber";
     }
   };
@@ -577,6 +595,7 @@ const App: React.FC = () => {
             <SidebarItem icon={Package} label="Assets" isActive={currentView === AppView.ASSETS} onClick={() => setCurrentView(AppView.ASSETS)} />
             <SidebarItem icon={Users} label="Users" isActive={currentView === AppView.USERS} onClick={() => setCurrentView(AppView.USERS)} />
             <SidebarItem icon={Building2} label="Vendors" isActive={currentView === AppView.VENDORS} onClick={() => setCurrentView(AppView.VENDORS)} />
+            <SidebarItem icon={GitBranch} label="Responsibility" isActive={currentView === AppView.RESPONSIBILITY} onClick={() => setCurrentView(AppView.RESPONSIBILITY)} badge="CRM" />
             <SidebarItem icon={Shield} label="Tenant Insights" isActive={currentView === AppView.INSIGHTS} onClick={() => setCurrentView(AppView.INSIGHTS)} badge="M365" />
           </SidebarSection>
           <SidebarSection title="Governance">
@@ -734,6 +753,27 @@ const App: React.FC = () => {
               onUpdate={handleUpdateClientData}
             />}
             {currentView === AppView.VENDORS && <VendorManager activeClientId={activeClientId} />}
+            {currentView === AppView.RESPONSIBILITY && <ResponsibilityCenter
+              clientOrgId={activeClientId}
+              requirements={activeData.requirements}
+              matrices={activeData.sharedResponsibilityMatrices || []}
+              gaps={activeData.responsibilityGaps || []}
+              onImport={async (matrix: SharedResponsibilityMatrix, gaps: ResponsibilityGap[]) => {
+                const token = auth.user?.id_token;
+                if (!token) throw new Error('Your session has expired.');
+                await api.saveResponsibilityMatrix(token, activeClientId, matrix, gaps);
+                setClientDataStore(prev => ({ ...prev, [activeClientId]: { ...prev[activeClientId], sharedResponsibilityMatrices: [...(prev[activeClientId].sharedResponsibilityMatrices || []), matrix], responsibilityGaps: [...(prev[activeClientId].responsibilityGaps || []), ...gaps] } }));
+              }}
+              onApproveGaps={(matrixId: string) => {
+                setClientDataStore(prev => {
+                  const current = prev[activeClientId];
+                  const selected = (current.responsibilityGaps || []).filter(g => g.matrixId === matrixId && g.status === 'DRAFT');
+                  const newRisks: Risk[] = selected.map((gap, index) => ({ id: `R-CRM-${gap.id}`, riskTier: 'Operational', riskCategory: 'Third Party', domainGrouping: gap.requirementId, riskNumber: `CRM-${Date.now()}-${index + 1}`, riskTitle: `Shared responsibility gap: ${gap.requirementId} ${gap.objectiveId}`, riskOwner: 'Security Officer', deficiencyDescription: gap.description, probableScenarios: 'An unassigned or undocumented provider responsibility may leave the assessment objective unmet.', likelihood: '3 - Possible', impact: '3 - High', inherentRiskRating: '3 - High', businessDecision: 'Mitigate', targetResidualRiskRating: '1 - Low', comments: `Generated from responsibility matrix ${matrixId}; validate ownership, service coverage, tooling, and evidence.`, status: 'Open', dateIdentified: Date.now(), fairData: { tef: 1, vulnerability: 0.5, primaryLossPerEvent: 10000, secondaryLossPerEvent: 25000, ale: 17500 } }));
+                  const newPoams: PoamItem[] = selected.filter(g => g.poamEligible).map(g => ({ id: `POAM-${g.id}`, linkedRequirementId: g.requirementId, weaknessName: `Resolve ${g.requirementId} ${g.objectiveId} responsibility gap`, scheduledCompletionDate: new Date(Date.now() + 90*86400000).toISOString().slice(0,10), milestones: `Confirm accountable party; map contracted service and tool; define evidence obligation; obtain customer approval. Source: ${g.description}`, status: 'Open', dateIdentified: Date.now() }));
+                  return { ...prev, [activeClientId]: { ...current, risks: [...current.risks, ...newRisks], poamItems: [...(current.poamItems || []), ...newPoams], responsibilityGaps: (current.responsibilityGaps || []).map(g => g.matrixId === matrixId && g.status === 'DRAFT' ? { ...g, status: 'VALIDATED' as const, linkedRiskId: `R-CRM-${g.id}`, linkedPoamId: g.poamEligible ? `POAM-${g.id}` : undefined } : g), sharedResponsibilityMatrices: (current.sharedResponsibilityMatrices || []).map(m => m.id === matrixId ? { ...m, status: 'ACCEPTED' as const, reviewedAt: Date.now() } : m) } };
+                });
+              }}
+            />}
             {currentView === AppView.BILLING && (
               <Billing 
                 accessToken={auth.user?.id_token || ''} 
