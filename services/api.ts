@@ -1,4 +1,4 @@
-import { Artifact, Client, CognitoGroup, Vendor } from '../types';
+import { Artifact, Client, CognitoGroup, Vendor, ResponsibilityGap, SharedResponsibilityMatrix } from '../types';
 
 // API Gateway base URL. VITE_API_BASE_URL is injected by Amplify at build time.
 // The production fallback prevents the SPA host from accidentally receiving API requests.
@@ -163,6 +163,15 @@ export const api = {
     fetchJson(`${API_BASE_URL}/invitations/accept`, {
       method: 'POST', token: accessToken, body: JSON.stringify({ token })
     }),
+
+  getResponsibilityMatrices: async (accessToken: string, orgId: string): Promise<{ matrices: SharedResponsibilityMatrix[]; gaps: ResponsibilityGap[] }> => {
+    const data = await fetchJson(`${API_BASE_URL}/orgs/${orgId}/responsibility-matrices`, { method: 'GET', token: accessToken });
+    return { matrices: data?.matrices || [], gaps: data?.gaps || [] };
+  },
+
+  saveResponsibilityMatrix: async (accessToken: string, orgId: string, matrix: SharedResponsibilityMatrix, gaps: ResponsibilityGap[]): Promise<void> => {
+    await fetchJson(`${API_BASE_URL}/orgs/${orgId}/responsibility-matrices`, { method: 'POST', token: accessToken, body: JSON.stringify({ matrix, gaps }) });
+  },
 
   /**
    * GET /orgs/discover - Tenant discovery.
