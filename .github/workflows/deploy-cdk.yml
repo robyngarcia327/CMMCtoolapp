@@ -2,12 +2,6 @@ name: Deploy MSP infrastructure
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'infrastructure/**'
-      - 'lambda/**'
-      - '.github/workflows/deploy-cdk.yml'
 
 permissions:
   id-token: write
