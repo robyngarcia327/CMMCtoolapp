@@ -91,6 +91,7 @@ export const Billing: React.FC<BillingProps> = ({ accessToken, orgId, orgName })
 
   const checkoutReturned = new URLSearchParams(window.location.search).has('session_id');
   const planChangesEnabled = import.meta.env.VITE_ENABLE_PLAN_CHANGES === 'true';
+  const mspUpgradesEnabled = import.meta.env.VITE_ENABLE_MSP_UPGRADES === 'true';
   const hasSubscription = Boolean(status && !['readiness', 'inactive'].includes(status.status));
   const storagePercent = useMemo(() => {
     if (!usage || usage.unlimited || usage.limitBytes <= 0) return 0;
@@ -139,15 +140,17 @@ export const Billing: React.FC<BillingProps> = ({ accessToken, orgId, orgName })
   };
 
   const changePlan = async (planCode: PaidPlan) => {
-    if (planCode === 'msp' || !planChangesEnabled) return;
-    const timing = status?.planCode === 'starter' && planCode !== 'starter' && interval === 'month'
+    if (!planChangesEnabled || (planCode === 'msp' && !mspUpgradesEnabled)) return;
+    const timing = planCode === 'msp'
+      ? `The existing subscription will convert to MSP immediately with ${managedClientCount} managed-client seat${managedClientCount === 1 ? '' : 's'}. The MSP workspace activates only after Stripe confirms the change.`
+      : status?.planCode === 'starter' && planCode !== 'starter' && interval === 'month'
       ? 'The upgrade will be applied immediately and Stripe will invoice the prorated difference.'
       : 'The change will take effect at the next renewal.';
     if (!window.confirm(`Change to ${titleCase(planCode)}? ${timing}`)) return;
     setAction(`change-${planCode}`);
     setError(null);
     try {
-      const result = await api.changePlan(accessToken, orgId, planCode, interval);
+      const result = await api.changePlan(accessToken, orgId, planCode, planCode === 'msp' ? 'month' : interval, planCode === 'msp' ? managedClientCount : undefined);
       window.alert(result.changeType === 'immediate_upgrade'
         ? 'Upgrade submitted. Billing will refresh after Stripe confirms it.'
         : 'Plan change scheduled for the next renewal.');
@@ -345,11 +348,11 @@ export const Billing: React.FC<BillingProps> = ({ accessToken, orgId, orgName })
                 )}
                 <button
                   onClick={() => hasSubscription ? changePlan(plan.code) : beginCheckout(plan.code)}
-                  disabled={!!action || isMspAnnual || isCurrent || (hasSubscription && (!planChangesEnabled || plan.code === 'msp'))}
+                  disabled={!!action || isMspAnnual || isCurrent || (hasSubscription && (!planChangesEnabled || (plan.code === 'msp' && !mspUpgradesEnabled)))}
                   className="mt-auto w-full bg-slate-950 text-white rounded-xl py-3 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-40"
                 >
                   {action === `checkout-${plan.code}` || action === `change-${plan.code}` ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
-                  {isCurrent ? 'Current plan' : hasSubscription ? (planChangesEnabled && plan.code !== 'msp' ? 'Change plan' : 'Contact billing to change') : isMspAnnual ? 'Monthly only' : 'Continue to checkout'}
+                  {isCurrent ? 'Current plan' : hasSubscription ? (planChangesEnabled && (plan.code !== 'msp' || mspUpgradesEnabled) ? (plan.code === 'msp' ? 'Upgrade to MSP' : 'Change plan') : 'Contact billing to change') : isMspAnnual ? 'Monthly only' : 'Continue to checkout'}
                 </button>
               </article>
             );
