@@ -11,6 +11,7 @@ This change separates an MSP parent from each managed client and authorizes acce
 | `GET`, `POST` | `/orgs/{parentOrgId}/clients` | `lambda/org_hierarchy.py` |
 | `POST` | `/orgs/{orgId}/invitations` | `lambda/org_hierarchy.py` |
 | `POST` | `/invitations/accept` | `lambda/org_hierarchy.py` |
+| `GET`, `POST` | `/orgs/{orgId}/responsibility-matrices` | `lambda/responsibility_matrices.py` |
 
 Attach the existing Cognito authorizer to every route. Do not accept an organization ID as authorization by itself; the handlers verify an active membership and permitted role.
 
@@ -33,5 +34,6 @@ Grant `dynamodb:GetItem`, `Query`, `BatchGetItem`, and `TransactWriteItems` on t
 | `USER#{sub}` | `ORG#{orgId}` | User-to-organization discovery index |
 | `ORG#{mspOrgId}` | `CLIENT#{clientOrgId}` | MSP portfolio link |
 | `INVITE#{sha256(token)}` | `META` | Hashed invitation lookup |
+| `ORG#{orgId}` | `CRM#{matrixId}` | Provider CRM, assignments, and draft gaps |
 
 Before replacing legacy organization handlers, migrate existing organizations and memberships into this key structure. Validate in a non-production environment with Enterprise and MSP accounts, including a client administrator who can access only their client organization.
