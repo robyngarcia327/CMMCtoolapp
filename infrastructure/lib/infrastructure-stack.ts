@@ -20,13 +20,23 @@ export class InfrastructureStack extends cdk.Stack {
     const tenantsTableName = new cdk.CfnParameter(this, 'TenantsTableName', { type: 'String' });
     const stripeSecretArn = new cdk.CfnParameter(this, 'StripeSecretArn', { type: 'String', noEcho: true, description: 'Secrets Manager ARN containing secretKey and webhookSecret.' });
     const stripeLayerArn = new cdk.CfnParameter(this, 'StripePythonLayerArn', { type: 'String' });
-    const mspBasePrice = new cdk.CfnParameter(this, 'StripeMspBasePriceId', { type: 'String', noEcho: true });
-    const mspClientPrice = new cdk.CfnParameter(this, 'StripeMspClientPriceId', { type: 'String', noEcho: true });
-    const starterPrice = new cdk.CfnParameter(this, 'StripeStarterPriceId', { type: 'String', noEcho: true });
-    const professionalPrice = new cdk.CfnParameter(this, 'StripeProfessionalPriceId', { type: 'String', noEcho: true });
-    const guidedPrice = new cdk.CfnParameter(this, 'StripeGuidedPriceId', { type: 'String', noEcho: true });
+    const mspBaseMonthlyPrice = new cdk.CfnParameter(this, 'StripeMspBaseMonthlyPriceId', { type: 'String' });
+    const mspClientMonthlyPrice = new cdk.CfnParameter(this, 'StripeMspClientMonthlyPriceId', { type: 'String' });
+    const starterMonthlyPrice = new cdk.CfnParameter(this, 'StripeStarterMonthlyPriceId', { type: 'String' });
+    const starterAnnualPrice = new cdk.CfnParameter(this, 'StripeStarterAnnualPriceId', { type: 'String' });
+    const professionalMonthlyPrice = new cdk.CfnParameter(this, 'StripeProfessionalMonthlyPriceId', { type: 'String' });
+    const professionalAnnualPrice = new cdk.CfnParameter(this, 'StripeProfessionalAnnualPriceId', { type: 'String' });
+    const guidedMonthlyPrice = new cdk.CfnParameter(this, 'StripeGuidedMonthlyPriceId', { type: 'String' });
+    const guidedAnnualPrice = new cdk.CfnParameter(this, 'StripeGuidedAnnualPriceId', { type: 'String' });
     const invitationEmail = new cdk.CfnParameter(this, 'InvitationFromEmail', { type: 'String', default: '' });
     const appBaseUrl = new cdk.CfnParameter(this, 'AppBaseUrl', { type: 'String', default: 'https://app.cualleecyber.com' });
+    const aiProvider = new cdk.CfnParameter(this, 'AiProvider', { type: 'String', default: 'disabled', allowedValues: ['disabled', 'bedrock'], description: 'AI remains disabled until an approved Bedrock deployment is available.' });
+    const bedrockRegion = new cdk.CfnParameter(this, 'BedrockRegion', { type: 'String', default: 'us-gov-west-1' });
+    const bedrockModelId = new cdk.CfnParameter(this, 'BedrockModelId', { type: 'String', default: '' });
+    const bedrockEmbeddingModelId = new cdk.CfnParameter(this, 'BedrockEmbeddingModelId', { type: 'String', default: '' });
+    const bedrockGuardrailIdentifier = new cdk.CfnParameter(this, 'BedrockGuardrailIdentifier', { type: 'String', default: '' });
+    const bedrockGuardrailVersion = new cdk.CfnParameter(this, 'BedrockGuardrailVersion', { type: 'String', default: 'DRAFT' });
+    const tenantIsolationMode = new cdk.CfnParameter(this, 'TenantIsolationMode', { type: 'String', default: 'siloed', allowedValues: ['siloed', 'pooled'], description: 'Siloed is the production default for the strongest customer boundary.' });
 
     const orgTable = dynamodb.Table.fromTableName(this, 'OrgDirectory', orgTableName.valueAsString);
     const tenantsTable = dynamodb.Table.fromTableName(this, 'Tenants', tenantsTableName.valueAsString);
@@ -39,8 +49,8 @@ export class InfrastructureStack extends cdk.Stack {
     const listOrgs = new lambda.Function(this, 'ListOrganizations', { ...common, handler: 'list_orgs.lambda_handler', environment: { ORG_DIRECTORY_TABLE: orgTable.tableName } });
     const hierarchy = new lambda.Function(this, 'OrganizationHierarchy', { ...common, handler: 'org_hierarchy.lambda_handler', environment: { ORG_DIRECTORY_TABLE: orgTable.tableName, APP_BASE_URL: appBaseUrl.valueAsString, INVITATION_FROM_EMAIL: invitationEmail.valueAsString, RETURN_INVITE_TOKEN: 'false' } });
     const responsibility = new lambda.Function(this, 'ResponsibilityMatrices', { ...common, handler: 'responsibility_matrices.lambda_handler', environment: { ORG_DIRECTORY_TABLE: orgTable.tableName } });
-    const upgrade = new lambda.Function(this, 'UpgradeExistingAccountToMsp', { ...common, handler: 'billing_upgrade_msp.lambda_handler', layers: [stripeLayer], timeout: cdk.Duration.seconds(60), environment: { ORG_DIRECTORY_TABLE: orgTable.tableName, TENANTS_TABLE: tenantsTable.tableName, STRIPE_SECRET_KEY: stripeSecret.secretValueFromJson('secretKey').unsafeUnwrap(), STRIPE_PRICE_ID_MSP_BASE: mspBasePrice.valueAsString, STRIPE_PRICE_ID_MSP_CLIENT: mspClientPrice.valueAsString, STRIPE_PRICE_ID_STARTER: starterPrice.valueAsString, STRIPE_PRICE_ID_PROFESSIONAL: professionalPrice.valueAsString, STRIPE_PRICE_ID_GUIDED: guidedPrice.valueAsString } });
-    const webhookCandidate = new lambda.Function(this, 'MspWebhookSynchronizationCandidate', { ...common, handler: 'billing_webhook_msp.lambda_handler', layers: [stripeLayer], environment: { ORG_DIRECTORY_TABLE: orgTable.tableName, TENANTS_TABLE: tenantsTable.tableName, STRIPE_WEBHOOK_SECRET: stripeSecret.secretValueFromJson('webhookSecret').unsafeUnwrap(), STRIPE_PRICE_ID_MSP_BASE: mspBasePrice.valueAsString } });
+    const upgrade = new lambda.Function(this, 'UpgradeExistingAccountToMsp', { ...common, handler: 'billing_upgrade_msp.lambda_handler', layers: [stripeLayer], timeout: cdk.Duration.seconds(60), environment: { ORG_DIRECTORY_TABLE: orgTable.tableName, TENANTS_TABLE: tenantsTable.tableName, STRIPE_SECRET_KEY: stripeSecret.secretValueFromJson('secretKey').unsafeUnwrap(), STRIPE_PRICE_ID_MSP_BASE: mspBaseMonthlyPrice.valueAsString, STRIPE_PRICE_ID_MSP_CLIENT: mspClientMonthlyPrice.valueAsString, STRIPE_PRICE_ID_STARTER: starterMonthlyPrice.valueAsString, STRIPE_PRICE_ID_STARTER_ANNUAL: starterAnnualPrice.valueAsString, STRIPE_PRICE_ID_PROFESSIONAL: professionalMonthlyPrice.valueAsString, STRIPE_PRICE_ID_PROFESSIONAL_ANNUAL: professionalAnnualPrice.valueAsString, STRIPE_PRICE_ID_GUIDED: guidedMonthlyPrice.valueAsString, STRIPE_PRICE_ID_GUIDED_ANNUAL: guidedAnnualPrice.valueAsString } });
+    const webhookCandidate = new lambda.Function(this, 'MspWebhookSynchronizationCandidate', { ...common, handler: 'billing_webhook_msp.lambda_handler', layers: [stripeLayer], environment: { ORG_DIRECTORY_TABLE: orgTable.tableName, TENANTS_TABLE: tenantsTable.tableName, STRIPE_WEBHOOK_SECRET: stripeSecret.secretValueFromJson('webhookSecret').unsafeUnwrap(), STRIPE_PRICE_ID_MSP_BASE: mspBaseMonthlyPrice.valueAsString } });
 
     orgTable.grantReadWriteData(createOrg);
     orgTable.grantReadData(listOrgs);
@@ -85,6 +95,9 @@ export class InfrastructureStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'CreateOrganizationFunctionArn', { value: createOrg.functionArn, description: 'Set as the existing POST /orgs integration.' });
     new cdk.CfnOutput(this, 'ListOrganizationsFunctionArn', { value: listOrgs.functionArn, description: 'Set as the existing GET /orgs integration.' });
     new cdk.CfnOutput(this, 'WebhookCandidateFunctionArn', { value: webhookCandidate.functionArn, description: 'Merge its MSP logic into the existing Stripe webhook.' });
+    new cdk.CfnOutput(this, 'ConfiguredAiProvider', { value: aiProvider.valueAsString, description: 'Configuration only; this stack does not deploy a Bedrock workload.' });
+    new cdk.CfnOutput(this, 'ConfiguredBedrockRegion', { value: bedrockRegion.valueAsString });
+    new cdk.CfnOutput(this, 'ConfiguredTenantIsolationMode', { value: tenantIsolationMode.valueAsString });
     new cdk.CfnOutput(this, 'ManualApiDeploymentRequired', { value: 'Deploy the existing CualleeCyberEvidence stage after CDK completes.' });
   }
 }
