@@ -1,85 +1,28 @@
-"""
-billing_checkout.py
-====================
-Creates a Stripe Checkout Session and redirects the user to Stripe to pay.
-
-Route:  POST /billing/checkout-session
-Auth:   Cognito (any authenticated user)
-Body:   { "orgName": "Acme Corp" }
-
-Environment Variables Required:
-  STRIPE_SECRET_KEY       — from Stripe Dashboard → Developers → API Keys
-  STRIPE_PRICE_ID_YEARLY  — the Price ID from Stripe Dashboard → Products
-  APP_SUCCESS_URL         — e.g. https://app.cualleecyber.com/?checkout=success&session_id={CHECKOUT_SESSION_ID}
-  APP_CANCEL_URL          — e.g. https://app.cualleecyber.com/?checkout=cancel
-"""
-import os
-import traceback
-import stripe
-
-from common.utils import response, get_user_sub, parse_json_body
-
-# Initialize Stripe once at module level (reused across warm Lambda invocations)
-stripe.api_key = os.environ["STRIPE_SECRET_KEY"]
-
-PRICE_ID_MSP      = os.environ["STRIPE_PRICE_ID_MSP"]
-PRICE_ID_ENTERPRISE = os.environ["STRIPE_PRICE_ID_ENTERPRISE"]
-SUCCESS_URL   = os.environ["APP_SUCCESS_URL"]
-CANCEL_URL    = os.environ["APP_CANCEL_URL"]
-
-
-def lambda_handler(event, context):
-    try:
-        user_sub = get_user_sub(event)
-
-        # Pull the caller's email from the Cognito authorizer claims
-        claims = (
-            event.get("requestContext", {})
-            .get("authorizer", {})
-            .get("claims", {})
-        )
-        email = claims.get("email", "")
-
-        body = parse_json_body(event)
-        org_name = (body.get("orgName") or "").strip()
-        tenant_type = body.get("tenantType", "ENTERPRISE")
-        if not org_name:
-            return response(400, {"error": "orgName is required"})
-
-        # Select price based on tenantType
-        selected_price = PRICE_ID_MSP if tenant_type == "MSP" else PRICE_ID_ENTERPRISE
-        if not selected_price:
-             return response(500, {"error": f"Price ID missing for tenant type {tenant_type}"})
-
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[
-                {
-                    "price": selected_price,
-                    "quantity": 1,
-                }
-            ],
-            mode="subscription",
-            # Stripe replaces {CHECKOUT_SESSION_ID} automatically in the success URL
-            success_url=SUCCESS_URL,
-            cancel_url=CANCEL_URL,
-            customer_email=email or None,
-            metadata={
-                "userSub": user_sub,
-                "orgName": org_name,
-                "email": email,
-                "tenantType": tenant_type,
-            },
-        )
-
-        return response(200, {"url": session.url})
-
-    except stripe.error.StripeError as e:
-        print("Stripe error:", str(e))
-        return response(502, {"error": f"Stripe error: {e.user_message or str(e)}"})
-    except ValueError as e:
-        return response(400, {"error": str(e)})
-    except Exception as e:
-        print("billing_checkout ERROR:", str(e))
-        print(traceback.format_exc())
-        return response(500, {"error": "Internal error"})
+import os, stripe
+from common.utils import *
+from common.stripe_utils import *
+def lambda_handler(event,context):
+ try:
+  b=body(event); oid=(b.get('orgId') or '').strip()
+  if not oid: raise ValueError('orgId is required; create the organization before checkout')
+  sub=user_sub(event); member(oid,sub,{'owner','admin'}); t=tenant_for_org(oid)
+  code=(b.get('planCode') or '').lower(); interval=(b.get('interval') or 'month').lower()
+  if code not in {'starter','professional','guided','msp'}: raise ValueError('planCode is not available for self-service checkout')
+  if interval not in {'month','year'}: raise ValueError('interval must be month or year')
+  if code=='msp' and interval!='month': raise ValueError('MSP is available monthly only')
+  p=plan(code)
+  lines=[]
+  if p.get('basePrices'):
+   lines.append({'price':p['basePrices'][interval],'quantity':1}); qty=int(b.get('managedClientCount') or 1)
+   if qty<1: raise ValueError('managedClientCount must be at least 1')
+   lines.append({'price':p['clientPrices'][interval],'quantity':qty})
+  else: lines=[{'price':p['prices'][interval],'quantity':1}]
+  params={'mode':'subscription','line_items':lines,'success_url':os.environ['APP_SUCCESS_URL']+'?session_id={CHECKOUT_SESSION_ID}','cancel_url':os.environ['APP_CANCEL_URL'],'client_reference_id':oid,'integration_identifier':integration_id(),'metadata':{'orgId':oid,'planCode':code,'userSub':sub},'subscription_data':{'metadata':{'orgId':oid,'planCode':code}}}
+  if t and t.get('stripeCustomerId'): params['customer']=t['stripeCustomerId']
+  else: params['customer_email']=claims(event).get('email') or b.get('email')
+  sess=client().v1.checkout.sessions.create(params=params,options={'idempotency_key':f'checkout:{oid}:{code}:{interval}'})
+  return response(200,{'url':sess.url,'sessionId':sess.id})
+ except (ValueError,KeyError) as e:return response(400,{'error':str(e)})
+ except PermissionError as e:return response(403,{'error':str(e)})
+ except stripe.StripeError as e: print('stripe',repr(e)); return response(502,{'error':stripe_error(e)})
+ except Exception as e: print('billing_checkout',repr(e)); return response(500,{'error':'Internal error'})
