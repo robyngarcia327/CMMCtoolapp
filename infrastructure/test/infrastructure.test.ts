@@ -13,3 +13,27 @@ test('creates MSP Lambda handlers and protected API methods', () => {
   template.hasOutput('ListOrganizationsFunctionArn', {});
   template.hasOutput('WebhookCandidateFunctionArn', {});
 });
+
+test('separates Stripe intervals and keeps AI disabled by default', () => {
+  const app = new cdk.App();
+  const template = Template.fromStack(new InfrastructureStack(app, 'ConfigurationTestStack'));
+  const parameters = template.toJSON().Parameters;
+
+  for (const name of [
+    'StripeMspBaseMonthlyPriceId',
+    'StripeMspClientMonthlyPriceId',
+    'StripeStarterMonthlyPriceId',
+    'StripeStarterAnnualPriceId',
+    'StripeProfessionalMonthlyPriceId',
+    'StripeProfessionalAnnualPriceId',
+    'StripeGuidedMonthlyPriceId',
+    'StripeGuidedAnnualPriceId',
+  ]) {
+    expect(parameters[name]).toBeDefined();
+  }
+
+  expect(parameters.AiProvider.Default).toBe('disabled');
+  expect(parameters.AiProvider.AllowedValues).toEqual(['disabled', 'bedrock']);
+  expect(parameters.BedrockRegion.Default).toBe('us-gov-west-1');
+  expect(parameters.TenantIsolationMode.Default).toBe('siloed');
+});
